@@ -2,7 +2,7 @@
 development."""
 
 
-# pymake
+# modflow-devtools
 from .config import (
     __author__,
     __date__,
