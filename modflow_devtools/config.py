@@ -5,6 +5,6 @@ __maintainer__ = "Joseph D. Hughes"
 __email__ = "jdhughes@usgs.gov"
 __status__ = "Production"
 __description__ = """
-This is the modflow-devtools package that provides functionality used in the
+This is the modflow_devtools package that provides functionality used in the
 MODFLOW development environment.
 """

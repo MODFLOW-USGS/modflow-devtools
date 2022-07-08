@@ -1,4 +1,4 @@
-name: modflow-devtools linting/installation
+name: modflow_devtools linting/installation
 
 on:
   schedule:
@@ -14,7 +14,7 @@ jobs:
 
 
   modflow-devtools_lint:
-    name: modflow-devtools linting
+    name: modflow_devtools linting
     runs-on: ubuntu-latest
 
     steps:
@@ -49,10 +49,10 @@ jobs:
           black --check --diff ./modflow-devtools
 
       - name: Run flake8
-        run: flake8 --count --show-source ./modflow-devtools
+        run: flake8 --count --show-source ./modflow_devtools
 
       - name: Run pylint
-        run: pylint --jobs=0 --errors-only ./modflow-devtools
+        run: pylint --jobs=0 --errors-only ./modflow_devtools
 
   modflow-devtools_setup:
     name: standard installation
@@ -79,15 +79,15 @@ jobs:
           python -m pip install --upgrade pip
           pip install build twine
 
-      - name: Base modflow-devtools installation
+      - name: Base modflow_devtools installation
         run: |
           pip --verbose install .
 
-      - name: Print modflow-devtools version
+      - name: Print modflow_devtools version
         run: |
-          python -c "import modflow-devtools; print(modflow-devtools.__version__)"
+          python -c "import modflow_devtools; print(modflow_devtools.__version__)"
 
-      - name: Build modflow-devtools, check dist outputs
+      - name: Build modflow_devtools, check dist outputs
         run: |
           python -m build
           twine check --strict dist/*

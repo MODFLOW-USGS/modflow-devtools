@@ -16,7 +16,7 @@ verbose = true
 
 [tool.isort]
 profile = "black"
-src_paths = ["mfdevtools", "autotest", ]
+src_paths = ["modflow_devtools", "autotest", ]
 line_length = 79
 
 [tool.setuptools_scm]
