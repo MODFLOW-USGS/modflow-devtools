@@ -4,10 +4,12 @@ on:
   schedule:
     - cron: '0 3 * * 3' # run at 3 AM UTC every Wednesday
   push:
-    branches: [ main, develop ]
+    branches:
+      - main
+      - develop
   pull_request:
-    branches: [ develop ]
-
+    branches:
+      - develop
 jobs:
 
 
@@ -26,7 +28,7 @@ jobs:
 
       - name: Install packages
         run: |
-          pip install pylint flake8 black
+          pip install numpy flopy pylint flake8 black
 
       - name: Run isort
         run: |
