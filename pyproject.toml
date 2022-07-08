@@ -1,0 +1,23 @@
+[build-system]
+# Minimum requirements for the build system to execute
+requires = [
+    "setuptools>=45",
+    "wheel",
+]
+build-backend = "setuptools.build_meta"
+
+[tool.black]
+line-length = 79
+target_version = ["py37"]
+
+[tool.flynt]
+line-length = 79
+verbose = true
+
+[tool.isort]
+profile = "black"
+src_paths = ["mfdevtools", "autotest", ]
+line_length = 79
+
+[tool.setuptools_scm]
+fallback_version = "999"
