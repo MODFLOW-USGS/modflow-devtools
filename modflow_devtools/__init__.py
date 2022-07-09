@@ -1,8 +1,8 @@
-"""modflow-devtools is a Python package containing tools for MODFLOW
+"""modflow_devtools is a Python package containing tools for MODFLOW
 development."""
 
 
-# pymake
+# modflow_devtools
 from .config import (
     __author__,
     __date__,
