@@ -35,18 +35,18 @@ jobs:
           echo "if isort check fails update isort using"
           echo "  pip install isort --upgrade"
           echo "and run"
-          echo "  isort ./modflow-devtools"
+          echo "  isort ./modflow_devtools"
           echo "and then commit the changes."
-          isort --verbose --check --diff ./modflow-devtools
+          isort --verbose --check --diff ./modflow_devtools
 
       - name: Run black
         run: |
           echo "if black check fails update black using"
           echo "  pip install black --upgrade"
           echo "and run"
-          echo "  black ./modflow-devtools"
+          echo "  black ./modflow_devtools"
           echo "and then commit the changes."
-          black --check --diff ./modflow-devtools
+          black --check --diff ./modflow_devtools
 
       - name: Run flake8
         run: flake8 --count --show-source ./modflow_devtools
