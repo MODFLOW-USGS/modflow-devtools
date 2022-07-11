@@ -28,7 +28,7 @@ jobs:
 
       - name: Install packages
         run: |
-          pip install numpy flopy pylint flake8 black
+          pip install numpy flopy mfpymake pylint flake8 black
 
       - name: Run isort
         run: |

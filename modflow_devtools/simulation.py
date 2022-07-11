@@ -21,9 +21,9 @@ except:
     msg += " pip install flopy"
     raise Exception(msg)
 
-from framework import running_on_CI, set_teardown_test
-from targets import program as target_program
-from targets import target_dict
+from .framework import running_on_CI, set_teardown_test
+from .targets import program as target_program
+from .targets import target_dict
 
 sfmt = "{:25s} - {}"
 extdict = {

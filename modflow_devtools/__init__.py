@@ -2,9 +2,9 @@
 development."""
 
 
-from framework import running_on_CI, set_teardown_test, testing_framework
-from simulation import Simulation
-from targets import get_mf6_version, run_exe, target_dict
+from .framework import running_on_CI, set_teardown_test, testing_framework
+from .simulation import Simulation
+from .targets import get_mf6_version, run_exe, target_dict
 
 # modflow_devtools
 from .config import (
