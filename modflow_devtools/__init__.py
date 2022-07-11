@@ -2,10 +2,6 @@
 development."""
 
 
-from .framework import running_on_CI, set_teardown_test, testing_framework
-from .simulation import Simulation
-from .targets import get_mf6_version, run_exe, target_dict
-
 # modflow_devtools
 from .config import (
     __author__,
@@ -16,6 +12,9 @@ from .config import (
     __status__,
     __version__,
 )
+from .framework import running_on_CI, set_teardown_test, testing_framework
+from .simulation import Simulation
+from .targets import get_mf6_version, run_exe, target_dict
 
 # autotest
 from .testing.testing import (
