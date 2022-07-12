@@ -12,6 +12,9 @@ from .config import (
     __status__,
     __version__,
 )
+from .framework import running_on_CI, set_teardown_test, testing_framework
+from .simulation import Simulation
+from .targets import get_mf6_version, get_target_dictionary, run_exe
 
 # autotest
 from .testing.testing import (
@@ -41,6 +44,16 @@ from .testing.testing import (
 # define public interfaces
 __all__ = [
     "__version__",
+    # targets
+    "run_exe",
+    "get_mf6_version",
+    "get_target_dictionary",
+    # simulation
+    "Simulation",
+    # framework
+    "running_on_CI",
+    "set_teardown_test",
+    "testing_framework",
     # testing
     "setup",
     "setup_comparison",
