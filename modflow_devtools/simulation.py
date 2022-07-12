@@ -7,8 +7,7 @@ import flopy
 import numpy as np
 
 from .framework import running_on_CI, set_teardown_test
-from .targets import program as target_program
-from .targets import target_dict
+from .targets import get_target_dictionary
 from .testing.testing import (
     compare_heads,
     get_mf6_comparison,
@@ -45,6 +44,7 @@ class Simulation(object):
         make_comparison=True,
     ):
         teardown_test = set_teardown_test()
+        target_dict = get_target_dictionary()
         for idx, arg in enumerate(sys.argv):
             if arg[2:].lower() in list(target_dict.keys()):
                 key = arg[2:].lower()
@@ -229,7 +229,8 @@ class Simulation(object):
         nam = None
 
         # run mf6 models
-        target, ext = os.path.splitext(target_program)
+        target_dict = get_target_dictionary()
+        target, ext = os.path.splitext(target_dict["mf6"])
         exe = os.path.abspath(target_dict[target])
         msg = sfmt.format("using executable", exe)
         print(msg)
@@ -287,6 +288,7 @@ class Simulation(object):
                     msg = sfmt.format("Comparison files", self.name)
                     print(msg)
                 else:
+                    target_dict = get_target_dictionary()
                     cpth = os.path.join(self.simpath, self.action)
                     key = self.action.lower().replace(".cmp", "")
                     exe = os.path.abspath(target_dict[key])
