@@ -17,6 +17,7 @@ from .simulation import Simulation
 from .targets import get_mf6_version, get_target_dictionary, run_exe
 
 # autotest
+from .testing.budget_testing import eval_bud_diff
 from .testing.testing import (
     compare,
     compare_budget,
@@ -40,6 +41,12 @@ from .testing.testing import (
     setup_mf6_comparison,
     teardown,
 )
+from .utilities.binary_file_writer import (
+    uniform_flow_field,
+    write_budget,
+    write_head,
+)
+from .utilities.disu_util import get_disu_kwargs
 
 # define public interfaces
 __all__ = [
@@ -55,6 +62,7 @@ __all__ = [
     "set_teardown_test",
     "testing_framework",
     # testing
+    "eval_bud_diff",
     "setup",
     "setup_comparison",
     "teardown",
@@ -76,4 +84,9 @@ __all__ = [
     "get_mf6_ftypes",
     "get_mf6_mshape",
     "get_mf6_nper",
+    # utilities
+    "uniform_flow_field",
+    "write_head",
+    "write_budget",
+    "get_disu_kwargs",
 ]
