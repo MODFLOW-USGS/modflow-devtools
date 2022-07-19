@@ -131,3 +131,7 @@ dmypy.json
 # pycharme
 .idea/
 
+# downloaded exe
+modflow_devtools/bin
+modflow_devtools/utilities/temp
+

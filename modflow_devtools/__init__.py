@@ -12,6 +12,10 @@ from .config import (
     __status__,
     __version__,
 )
+from .common_regression import get_example_basedir, get_example_dirs, \
+                               get_home_dir, get_select_dirs, \
+                               get_select_packages, is_directory_available, \
+                               set_mf6_regression
 from .framework import running_on_CI, set_teardown_test, testing_framework
 from .simulation import Simulation
 from .targets import get_mf6_version, get_target_dictionary, run_exe
@@ -47,10 +51,27 @@ from .utilities.binary_file_writer import (
     write_head,
 )
 from .utilities.disu_util import get_disu_kwargs
+from .utilities.usgsprograms import usgs_program_data
+from .utilities.download import (
+    download_and_unzip,
+    get_repo_assets,
+    getmfexes,
+    getmfnightly,
+    repo_latest_version,
+    zip_all,
+)
 
 # define public interfaces
 __all__ = [
     "__version__",
+    # common_regression
+    "get_example_basedir",
+    "get_example_dirs",
+    "get_home_dir",
+    "get_select_dirs",
+    "get_select_packages",
+    "is_directory_available",
+    "set_mf6_regression",
     # targets
     "run_exe",
     "get_mf6_version",
@@ -89,4 +110,10 @@ __all__ = [
     "write_head",
     "write_budget",
     "get_disu_kwargs",
+    "usgs_program_data",
+    "download_and_unzip",
+    "getmfexes",
+    "repo_latest_version",
+    "get_repo_assets",
+    "zip_all",
 ]
