@@ -216,7 +216,7 @@ def _request_get(url, verify=True, timeout=1, max_requests=10, verbose=False):
             else:
                 msg = "Cannot open request from:\n" + f"    {url}\n\n"
                 print(msg)
-                req.raise_for_status()
+                raise requests.HTTPError(msg)
 
         # successful request
         break
