@@ -2,6 +2,16 @@
 development."""
 
 
+from .common_regression import (
+    get_example_basedir,
+    get_example_dirs,
+    get_home_dir,
+    get_select_dirs,
+    get_select_packages,
+    is_directory_available,
+    set_mf6_regression,
+)
+
 # modflow_devtools
 from .config import (
     __author__,
@@ -12,10 +22,6 @@ from .config import (
     __status__,
     __version__,
 )
-from .common_regression import get_example_basedir, get_example_dirs, \
-                               get_home_dir, get_select_dirs, \
-                               get_select_packages, is_directory_available, \
-                               set_mf6_regression
 from .framework import running_on_CI, set_teardown_test, testing_framework
 from .simulation import Simulation
 from .targets import get_mf6_version, get_target_dictionary, run_exe
@@ -51,7 +57,6 @@ from .utilities.binary_file_writer import (
     write_head,
 )
 from .utilities.disu_util import get_disu_kwargs
-from .utilities.usgsprograms import usgs_program_data
 from .utilities.download import (
     download_and_unzip,
     get_repo_assets,
@@ -60,6 +65,7 @@ from .utilities.download import (
     repo_latest_version,
     zip_all,
 )
+from .utilities.usgsprograms import usgs_program_data
 
 # define public interfaces
 __all__ = [

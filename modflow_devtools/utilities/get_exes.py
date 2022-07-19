@@ -3,10 +3,10 @@
 import os
 import shutil
 
+from build_exes import meson_build
 from download import download_and_unzip, getmfexes
 from usgsprograms import usgs_program_data
 
-from build_exes import meson_build
 from modflow_devtools import running_on_CI
 
 if running_on_CI():
