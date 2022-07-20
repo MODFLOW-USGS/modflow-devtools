@@ -70,7 +70,7 @@ ignore_ext = (
 )
 
 
-def setup(namefile, dst, remove_existing=True, extrafiles=None):
+def model_setup(namefile, dst, remove_existing=True, extrafiles=None):
     """Setup MODFLOW-based model files for autotests.
 
     Parameters
@@ -245,7 +245,7 @@ def setup_comparison(namefile, dst, remove_existing=True):
                         os.path.join(cmppth, os.path.basename(file))
                     )
                     nf = os.path.join(src, action, os.path.basename(file))
-                    setup(nf, dst, remove_existing=remove_existing)
+                    model_setup(nf, dst, remove_existing=remove_existing)
                     break
 
     return action
@@ -669,7 +669,7 @@ def setup_mf6_comparison(src, dst, remove_existing=True):
                         srcf = os.path.join(cmppth, os.path.basename(file))
                         files2copy.append(srcf)
                         nf = os.path.join(src, action, os.path.basename(file))
-                        setup(nf, dst, remove_existing=remove_existing)
+                        model_setup(nf, dst, remove_existing=remove_existing)
                         break
 
     return action
