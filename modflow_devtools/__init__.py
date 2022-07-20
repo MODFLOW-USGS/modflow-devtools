@@ -45,7 +45,7 @@ from .testing.testing import (
     get_mf6_nper,
     get_namefiles,
     get_sim_name,
-    setup,
+    model_setup,
     setup_comparison,
     setup_mf6,
     setup_mf6_comparison,
@@ -90,7 +90,7 @@ __all__ = [
     "testing_framework",
     # testing
     "eval_bud_diff",
-    "setup",
+    "model_setup",
     "setup_comparison",
     "teardown",
     "get_namefiles",
