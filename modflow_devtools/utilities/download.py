@@ -1,3 +1,5 @@
+# pylint: disable=E1101
+
 """Utility functions to:
 
 1. download and unzip software releases from the USGS and other organizations
