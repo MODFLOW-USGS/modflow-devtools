@@ -14,13 +14,13 @@ if running_on_CI():
     os.environ["PYMAKE_DOUBLE"] = "1"
 
 # path to rebuilt executables for previous versions of MODFLOW
-rebuilt_bindir = os.path.join("..", "bin", "rebuilt")
+rebuilt_bindir = os.path.join("..", "..", "bin", "rebuilt")
 
 if not os.path.exists(rebuilt_bindir):
     os.makedirs(rebuilt_bindir)
 
 # paths to downloaded for previous versions of MODFLOW
-downloaded_bindir = os.path.join("..", "bin", "downloaded")
+downloaded_bindir = os.path.join("..", "..", "bin", "downloaded")
 
 if not os.path.exists(downloaded_bindir):
     os.makedirs(downloaded_bindir)
@@ -91,7 +91,7 @@ def rebuild_mf6_release():
 
 
 def test_create_dirs():
-    pths = [os.path.join("..", "bin"), os.path.join("temp")]
+    pths = [os.path.join("..", "..", "bin"), os.path.join("temp")]
 
     for pth in pths:
         create_dir(pth)

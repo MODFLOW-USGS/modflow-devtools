@@ -1,0 +1,8 @@
+[submodule "data/model/modflow6-testmodels"]
+	path = data/model/modflow6-testmodels
+	url = ../modflow6-testmodels.git
+	branch = master
+[submodule "data/model/modflow6-largetestmodels"]
+	path = data/model/modflow6-largetestmodels
+	url = ../modflow6-largetestmodels.git
+	branch = master

@@ -132,6 +132,6 @@ dmypy.json
 .idea/
 
 # downloaded exe
-modflow_devtools/bin
-modflow_devtools/utilities/temp
+bin/
+modflow_devtools/utilities/temp/
 
