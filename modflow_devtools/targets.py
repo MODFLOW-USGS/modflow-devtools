@@ -5,8 +5,12 @@ import sys
 import flopy
 
 # paths to executables for  previous versions of MODFLOW
-downloaded_bindir = os.path.join(os.path.dirname(__file__), "..", "bin", "downloaded")
-rebuilt_bindir = os.path.join(os.path.dirname(__file__), "..", "bin", "rebuilt")
+downloaded_bindir = os.path.join(
+    os.path.dirname(__file__), "..", "bin", "downloaded"
+)
+rebuilt_bindir = os.path.join(
+    os.path.dirname(__file__), "..", "bin", "rebuilt"
+)
 
 # paths to MODFLOW 6 executable, source files, and example files
 bindir = os.path.join("..", "bin")
