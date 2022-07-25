@@ -43,40 +43,9 @@ class Simulation(object):
         mf6_regression=False,
         make_comparison=True,
     ):
-        teardown_test = set_teardown_test()
-        target_dict = get_target_dictionary()
-        for idx, arg in enumerate(sys.argv):
-            if arg[2:].lower() in list(target_dict.keys()):
-                key = arg[2:].lower()
-                exe0 = target_dict[key]
-                exe = os.path.join(os.path.dirname(exe0), sys.argv[idx + 1])
-                msg = (
-                    f"replacing {key} executable "
-                    + f'"{target_dict[key]}" with '
-                    + f'"{exe}".'
-                )
-                print(msg)
-                target_dict[key] = exe
-
-        if exe_dict is not None:
-            if not isinstance(exe_dict, dict):
-                msg = "exe_dict must be a dictionary"
-                assert False, msg
-            keys = list(target_dict.keys())
-            for key, value in exe_dict.items():
-                if key in keys:
-                    exe0 = target_dict[key]
-                    exe = os.path.join(os.path.dirname(exe0), value)
-                    msg = (
-                        f"replacing {key} executable "
-                        + f'"{target_dict[key]}" with '
-                        + f'"{exe}".'
-                    )
-                    print(msg)
-                    target_dict[key] = exe
-
         msg = sfmt.format("Initializing test", name)
         print(msg)
+
         self.name = name
         self.exfunc = exfunc
         self.simpath = None
@@ -87,6 +56,37 @@ class Simulation(object):
         self.mf6_regression = mf6_regression
         self.make_comparison = make_comparison
         self.action = None
+
+        self.target_dict = get_target_dictionary()
+        for idx, arg in enumerate(sys.argv):
+            if arg[2:].lower() in list(self.target_dict.keys()):
+                key = arg[2:].lower()
+                exe0 = self.target_dict[key]
+                exe = os.path.join(os.path.dirname(exe0), sys.argv[idx + 1])
+                msg = (
+                    f"replacing {key} executable "
+                    + f'"{self.target_dict[key]}" with '
+                    + f'"{exe}".'
+                )
+                print(msg)
+                self.target_dict[key] = exe
+
+        if exe_dict is not None:
+            if not isinstance(exe_dict, dict):
+                msg = "exe_dict must be a dictionary"
+                assert False, msg
+            keys = list(self.target_dict.keys())
+            for key, value in exe_dict.items():
+                if key in keys:
+                    exe0 = self.target_dict[key]
+                    exe = os.path.join(os.path.dirname(exe0), value)
+                    msg = (
+                        f"replacing {key} executable "
+                        + f'"{self.target_dict[key]}" with '
+                        + f'"{exe}".'
+                    )
+                    print(msg)
+                    self.target_dict[key] = exe
 
         # set htol for comparisons
         if htol is None:
@@ -128,7 +128,7 @@ class Simulation(object):
         # set allow failure
         self.require_failure = require_failure
 
-        self.teardown_test = teardown_test
+        self.teardown_test = set_teardown_test()
         self.success = False
 
         # set is_ci
@@ -229,8 +229,7 @@ class Simulation(object):
         nam = None
 
         # run mf6 models
-        target_dict = get_target_dictionary()
-        target, ext = os.path.splitext(target_dict["mf6"])
+        target, ext = os.path.splitext(self.target_dict["mf6"])
         exe = os.path.abspath(target)
         msg = sfmt.format("using executable", exe)
         print(msg)
@@ -288,10 +287,9 @@ class Simulation(object):
                     msg = sfmt.format("Comparison files", self.name)
                     print(msg)
                 else:
-                    target_dict = get_target_dictionary()
                     cpth = os.path.join(self.simpath, self.action)
                     key = self.action.lower().replace(".cmp", "")
-                    exe = os.path.abspath(target_dict[key])
+                    exe = os.path.abspath(self.target_dict[key])
                     msg = sfmt.format("comparison executable", exe)
                     print(msg)
                     if (
