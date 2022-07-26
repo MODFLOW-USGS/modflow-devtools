@@ -105,7 +105,7 @@ class MFTestExe:
 
     def _download_exes(self):
         self._create_dirs()
-        mfexe_pth = os.path.join(self._working_dir, "testing")
+        mfexe_pth = os.path.join(self._working_dir, "mfexes")
         getmfexes(mfexe_pth, verify=False)
         for target in os.listdir(mfexe_pth):
             srcpth = os.path.join(mfexe_pth, target)
