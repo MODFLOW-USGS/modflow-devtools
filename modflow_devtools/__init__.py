@@ -1,7 +1,6 @@
 """modflow_devtools is a Python package containing tools for MODFLOW
 development."""
 
-
 from .common_regression import (
     get_example_basedir,
     get_example_dirs,
@@ -23,6 +22,7 @@ from .config import (
     __version__,
 )
 from .framework import running_on_CI, set_teardown_test, testing_framework
+from .mftest_context import MFTargetType, MFTestContext, MFTestTargets
 from .simulation import Simulation
 from .targets import get_mf6_version, get_target_dictionary, run_exe
 
@@ -65,6 +65,7 @@ from .utilities.download import (
     repo_latest_version,
     zip_all,
 )
+from .utilities.mftest_exe import MFTestExe
 from .utilities.usgsprograms import usgs_program_data
 
 # define public interfaces
@@ -78,16 +79,20 @@ __all__ = [
     "get_select_packages",
     "is_directory_available",
     "set_mf6_regression",
-    # targets
-    "run_exe",
-    "get_mf6_version",
-    "get_target_dictionary",
-    # simulation
-    "Simulation",
     # framework
     "running_on_CI",
     "set_teardown_test",
     "testing_framework",
+    # context
+    "MFTargetType",
+    "MFTestTargets",
+    "MFTestContext",
+    # simulation
+    "Simulation",
+    # targets
+    "run_exe",
+    "get_mf6_version",
+    "get_target_dictionary",
     # testing
     "eval_bud_diff",
     "model_setup",
@@ -116,6 +121,7 @@ __all__ = [
     "write_head",
     "write_budget",
     "get_disu_kwargs",
+    "MFTestExe",
     "usgs_program_data",
     "download_and_unzip",
     "getmfexes",
