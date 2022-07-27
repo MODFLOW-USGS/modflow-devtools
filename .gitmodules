@@ -6,3 +6,7 @@
 	path = data/model/modflow6-largetestmodels
 	url = ../modflow6-largetestmodels.git
 	branch = master
+[submodule "data/example/modflow6-examples"]
+	path = data/example/modflow6-examples
+	url = ../modflow6-examples.git
+	branch = master
