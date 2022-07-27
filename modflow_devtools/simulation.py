@@ -57,7 +57,11 @@ class Simulation(object):
         self.make_comparison = make_comparison
         self.action = None
 
-        self.target_dict = get_target_dictionary()
+        if exe_dict is not None:
+            self.target_dict = exe_dict
+        else:
+            self.target_dict = get_target_dictionary()
+
         for idx, arg in enumerate(sys.argv):
             if arg[2:].lower() in list(self.target_dict.keys()):
                 key = arg[2:].lower()
@@ -70,23 +74,6 @@ class Simulation(object):
                 )
                 print(msg)
                 self.target_dict[key] = exe
-
-        if exe_dict is not None:
-            if not isinstance(exe_dict, dict):
-                msg = "exe_dict must be a dictionary"
-                assert False, msg
-            keys = list(self.target_dict.keys())
-            for key, value in exe_dict.items():
-                if key in keys:
-                    exe0 = self.target_dict[key]
-                    exe = os.path.join(os.path.dirname(exe0), value)
-                    msg = (
-                        f"replacing {key} executable "
-                        + f'"{self.target_dict[key]}" with '
-                        + f'"{exe}".'
-                    )
-                    print(msg)
-                    self.target_dict[key] = exe
 
         # set htol for comparisons
         if htol is None:
