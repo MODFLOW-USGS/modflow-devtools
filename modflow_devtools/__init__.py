@@ -23,7 +23,7 @@ from .config import (
 )
 from .framework import running_on_CI, set_teardown_test, testing_framework
 from .mftest_context import MFTargetType, MFTestContext, MFTestTargets
-from .simulation import Simulation
+from .simulation import Simulation, api_return
 from .targets import get_mf6_version, get_target_dictionary, run_exe
 
 # autotest
@@ -55,6 +55,10 @@ from .utilities.binary_file_writer import (
     uniform_flow_field,
     write_budget,
     write_head,
+)
+from .utilities.cross_section import (
+    get_depths,
+    calculate_rectchan_mannings_discharge,
 )
 from .utilities.disu_util import get_disu_kwargs
 from .utilities.download import (
@@ -89,6 +93,7 @@ __all__ = [
     "MFTestContext",
     # simulation
     "Simulation",
+    "api_return",
     # targets
     "run_exe",
     "get_mf6_version",
@@ -120,6 +125,8 @@ __all__ = [
     "uniform_flow_field",
     "write_head",
     "write_budget",
+    "get_depths",
+    "calculate_rectchan_mannings_discharge",
     "get_disu_kwargs",
     "MFTestExe",
     "usgs_program_data",
