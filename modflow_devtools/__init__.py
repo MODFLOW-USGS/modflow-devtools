@@ -57,8 +57,8 @@ from .utilities.binary_file_writer import (
     write_head,
 )
 from .utilities.cross_section import (
-    get_depths,
     calculate_rectchan_mannings_discharge,
+    get_depths,
 )
 from .utilities.disu_util import get_disu_kwargs
 from .utilities.download import (

@@ -6,8 +6,8 @@ import time
 import flopy
 import numpy as np
 
-from .mftest_context import MFTestContext
 from .framework import running_on_CI, set_teardown_test
+from .mftest_context import MFTestContext
 from .targets import get_target_dictionary
 from .testing.testing import (
     compare_heads,
@@ -70,18 +70,18 @@ class Simulation(object):
             if not isinstance(exe_dict, dict):
                 msg = "exe_dict must be a dictionary"
                 assert False, msg
-            keys = list(target_dict.keys())
+            keys = list(self.target_dict.keys())
             for key, value in exe_dict.items():
                 if key in keys:
-                    exe0 = target_dict[key]
+                    exe0 = self.target_dict[key]
                     exe = os.path.join(os.path.dirname(exe0), value)
                     msg = (
                         f"replacing {key} executable "
-                        + f'"{target_dict[key]}" with '
+                        + f'"{self.target_dict[key]}" with '
                         + f'"{exe}".'
                     )
                     print(msg)
-                    target_dict[key] = exe
+                    self.target_dict[key] = exe
 
         for idx, arg in enumerate(sys.argv):
             if arg[2:].lower() in list(self.target_dict.keys()):

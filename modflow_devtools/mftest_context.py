@@ -120,7 +120,6 @@ class MFTestTargets:
         ]
 
     def _target_pth(self, target, target_t=None, is_lib=False):
-        path=None
         if target_t == MFTargetType.TEST:
             path = self._testbin
         elif target_t == MFTargetType.REGRESSION:
@@ -133,8 +132,11 @@ class MFTestTargets:
         else:
             exe_exists = flopy.which(target, path=path)
 
-        if exe_exists is None and is_lib and \
-            os.path.isfile(os.path.join(path, target)):
+        if (
+            exe_exists is None
+            and is_lib
+            and os.path.isfile(os.path.join(path, target))
+        ):
             exe_exists = os.path.join(path, target)
 
         if exe_exists is None:
