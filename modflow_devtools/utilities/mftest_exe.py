@@ -41,7 +41,15 @@ class MFTestExe:
             if not os.path.isfile(os.path.join(self._releasebin, t)):
                 return False
 
+        for t in self._targets.release_lib_names():
+            if not os.path.isfile(os.path.join(self._releasebin, t)):
+                return False
+
         for t in self._targets.regression_exe_names():
+            if not os.path.isfile(os.path.join(self._builtbin, t)):
+                return False
+
+        for t in self._targets.regression_lib_names():
             if not os.path.isfile(os.path.join(self._builtbin, t)):
                 return False
 
