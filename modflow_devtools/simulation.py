@@ -7,6 +7,7 @@ import flopy
 import numpy as np
 
 from .framework import running_on_CI, set_teardown_test
+from .mftest_context import MFTestContext
 from .targets import get_target_dictionary
 from .testing.testing import (
     compare_heads,
@@ -33,6 +34,7 @@ class Simulation(object):
         name,
         exfunc=None,
         exe_dict=None,
+        testbin=None,
         htol=None,
         pdtol=None,
         rclose=None,
@@ -48,6 +50,7 @@ class Simulation(object):
 
         self.name = name
         self.exfunc = exfunc
+        self.ctx = None
         self.simpath = None
         self.inpt = None
         self.outp = None
@@ -57,10 +60,28 @@ class Simulation(object):
         self.make_comparison = make_comparison
         self.action = None
 
-        if exe_dict is not None:
-            self.target_dict = exe_dict
+        if testbin is not None:
+            self.ctx = MFTestContext(testbin=testbin)
+            self.target_dict = self.ctx.get_target_dictionary()
         else:
             self.target_dict = get_target_dictionary()
+
+        if exe_dict is not None:
+            if not isinstance(exe_dict, dict):
+                msg = "exe_dict must be a dictionary"
+                assert False, msg
+            keys = list(self.target_dict.keys())
+            for key, value in exe_dict.items():
+                if key in keys:
+                    exe0 = self.target_dict[key]
+                    exe = os.path.join(os.path.dirname(exe0), value)
+                    msg = (
+                        f"replacing {key} executable "
+                        + f'"{self.target_dict[key]}" with '
+                        + f'"{exe}".'
+                    )
+                    print(msg)
+                    self.target_dict[key] = exe
 
         for idx, arg in enumerate(sys.argv):
             if arg[2:].lower() in list(self.target_dict.keys()):
@@ -512,6 +533,9 @@ class Simulation(object):
             else:
                 print("Retaining test files")
         return
+
+    def Ctx(self):
+        return self.ctx
 
     def _get_mfsim_listing(self, lst_pth):
         """Get the tail of the mfsim.lst listing file"""

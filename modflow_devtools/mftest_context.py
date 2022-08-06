@@ -73,35 +73,71 @@ class MFTestTargets:
 
     def release_exe_names(self):
         """
-        get exe name list of release executables
+        get name list of release executables
         """
+        target_ext, target_so = self._extensions()
         return [
-            self._exe_targets[t]["exe"]
+            f"{self._exe_targets[t]['exe']}{target_ext}"
             for t in self._exe_targets
             if self._exe_targets[t]["type"] == MFTargetType.RELEASE
+            and self._exe_targets[t]["exe"]
+        ]
+
+    def release_lib_names(self):
+        """
+        get name list of release libs
+        """
+        target_ext, target_so = self._extensions()
+        return [
+            f"{self._exe_targets[t]}{target_so}"
+            for t in self._exe_targets
+            if self._exe_targets[t]["type"] == MFTargetType.RELEASE
+            and self._exe_targets[t]["exe"] is None
         ]
 
     def regression_exe_names(self):
         """
-        get exe name list of regression executables
+        get name list of regression executables
         """
+        target_ext, target_so = self._extensions()
         return [
-            self._exe_targets[t]["exe"]
+            f"{self._exe_targets[t]['exe']}{target_ext}"
             for t in self._exe_targets
             if self._exe_targets[t]["type"] == MFTargetType.REGRESSION
+            and self._exe_targets[t]["exe"]
         ]
 
-    def _target_pth(self, target, target_t=None):
+    def regression_lib_names(self):
+        """
+        get name list of regression libs
+        """
+        target_ext, target_so = self._extensions()
+        return [
+            f"{self._exe_targets[t]}{target_so}"
+            for t in self._exe_targets
+            if self._exe_targets[t]["type"] == MFTargetType.REGRESSION
+            and self._exe_targets[t]["exe"] is None
+        ]
+
+    def _target_pth(self, target, target_t=None, is_lib=False):
         if target_t == MFTargetType.TEST:
-            exe_exists = flopy.which(target, path=self._testbin)
+            path = self._testbin
+        elif target_t == MFTargetType.REGRESSION:
+            path = self._builtbin
+        elif target_t == MFTargetType.RELEASE:
+            path = self._releasebin
+
+        if self._use_path:
+            exe_exists = flopy.which(target)
         else:
-            if self._use_path:
-                exe_exists = flopy.which(target)
-            else:
-                if target_t == MFTargetType.REGRESSION:
-                    exe_exists = flopy.which(target, path=self._builtbin)
-                elif target_t == MFTargetType.RELEASE:
-                    exe_exists = flopy.which(target, path=self._releasebin)
+            exe_exists = flopy.which(target, path=path)
+
+        if (
+            exe_exists is None
+            and is_lib
+            and os.path.isfile(os.path.join(path, target))
+        ):
+            exe_exists = os.path.join(path, target)
 
         if exe_exists is None:
             print(target)
@@ -136,7 +172,23 @@ class MFTestTargets:
 
     def _set_targets(self):
         self._target_path_d = None
+        target_ext, target_so = self._extensions()
 
+        self._target_path_d = {}
+        for t in list(self._exe_targets):
+            is_lib = False
+            if self._exe_targets[t]["exe"] is None:
+                name = f"{t}{target_so}"
+                is_lib = True
+            else:
+                name = f"{self._exe_targets[t]['exe']}{target_ext}"
+
+            target = self._target_pth(
+                name, target_t=self._exe_targets[t]["type"], is_lib=is_lib
+            )
+            self._target_path_d[t] = target
+
+    def _extensions(self):
         target_ext = ""
         target_so = ".so"
         sysinfo = sys.platform.lower()
@@ -146,17 +198,7 @@ class MFTestTargets:
         elif sysinfo.lower() == "darwin":
             target_so = ".dylib"
 
-        self._target_path_d = {}
-        for t in list(self._exe_targets):
-            if self._exe_targets[t]["exe"] is None:
-                name = f"{t}{target_so}"
-            else:
-                name = f"{self._exe_targets[t]['exe']}{target_ext}"
-
-            target = self._target_pth(
-                name, target_t=self._exe_targets[t]["type"]
-            )
-            self._target_path_d[t] = target
+        return target_ext, target_so
 
 
 class MFTestContext:
@@ -172,7 +214,7 @@ class MFTestContext:
 
         self._testbin = os.path.abspath(testbin)
         self._releasebin = os.path.abspath(
-            os.path.join(os.path.dirname(__file__), "..", "bin")
+            os.path.join(os.path.dirname(__file__), "bin")
         )
 
         builtbin = os.path.join(self._releasebin, "rebuilt")
