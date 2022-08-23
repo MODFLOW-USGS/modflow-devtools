@@ -180,8 +180,6 @@ class MFTestExe:
                 cmd += "%CD%"
             else:
                 cmd += "$(pwd)"
-            if pathlib.Path("builddir").is_dir():
-                cmd += " --wipe"
             print(f"setup meson\nrunning...\n  {cmd}")
             subprocess.run(cmd, shell=True, check=True)
 

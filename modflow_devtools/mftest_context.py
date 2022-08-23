@@ -127,7 +127,7 @@ class MFTestTargets:
         elif target_t == MFTargetType.RELEASE:
             path = self._releasebin
 
-        if self._use_path:
+        if target_t != MFTargetType.TEST and self._use_path:
             exe_exists = flopy.which(target)
         else:
             exe_exists = flopy.which(target, path=path)
