@@ -102,6 +102,35 @@ class MFTestExe:
         shutil.rmtree(self._builtbin, ignore_errors=True)
         shutil.rmtree(self._releasebin, ignore_errors=True)
 
+    def meson_build(
+        self,
+        dir_path: str = "..",
+        libdir: str = "bin",
+    ):
+        """
+        run meson setup and install commands as subprocess
+        """
+
+        self._set_compiler_environment_variable()
+        is_windows = sys.platform.lower() == "win32"
+        with self._set_directory(dir_path):
+            cmd = (
+                "meson setup builddir "
+                + f"--bindir={os.path.abspath(libdir)} "
+                + f"--libdir={os.path.abspath(libdir)} "
+                + "--prefix="
+            )
+            if is_windows:
+                cmd += "%CD%"
+            else:
+                cmd += "$(pwd)"
+            print(f"setup meson\nrunning...\n  {cmd}")
+            subprocess.run(cmd, shell=True, check=True)
+
+            cmd = "meson install -C builddir"
+            print(f"build and install with meson\nrunning...\n  {cmd}")
+            subprocess.run(cmd, shell=True, check=True)
+
     def _create_dirs(self):
         pths = [self._releasebin, self._working_dir]
         for pth in pths:
@@ -162,31 +191,6 @@ class MFTestExe:
         # set FC environment variable
         os.environ["FC"] = fc
 
-    def _meson_build(
-        self,
-        dir_path: str = "..",
-        libdir: str = "bin",
-    ):
-        self._set_compiler_environment_variable()
-        is_windows = sys.platform.lower() == "win32"
-        with self._set_directory(dir_path):
-            cmd = (
-                "meson setup builddir "
-                + f"--bindir={os.path.abspath(libdir)} "
-                + f"--libdir={os.path.abspath(libdir)} "
-                + "--prefix="
-            )
-            if is_windows:
-                cmd += "%CD%"
-            else:
-                cmd += "$(pwd)"
-            print(f"setup meson\nrunning...\n  {cmd}")
-            subprocess.run(cmd, shell=True, check=True)
-
-            cmd = "meson install -C builddir"
-            print(f"build and install with meson\nrunning...\n  {cmd}")
-            subprocess.run(cmd, shell=True, check=True)
-
     def _build_mf6_release(self):
         target_dict = usgs_program_data.get_target("mf6")
 
@@ -215,6 +219,6 @@ class MFTestExe:
 
         # build release source files with Meson
         root_path = os.path.join(self._working_dir, target_dict["dirname"])
-        self._meson_build(
+        self.meson_build(
             dir_path=root_path, libdir=os.path.abspath(self._builtbin)
         )
