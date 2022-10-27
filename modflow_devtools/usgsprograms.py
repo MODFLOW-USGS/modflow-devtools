@@ -23,7 +23,7 @@ import json
 import os
 import sys
 
-from modflow_devtools.utilities.download import _request_header
+from modflow_devtools.http import head_request
 
 
 class dotdict(dict):
@@ -373,7 +373,7 @@ class usgs_program_data:
         for target, target_dict in prog_data.items():
             if "url" in target_dict.keys():
                 url = target_dict["url"]
-                header = _request_header(url, verbose=verbose)
+                header = head_request(url, verbose=verbose)
                 keys = list(header.headers.keys())
                 for key in ("Last-Modified", "Date"):
                     if key in keys:
