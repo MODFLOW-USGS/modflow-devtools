@@ -36,10 +36,10 @@ jobs:
         run: black --check --diff modflow_devtools
 
       - name: Run flake8
-        run: flake8 --count --show-source modflow_devtools
+        run: flake8 --count --show-source --exit-zero modflow_devtools
 
       - name: Run pylint
-        run: pylint --jobs=0 --errors-only modflow_devtools
+        run: pylint --jobs=0 --errors-only --exit-zero modflow_devtools
 
   test:
     name: Test
