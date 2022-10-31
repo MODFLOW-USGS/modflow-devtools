@@ -11,6 +11,7 @@ def meson_build(
     bld_path: PathLike = "build",
     bin_path: PathLike = "bin",
     lib_path: PathLike = "bin",
+    quiet: bool = True,
 ):
     """
     Setup, compile and install with meson.
@@ -29,9 +30,11 @@ def meson_build(
             + "--prefix="
             + ("%CD%" if sys.platform.lower() == "win32" else "$(pwd)")
         )
-        print(f"Running: {cmd}")
+        if not quiet:
+            print(f"Running: {cmd}")
         subprocess.run(cmd, shell=True, check=True)
 
         cmd = "meson install -C builddir"
-        print(f"Running: {cmd}")
+        if not quiet:
+            print(f"Running: {cmd}")
         subprocess.run(cmd, shell=True, check=True)

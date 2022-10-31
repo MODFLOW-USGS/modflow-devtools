@@ -15,7 +15,7 @@ except ModuleNotFoundError:
     print("black not installed\n\tInstall using pip install black")
 
 print("running isort...")
-os.system("isort -v ../flopy")
+os.system("isort -v .")
 
 print("running black...")
-os.system("black -v ../flopy")
+os.system("black -v .")
