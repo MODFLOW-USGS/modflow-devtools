@@ -34,7 +34,7 @@ def meson_build(
             print(f"Running: {cmd}")
         subprocess.run(cmd, shell=True, check=True)
 
-        cmd = "meson install -C builddir"
+        cmd = f"meson install -C {bld_path}"
         if not quiet:
             print(f"Running: {cmd}")
         subprocess.run(cmd, shell=True, check=True)
