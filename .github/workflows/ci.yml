@@ -26,8 +26,8 @@ jobs:
 
       - name: Install Python packages
         run: |
-          pip3 install .
-          pip3 install ".[lint]"
+          pip install .
+          pip install ".[lint]"
 
       - name: Run isort
         run: isort --verbose --check --diff modflow_devtools
@@ -54,10 +54,6 @@ jobs:
           # avoid shutil.copytree infinite recursion bug
           # https://github.com/python/cpython/pull/17098
           - python: '3.8.0'
-    defaults:
-      run:
-        shell:
-          bash -l {0}
     steps:
 
       - name: Checkout repo
@@ -81,8 +77,8 @@ jobs:
       - name: Install Python packages
         working-directory: modflow-devtools
         run: |
-          pip3 install .
-          pip3 install ".[test]"
+          python3 -m pip install .
+          python3 -m pip install ".[test]"
 
       - name: Run tests
         working-directory: modflow-devtools

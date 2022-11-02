@@ -1,8 +1,19 @@
+import importlib
+import socket
+import sys
 from contextlib import contextmanager
-from os import PathLike, chdir, getcwd
+from os import PathLike, chdir, environ, getcwd
+from os.path import basename, normpath
 from pathlib import Path
+from platform import system
+from shutil import which
+from subprocess import PIPE, Popen
+from typing import List, Optional
+from urllib import request
 
-import numpy as np
+import pkg_resources
+import pytest
+from _warnings import warn
 
 
 @contextmanager
@@ -12,308 +23,262 @@ def set_dir(path: PathLike):
 
     try:
         chdir(path)
-        print(f"Changed to directory: {wrkdir} (previously: {origin})")
+        print(f"Changed to working directory: {wrkdir} (previously: {origin})")
         yield
     finally:
         chdir(origin)
-        print(f"Returned to directory: {origin}")
+        print(f"Returned to previous directory: {origin}")
 
 
-def get_disu_kwargs(nlay, nrow, ncol, delr, delc, tp, botm):
+def run_cmd(*args, verbose=False, **kwargs):
+    """Run any command, return tuple (stdout, stderr, returncode)."""
+    args = [str(g) for g in args]
+    if verbose:
+        print("running: " + " ".join(args))
+    p = Popen(args, stdout=PIPE, stderr=PIPE, **kwargs)
+    stdout, stderr = p.communicate()
+    stdout = stdout.decode()
+    stderr = stderr.decode()
+    returncode = p.returncode
+    if verbose:
+        print(f"stdout:\n{stdout}")
+        print(f"stderr:\n{stderr}")
+        print(f"returncode: {returncode}")
+    return stdout, stderr, returncode
+
+
+def run_py_script(script, *args, verbose=False):
+    """Run a Python script, return tuple (stdout, stderr, returncode)."""
+    return run_cmd(
+        sys.executable, script, *args, verbose=verbose, cwd=Path(script).parent
+    )
+
+
+def get_current_branch() -> str:
+    # check if on GitHub Actions CI
+    ref = environ.get("GITHUB_REF")
+    if ref is not None:
+        return basename(normpath(ref)).lower()
+
+    # otherwise ask git about it
+    if not which("git"):
+        raise RuntimeError("'git' required to determine current branch")
+    stdout, stderr, code = run_cmd("git", "rev-parse", "--abbrev-ref", "HEAD")
+    if code == 0 and stdout:
+        return stdout.strip().lower()
+    raise ValueError(f"Could not determine current branch: {stderr}")
+
+
+def get_mf6_ftypes(namefile_path: PathLike, ftypekeys: List[str]) -> List[str]:
     """
-    Simple utility for creating args needed to construct
-    a disu package
+    Return a list of FTYPES that are in the name file and in ftypekeys.
 
+    Parameters
+    ----------
+    namefile_path : str
+        path to a MODFLOW 6 name file
+    ftypekeys : list
+        list of desired FTYPEs
+    Returns
+    -------
+    ftypes : list
+        list of FTYPES that match ftypekeys in namefile
+    """
+    with open(namefile_path, "r") as f:
+        lines = f.readlines()
+
+    ftypes = []
+    for line in lines:
+        # Skip over blank and commented lines
+        ll = line.strip().split()
+        if len(ll) < 2:
+            continue
+
+        if ll[0] in ["#", "!"]:
+            continue
+
+        for key in ftypekeys:
+            if key.lower() in ll[0].lower():
+                ftypes.append(ll[0])
+
+    return ftypes
+
+
+def get_models(
+    path: PathLike,
+    prefix: str = None,
+    namefile: str = "mfsim.nam",
+    excluded=None,
+    selected=None,
+    packages=None,
+) -> List[Path]:
+    """
+    Find models in the given filesystem location.
     """
 
-    def get_nn(k, i, j):
-        return k * nrow * ncol + i * ncol + j
+    # if path doesn't exist, return empty list
+    if not Path(path).is_dir():
+        return []
 
-    nodes = nlay * nrow * ncol
-    iac = np.zeros((nodes), dtype=int)
-    ja = []
-    area = np.zeros((nodes), dtype=float)
-    top = np.zeros((nodes), dtype=float)
-    bot = np.zeros((nodes), dtype=float)
-    ihc = []
-    cl12 = []
-    hwva = []
-    for k in range(nlay):
-        for i in range(nrow):
-            for j in range(ncol):
-                # diagonal
-                n = get_nn(k, i, j)
-                ja.append(n)
-                iac[n] += 1
-                area[n] = delr[i] * delc[j]
-                ihc.append(n + 1)
-                cl12.append(n + 1)
-                hwva.append(n + 1)
-                if k == 0:
-                    top[n] = tp
-                else:
-                    top[n] = botm[k - 1]
-                bot[n] = botm[k]
-                # up
-                if k > 0:
-                    ja.append(get_nn(k - 1, i, j))
-                    iac[n] += 1
-                    ihc.append(0)
-                    dz = botm[k - 1] - botm[k]
-                    cl12.append(0.5 * dz)
-                    hwva.append(delr[i] * delc[j])
-                # back
-                if i > 0:
-                    ja.append(get_nn(k, i - 1, j))
-                    iac[n] += 1
-                    ihc.append(1)
-                    cl12.append(0.5 * delc[i])
-                    hwva.append(delr[j])
-                # left
-                if j > 0:
-                    ja.append(get_nn(k, i, j - 1))
-                    iac[n] += 1
-                    ihc.append(1)
-                    cl12.append(0.5 * delr[j])
-                    hwva.append(delc[i])
-                # right
-                if j < ncol - 1:
-                    ja.append(get_nn(k, i, j + 1))
-                    iac[n] += 1
-                    ihc.append(1)
-                    cl12.append(0.5 * delr[j])
-                    hwva.append(delc[i])
-                # front
-                if i < nrow - 1:
-                    ja.append(get_nn(k, i + 1, j))
-                    iac[n] += 1
-                    ihc.append(1)
-                    cl12.append(0.5 * delc[i])
-                    hwva.append(delr[j])
-                # bottom
-                if k < nlay - 1:
-                    ja.append(get_nn(k + 1, i, j))
-                    iac[n] += 1
-                    ihc.append(0)
-                    if k == 0:
-                        dz = tp - botm[k]
-                    else:
-                        dz = botm[k - 1] - botm[k]
-                    cl12.append(0.5 * dz)
-                    hwva.append(delr[i] * delc[j])
-    ja = np.array(ja, dtype=int)
-    nja = ja.shape[0]
-    hwva = np.array(hwva, dtype=float)
-    kw = {}
-    kw["nodes"] = nodes
-    kw["nja"] = nja
-    kw["nvert"] = None
-    kw["top"] = top
-    kw["bot"] = bot
-    kw["area"] = area
-    kw["iac"] = iac
-    kw["ja"] = ja
-    kw["ihc"] = ihc
-    kw["cl12"] = cl12
-    kw["hwva"] = hwva
-    return kw
-
-
-def uniform_flow_field(qx, qy, qz, shape, delr=None, delc=None, delv=None):
-
-    nlay, nrow, ncol = shape
-
-    # create spdis array for the uniform flow field
-    dt = np.dtype(
-        [
-            ("ID1", np.int32),
-            ("ID2", np.int32),
-            ("FLOW", np.float64),
-            ("QX", np.float64),
-            ("QY", np.float64),
-            ("QZ", np.float64),
-        ]
-    )
-    spdis = np.array(
-        [(id1, id1, 0.0, qx, qy, qz) for id1 in range(nlay * nrow * ncol)],
-        dtype=dt,
-    )
-
-    # create the flowja array for the uniform flow field (assume top-bot = 1)
-    flowja = []
-    if delr is None:
-        delr = 1.0
-    if delc is None:
-        delc = 1.0
-    if delv is None:
-        delv = 1.0
-    for k in range(nlay):
-        for i in range(nrow):
-            for j in range(ncol):
-                # diagonal
-                flowja.append(0.0)
-                # up
-                if k > 0:
-                    flowja.append(-qz * delr * delc)
-                # back
-                if i > 0:
-                    flowja.append(-qy * delr * delv)
-                # left
-                if j > 0:
-                    flowja.append(qx * delc * delv)
-                # right
-                if j < ncol - 1:
-                    flowja.append(-qx * delc * delv)
-                # front
-                if i < nrow - 1:
-                    flowja.append(qy * delr * delv)
-                # bottom
-                if k < nlay - 1:
-                    flowja.append(qz * delr * delc)
-    flowja = np.array(flowja, dtype=np.float64)
-    return spdis, flowja
-
-
-def write_head(
-    fbin,
-    data,
-    kstp=1,
-    kper=1,
-    pertim=1.0,
-    totim=1.0,
-    text="            HEAD",
-    ilay=1,
-):
-    dt = np.dtype(
-        [
-            ("kstp", np.int32),
-            ("kper", np.int32),
-            ("pertim", np.float64),
-            ("totim", np.float64),
-            ("text", "S16"),
-            ("ncol", np.int32),
-            ("nrow", np.int32),
-            ("ilay", np.int32),
-        ]
-    )
-    nrow = data.shape[0]
-    ncol = data.shape[1]
-    h = np.array((kstp, kper, pertim, totim, text, ncol, nrow, ilay), dtype=dt)
-    h.tofile(fbin)
-    data.tofile(fbin)
-    return
-
-
-def write_budget(
-    fbin,
-    data,
-    kstp=1,
-    kper=1,
-    text="    FLOW-JA-FACE",
-    imeth=1,
-    delt=1.0,
-    pertim=1.0,
-    totim=1.0,
-    text1id1="           GWF-1",
-    text2id1="           GWF-1",
-    text1id2="           GWF-1",
-    text2id2="             NPF",
-):
-    dt = np.dtype(
-        [
-            ("kstp", np.int32),
-            ("kper", np.int32),
-            ("text", "S16"),
-            ("ndim1", np.int32),
-            ("ndim2", np.int32),
-            ("ndim3", np.int32),
-            ("imeth", np.int32),
-            ("delt", np.float64),
-            ("pertim", np.float64),
-            ("totim", np.float64),
-        ]
-    )
-
-    if imeth == 1:
-        ndim1 = data.shape[0]
-        ndim2 = 1
-        ndim3 = -1
-        h = np.array(
-            (
-                kstp,
-                kper,
-                text,
-                ndim1,
-                ndim2,
-                ndim3,
-                imeth,
-                delt,
-                pertim,
-                totim,
-            ),
-            dtype=dt,
+    # find namfiles
+    namfile_paths = [
+        p
+        for p in Path(path).rglob(
+            f"{prefix}*/{namefile}" if prefix else namefile
         )
-        h.tofile(fbin)
-        data.tofile(fbin)
+    ]
 
-    elif imeth == 6:
-        ndim1 = 1
-        ndim2 = 1
-        ndim3 = -1
-        h = np.array(
-            (
-                kstp,
-                kper,
-                text,
-                ndim1,
-                ndim2,
-                ndim3,
-                imeth,
-                delt,
-                pertim,
-                totim,
-            ),
-            dtype=dt,
-        )
-        h.tofile(fbin)
+    # remove excluded
+    namfile_paths = [
+        p
+        for p in namfile_paths
+        if (not excluded or not any(e in str(p) for e in excluded))
+    ]
 
-        # write text1id1, ...
-        dt = np.dtype(
-            [
-                ("text1id1", "S16"),
-                ("text1id2", "S16"),
-                ("text2id1", "S16"),
-                ("text2id2", "S16"),
-            ]
-        )
-        h = np.array((text1id1, text1id2, text2id1, text2id2), dtype=dt)
-        h.tofile(fbin)
+    # filter by package (optional)
+    def has_packages(nfp, pkgs):
+        ftypes = [item.upper() for item in get_mf6_ftypes(nfp, pkgs)]
+        return len(ftypes) > 0
 
-        # write ndat (number of floating point columns)
-        colnames = data.dtype.names
-        ndat = len(colnames) - 2
-        dt = np.dtype([("ndat", np.int32)])
-        h = np.array([(ndat,)], dtype=dt)
-        h.tofile(fbin)
+    if packages:
+        namfile_paths = [
+            p
+            for p in namfile_paths
+            if (has_packages(p, packages) if packages else True)
+        ]
 
-        # write auxiliary column names
-        naux = ndat - 1
-        if naux > 0:
-            auxtxt = [f"{colname:16}" for colname in colnames[3:]]
-            auxtxt = tuple(auxtxt)
-            dt = np.dtype([(colname, "S16") for colname in colnames[3:]])
-            h = np.array(auxtxt, dtype=dt)
-            h.tofile(fbin)
+    # get model dir paths
+    model_paths = [p.parent for p in namfile_paths]
 
-        # write nlist
-        nlist = data.shape[0]
-        dt = np.dtype([("nlist", np.int32)])
-        h = np.array([(nlist,)], dtype=dt)
-        h.tofile(fbin)
+    # filter by model name (optional)
+    if selected:
+        model_paths = [
+            model
+            for model in model_paths
+            if any(s in model.name for s in selected)
+        ]
 
-        # write the data
-        data.tofile(fbin)
+    # exclude dev examples on master or release branches
+    branch = get_current_branch()
+    if "master" in branch.lower() or "release" in branch.lower():
+        model_paths = [
+            model for model in model_paths if "_dev" not in model.name.lower()
+        ]
 
+    return model_paths
+
+
+def is_connected(hostname):
+    """See https://stackoverflow.com/a/20913928/ to test hostname."""
+    try:
+        host = socket.gethostbyname(hostname)
+        s = socket.create_connection((host, 80), 2)
+        s.close()
+        return True
+    except Exception:
         pass
-    else:
-        raise Exception(f"unknown method code {imeth}")
+    return False
+
+
+def is_in_ci():
+    # if running in GitHub Actions CI, "CI" variable always set to true
+    # https://docs.github.com/en/actions/learn-github-actions/environment-variables#default-environment-variables
+    return bool(environ.get("CI", None))
+
+
+def is_github_rate_limited() -> Optional[bool]:
+    """
+    Determines if a GitHub API rate limit is applied to the current IP.
+    Note that running this function will consume an API request!
+
+    Returns
+    -------
+        True if rate-limiting is applied, otherwise False (or None if the connection fails).
+    """
+    try:
+        with request.urlopen(
+            "https://api.github.com/users/octocat"
+        ) as response:
+            remaining = int(response.headers["x-ratelimit-remaining"])
+            if remaining < 10:
+                warn(
+                    f"Only {remaining} GitHub API requests remaining before rate-limiting"
+                )
+            return remaining > 0
+    except:
+        return None
+
+
+_has_exe_cache = {}
+_has_pkg_cache = {}
+
+
+def has_exe(exe):
+    if exe not in _has_exe_cache:
+        _has_exe_cache[exe] = bool(which(exe))
+    return _has_exe_cache[exe]
+
+
+def has_pkg(pkg):
+    if pkg not in _has_pkg_cache:
+
+        # for some dependencies, package name and import name are different
+        # (e.g. pyshp/shapefile, mfpymake/pymake, python-dateutil/dateutil)
+        # pkg_resources expects package name, importlib expects import name
+        try:
+            _has_pkg_cache[pkg] = bool(importlib.import_module(pkg))
+        except (ImportError, ModuleNotFoundError):
+            try:
+                _has_pkg_cache[pkg] = bool(pkg_resources.get_distribution(pkg))
+            except pkg_resources.DistributionNotFound:
+                _has_pkg_cache[pkg] = False
+
+    return _has_pkg_cache[pkg]
+
+
+def requires_exe(*exes):
+    missing = {exe for exe in exes if not has_exe(exe)}
+    return pytest.mark.skipif(
+        missing,
+        reason=f"missing executable{'s' if len(missing) != 1 else ''}: "
+        + ", ".join(missing),
+    )
+
+
+def requires_pkg(*pkgs):
+    missing = {pkg for pkg in pkgs if not has_pkg(pkg)}
+    return pytest.mark.skipif(
+        missing,
+        reason=f"missing package{'s' if len(missing) != 1 else ''}: "
+        + ", ".join(missing),
+    )
+
+
+def requires_platform(platform, ci_only=False):
+    return pytest.mark.skipif(
+        system().lower() != platform.lower()
+        and (is_in_ci() if ci_only else True),
+        reason=f"only compatible with platform: {platform.lower()}",
+    )
+
+
+def excludes_platform(platform, ci_only=False):
+    return pytest.mark.skipif(
+        system().lower() == platform.lower()
+        and (is_in_ci() if ci_only else True),
+        reason=f"not compatible with platform: {platform.lower()}",
+    )
+
+
+def requires_branch(branch):
+    current = get_current_branch()
+    return pytest.mark.skipif(
+        current != branch, reason=f"must run on branch: {branch}"
+    )
+
+
+def excludes_branch(branch):
+    current = get_current_branch()
+    return pytest.mark.skipif(
+        current == branch, reason=f"can't run on branch: {branch}"
+    )
