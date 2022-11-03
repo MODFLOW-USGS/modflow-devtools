@@ -126,7 +126,9 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache: 'pip'
-          cache-dependency-path: modflow-devtools/setup.cfg
+          cache-dependency-path: |
+            modflow-devtools/setup.cfg
+            modflow6-examples/etc/requirements*.txt
 
       - name: Install Python packages
         working-directory: modflow-devtools
@@ -157,4 +159,5 @@ jobs:
         working-directory: modflow-devtools
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPOS_PATH: ${{ github.workspace }}
         run: pytest -v -n auto --durations 0
