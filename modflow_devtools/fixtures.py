@@ -139,7 +139,7 @@ def pytest_generate_tests(metafunc):
     if key in metafunc.fixturenames:
         models = (
             get_models(
-                repos_path / "modflow6-testmodels" / "mf6",
+                Path(repos_path) / "modflow6-testmodels" / "mf6",
                 prefix="test",
                 excluded=["test205_gwtbuy-henrytidal"],
                 selected=models_selected,
@@ -154,7 +154,7 @@ def pytest_generate_tests(metafunc):
     if key in metafunc.fixturenames:
         models = (
             get_models(
-                repos_path / "modflow6-testmodels" / "mf5to6",
+                Path(repos_path) / "modflow6-testmodels" / "mf5to6",
                 prefix="test",
                 namefile="*.nam",
                 excluded=["test205_gwtbuy-henrytidal"],
@@ -170,7 +170,7 @@ def pytest_generate_tests(metafunc):
     if key in metafunc.fixturenames:
         models = (
             get_models(
-                repos_path / "modflow6-largetestmodels",
+                Path(repos_path) / "modflow6-largetestmodels",
                 prefix="test",
                 namefile="*.nam",
                 excluded=[],
@@ -229,9 +229,9 @@ def pytest_generate_tests(metafunc):
             # find and filter namfiles
             namfiles = [
                 p
-                for p in (repos_path / "modflow6-examples" / "examples").rglob(
-                    "mfsim.nam"
-                )
+                for p in (
+                    Path(repos_path) / "modflow6-examples" / "examples"
+                ).rglob("mfsim.nam")
             ]
             namfiles = [
                 p
@@ -278,9 +278,11 @@ def pytest_generate_tests(metafunc):
                 if name not in ["mf6gwf", "mf6gwt"]
             }
 
-        examples = get_examples() if repos_path else dict()
+            return examples
+
+        example_scenarios = get_examples() if repos_path else dict()
         metafunc.parametrize(
             key,
-            [(name, nfps) for name, nfps in examples.items()],
-            ids=[name for name, ex in examples.items()],
+            [(name, nfps) for name, nfps in example_scenarios.items()],
+            ids=[name for name, ex in example_scenarios.items()],
         )

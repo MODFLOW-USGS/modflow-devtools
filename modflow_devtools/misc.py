@@ -5,14 +5,12 @@ from contextlib import contextmanager
 from os import PathLike, chdir, environ, getcwd
 from os.path import basename, normpath
 from pathlib import Path
-from platform import system
 from shutil import which
 from subprocess import PIPE, Popen
 from typing import List, Optional
 from urllib import request
 
 import pkg_resources
-import pytest
 from _warnings import warn
 
 
@@ -234,51 +232,3 @@ def has_pkg(pkg):
                 _has_pkg_cache[pkg] = False
 
     return _has_pkg_cache[pkg]
-
-
-def requires_exe(*exes):
-    missing = {exe for exe in exes if not has_exe(exe)}
-    return pytest.mark.skipif(
-        missing,
-        reason=f"missing executable{'s' if len(missing) != 1 else ''}: "
-        + ", ".join(missing),
-    )
-
-
-def requires_pkg(*pkgs):
-    missing = {pkg for pkg in pkgs if not has_pkg(pkg)}
-    return pytest.mark.skipif(
-        missing,
-        reason=f"missing package{'s' if len(missing) != 1 else ''}: "
-        + ", ".join(missing),
-    )
-
-
-def requires_platform(platform, ci_only=False):
-    return pytest.mark.skipif(
-        system().lower() != platform.lower()
-        and (is_in_ci() if ci_only else True),
-        reason=f"only compatible with platform: {platform.lower()}",
-    )
-
-
-def excludes_platform(platform, ci_only=False):
-    return pytest.mark.skipif(
-        system().lower() == platform.lower()
-        and (is_in_ci() if ci_only else True),
-        reason=f"not compatible with platform: {platform.lower()}",
-    )
-
-
-def requires_branch(branch):
-    current = get_current_branch()
-    return pytest.mark.skipif(
-        current != branch, reason=f"must run on branch: {branch}"
-    )
-
-
-def excludes_branch(branch):
-    current = get_current_branch()
-    return pytest.mark.skipif(
-        current == branch, reason=f"can't run on branch: {branch}"
-    )

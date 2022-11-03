@@ -1,22 +1,14 @@
 import inspect
 import platform
-from os import environ
 from pathlib import Path
-from shutil import which
 
 import pytest
-from modflow_devtools.misc import (
-    excludes_platform,
-    requires_exe,
-    requires_pkg,
-    requires_platform,
-)
 
 system = platform.system()
 proj_root = Path(__file__).parent.parent.parent.parent
 
 
-# temporary directory fixtures
+# test temporary directory fixtures
 
 
 def test_tmpdirs(function_tmpdir, module_tmpdir):
@@ -79,43 +71,27 @@ def test_session_scoped_tmpdir(session_tmpdir):
     assert session_tmpdir.is_dir()
 
 
-# test fixtures to require/exclude executables & platforms
+# test fixtures dynamically generated from examples and test models
 
 
-@requires_exe("mf6")
-def test_mf6():
-    assert which("mf6")
+def test_example_scenario(example_scenario):
+    assert isinstance(example_scenario, tuple)
+    name, namefiles = example_scenario
+    assert isinstance(name, str)
+    assert isinstance(namefiles, list)
+    assert all(namefile.is_file() for namefile in namefiles)
 
 
-exes = ["mfusg", "mfnwt"]
+def test_test_model_mf6(test_model_mf6):
+    assert isinstance(test_model_mf6, Path)
+    assert (test_model_mf6 / "mfsim.nam").is_file()
 
 
-@requires_exe(*exes)
-def test_mfusg_and_mfnwt():
-    assert all(which(exe) for exe in exes)
+def test_test_model_mf5to6(test_model_mf5to6):
+    assert isinstance(test_model_mf5to6, Path)
+    assert len(list(test_model_mf5to6.glob("*.nam"))) >= 1
 
 
-@requires_pkg("numpy")
-def test_numpy():
-    import numpy
-
-    assert numpy is not None
-
-
-@requires_pkg("numpy", "matplotlib")
-def test_numpy_and_matplotlib():
-    import matplotlib
-    import numpy
-
-    assert numpy is not None and matplotlib is not None
-
-
-@requires_platform("Windows")
-def test_needs_windows():
-    assert system == "Windows"
-
-
-@excludes_platform("Darwin", ci_only=True)
-def test_breaks_osx_ci():
-    if "CI" in environ:
-        assert system != "Darwin"
+def test_large_test_model(large_test_model):
+    assert isinstance(large_test_model, Path)
+    assert (large_test_model / "mfsim.nam").is_file()
