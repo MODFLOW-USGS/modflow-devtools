@@ -1,6 +1,7 @@
 # MODFLOW developer tools
 
 [![Project Status: WIP – Initial development is in progress, but there has not yet been a stable, usable release suitable for the public.](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip)
+[![CI](https://github.com/MODFLOW-USGS/modflow-devtools/actions/workflows/ci.yml/badge.svg)](https://github.com/MODFLOW-USGS/modflow-devtools/actions/workflows/ci.yml)
 
 Python tools for MODFLOW development and testing.
 
@@ -9,13 +10,12 @@ Python tools for MODFLOW development and testing.
 
 - [Requirements](#requirements)
 - [Installation](#installation)
-- [Usage](#usage)
-  - [Regression test framework](#regression-test-framework)
-  - [`MFZipFile` class and usage](#mfzipfile-class-and-usage)
+- [Included](#included)
+  - [`MFZipFile` class](#mfzipfile-class)
   - [Keepable temporary directories](#keepable-temporary-directories)
-  - [Example model test generation](#example-model-test-generation)
+  - [Example model tests](#example-model-tests)
     - [Test model fixtures](#test-model-fixtures)
-    - [Example model fixtures](#example-model-fixtures)
+    - [Example scenario fixtures](#example-scenario-fixtures)
   - [Conditionally skipping tests](#conditionally-skipping-tests)
   - [Miscellaneous](#miscellaneous)
     - [Generating TOCs with `doctoc`](#generating-tocs-with-doctoc)
@@ -32,58 +32,54 @@ This package requires Python3.7+. Its only dependencies are `numpy` and `pytest`
 
 This package is not yet published to PyPI or a Conda channel. To install it please see the [developer documentation](DEVELOPER.md).
 
-## Usage
+## Included
 
 This package contains shared tools for developing and testing MODFLOW 6 and FloPy, including standalone utilities as well as `pytest` fixtures, CLI options, and test parametrizations:
 
-- a framework for MODFLOW regression test comparisons
-- a `ZipFile` child class preserving file attributes
+- a `ZipFile` subclass preserving file attributes
 - various `pytest` fixtures and utilities
   - keepable temporary directories
-  - fixtures/hooks to generate tests from example repos
+  - a smoke testing CLI option
+  - dynamic test parametrization from example repos
   - markers to conditionally skip test cases based on
     - operating system
     - Python packages installed
     - executables available on the path
 
-To import `pytest` configuration in a project consuming `modflow-devtools`, add the following to the project's top-level `conftest.py` file:
+To import `pytest` fixtures in a project consuming `modflow-devtools`, add the following to a `conftest.py` file in the project root:
 
 ```python
 pytest_plugins = [ "modflow_devtools.fixtures" ]
 ```
 
-Note that `pytest` requires that this `conftest.py` live in your project root. (You can create nested `conftest.py` files to override default behavior if needed.)
+Note that `pytest` requires this to be a top-level `conftest.py` living in your project root. Nested `conftest.py` files may override or extend this package's behavior.
 
-### Regression test framework
+### `MFZipFile` class
 
-*TODO*
-
-### `MFZipFile` class and usage
-
-*TODO*
+Python's `ZipFile` doesn't preserve execute permissions. The `MFZipFile` subclass modifies `ZipFile.extract()` to do so, as per the recommendation [here](https://stackoverflow.com/questions/39296101/python-zipfile-removes-execute-permissions-from-binaries).
 
 ### Keepable temporary directories
 
 Tests often need to exercise code that reads from and/or writes to disk. The test harness may also need to create test data during setup and clean up the filesystem on teardown. Temporary directories are built into `pytest` via the [`tmp_path`](https://docs.pytest.org/en/latest/how-to/tmp_path.html#the-tmp-path-fixture) and `tmp_path_factory` fixtures.
 
-Several fixtures are provided in `modflow_devtools/test/conftest.py` to extend the behavior of temporary directories for test functions:
+Several fixtures are provided in `modflow_devtools/fixtures.py` to extend the behavior of temporary directories for test functions:
 
-- `tmpdir`
+- `function_tmpdir`
 - `module_tmpdir`
 - `class_tmpdir`
 - `session_tmpdir`
 
-These are automatically created before test code runs and lazily removed afterwards, subject to the same [cleanup procedure](https://docs.pytest.org/en/latest/how-to/tmp_path.html#the-default-base-temporary-directory) used by the default `pytest` fixtures. Their purpose is to allow temporary test artifacts to be saved in a user-specified location when `pytest` is invoked with a `--keep` option &mdash; this can be useful to debug failing tests.
+These are automatically created before test code runs and lazily removed afterwards, subject to the same [cleanup procedure](https://docs.pytest.org/en/latest/how-to/tmp_path.html#the-default-base-temporary-directory) used by the default `pytest` temporary directory fixtures. Their purpose is to allow test artifacts to be saved in a user-specified location when `pytest` is invoked with a `--keep` option &mdash; this can be useful to debug failing tests.
 
 ```python
 from pathlib import Path
 import inspect
 
-def test_tmpdirs(tmpdir, module_tmpdir):
+def test_tmpdirs(function_tmpdir, module_tmpdir):
     # function-scoped temporary directory
-    assert isinstance(tmpdir, Path)
-    assert tmpdir.is_dir()
-    assert inspect.currentframe().f_code.co_name in tmpdir.stem
+    assert isinstance(function_tmpdir, Path)
+    assert function_tmpdir.is_dir()
+    assert inspect.currentframe().f_code.co_name in function_tmpdir.stem
 
     # module-scoped temp dir (accessible to other tests in the script)
     assert module_tmpdir.is_dir()
@@ -96,42 +92,56 @@ Any files written to the temporary directory will be saved to saved to subdirect
 pytest <test file> --keep temp
 ```
 
-### Example model test generation
+There is also a `--keep-failed <path>` variant which only preserves outputs from failing test cases.
 
-Fixtures are provided to parametrize test functions dynamically from models in the MODFLOW 6 example and test model repositories:
+### Example model tests
+
+Fixtures are provided to load models from the MODFLOW 6 example and test model repositories and feed them to test functions. Models can be loaded from:
 
 - [`MODFLOW-USGS/modflow6-examples`](https://github.com/MODFLOW-USGS/modflow6-examples)
 - [`MODFLOW-USGS/modflow6-testmodels`](https://github.com/MODFLOW-USGS/modflow6-testmodels)
 - [`MODFLOW-USGS/modflow6-largetestmodels`](https://github.com/MODFLOW-USGS/modflow6-largetestmodels)
 
-These can be requested like any other `pytest` fixture by adding one of the following test function arguments:
+These models can be requested like any other `pytest` fixture, by adding one of the following parameters to test functions:
 
 - `test_model_mf5to6`
 - `test_model_mf6`
 - `large_test_model`
 - `example_scenario`
 
-**Note**: test models for `mf5to6` and `mf6` both live in the `modflow6-testmodels` repository and must be requested separately.
+To use these fixtures, the environment variable `REPOS_PATH` must point to the location of model repositories on the filesystem. Model repositories must live side-by-side in this location. If `REPOS_PATH` is not configured, test functions requesting these fixtures will be skipped.
 
-**Note**: example models must be built with the `ci_build_files.py` script located in `modflow6-examples/etc` before running tests using the `example_scenario` fixture.
+**Note**: example models must be built by running the `ci_build_files.py` script in `modflow6-examples/etc` before running tests using the `example_scenario` fixture.
 
 #### Test model fixtures
 
-The `test_model_mf5to6`, `test_model_mf6` and `large_test_model` fixtures are the `Path` to the directory containing the model's namefile. These can be used straightforwardly, for instance:
+The `test_model_mf5to6`, `test_model_mf6` and `large_test_model` fixtures are each a `Path` to the directory containing the model's namefile. For instance, to load `mf5to6` models from the [`MODFLOW-USGS/modflow6-testmodels`](https://github.com/MODFLOW-USGS/modflow6-testmodels) repository:
 
 ```python
-def test_mf5to6_model(
-        tmpdir: Path,
-        testmodel_mf5to6: Path):
-    # load the model 
-    # switch to temp workdir
-    # run the model
-    ...
+def test_mf5to6_model(tmpdir, testmodel_mf5to6):
+    assert testmodel_mf5to6.is_dir()
 ```
 
-#### Example model fixtures
+This test function will be parametrized with all `mf5to6` models found in the `testmodels` repository (likewise for `mf6` models, and for large test models in their own repository).
 
-The `example_scenario` fixture is an ordered list of model namefile `Path`s, representing models to be run in the specified order. (Order matters, as some models may depend on the outputs of others.)
+#### Example scenario fixtures
+
+The [`MODFLOW-USGS/modflow6-examples`](https://github.com/MODFLOW-USGS/modflow6-examples) repository contains a collection of scenarios, each consisting of 1 or more models. The `example_scenario` fixture is a `Tuple[str, List[Path]]`. The first item is the name of the scenario. The second item is a list of namefile `Path`s, ordered alphabetically by name. Model naming conventions are as follows:
+
+- groundwater flow models begin with prefix `gwf*`
+- transport models begin with `gwt*`
+
+Ordering as above permits models to be run directly in the order provided, with transport models potentially consuming the outputs of flow models. A straightforward pattern is to loop over models and run each in a subdirectory of the same top-level working directory.
+
+```python
+def test_example_scenario(tmpdir, example_scenario):
+    name, namefiles = example_scenario
+    for namefile in namefiles:
+        model_ws = tmpdir / namefile.parent.name
+        model_ws.mkdir()
+        # load and run model
+        # ...
+```
 
 ### Conditionally skipping tests
 
@@ -141,7 +151,7 @@ To skip tests if one or more executables are not available on the path:
 
 ```python
 from shutil import which
-from autotest.conftest import requires_exe
+from modflow_devtools.markers import requires_exe
 
 @requires_exe("mf6")
 def test_mf6():
@@ -156,7 +166,7 @@ def test_mf6_and_mp7():
 To skip tests if one or more Python packages are not available:
 
 ```python
-from autotest.conftest import requires_pkg
+from modflow_devtools.markers import requires_pkg
 
 @requires_pkg("pandas")
 def test_needs_pandas():
@@ -173,7 +183,7 @@ To mark tests requiring or incompatible with particular operating systems:
 ```python
 import os
 import platform
-from autotest.conftest import requires_platform, excludes_platform
+from modflow_devtools.markers import requires_platform, excludes_platform
 
 @requires_platform("Windows")
 def test_needs_windows():
@@ -189,11 +199,14 @@ Platforms must be specified as returned by `platform.system()`.
 
 Both these markers accept a `ci_only` flag, which indicates whether the policy should only apply when the test is running on GitHub Actions CI.
 
-There is also a `@requires_github` marker, which will skip decorated tests if the GitHub API is unreachable.
+Markers are also provided to ping network resources and skip if unavailable:
+
+- `@requires_github`: skips if `github.com` is unreachable
+- `@requires_spatial_reference`: skips if `spatialreference.org` is unreachable
 
 ### Miscellaneous
 
-A few other useful tools for FloPy development include:
+A few other useful tools for MODFLOW 6 and FloPy development include:
 
 - [`doctoc`](https://www.npmjs.com/package/doctoc): automatically generate table of contents sections for markdown files
 - [`act`](https://github.com/nektos/act): test GitHub Actions workflows locally (requires Docker)

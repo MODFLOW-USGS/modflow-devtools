@@ -7,6 +7,7 @@ This document provides guidance to set up a development environment and discusse
 
 - [Installation](#installation)
 - [Testing](#testing)
+  - [Environment variables](#environment-variables)
   - [Running the tests](#running-the-tests)
   - [Writing new tests](#writing-new-tests)
     - [Temporary directories](#temporary-directories)
