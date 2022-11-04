@@ -26,6 +26,22 @@ pip install ".[lint, test]"
 
 This repository's tests use [`pytest`](https://docs.pytest.org/en/latest/) and several plugins.
 
+### Environment variables
+
+This repository's tests expect a few environment variables:
+
+- `REPOS_PATH`: the path to MODFLOW 6 example model repositories
+- `GITHUB_TOKEN`: a GitHub authentication token
+
+These may be set manually, but the recommended approach is to configure environment variables in a `.env` file in the project root, for instance:
+
+```
+REPOS_PATH=/path/to/repos
+GITHUB_TOKEN=yourtoken...
+```
+
+The tests use [`pytest-dotenv`](https://github.com/quiqua/pytest-dotenv) to detect and load variables from this file.
+
 ### Running the tests
 
 Tests should be run from the project root. To run the tests in parallel with verbose output:

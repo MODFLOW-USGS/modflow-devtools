@@ -34,7 +34,7 @@ class MFZipFile(ZipFile):
         if path is None:
             path = os.getcwd()
 
-        ret_val = self._extract_member(member, path, pwd)
+        ret_val = self._extract_member(member, str(path), pwd)
         attr = member.external_attr >> 16
         if attr != 0:
             os.chmod(ret_val, attr)
@@ -67,10 +67,10 @@ class MFZipFile(ZipFile):
         else:
             if hasattr(os, "fspath"):
                 # introduced in python 3.6 and above
-                path = os.fspath(path)
+                path = os.fspath(str(path))
 
         for zipinfo in members:
-            self.extract(zipinfo, path, pwd)
+            self.extract(zipinfo, str(path), pwd)
 
     @staticmethod
     def compressall(path, file_pths=None, dir_pths=None, patterns=None):
