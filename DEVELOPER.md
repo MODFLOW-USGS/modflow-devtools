@@ -57,4 +57,4 @@ Tests should follow a few conventions for ease of use and maintenance.
 
 #### Temporary directories
 
-Tests which must write to disk should use `pytest`'s built-in `temp_dir` fixture or one of the scoped temporary directory fixtures defined in `conftest.py` (the latter are part of this package's public API and so are tested in `modflow_devtools/test/test_conftest.py`).
+Tests which must write to disk should use `pytest`'s built-in `temp_dir` fixture or one of this package's own scoped temporary directory fixtures.
