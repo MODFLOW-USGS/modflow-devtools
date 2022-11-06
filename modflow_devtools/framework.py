@@ -299,63 +299,6 @@ def get_namefiles(pth, exclude=None):
     return namefiles
 
 
-def get_entries_from_namefile(namefile, ftype=None, unit=None, extension=None):
-    """Get entries from a namefile. Can select using FTYPE, UNIT, or file
-    extension.
-
-    Parameters
-    ----------
-    namefile : str
-        path to a MODFLOW-based model name file
-    ftype : str
-        package type
-    unit : int
-        file unit number
-    extension : str
-        file extension
-
-    Returns
-    -------
-    entries : list of tuples
-        list of tuples containing FTYPE, UNIT, FNAME, STATUS for each
-        namefile entry that meets a user-specified value.
-
-    """
-    entries = []
-    f = open(namefile, "r")
-    for line in f:
-        if line.strip() == "":
-            continue
-        if line[0] == "#":
-            continue
-        ll = line.strip().split()
-        if len(ll) < 3:
-            continue
-        status = "UNKNOWN"
-        if len(ll) > 3:
-            status = ll[3].upper()
-        if ftype is not None:
-            if ftype.upper() == ll[0].upper():
-                filename = os.path.join(os.path.split(namefile)[0], ll[2])
-                entries.append((filename, ll[0], ll[1], status))
-        elif unit is not None:
-            if int(unit) == int(ll[1]):
-                filename = os.path.join(os.path.split(namefile)[0], ll[2])
-                entries.append((filename, ll[0], ll[1], status))
-        elif extension is not None:
-            filename = os.path.join(os.path.split(namefile)[0], ll[2])
-            ext = os.path.splitext(filename)[1]
-            if len(ext) > 0:
-                if ext[0] == ".":
-                    ext = ext[1:]
-                if extension.lower() == ext.lower():
-                    entries.append((filename, ll[0], ll[1], status))
-    f.close()
-    if len(entries) < 1:
-        entries.append((None, None, None, None))
-    return entries
-
-
 def get_sim_name(namefiles, rootpth=None):
     """Get simulation name.
 

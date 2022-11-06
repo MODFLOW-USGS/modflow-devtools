@@ -190,7 +190,7 @@ def pytest_generate_tests(metafunc):
             if not p.is_file() or not p.name.endswith(".nam"):
                 raise ValueError(f"Expected namefile path, got {p}")
 
-            return p.parent.parent.name == "examples "
+            return p.parent.parent.name == "examples"
 
         def example_name_from_namfile_path(path: PathLike) -> str:
             p = Path(path)
