@@ -13,9 +13,10 @@ Python tools for MODFLOW development and testing.
 - [Included](#included)
   - [`MFZipFile` class](#mfzipfile-class)
   - [Keepable temporary directories](#keepable-temporary-directories)
-  - [Example model tests](#example-model-tests)
+  - [Model-loading fixtures](#model-loading-fixtures)
     - [Test model fixtures](#test-model-fixtures)
     - [Example scenario fixtures](#example-scenario-fixtures)
+  - [Reusable test case framework](#reusable-test-case-framework)
   - [Conditionally skipping tests](#conditionally-skipping-tests)
   - [Miscellaneous](#miscellaneous)
     - [Generating TOCs with `doctoc`](#generating-tocs-with-doctoc)
@@ -37,14 +38,14 @@ This package is not yet published to PyPI or a Conda channel. To install it plea
 This package contains shared tools for developing and testing MODFLOW 6 and FloPy, including standalone utilities as well as `pytest` fixtures, CLI options, and test parametrizations:
 
 - a `ZipFile` subclass preserving file attributes
-- various `pytest` fixtures and utilities
-  - keepable temporary directories
-  - a smoke testing CLI option
-  - dynamic test parametrization from example repos
-  - markers to conditionally skip test cases based on
-    - operating system
-    - Python packages installed
-    - executables available on the path
+- variably-scoped `pytest` temporary directory fixtures
+- a `pytest` smoke test CLI option (to run a fast subset of cases)
+- a minimal `pytest` framework for reusing test functions and data
+- a `pytest_generate_tests` hook to load example/test model fixtures
+- a set of `pytest` markers to conditionally skip test cases based on
+  - operating system
+  - Python packages installed
+  - executables available on the path
 
 To import `pytest` fixtures in a project consuming `modflow-devtools`, add the following to a `conftest.py` file in the project root:
 
@@ -94,7 +95,7 @@ pytest <test file> --keep temp
 
 There is also a `--keep-failed <path>` variant which only preserves outputs from failing test cases.
 
-### Example model tests
+### Model-loading fixtures
 
 Fixtures are provided to load models from the MODFLOW 6 example and test model repositories and feed them to test functions. Models can be loaded from:
 
@@ -141,6 +142,32 @@ def test_example_scenario(tmpdir, example_scenario):
         model_ws.mkdir()
         # load and run model
         # ...
+```
+
+### Reusable test case framework
+
+A second approach to testing, more flexible than loading pre-existing models from a repository, is to construct test models in code. This typically involves defining variables or `pytest` fixtures in the same test script as the test function. While this pattern is effective for manually defined scenarios, it tightly couples test functions to test cases, prevents easy reuse of the test case by other tests, and tends to lead to duplication, as each test script may reproduce similar test functions and data-generation procedures.
+
+This package provides a minimal framework for self-describing test cases which can be defined once and plugged into arbitrary test functions. At its core is the `Case` class, which is just a `SimpleNamespace` with a few defaults and a `copy_update()` method for easy modification. This pairs nicely with [`pytest-cases`](https://smarie.github.io/python-pytest-cases/), which is recommended but not required.
+
+A `Case` requires only a `name`, and has a single default attribute, `xfail=False`, indicating whether the test case is expected to succeed. (Test functions may of course choose to use or ignore this.)
+
+For instance, to generate a set of similar test cases with `pytest-cases`:
+
+```python
+from pytest_cases import parametrize
+
+from modflow_devtools.case import Case
+
+template = Case(name="QA")
+cases = [
+  template.copy_update(name=template.name + "1", question="What's the meaning of life, the universe, and everything?", answer=42),
+  template.copy_update(name=template.name + "2", question="Is a Case immutable?", answer="No, but it's better not to mutate it.")
+]
+
+@parametrize(data=cases, ids=[c.name for c in cases])
+def case_qa(case):
+    print(case.name, case.question, case.answer)
 ```
 
 ### Conditionally skipping tests
