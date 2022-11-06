@@ -5,6 +5,7 @@ from modflow_devtools.misc import (
     get_current_branch,
     has_exe,
     has_pkg,
+    is_connected,
     is_in_ci,
 )
 
@@ -55,3 +56,14 @@ def excludes_branch(branch):
     return pytest.mark.skipif(
         current == branch, reason=f"can't run on branch: {branch}"
     )
+
+
+requires_github = pytest.mark.skipif(
+    not is_connected("github.com"), reason="github.com is required."
+)
+
+
+requires_spatial_reference = pytest.mark.skipif(
+    not is_connected("spatialreference.org"),
+    reason="spatialreference.org is required.",
+)

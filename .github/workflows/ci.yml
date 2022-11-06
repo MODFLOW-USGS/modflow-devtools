@@ -117,6 +117,9 @@ jobs:
           repository: MODFLOW-USGS/modflow6-largetestmodels
           path: modflow6-largetestmodels
 
+      - name: Install executables
+        uses: modflowpy/install-modflow-action@v1
+
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
@@ -154,6 +157,7 @@ jobs:
       - name: Run tests
         working-directory: modflow-devtools
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BIN_PATH: ~/.local/bin/modflow
           REPOS_PATH: ${{ github.workspace }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: pytest -v -n auto --durations 0

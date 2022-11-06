@@ -7,7 +7,7 @@ from os.path import basename, normpath
 from pathlib import Path
 from shutil import which
 from subprocess import PIPE, Popen
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from urllib import request
 
 import pkg_resources
@@ -26,6 +26,40 @@ def set_dir(path: PathLike):
     finally:
         chdir(origin)
         print(f"Returned to previous directory: {origin}")
+
+
+class add_sys_path:
+    """
+    Context manager for temporarily editing the system path
+    (https://stackoverflow.com/a/39855753/6514033)
+    """
+
+    def __init__(self, path):
+        self.path = path
+
+    def __enter__(self):
+        sys.path.insert(0, self.path)
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        try:
+            sys.path.remove(self.path)
+        except ValueError:
+            pass
+
+
+def get_suffixes(ostag) -> Tuple[str, str]:
+    """Returns executable and library suffixes for the given OS (as returned by sys.platform)"""
+
+    tag = ostag.lower()
+
+    if tag in ["win32", "win64"]:
+        return ".exe", ".dll"
+    elif tag == "linux":
+        return "", ".so"
+    elif tag == "mac" or tag == "darwin":
+        return "", ".dylib"
+    else:
+        raise KeyError(f"unrecognized OS tag: {ostag!r}")
 
 
 def run_cmd(*args, verbose=False, **kwargs):

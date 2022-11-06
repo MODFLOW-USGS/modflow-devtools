@@ -31,17 +31,21 @@ This repository's tests use [`pytest`](https://docs.pytest.org/en/latest/) and s
 
 This repository's tests expect a few environment variables:
 
+- `BIN_PATH`: path to MODFLOW 6 and related executables
 - `REPOS_PATH`: the path to MODFLOW 6 example model repositories
 - `GITHUB_TOKEN`: a GitHub authentication token
 
 These may be set manually, but the recommended approach is to configure environment variables in a `.env` file in the project root, for instance:
 
 ```
+BIN_PATH=/path/to/modflow/executables
 REPOS_PATH=/path/to/repos
 GITHUB_TOKEN=yourtoken...
 ```
 
 The tests use [`pytest-dotenv`](https://github.com/quiqua/pytest-dotenv) to detect and load variables from this file.
+
+**Note:** at minimum, the tests require that the `mf6` executable is present in `BIN_PATH`.
 
 ### Running the tests
 

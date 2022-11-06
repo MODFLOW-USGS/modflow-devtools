@@ -12,11 +12,12 @@ Python tools for MODFLOW development and testing.
 - [Installation](#installation)
 - [Included](#included)
   - [`MFZipFile` class](#mfzipfile-class)
-  - [Keepable temporary directories](#keepable-temporary-directories)
+  - [Keepable temporary directory fixtures](#keepable-temporary-directory-fixtures)
   - [Model-loading fixtures](#model-loading-fixtures)
-    - [Test model fixtures](#test-model-fixtures)
-    - [Example scenario fixtures](#example-scenario-fixtures)
+    - [Test models](#test-models)
+    - [Example scenarios](#example-scenarios)
   - [Reusable test case framework](#reusable-test-case-framework)
+  - [Executables container](#executables-container)
   - [Conditionally skipping tests](#conditionally-skipping-tests)
   - [Miscellaneous](#miscellaneous)
     - [Generating TOCs with `doctoc`](#generating-tocs-with-doctoc)
@@ -59,7 +60,7 @@ Note that `pytest` requires this to be a top-level `conftest.py` living in your 
 
 Python's `ZipFile` doesn't preserve execute permissions. The `MFZipFile` subclass modifies `ZipFile.extract()` to do so, as per the recommendation [here](https://stackoverflow.com/questions/39296101/python-zipfile-removes-execute-permissions-from-binaries).
 
-### Keepable temporary directories
+### Keepable temporary directory fixtures
 
 Tests often need to exercise code that reads from and/or writes to disk. The test harness may also need to create test data during setup and clean up the filesystem on teardown. Temporary directories are built into `pytest` via the [`tmp_path`](https://docs.pytest.org/en/latest/how-to/tmp_path.html#the-tmp-path-fixture) and `tmp_path_factory` fixtures.
 
@@ -114,7 +115,7 @@ To use these fixtures, the environment variable `REPOS_PATH` must point to the l
 
 **Note**: example models must be built by running the `ci_build_files.py` script in `modflow6-examples/etc` before running tests using the `example_scenario` fixture.
 
-#### Test model fixtures
+#### Test models
 
 The `test_model_mf5to6`, `test_model_mf6` and `large_test_model` fixtures are each a `Path` to the directory containing the model's namefile. For instance, to load `mf5to6` models from the [`MODFLOW-USGS/modflow6-testmodels`](https://github.com/MODFLOW-USGS/modflow6-testmodels) repository:
 
@@ -125,7 +126,7 @@ def test_mf5to6_model(tmpdir, testmodel_mf5to6):
 
 This test function will be parametrized with all `mf5to6` models found in the `testmodels` repository (likewise for `mf6` models, and for large test models in their own repository).
 
-#### Example scenario fixtures
+#### Example scenarios
 
 The [`MODFLOW-USGS/modflow6-examples`](https://github.com/MODFLOW-USGS/modflow6-examples) repository contains a collection of scenarios, each consisting of 1 or more models. The `example_scenario` fixture is a `Tuple[str, List[Path]]`. The first item is the name of the scenario. The second item is a list of namefile `Path`s, ordered alphabetically by name. Model naming conventions are as follows:
 
@@ -168,6 +169,38 @@ cases = [
 @parametrize(data=cases, ids=[c.name for c in cases])
 def case_qa(case):
     print(case.name, case.question, case.answer)
+```
+
+### Executables container
+
+The `Executables` class is just a mapping between executable names and paths on the filesystem. This can be useful to test multiple versions of the same program, and is easily injected into test functions as a fixture:
+
+```python
+from os import environ
+from pathlib import Path
+import subprocess
+import sys
+
+import pytest
+
+from modflow_devtools.misc import get_suffixes
+from modflow_devtools.executables import Executables
+
+_bin_path = Path("~/.local/bin/modflow").expanduser()
+_dev_path = Path(environ.get("BIN_PATH")).absolute()
+_ext, _ = get_suffixes(sys.platform) 
+
+@pytest.fixture
+@pytest.mark.skipif(not (_bin_path.is_dir() and _dev_path.is_dir()))
+def exes():
+    return Executables(
+        mf6_rel=_bin_path / f"mf6{_ext}",
+        mf6_dev=_dev_path / f"mf6{_ext}"
+    )
+
+def test_exes(exes):
+    print(subprocess.check_output([f"{exes.mf6_rel}", "-v"]).decode('utf-8'))
+    print(subprocess.check_output([f"{exes.mf6_dev}", "-v"]).decode('utf-8'))
 ```
 
 ### Conditionally skipping tests

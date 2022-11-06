@@ -1,7 +1,9 @@
 import pytest
 from modflow_devtools.download import download_and_unzip
+from modflow_devtools.markers import requires_github
 
 
+@requires_github
 @pytest.mark.parametrize("delete_zip", [True, False])
 def test_download_and_unzip(function_tmpdir, delete_zip):
     zip_name = "mf6.3.0_linux.zip"
