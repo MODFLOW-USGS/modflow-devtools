@@ -147,14 +147,14 @@ jobs:
           key: modflow6-examples-${{ hashFiles('modflow6-examples/data/**') }}
       
       - name: Install extra Python packages
-        if: steps.cache-examples.outputs.cache-hit != 'true'
+        if: steps.cache-examples.outputs.cache-hit != 'true' && matrix.python != '3.7'
         working-directory: modflow6-examples/etc
         run: |
           pip install -r requirements.pip.txt
           pip install -r requirements.usgs.txt
 
       - name: Build modflow6 example models
-        if: steps.cache-examples.outputs.cache-hit != 'true'
+        if: steps.cache-examples.outputs.cache-hit != 'true' && matrix.python != '3.7'
         working-directory: modflow6-examples/etc
         run: python ci_build_files.py
 
