@@ -79,22 +79,24 @@ import inspect
 
 def test_tmpdirs(function_tmpdir, module_tmpdir):
     # function-scoped temporary directory
-    assert isinstance(function_tmpdir, Path)
     assert function_tmpdir.is_dir()
     assert inspect.currentframe().f_code.co_name in function_tmpdir.stem
 
     # module-scoped temp dir (accessible to other tests in the script)
     assert module_tmpdir.is_dir()
-    assert "autotest" in module_tmpdir.stem
+
+    with open(function_tmpdir / "test.txt", "w") as f1, open(module_tmpdir / "test.txt", "w") as f2:
+        f1.write("hello, function")
+        f2.write("hello, module")
 ```
 
-Any files written to the temporary directory will be saved to saved to subdirectories of `temp` named according to the test case, class or module. For instance, to store test outputs in a new folder named `temp` relative to the working directory (e.g., `<project root>/autotest`), run:
+Any files written to the temporary directory will be saved to saved to subdirectories named according to the test case, class or module. To keep files created by a test case like above, run:
 
 ```shell
-pytest <test file> --keep temp
+pytest --keep <path>
 ```
 
-There is also a `--keep-failed <path>` variant which only preserves outputs from failing test cases.
+There is also a `--keep-failed <path>` option which preserves outputs only from failing test cases.
 
 ### Model-loading fixtures
 
