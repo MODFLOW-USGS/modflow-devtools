@@ -16,11 +16,12 @@ import os
 import shutil
 import sys
 import tarfile
-import time
 import timeit
+import urllib.request
+from os import PathLike
+from pathlib import Path
+from typing import Optional
 from zipfile import ZIP_DEFLATED, ZipFile, ZipInfo
-
-import requests
 
 
 class MFZipFile(ZipFile):
@@ -179,101 +180,32 @@ class MFZipFile(ZipFile):
         return success
 
 
-def _request_get(url, verify=True, timeout=1, max_requests=10, verbose=False):
-    """Make a url request
-
-    Parameters
-    ----------
-    url : str
-        url address for the zip file
-    verify : bool
-        boolean indicating if the url request should be verified
-        (default is True)
-    timeout : int
-        url request time out length (default is 1 seconds)
-    max_requests : int
-        number of url download request attempts (default is 10)
-    verbose : bool
-        boolean indicating if output will be printed to the terminal
-        (default is False)
-
-    Returns
-    -------
-    req : request object
-        request object for url
-
+def get_request(url, params={}):
     """
-    for idx in range(max_requests):
-        if verbose:
-            msg = f"open request attempt {idx + 1} of {max_requests}"
-            print(msg)
-        try:
-            req = requests.get(
-                url, stream=True, verify=verify, timeout=timeout
-            )
-        except:
-            if idx < max_requests - 1:
-                time.sleep(13)
-                continue
-            else:
-                msg = "Cannot open request from:\n" + f"    {url}\n\n"
-                print(msg)
-                raise requests.HTTPError(msg)
+    Get urllib.request.Request, with parameters and headers.
 
-        # successful request
-        break
-
-    return req
-
-
-def _request_header(url, max_requests=10, verbose=False):
-    """Get the headers from a url
-
-    Parameters
-    ----------
-    url : str
-        url address for the zip file
-    max_requests : int
-        number of url download request attempts (default is 10)
-    verbose : bool
-        boolean indicating if output will be printed to the terminal
-        (default is False)
-
-    Returns
-    -------
-    header : request header object
-        request header object for url
-
+    This bears a GitHub API authentication token if github.com is
+    in the URL and the GITHUB_TOKEN environment variable is set.
     """
-    for idx in range(max_requests):
-        if verbose:
-            msg = f"open request attempt {idx + 1} of {max_requests}"
-            print(msg)
+    if isinstance(params, dict):
+        if len(params) > 0:
+            url += "?" + urllib.parse.urlencode(params)
+    else:
+        raise TypeError("data must be a dict")
+    headers = {}
 
-        header = requests.head(url, allow_redirects=True)
-        if header.status_code != 200:
-            if idx < max_requests - 1:
-                time.sleep(13)
-                continue
-            else:
-                msg = "Cannot open request from:\n" + f"    {url}\n\n"
-                print(msg)
-                header.raise_for_status()
+    if "github.com" in url:
+        github_token = os.environ.get("GITHUB_TOKEN", None)
+        if github_token:
+            headers["Authorization"] = f"Bearer {github_token}"
 
-        # successful header request
-        break
-
-    return header
+    return urllib.request.Request(url, headers=headers)
 
 
 def download_and_unzip(
-    url,
-    pth="./",
+    url: str,
+    path: Optional[PathLike] = None,
     delete_zip=True,
-    verify=True,
-    timeout=30,
-    max_requests=10,
-    chunk_size=2048000,
     verbose=False,
 ):
     """Download and unzip a zip file from a url.
@@ -282,19 +214,11 @@ def download_and_unzip(
     ----------
     url : str
         url address for the zip file
-    pth : str
+    path : PathLike
         path where the zip file will be saved (default is the current path)
     delete_zip : bool
         boolean indicating if the zip file should be deleted after it is
         unzipped (default is True)
-    verify : bool
-        boolean indicating if the url request should be verified
-    timeout : int
-        url request time out length (default is 30 seconds)
-    max_requests : int
-        number of url download request attempts (default is 10)
-    chunk_size : int
-        maximum url download request chunk size (default is 2048000 bytes)
     verbose : bool
         boolean indicating if output will be printed to the terminal
 
@@ -303,35 +227,32 @@ def download_and_unzip(
 
     """
 
-    # create download directory
-    if not os.path.exists(pth):
-        if verbose:
-            print(f"Creating the directory:\n    {pth}")
-        os.makedirs(pth)
+    path = Path(path if path else os.getcwd())
+    path.mkdir(exist_ok=True)
 
     if verbose:
-        print(f"Attempting to download the file:\n    {url}")
-
-    # define the filename
-    file_name = os.path.join(pth, url.split("/")[-1])
+        print(f"Downloading {url}")
 
     # download the file
     success = False
     tic = timeit.default_timer()
 
-    # open request
-    req = _request_get(
-        url,
-        verify=verify,
-        timeout=timeout,
-        max_requests=max_requests,
-        verbose=verbose,
+    def report(chunk, size, total):
+        complete = chunk * size
+        percent = round(complete / total * 100)
+        if verbose:
+            print(f"{percent}% complete ({complete} bytes of {total})")
+
+    # download zip file
+    file_path = path / url.split("/")[-1]
+    _, headers = urllib.request.urlretrieve(
+        url, filename=str(file_path), reporthook=report
     )
 
     # get content length, if available
     tag = "Content-length"
-    if tag in req.headers:
-        file_size = req.headers[tag]
+    if tag in headers:
+        file_size = headers[tag]
         len_file_size = len(file_size)
         file_size = int(file_size)
 
@@ -343,111 +264,38 @@ def download_and_unzip(
     else:
         file_size = 0.0
 
-    # download data from url
-    for idx in range(max_requests):
-        # print download attempt message
-        if verbose:
-            print(f" download attempt: {idx + 1}")
-
-        # connection established - download the file
-        download_size = 0
-        try:
-            with open(file_name, "wb") as f:
-                for chunk in req.iter_content(chunk_size=chunk_size):
-                    if chunk:
-                        # increment the counter
-                        download_size += len(chunk)
-
-                        # write the chunk
-                        f.write(chunk)
-
-                        # write information to the screen
-                        if verbose:
-                            if file_size > 0:
-                                download_percent = float(
-                                    download_size
-                                ) / float(file_size)
-                                msg = (
-                                    "     downloaded "
-                                    + sbfmt.format(bfmt.format(download_size))
-                                    + " of "
-                                    + bfmt.format(int(file_size))
-                                    + " bytes"
-                                    + f" ({download_percent:10.4%})"
-                                )
-                            else:
-                                msg = (
-                                    "     downloaded "
-                                    + sbfmt.format(bfmt.format(download_size))
-                                    + " bytes"
-                                )
-                            print(msg)
-                        else:
-                            sys.stdout.write(".")
-                            sys.stdout.flush()
-
-                success = True
-        except:
-            # reestablish request
-            req = _request_get(
-                url,
-                verify=verify,
-                timeout=timeout,
-                max_requests=max_requests,
-                verbose=verbose,
-            )
-
-            # try to download the data again
-            continue
-
-        # terminate the download attempt loop
-        if success:
-            break
-
     # write the total download time
     toc = timeit.default_timer()
-    tsec = toc - tic
+    tsec = round(toc - tic, 2)
     if verbose:
         print(f"\ntotal download time: {tsec} seconds")
 
-    if success:
-        if file_size > 0:
-            if verbose:
-                print(f"download speed:      {file_size / (1e6 * tsec)} MB/s")
-    else:
-        msg = f"could not download...{url}"
-        raise ConnectionError(msg)
-
     # Unzip the file, and delete zip file if successful.
-    if "zip" in os.path.basename(file_name) or "exe" in os.path.basename(
-        file_name
-    ):
-        z = MFZipFile(file_name)
+    if "zip" in file_path.suffix or "exe" in file_path.suffix:
+        z = MFZipFile(file_path)
         try:
-            # write a message
-            if not verbose:
-                sys.stdout.write("\n")
-            print(f"uncompressing...'{file_name}'")
+            if verbose:
+                print(f"Uncompressing: {file_path}")
 
             # extract the files
-            z.extractall(pth)
+            z.extractall(str(path))
         except:
-            p = "Could not unzip the file.  Stopping."
+            p = "Could not unzip the file. Stopping."
             raise Exception(p)
         z.close()
-    elif "tar" in os.path.basename(file_name):
-        ar = tarfile.open(file_name)
-        ar.extractall(path=pth)
+    elif "tar" in file_path.suffix:
+        ar = tarfile.open(file_path)
+        ar.extractall(path=str(path))
         ar.close()
 
     # delete the zipfile
     if delete_zip:
         if verbose:
-            print("Deleting the zipfile...")
-        os.remove(file_name)
+            print(f"Deleting zipfile {file_path}")
+        file_path.unlink()
 
     if verbose:
-        print("Done downloading and extracting...\n")
+        print(f"Done downloading and extracting {file_path.name} to {path}")
 
     return success
 
@@ -963,5 +811,3 @@ def getmfnightly(
             if verbose:
                 print("Removing folder " + download_dir)
             shutil.rmtree(download_dir)
-
-    return

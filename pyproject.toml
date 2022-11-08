@@ -16,8 +16,11 @@ verbose = true
 
 [tool.isort]
 profile = "black"
-src_paths = ["modflow_devtools", "autotest", ]
+src_paths = ["src/modflow_devtools"]
 line_length = 79
 
 [tool.setuptools_scm]
 fallback_version = "999"
+
+[tool.pytest.ini_options]
+addopts = ["--import-mode=importlib"]

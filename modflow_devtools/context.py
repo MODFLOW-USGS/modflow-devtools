@@ -1,12 +1,8 @@
-import json
 import os
 import subprocess
 import sys
 from enum import Enum
-
-import flopy
-
-from .utilities.mftest_exe import MFTestExe
+from shutil import which
 
 
 class MFTargetType(Enum):
@@ -128,9 +124,9 @@ class MFTestTargets:
             path = self._releasebin
 
         if self._use_path:
-            exe_exists = flopy.which(target)
+            exe_exists = which(target)
         else:
-            exe_exists = flopy.which(target, path=path)
+            exe_exists = which(target, path=path)
 
         if (
             exe_exists is None
@@ -226,12 +222,6 @@ class MFTestContext:
             releasebin=self._releasebin,
             builtbin=builtbin,
             use_path=use_path,
-        )
-
-        self._exe = MFTestExe(
-            releasebin=self._releasebin,
-            builtbin=builtbin,
-            targets=self._targets,
         )
 
         self._update_context()
