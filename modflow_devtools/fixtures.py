@@ -51,6 +51,7 @@ def module_tmpdir(tmpdir_factory, request) -> Path:
     keep = request.config.getoption("--keep")
     if keep:
         copytree(temp, Path(keep) / temp.name)
+        print(list((Path(keep) / temp.name).rglob("*")))
 
 
 @pytest.fixture(scope="session")
@@ -105,8 +106,43 @@ def pytest_addoption(parser):
         help="Run only smoke tests (should complete in <1 minute).",
     )
 
+    parser.addoption(
+        "-M",
+        "--meta",
+        action="store",
+        metavar="NAME",
+        help="Indicates a test should only be run by other tests (e.g., to test framework or fixtures).",
+    )
+
+    parser.addoption(
+        "--model",
+        action="append",
+        type=str,
+        help="Select a subset of models to run.",
+    )
+
+    parser.addoption(
+        "--package",
+        action="append",
+        type=str,
+        help="Select a subset of packages to run.",
+    )
+
+
+def pytest_configure(config):
+    config.addinivalue_line(
+        "markers",
+        "meta(name): run only by other tests",
+    )
+
 
 def pytest_runtest_setup(item):
+    # skip meta-tests unless specified
+    meta = item.config.getoption("--meta")
+    metagroups = [mark.args[0] for mark in item.iter_markers(name="meta")]
+    if metagroups and meta not in metagroups:
+        pytest.skip()
+
     # smoke tests are \ {slow U example U regression}
     smoke = item.config.getoption("--smoke")
     slow = list(item.iter_markers(name="slow"))

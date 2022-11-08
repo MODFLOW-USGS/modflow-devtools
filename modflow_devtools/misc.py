@@ -136,6 +136,11 @@ def get_mf6_ftypes(namefile_path: PathLike, ftypekeys: List[str]) -> List[str]:
     return ftypes
 
 
+def has_packages(namefile_path: PathLike, packages: List[str]) -> bool:
+    ftypes = [item.upper() for item in get_mf6_ftypes(namefile_path, packages)]
+    return len(ftypes) > 0
+
+
 def get_models(
     path: PathLike,
     prefix: str = None,
@@ -168,10 +173,6 @@ def get_models(
     ]
 
     # filter by package (optional)
-    def has_packages(nfp, pkgs):
-        ftypes = [item.upper() for item in get_mf6_ftypes(nfp, pkgs)]
-        return len(ftypes) > 0
-
     if packages:
         namfile_paths = [
             p
