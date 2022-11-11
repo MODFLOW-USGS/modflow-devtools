@@ -101,20 +101,17 @@ def get_current_branch() -> str:
     raise ValueError(f"Could not determine current branch: {stderr}")
 
 
-def get_mf6_ftypes(namefile_path: PathLike, ftypekeys: List[str]) -> List[str]:
+def get_packages(namefile_path: PathLike) -> List[str]:
     """
-    Return a list of FTYPES that are in the name file and in ftypekeys.
+    Return a list of packages used by the model defined in the given namefile.
 
     Parameters
     ----------
-    namefile_path : str
-        path to a MODFLOW 6 name file
-    ftypekeys : list
-        list of desired FTYPEs
+    namefile_path : PathLike
+        path to MODFLOW 6 name file
     Returns
     -------
-    ftypes : list
-        list of FTYPES that match ftypekeys in namefile
+        list of package types
     """
     with open(namefile_path, "r") as f:
         lines = f.readlines()
@@ -126,22 +123,29 @@ def get_mf6_ftypes(namefile_path: PathLike, ftypekeys: List[str]) -> List[str]:
         if len(ll) < 2:
             continue
 
-        if ll[0] in ["#", "!"]:
+        l = ll[0].lower()
+        if any(l.startswith(c) for c in ["#", "!", "data", "list"]) or l in [
+            "begin",
+            "end",
+            "memory_print_option",
+        ]:
             continue
 
-        for key in ftypekeys:
-            if key.lower() in ll[0].lower():
-                ftypes.append(ll[0])
+        # strip "6" from package name
+        l = l.replace("6", "")
 
-    return ftypes
+        ftypes.append(l.lower())
 
-
-def has_packages(namefile_path: PathLike, packages: List[str]) -> bool:
-    ftypes = [item.upper() for item in get_mf6_ftypes(namefile_path, packages)]
-    return len(ftypes) > 0
+    return list(set(ftypes))
 
 
-def get_models(
+def has_package(namefile_path: PathLike, package: str) -> bool:
+    """Determines whether the model with the given namefile contains the selected package"""
+    packages = get_packages(namefile_path)
+    return package.lower in packages
+
+
+def get_model_paths(
     path: PathLike,
     prefix: str = None,
     namefile: str = "mfsim.nam",
@@ -150,7 +154,12 @@ def get_models(
     packages=None,
 ) -> List[Path]:
     """
-    Find models in the given filesystem location.
+    Find models recursively in the given location.
+    Models can be filtered or excluded by pattern,
+    filtered by packages used or naming convention
+    for namefiles, or by parent folder name prefix.
+    The path to the model folder (i.e., the folder
+    containing the model's namefile) is returned.
     """
 
     # if path doesn't exist, return empty list
@@ -161,7 +170,7 @@ def get_models(
     namfile_paths = [
         p
         for p in Path(path).rglob(
-            f"{prefix}*/{namefile}" if prefix else namefile
+            f"{prefix}*/**/{namefile}" if prefix else namefile
         )
     ]
 
@@ -172,18 +181,22 @@ def get_models(
         if (not excluded or not any(e in str(p) for e in excluded))
     ]
 
-    # filter by package (optional)
+    # filter by package
     if packages:
-        namfile_paths = [
-            p
-            for p in namfile_paths
-            if (has_packages(p, packages) if packages else True)
-        ]
+        filtered = []
+        for nfp in namfile_paths:
+            nf_pkgs = get_packages(nfp)
+            shared = set(nf_pkgs).intersection(
+                set([p.lower() for p in packages])
+            )
+            if any(shared):
+                filtered.append(nfp)
+        namfile_paths = filtered
 
-    # get model dir paths
+    # get model folder paths
     model_paths = [p.parent for p in namfile_paths]
 
-    # filter by model name (optional)
+    # filter by model name
     if selected:
         model_paths = [
             model
@@ -191,18 +204,13 @@ def get_models(
             if any(s in model.name for s in selected)
         ]
 
-    # exclude dev examples on master or release branches
-    branch = get_current_branch()
-    if "master" in branch.lower() or "release" in branch.lower():
-        model_paths = [
-            model for model in model_paths if "_dev" not in model.name.lower()
-        ]
-
-    return model_paths
+    return sorted(model_paths)
 
 
 def is_connected(hostname):
-    """See https://stackoverflow.com/a/20913928/ to test hostname."""
+    """
+    Tests whether the given URL is accessible.
+    See https://stackoverflow.com/a/20913928/."""
     try:
         host = socket.gethostbyname(hostname)
         s = socket.create_connection((host, 80), 2)
@@ -214,6 +222,8 @@ def is_connected(hostname):
 
 
 def is_in_ci():
+    """Determines whether the current process is running GitHub Actions CI"""
+
     # if running in GitHub Actions CI, "CI" variable always set to true
     # https://docs.github.com/en/actions/learn-github-actions/environment-variables#default-environment-variables
     return bool(environ.get("CI", None))
@@ -222,7 +232,7 @@ def is_in_ci():
 def is_github_rate_limited() -> Optional[bool]:
     """
     Determines if a GitHub API rate limit is applied to the current IP.
-    Note that running this function will consume an API request!
+    Running this function will consume an API request!
 
     Returns
     -------
