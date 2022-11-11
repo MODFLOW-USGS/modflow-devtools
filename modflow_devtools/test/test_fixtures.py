@@ -254,9 +254,11 @@ def test_test_model_mf6(test_model_mf6):
 
 def test_test_model_mf5to6(test_model_mf5to6):
     assert isinstance(test_model_mf5to6, Path)
-    assert len(list(test_model_mf5to6.glob("*.nam"))) >= 1
+    assert any(list(test_model_mf5to6.glob("*.nam")))
 
 
 def test_large_test_model(large_test_model):
     assert isinstance(large_test_model, Path)
-    assert (large_test_model / "mfsim.nam").is_file()
+    assert (large_test_model / "mfsim.nam").is_file() or any(
+        list(large_test_model.glob("*.nam"))
+    )

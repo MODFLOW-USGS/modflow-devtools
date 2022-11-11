@@ -6,7 +6,7 @@ from shutil import copytree
 from typing import Dict, List, Optional
 
 import pytest
-from modflow_devtools.misc import get_mf6_ftypes, get_models
+from modflow_devtools.misc import get_model_paths, get_packages
 
 # temporary directory fixtures
 
@@ -174,7 +174,7 @@ def pytest_generate_tests(metafunc):
     key = "test_model_mf6"
     if key in metafunc.fixturenames:
         models = (
-            get_models(
+            get_model_paths(
                 Path(repos_path) / "modflow6-testmodels" / "mf6",
                 prefix="test",
                 excluded=["test205_gwtbuy-henrytidal"],
@@ -189,7 +189,7 @@ def pytest_generate_tests(metafunc):
     key = "test_model_mf5to6"
     if key in metafunc.fixturenames:
         models = (
-            get_models(
+            get_model_paths(
                 Path(repos_path) / "modflow6-testmodels" / "mf5to6",
                 prefix="test",
                 namefile="*.nam",
@@ -205,7 +205,7 @@ def pytest_generate_tests(metafunc):
     key = "large_test_model"
     if key in metafunc.fixturenames:
         models = (
-            get_models(
+            get_model_paths(
                 Path(repos_path) / "modflow6-largetestmodels",
                 prefix="test",
                 namefile="*.nam",
@@ -292,7 +292,7 @@ def pytest_generate_tests(metafunc):
                 for name, namefiles in examples.items():
                     ftypes = []
                     for namefile in namefiles:
-                        ftype = get_mf6_ftypes(namefile, packages_selected)
+                        ftype = get_packages(namefile, packages_selected)
                         if ftype not in ftypes:
                             ftypes += ftype
                     if len(ftypes) > 0:
