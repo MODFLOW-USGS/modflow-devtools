@@ -1,6 +1,7 @@
 import os
 from os import environ
 from pathlib import Path
+from typing import List
 
 import pytest
 from modflow_devtools.misc import get_model_paths, get_packages, set_dir
@@ -32,11 +33,22 @@ def test_has_packages():
 
 @pytest.mark.skipif(not any(_example_paths), reason="examples not found")
 def test_get_model_paths():
-    paths = get_model_paths(_examples_path)
-    assert len(paths) == 127
+    def get_expected(path, pattern="mfsim.nam") -> List[Path]:
+        folders = []
+        for root, dirs, files in os.walk(path):
+            for d in dirs:
+                p = Path(root) / d
+                if any(p.glob(pattern)):
+                    folders.append(p)
+        return sorted(folders)
 
+    expected_paths = get_expected(_examples_path)
+    paths = get_model_paths(_examples_path)
+    assert set(expected_paths) == set(paths)
+
+    expected_paths = get_expected(_examples_path, "*.nam")
     paths = get_model_paths(_examples_path, namefile="*.nam")
-    assert len(paths) == 339
+    assert set(expected_paths) == set(paths)
 
 
 def test_get_model_paths_exclude_patterns():
