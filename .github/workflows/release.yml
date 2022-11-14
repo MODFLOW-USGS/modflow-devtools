@@ -1,11 +1,11 @@
-name: Publish release and package
+name: Release
 on:
   push:
-    branches:
-      - master
+    tags:
+      - v*
 jobs:
   release:
-    name: Release
+    name: Release & publish
     runs-on: ubuntu-latest
     steps:
 
@@ -17,16 +17,13 @@ jobs:
         with:
           python-version: 3.7
 
-      - name: Upgrade pip and install build and twine
+      - name: Install Python packages
         run: |
           pip install --upgrade pip
           pip install build twine
+          pip install .
 
-      - name: Base modflow_devtools installation
-        run: |
-          pip --verbose install .
-
-      - name: Print package version
+      - name: Print version
         run: |
           python -c "import modflow_devtools; print(modflow_devtools.__version__)"
 
@@ -37,16 +34,17 @@ jobs:
       - name: Check distribution
         run: |
           twine check --strict dist/*
-      
+
+      - name: Publish package
+        if: ${{ env.TWINE_USERNAME != '' }}
+        env:
+          TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
+          TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+        run: |
+          twine upload dist/*
+
       - name: Create release
-        uses: "marvinpinto/action-automatic-releases@latest"
+        uses: marvinpinto/action-automatic-releases@latest
         with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
-      
-      # todo: set repo secrets and enable
-      # - name: Publish package
-      #   env:
-      #     TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
-      #     TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-      #   run: |
-      #     twine upload dist/*
+          prerelease: true
+          repo_token: ${{ github.token }}
