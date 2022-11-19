@@ -246,7 +246,7 @@ def download_and_unzip(
         github_token = os.environ.get("GITHUB_TOKEN", None)
         if github_token:
             opener = urllib.request.build_opener()
-            opener.addheaders = [("Bearer", github_token)]
+            opener.addheaders = [("Authorization", f"Bearer {github_token}")]
             urllib.request.install_opener(opener)
 
     _, headers = urllib.request.urlretrieve(
