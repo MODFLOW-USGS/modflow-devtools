@@ -47,6 +47,17 @@ class add_sys_path:
             pass
 
 
+def get_ostag() -> str:
+    """Determine operating system tag from sys.platform."""
+    if sys.platform.startswith("linux"):
+        return "linux"
+    elif sys.platform.startswith("win"):
+        return "win" + ("64" if sys.maxsize > 2**32 else "32")
+    elif sys.platform.startswith("darwin"):
+        return "mac"
+    raise ValueError(f"platform {sys.platform!r} not supported")
+
+
 def get_suffixes(ostag) -> Tuple[str, str]:
     """Returns executable and library suffixes for the given OS (as returned by sys.platform)"""
 
@@ -63,7 +74,11 @@ def get_suffixes(ostag) -> Tuple[str, str]:
 
 
 def run_cmd(*args, verbose=False, **kwargs):
-    """Run any command, return tuple (stdout, stderr, returncode)."""
+    """
+    Run any command, return tuple (stdout, stderr, returncode).
+
+    Originally written by Mike Toews (mwtoews@gmail.com) for FloPy.
+    """
     args = [str(g) for g in args]
     if verbose:
         print("running: " + " ".join(args))
@@ -257,12 +272,22 @@ _has_pkg_cache = {}
 
 
 def has_exe(exe):
+    """
+    Determines if the given executable is available on the path.
+
+    Originally written by Mike Toews (mwtoews@gmail.com) for FloPy.
+    """
     if exe not in _has_exe_cache:
         _has_exe_cache[exe] = bool(which(exe))
     return _has_exe_cache[exe]
 
 
 def has_pkg(pkg):
+    """
+    Determines if the given Python package is installed.
+
+    Originally written by Mike Toews (mwtoews@gmail.com) for FloPy.
+    """
     if pkg not in _has_pkg_cache:
 
         # for some dependencies, package name and import name are different
