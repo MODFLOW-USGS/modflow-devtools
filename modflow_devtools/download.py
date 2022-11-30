@@ -177,7 +177,7 @@ def list_artifacts(
                     ) from err
                 elif err.code in (404, 503) and tries < _max_http_tries:
                     # GitHub sometimes returns this error for valid URLs, so retry
-                    print(f"URL request {tries} did not work ({err})")
+                    print(f"URL request try {tries} did not work ({err})")
                     continue
                 raise RuntimeError(f"cannot retrieve data from {url}") from err
 
@@ -211,11 +211,23 @@ def download_artifact(
             request.add_header("Authorization", f"Bearer {github_token}")
 
     zip_path = Path(path).expanduser().absolute() / f"{str(uuid4())}.zip"
-    with urllib.request.urlopen(request) as url_file, open(
-        zip_path, "ab"
-    ) as out_file:
-        content = url_file.read()
-        out_file.write(content)
+
+    tries = 0
+    while True:
+        tries += 1
+        try:
+            with urllib.request.urlopen(request) as url_file, open(
+                zip_path, "wb"
+            ) as out_file:
+                content = url_file.read()
+                out_file.write(content)
+                break
+        except urllib.error.HTTPError as err:
+            if tries < _max_http_tries:
+                print(f"URL request try {tries} did not work ({err})")
+                continue
+            else:
+                raise RuntimeError(f"cannot retrieve data from {url}") from err
 
     if not quiet:
         print(f"Uncompressing: {zip_path}")
@@ -264,15 +276,7 @@ def download_and_unzip(
     if verbose:
         print(f"Downloading {url}")
 
-    # download the file
-    success = False
     tic = timeit.default_timer()
-
-    def report(chunk, size, total):
-        complete = chunk * size
-        percent = round(complete / total * 100)
-        if verbose:
-            print(f"{percent}% complete ({complete} bytes of {total})")
 
     # download zip file
     file_path = path / url.split("/")[-1]
@@ -282,30 +286,38 @@ def download_and_unzip(
         if github_token:
             request.add_header("Authorization", f"Bearer {github_token}")
 
-    with urllib.request.urlopen(request) as url_file, open(
-        file_path, "ab"
-    ) as out_file:
-        content = url_file.read()
-        out_file.write(content)
+    tries = 0
+    while True:
+        tries += 1
+        try:
+            with urllib.request.urlopen(request) as url_file, open(
+                file_path, "wb"
+            ) as out_file:
+                content = url_file.read()
+                out_file.write(content)
 
-        # _, headers = urllib.request.urlretrieve(
-        #     url, filename=str(file_path), reporthook=report
-        # )
+                # if verbose, print content length (if available)
+                tag = "Content-length"
+                if verbose and tag in url_file.headers:
+                    file_size = url_file.headers[tag]
+                    len_file_size = len(file_size)
+                    file_size = int(file_size)
 
-        # get content length, if available
-        tag = "Content-length"
-        if tag in url_file.headers:
-            file_size = url_file.headers[tag]
-            len_file_size = len(file_size)
-            file_size = int(file_size)
+                    bfmt = "{:" + f"{len_file_size}" + ",d}"
+                    sbfmt = (
+                        "{:>"
+                        + f"{len(bfmt.format(int(file_size)))}"
+                        + "s} bytes"
+                    )
+                    print(
+                        f"   file size: {sbfmt.format(bfmt.format(int(file_size)))}"
+                    )
 
-            bfmt = "{:" + f"{len_file_size}" + ",d}"
-            sbfmt = "{:>" + f"{len(bfmt.format(int(file_size)))}" + "s} bytes"
-            msg = f"   file size: {sbfmt.format(bfmt.format(int(file_size)))}"
-            if verbose:
-                print(msg)
-        else:
-            file_size = 0.0
+                break
+        except urllib.error.HTTPError as err:
+            if tries < _max_http_tries:
+                print(f"URL request try {tries} did not work ({err})")
+                continue
 
     # write the total download time
     toc = timeit.default_timer()
@@ -345,5 +357,3 @@ def download_and_unzip(
 
     if verbose:
         print(f"Done downloading and extracting {file_path.name} to {path}")
-
-    return success
