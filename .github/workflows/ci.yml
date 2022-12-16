@@ -155,6 +155,7 @@ jobs:
           key: modflow6-examples-${{ hashFiles('modflow6-examples/data/**') }}
       
       - name: Install extra Python packages
+        # can't build examples on Python 3.7, requires Python 3.8
         if: steps.cache-examples.outputs.cache-hit != 'true' && matrix.python != '3.7'
         working-directory: modflow6-examples/etc
         run: |
@@ -162,6 +163,7 @@ jobs:
           pip install -r requirements.usgs.txt
 
       - name: Build modflow6 example models
+        # can't build examples on Python 3.7, requires Python 3.8
         if: steps.cache-examples.outputs.cache-hit != 'true' && matrix.python != '3.7'
         working-directory: modflow6-examples/etc
         run: python ci_build_files.py
