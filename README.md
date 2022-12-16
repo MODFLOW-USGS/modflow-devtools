@@ -1,7 +1,11 @@
 # MODFLOW developer tools
 
-[![Project Status: WIP – Initial development is in progress, but there has not yet been a stable, usable release suitable for the public.](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip)
+### Version 0.0.6 &mdash; release candidate
+[![GitHub tag](https://img.shields.io/github/tag/MODFLOW-USGS/modflow-devtools.svg)](https://github.com/MODFLOW-USGS/modflow-devtools/tags/latest)
 [![CI](https://github.com/MODFLOW-USGS/modflow-devtools/actions/workflows/ci.yml/badge.svg)](https://github.com/MODFLOW-USGS/modflow-devtools/actions/workflows/ci.yml)
+[![PyPI Version](https://img.shields.io/pypi/v/modflow-devtools.png)](https://pypi.python.org/pypi/modflow-devtools)
+[![PyPI Status](https://img.shields.io/pypi/status/modflow-devtools.png)](https://pypi.python.org/pypi/modflow-devtools)
+[![PyPI Versions](https://img.shields.io/pypi/pyversions/modflow-devtools.png)](https://pypi.python.org/pypi/modflow-devtools)
 
 Python tools for MODFLOW development and testing.
 
@@ -34,11 +38,17 @@ This package requires Python3.7+. Its only dependencies are `numpy` and `pytest`
 
 ## Installation
 
-This package is not yet published to PyPI or a Conda channel. To install it please see the [developer documentation](DEVELOPER.md).
+The package is available on PyPI and can be installed with pip:
+
+```shell
+pip install modflow-devtools
+```
+
+To install from source and set up a development environment please see the [developer documentation](DEVELOPER.md).
 
 ## Included
 
-This package contains shared tools for developing and testing MODFLOW 6 and FloPy, including standalone utilities as well as `pytest` fixtures, CLI options, and test parametrizations:
+This package contains shared tools for developing and testing MODFLOW 6 and FloPy, including standalone utilities as well as `pytest` fixtures, CLI options, and test cases:
 
 - a `ZipFile` subclass preserving file attributes
 - variably-scoped `pytest` temporary directory fixtures

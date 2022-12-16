@@ -51,21 +51,25 @@ def test_get_model_paths():
     assert set(expected_paths) == set(paths)
 
 
+@pytest.mark.skipif(not any(_example_paths), reason="examples not found")
 def test_get_model_paths_exclude_patterns():
     paths = get_model_paths(_examples_path, excluded=["gwt"])
     assert len(paths) == 63
 
 
+@pytest.mark.skipif(not any(_example_paths), reason="examples not found")
 def test_get_model_paths_select_prefix():
     paths = get_model_paths(_examples_path, prefix="ex2")
     assert not any(paths)
 
 
+@pytest.mark.skipif(not any(_example_paths), reason="examples not found")
 def test_get_model_paths_select_patterns():
     paths = get_model_paths(_examples_path, selected=["gwf"])
     assert len(paths) == 70
 
 
+@pytest.mark.skipif(not any(_example_paths), reason="examples not found")
 def test_get_model_paths_select_packages():
     paths = get_model_paths(_examples_path, namefile="*.nam", packages=["wel"])
     assert len(paths) == 64

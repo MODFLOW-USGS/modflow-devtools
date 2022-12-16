@@ -62,3 +62,23 @@ Tests should follow a few conventions for ease of use and maintenance.
 #### Temporary directories
 
 Tests which must write to disk should use `pytest`'s built-in `temp_dir` fixture or one of this package's own scoped temporary directory fixtures.
+
+## Releasing
+
+The `modflow-devtools` release procedure is automated with GitHub Actions in [`.github/workflows/release.yml`](.github/workflows/release.yml). Making a release involves the following steps:
+
+1. Release from `master` branch
+2. Reinitialize the `develop` branch
+3. Publish the package to PyPI
+
+To begin an automated release, create a release branch from `develop`. The release branch name should be the version number of with a `v`a prefix (e.g., `v0.0.6`). Pushing the release branch to the `MODFLOW-USGS/modflow-devtools` repository will trigger the release workflow, which begins with the following steps:
+
+- update version strings to match the version number in the release branch name
+- generate a changelog since the last release and update `HISTORY.md`
+- open a PR from the release branch to `master`
+
+Merging the pull request into `master` triggers another job to draft a release.
+
+**Note:** the PR should be merged, not squashed. Squashing removes the commit history from the `master` branch and causes `develop` and `master` to diverge, which can cause future PRs updating `master` to replay commits from previous releases.
+
+Publishing the release triggers jobs to publish the `modflow-devtools` package to PyPI and open a PR updating `develop` from `master`. This PR also updates version strings, incrementing the patch version number.
