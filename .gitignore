@@ -127,3 +127,13 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# pycharme
+.idea/
+
+# downloaded exe
+modflow_devtools/bin/
+modflow_devtools/utilities/temp/
+
+# git-cliff-action likes to add app/ folder to the project root
+app
