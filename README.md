@@ -1,8 +1,8 @@
 # MODFLOW developer tools
 
-### Version 0.0.6 &mdash; release candidate
-[![GitHub tag](https://img.shields.io/github/tag/MODFLOW-USGS/modflow-devtools.svg)](https://github.com/MODFLOW-USGS/modflow-devtools/tags/latest)
+### Version 0.0.7 &mdash; release candidate
 [![CI](https://github.com/MODFLOW-USGS/modflow-devtools/actions/workflows/ci.yml/badge.svg)](https://github.com/MODFLOW-USGS/modflow-devtools/actions/workflows/ci.yml)
+[![GitHub tag](https://img.shields.io/github/tag/MODFLOW-USGS/modflow-devtools.svg)](https://github.com/MODFLOW-USGS/modflow-devtools/tags/latest)
 [![PyPI Version](https://img.shields.io/pypi/v/modflow-devtools.png)](https://pypi.python.org/pypi/modflow-devtools)
 [![PyPI Status](https://img.shields.io/pypi/status/modflow-devtools.png)](https://pypi.python.org/pypi/modflow-devtools)
 [![PyPI Versions](https://img.shields.io/pypi/pyversions/modflow-devtools.png)](https://pypi.python.org/pypi/modflow-devtools)
@@ -34,7 +34,7 @@ Python tools for MODFLOW development and testing.
 
 ## Requirements
 
-This package requires Python3.7+. Its only dependencies are `numpy` and `pytest`.
+This package requires Python3.8+. Its only dependencies are `numpy` and `pytest`.
 
 ## Installation
 
