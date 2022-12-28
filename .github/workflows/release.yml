@@ -101,6 +101,7 @@ jobs:
           # remove this release's changelog so we don't commit it
           # the changes have already been prepended to HISTORY.md
           rm ${{ steps.update-changelog.outputs.changelog }}
+          rm -f CHANGELOG.md
           
           # commit and push changes
           git config core.sharedRepository true
