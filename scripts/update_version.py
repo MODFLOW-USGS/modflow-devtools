@@ -13,6 +13,7 @@ _project_root_path = Path(__file__).parent.parent
 _version_txt_path = _project_root_path / "version.txt"
 _package_init_path = _project_root_path / "modflow_devtools" / "__init__.py"
 _readme_path = _project_root_path / "README.md"
+_docs_config_path = _project_root_path / "docs" / "conf.py"
 
 
 class Version(NamedTuple):
@@ -107,6 +108,18 @@ def update_readme_markdown(
     print(f"Updated {_readme_path} to version {version}")
 
 
+def update_docs_config(
+    release_type: ReleaseType, timestamp: datetime, version: Version
+):
+    lines = _docs_config_path.read_text().rstrip().split("\n")
+    with open(_docs_config_path, "w") as f:
+        for line in lines:
+            line = f"release = {version}" if "release = " in line else line
+            f.write(f"{line}\n")
+
+    print(f"Updated {_docs_config_path} to version {version}")
+
+
 def update_version(
     release_type: ReleaseType,
     timestamp: datetime = datetime.now(),
@@ -126,6 +139,7 @@ def update_version(
             update_version_txt(release_type, timestamp, version)
             update_init_py(release_type, timestamp, version)
             update_readme_markdown(release_type, timestamp, version)
+            update_docs_config(release_type, timestamp, version)
     finally:
         try:
             lock_path.unlink()
