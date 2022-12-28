@@ -17,7 +17,6 @@ Python tools for MODFLOW development and testing.
 - [Installation](#installation)
 - [Use cases](#use-cases)
 - [Documentation](#documentation)
-- [Miscellaneous](#miscellaneous)
 - [MODFLOW Resources](#modflow-resources)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
