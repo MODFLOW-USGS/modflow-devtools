@@ -28,7 +28,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.7
+          python-version: 3.8
           cache: 'pip'
           cache-dependency-path: setup.cfg
 
@@ -37,7 +37,7 @@ jobs:
           pip install --upgrade pip
           pip install build twine
           pip install .
-          pip install ".[lint, test, optional]"
+          pip install ".[lint, test]"
 
       - name: Update version
         id: version
@@ -173,7 +173,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.7
+          python-version: 3.8
 
       - name: Install Python dependencies
         run: |
@@ -211,7 +211,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.7
+          python-version: 3.8
           cache: 'pip'
           cache-dependency-path: setup.cfg
 
@@ -219,7 +219,7 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install .
-          pip install ".[lint, test, optional]"
+          pip install ".[lint, test]"
 
       - name: Get release tag
         uses: oprypin/find-latest-tag@v1

@@ -24,7 +24,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.7
+          python-version: 3.8
           cache: 'pip'
           cache-dependency-path: setup.cfg
 
@@ -56,28 +56,22 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.7
+          python-version: 3.8
 
-      - name: Upgrade pip and install build and twine
+      - name: Install Python packages
         run: |
           pip install --upgrade pip
           pip install build twine
-
-      - name: Base modflow_devtools installation
-        run: |
           pip --verbose install .
 
       - name: Print package version
-        run: |
-          python -c "import modflow_devtools; print(modflow_devtools.__version__)"
+        run: python -c "import modflow_devtools; print(modflow_devtools.__version__)"
 
       - name: Build package
-        run: |
-          python -m build
+        run: python -m build
       
       - name: Check distribution
-        run: |
-          twine check --strict dist/*
+        run: twine check --strict dist/*
 
   test:
     name: Test
@@ -89,7 +83,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ ubuntu-22.04, macos-12, windows-2022 ]
-        python: [ 3.7, 3.8, 3.9, "3.10" ]
+        python: [ 3.8, 3.9, "3.10", "3.11" ]
     env:
       GCC_V: 11
     steps:
@@ -155,16 +149,14 @@ jobs:
           key: modflow6-examples-${{ hashFiles('modflow6-examples/data/**') }}
       
       - name: Install extra Python packages
-        # can't build examples on Python 3.7, requires Python 3.8
-        if: steps.cache-examples.outputs.cache-hit != 'true' && matrix.python != '3.7'
+        if: steps.cache-examples.outputs.cache-hit != 'true'
         working-directory: modflow6-examples/etc
         run: |
           pip install -r requirements.pip.txt
           pip install -r requirements.usgs.txt
 
       - name: Build modflow6 example models
-        # can't build examples on Python 3.7, requires Python 3.8
-        if: steps.cache-examples.outputs.cache-hit != 'true' && matrix.python != '3.7'
+        if: steps.cache-examples.outputs.cache-hit != 'true'
         working-directory: modflow6-examples/etc
         run: python ci_build_files.py
 
