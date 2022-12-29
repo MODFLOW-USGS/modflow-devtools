@@ -160,7 +160,66 @@ def has_package(namefile_path: PathLike, package: str) -> bool:
     return package.lower in packages
 
 
-def get_model_paths(
+def get_namefile_paths(
+    path: PathLike,
+    prefix: str = None,
+    namefile: str = "mfsim.nam",
+    excluded=None,
+    selected=None,
+    packages=None,
+):
+    """
+    Find namefiles recursively in the given location.
+    Namefiles can be filtered or excluded by pattern,
+    by parent directory name prefix or pattern, or by
+    packages used.
+    """
+
+    # if path doesn't exist, return empty list
+    if not Path(path).is_dir():
+        return []
+
+    # find namefiles
+    paths = [
+        p
+        for p in Path(path).rglob(
+            f"{prefix}*/**/{namefile}" if prefix else namefile
+        )
+    ]
+
+    # remove excluded
+    paths = [
+        p
+        for p in paths
+        if (not excluded or not any(e in str(p) for e in excluded))
+    ]
+
+    # filter by package
+    if packages:
+        filtered = []
+        for nfp in paths:
+            nf_pkgs = get_packages(nfp)
+            shared = set(nf_pkgs).intersection(
+                set([p.lower() for p in packages])
+            )
+            if any(shared):
+                filtered.append(nfp)
+        paths = filtered
+
+    # filter by model name
+    if selected:
+        paths = [
+            namfile_path
+            for (namfile_path, model_path) in zip(
+                paths, [p.parent for p in paths]
+            )
+            if any(s in model_path.name for s in selected)
+        ]
+
+    return sorted(paths)
+
+
+def get_model_dir_paths(
     path: PathLike,
     prefix: str = None,
     namefile: str = "mfsim.nam",
@@ -169,57 +228,19 @@ def get_model_paths(
     packages=None,
 ) -> List[Path]:
     """
-    Find models recursively in the given location.
-    Models can be filtered or excluded by pattern,
-    filtered by packages used or naming convention
-    for namefiles, or by parent folder name prefix.
-    The path to the model folder (i.e., the folder
-    containing the model's namefile) is returned.
+    Find model directories recursively in the given location.
+    A model directory is any directory containing one or more
+    namefiles. Model directories can be filtered or excluded,
+    by prefix, pattern, namefile name, or packages used.
     """
 
-    # if path doesn't exist, return empty list
-    if not Path(path).is_dir():
-        return []
-
-    # find namfiles
-    namfile_paths = [
-        p
-        for p in Path(path).rglob(
-            f"{prefix}*/**/{namefile}" if prefix else namefile
-        )
-    ]
-
-    # remove excluded
-    namfile_paths = [
-        p
-        for p in namfile_paths
-        if (not excluded or not any(e in str(p) for e in excluded))
-    ]
-
-    # filter by package
-    if packages:
-        filtered = []
-        for nfp in namfile_paths:
-            nf_pkgs = get_packages(nfp)
-            shared = set(nf_pkgs).intersection(
-                set([p.lower() for p in packages])
-            )
-            if any(shared):
-                filtered.append(nfp)
-        namfile_paths = filtered
-
-    # get model folder paths
-    model_paths = [p.parent for p in namfile_paths]
-
-    # filter by model name
-    if selected:
-        model_paths = [
-            model
-            for model in model_paths
-            if any(s in model.name for s in selected)
-        ]
-
-    return sorted(model_paths)
+    namefile_paths = get_namefile_paths(
+        path, prefix, namefile, excluded, selected, packages
+    )
+    model_paths = sorted(
+        list(set([p.parent for p in namefile_paths if p.parent.name]))
+    )
+    return model_paths
 
 
 def is_connected(hostname):

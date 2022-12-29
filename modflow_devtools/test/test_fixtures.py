@@ -249,16 +249,18 @@ def test_example_scenario(example_scenario):
 
 def test_test_model_mf6(test_model_mf6):
     assert isinstance(test_model_mf6, Path)
-    assert (test_model_mf6 / "mfsim.nam").is_file()
+    assert test_model_mf6.is_file()
+    assert test_model_mf6.name == "mfsim.nam"
 
 
 def test_test_model_mf5to6(test_model_mf5to6):
     assert isinstance(test_model_mf5to6, Path)
-    assert any(list(test_model_mf5to6.glob("*.nam")))
+    assert test_model_mf5to6.is_file()
+    assert test_model_mf5to6.suffix == ".nam"
 
 
 def test_large_test_model(large_test_model):
+    print(large_test_model)
     assert isinstance(large_test_model, Path)
-    assert (large_test_model / "mfsim.nam").is_file() or any(
-        list(large_test_model.glob("*.nam"))
-    )
+    assert large_test_model.is_file()
+    assert large_test_model.suffix == ".nam"

@@ -2,7 +2,7 @@
 
 Several `pytest` fixtures are provided to help with testing.
 
-## Keepable temporary directory fixtures
+## Keepable temporary directories
 
 Tests often need to exercise code that reads from and/or writes to disk. The test harness may also need to create test data during setup and clean up the filesystem on teardown. Temporary directories are built into `pytest` via the [`tmp_path`](https://docs.pytest.org/en/latest/how-to/tmp_path.html#the-tmp-path-fixture) and `tmp_path_factory` fixtures.
 
@@ -40,9 +40,9 @@ pytest --keep <path>
 
 There is also a `--keep-failed <path>` option which preserves outputs only from failing test cases.
 
-## Model-loading fixtures
+## Loading example models
 
-Fixtures are provided to load models from the MODFLOW 6 example and test model repositories and feed them to test functions. Models can be loaded from:
+Fixtures are provided to find and enumerate models from the MODFLOW 6 example and test model repositories and feed them to test functions. Models can be loaded from:
 
 - [`MODFLOW-USGS/modflow6-examples`](https://github.com/MODFLOW-USGS/modflow6-examples)
 - [`MODFLOW-USGS/modflow6-testmodels`](https://github.com/MODFLOW-USGS/modflow6-testmodels)
@@ -61,14 +61,15 @@ To use these fixtures, the environment variable `REPOS_PATH` must point to the l
 
 ### Test models
 
-The `test_model_mf5to6`, `test_model_mf6` and `large_test_model` fixtures are each a `Path` to the directory containing the model's namefile. For instance, to load `mf5to6` models from the [`MODFLOW-USGS/modflow6-testmodels`](https://github.com/MODFLOW-USGS/modflow6-testmodels) repository:
+The `test_model_mf5to6`, `test_model_mf6` and `large_test_model` fixtures are each a `Path` to the model's namefile. For example:, to load `mf5to6` models from the  repository:
 
 ```python
-def test_mf5to6_model(testmodel_mf5to6):
-    assert testmodel_mf5to6.is_dir()
+def test_mf5to6_model(test_model_mf5to6):
+    assert test_model_mf5to6.is_file()
+    assert test_model_mf5to6.suffix == ".nam"
 ```
 
-This test function will be parametrized with all `mf5to6` models found in the `testmodels` repository (likewise for `mf6` models, and for large test models in their own repository).
+This test function will be parametrized with all `mf5to6` models found in the [`MODFLOW-USGS/modflow6-testmodels`](https://github.com/MODFLOW-USGS/modflow6-testmodels).
 
 ### Example scenarios
 
@@ -88,3 +89,12 @@ def test_example_scenario(tmp_path, example_scenario):
         # load and run model
         # ...
 ```
+
+### Utility functions
+
+Model-loading fixtures use a set of utility functions to find and enumerate models. These functions can be imported from `modflow_devtools.misc` for use in other contexts:
+
+- `get_model_dir_paths()`
+- `get_namefile_paths()`
+
+See this project's test suite for usage examples.
