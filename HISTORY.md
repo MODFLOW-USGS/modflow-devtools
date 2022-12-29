@@ -1,3 +1,10 @@
+### Version 0.0.8
+
+#### Bug fixes
+
+* [fix(release)](https://github.com/modflowpy/flopy/commit/b62547bd607f9a0d3a78be61d16976bf406151f5): Exclude intermediate changelog (#28). Committed by w-bonelli on 2022-12-28.
+* [fix(fixtures)](https://github.com/modflowpy/flopy/commit/a2d4b9210db532f12cf87ae5d26582d1ed446463): Fix example_scenario fixture loading (#30). Committed by w-bonelli on 2022-12-29.
+
 ### Version 0.0.7
 
 #### Refactoring

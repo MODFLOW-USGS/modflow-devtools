@@ -137,3 +137,7 @@ modflow_devtools/utilities/temp/
 
 # git-cliff-action likes to add app/ folder to the project root
 app
+
+# in case developer installs modflow executables in the project root
+bin
+
