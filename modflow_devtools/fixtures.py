@@ -6,7 +6,11 @@ from shutil import copytree
 from typing import Dict, List, Optional
 
 import pytest
-from modflow_devtools.misc import get_model_paths, get_packages
+from modflow_devtools.misc import (
+    get_model_dir_paths,
+    get_namefile_paths,
+    get_packages,
+)
 
 # temporary directory fixtures
 
@@ -174,7 +178,7 @@ def pytest_generate_tests(metafunc):
     key = "test_model_mf6"
     if key in metafunc.fixturenames:
         models = (
-            get_model_paths(
+            get_namefile_paths(
                 Path(repos_path) / "modflow6-testmodels" / "mf6",
                 prefix="test",
                 excluded=["test205_gwtbuy-henrytidal"],
@@ -184,12 +188,12 @@ def pytest_generate_tests(metafunc):
             if repos_path
             else []
         )
-        metafunc.parametrize(key, models, ids=[m.name for m in models])
+        metafunc.parametrize(key, models, ids=[str(m) for m in models])
 
     key = "test_model_mf5to6"
     if key in metafunc.fixturenames:
         models = (
-            get_model_paths(
+            get_namefile_paths(
                 Path(repos_path) / "modflow6-testmodels" / "mf5to6",
                 prefix="test",
                 namefile="*.nam",
@@ -200,15 +204,15 @@ def pytest_generate_tests(metafunc):
             if repos_path
             else []
         )
-        metafunc.parametrize(key, models, ids=[m.name for m in models])
+        metafunc.parametrize(key, models, ids=[str(m) for m in models])
 
     key = "large_test_model"
     if key in metafunc.fixturenames:
         models = (
-            get_model_paths(
+            get_namefile_paths(
                 Path(repos_path) / "modflow6-largetestmodels",
                 prefix="test",
-                namefile="*.nam",
+                namefile="mfsim.nam",
                 excluded=[],
                 selected=models_selected,
                 packages=packages_selected,
@@ -216,7 +220,7 @@ def pytest_generate_tests(metafunc):
             if repos_path
             else []
         )
-        metafunc.parametrize(key, models, ids=[m.name for m in models])
+        metafunc.parametrize(key, models, ids=[str(m) for m in models])
 
     key = "example_scenario"
     if key in metafunc.fixturenames:
