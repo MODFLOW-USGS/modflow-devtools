@@ -1,3 +1,9 @@
+### Version 0.1.0
+
+#### Refactoring
+
+* [refactor(fixtures)](https://github.com/modflowpy/flopy/commit/23593df7fb427d6de1d33f9aa408697d2536e473): Fix/refactor model-loading fixtures (#33). Committed by w-bonelli on 2022-12-29.
+
 ### Version 0.0.8
 
 #### Bug fixes
