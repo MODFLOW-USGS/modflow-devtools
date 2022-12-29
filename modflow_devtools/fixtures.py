@@ -221,27 +221,25 @@ def pytest_generate_tests(metafunc):
     key = "example_scenario"
     if key in metafunc.fixturenames:
 
-        def example_namfile_is_nested(namfile_path: PathLike) -> bool:
+        def is_nested(namfile_path: PathLike) -> bool:
             p = Path(namfile_path)
             if not p.is_file() or not p.name.endswith(".nam"):
                 raise ValueError(f"Expected namefile path, got {p}")
 
-            return p.parent.parent.name == "examples"
+            return p.parent.parent.name != "examples"
 
-        def example_name_from_namfile_path(path: PathLike) -> str:
+        def example_path_from_namfile_path(path: PathLike) -> Path:
             p = Path(path)
             if not p.is_file() or not p.name.endswith(".nam"):
                 raise ValueError(f"Expected namefile path, got {p}")
 
-            return (
-                p.parent.parent.name
-                if example_namfile_is_nested(p)
-                else p.parent.name
-            )
+            return p.parent.parent if is_nested(p) else p.parent
+
+        def example_name_from_namfile_path(path: PathLike) -> str:
+            return example_path_from_namfile_path(path).name
 
         def group_examples(namefile_paths) -> Dict[str, List[Path]]:
             d = OrderedDict()
-
             for name, paths in groupby(
                 namefile_paths, key=example_name_from_namfile_path
             ):
@@ -257,22 +255,12 @@ def pytest_generate_tests(metafunc):
             return d
 
         def get_examples():
-            examples_excluded = [
-                "ex-gwf-csub-p02c",
-                "ex-gwt-gwtgwt-mt3dms-p10",
-            ]
-
             # find and filter namfiles
             namfiles = [
                 p
                 for p in (
                     Path(repos_path) / "modflow6-examples" / "examples"
                 ).rglob("mfsim.nam")
-            ]
-            namfiles = [
-                p
-                for p in namfiles
-                if (not any(e in str(p) for e in examples_excluded))
             ]
 
             # group example scenarios with multiple models

@@ -55,7 +55,7 @@ These models can be requested like any other `pytest` fixture, by adding one of 
 - `large_test_model`
 - `example_scenario`
 
-To use these fixtures, the environment variable `REPOS_PATH` must point to the location of model repositories on the filesystem. Model repositories must live side-by-side in this location. If `REPOS_PATH` is not configured, test functions requesting these fixtures will be skipped.
+To use these fixtures, the environment variable `REPOS_PATH` must point to the location of model repositories on the filesystem. Model repositories must live side-by-side in this location, and repository directories are expected to be named identically to GitHub repositories. If `REPOS_PATH` is not configured, test functions requesting these fixtures will be skipped.
 
 **Note**: example models must be built by running the `ci_build_files.py` script in `modflow6-examples/etc` before running tests using the `example_scenario` fixture.
 
@@ -64,7 +64,7 @@ To use these fixtures, the environment variable `REPOS_PATH` must point to the l
 The `test_model_mf5to6`, `test_model_mf6` and `large_test_model` fixtures are each a `Path` to the directory containing the model's namefile. For instance, to load `mf5to6` models from the [`MODFLOW-USGS/modflow6-testmodels`](https://github.com/MODFLOW-USGS/modflow6-testmodels) repository:
 
 ```python
-def test_mf5to6_model(tmpdir, testmodel_mf5to6):
+def test_mf5to6_model(testmodel_mf5to6):
     assert testmodel_mf5to6.is_dir()
 ```
 
@@ -80,10 +80,10 @@ The [`MODFLOW-USGS/modflow6-examples`](https://github.com/MODFLOW-USGS/modflow6-
 Ordering as above permits models to be run directly in the order provided, with transport models potentially consuming the outputs of flow models. A straightforward pattern is to loop over models and run each in a subdirectory of the same top-level working directory.
 
 ```python
-def test_example_scenario(tmpdir, example_scenario):
+def test_example_scenario(tmp_path, example_scenario):
     name, namefiles = example_scenario
     for namefile in namefiles:
-        model_ws = tmpdir / namefile.parent.name
+        model_ws = tmp_path / namefile.parent.name
         model_ws.mkdir()
         # load and run model
         # ...
