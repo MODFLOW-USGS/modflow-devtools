@@ -5,7 +5,7 @@ from typing import List
 
 import pytest
 from modflow_devtools.misc import (
-    get_model_dir_paths,
+    get_model_paths,
     get_namefile_paths,
     get_packages,
     set_dir,
@@ -61,14 +61,14 @@ def get_expected_namefiles(path, pattern="mfsim.nam") -> List[Path]:
 @pytest.mark.skipif(
     not any(_example_paths), reason="modflow6-examples repo not found"
 )
-def test_get_model_dir_paths_examples():
+def test_get_model_paths_examples():
     expected_paths = get_expected_model_dirs(_examples_path)
-    paths = get_model_dir_paths(_examples_path)
+    paths = get_model_paths(_examples_path)
     assert paths == sorted(list(set(paths)))  # no duplicates
     assert set(expected_paths) == set(paths)
 
     expected_paths = get_expected_model_dirs(_examples_path, "*.nam")
-    paths = get_model_dir_paths(_examples_path, namefile="*.nam")
+    paths = get_model_paths(_examples_path, namefile="*.nam")
     assert paths == sorted(list(set(paths)))
     assert set(expected_paths) == set(paths)
 
@@ -76,14 +76,14 @@ def test_get_model_dir_paths_examples():
 @pytest.mark.skipif(
     not any(_largetestmodel_paths), reason="modflow6-largetestmodels not found"
 )
-def test_get_model_dir_paths_largetestmodels():
+def test_get_model_paths_largetestmodels():
     expected_paths = get_expected_model_dirs(_examples_path)
-    paths = get_model_dir_paths(_examples_path)
+    paths = get_model_paths(_examples_path)
     assert paths == sorted(list(set(paths)))
     assert set(expected_paths) == set(paths)
 
     expected_paths = get_expected_model_dirs(_examples_path)
-    paths = get_model_dir_paths(_examples_path)
+    paths = get_model_paths(_examples_path)
     assert paths == sorted(list(set(paths)))
     assert set(expected_paths) == set(paths)
 
@@ -95,9 +95,9 @@ def test_get_model_dir_paths_largetestmodels():
 @pytest.mark.parametrize(
     "models", [(_examples_path, 63), (_largetestmodels_repo_path, 15)]
 )
-def test_get_model_dir_paths_exclude_patterns(models):
+def test_get_model_paths_exclude_patterns(models):
     path, expected_count = models
-    paths = get_model_dir_paths(path, excluded=["gwt"])
+    paths = get_model_paths(path, excluded=["gwt"])
     assert len(paths) == expected_count
 
 

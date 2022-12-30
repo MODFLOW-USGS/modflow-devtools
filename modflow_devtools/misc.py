@@ -219,7 +219,7 @@ def get_namefile_paths(
     return sorted(paths)
 
 
-def get_model_dir_paths(
+def get_model_paths(
     path: PathLike,
     prefix: str = None,
     namefile: str = "mfsim.nam",
