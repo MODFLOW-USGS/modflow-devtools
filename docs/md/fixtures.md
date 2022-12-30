@@ -94,7 +94,7 @@ def test_example_scenario(tmp_path, example_scenario):
 
 Model-loading fixtures use a set of utility functions to find and enumerate models. These functions can be imported from `modflow_devtools.misc` for use in other contexts:
 
-- `get_model_dir_paths()`
+- `get_model_paths()`
 - `get_namefile_paths()`
 
 See this project's test suite for usage examples.
