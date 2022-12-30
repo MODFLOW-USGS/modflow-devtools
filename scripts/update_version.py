@@ -114,7 +114,7 @@ def update_docs_config(
     lines = _docs_config_path.read_text().rstrip().split("\n")
     with open(_docs_config_path, "w") as f:
         for line in lines:
-            line = f"release = {version}" if "release = " in line else line
+            line = f"release = '{version}'" if "release = " in line else line
             f.write(f"{line}\n")
 
     print(f"Updated {_docs_config_path} to version {version}")

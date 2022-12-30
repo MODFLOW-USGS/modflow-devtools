@@ -7,7 +7,7 @@ from typing import Dict, List, Optional
 
 import pytest
 from modflow_devtools.misc import (
-    get_model_dir_paths,
+    get_model_paths,
     get_namefile_paths,
     get_packages,
 )
