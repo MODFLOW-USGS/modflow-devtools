@@ -1,3 +1,15 @@
+### Version 0.1.1
+
+#### Bug fixes
+
+* [fix(release)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/b8255caaeb3a7c7d140aecbf590237e4b0d8ec1d): Fix conf.py version fmt, fix update_version.py. Committed by w-bonelli on 2022-12-29.
+* [fix(release)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/373d4f4fab212ea0a25b3b805a8fd363cbf50f7b): Fix changelog commit links (#38). Committed by w-bonelli on 2022-12-29.
+* [fix(license)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/18417f0ca5daddde6379ec9cd28a52f0567b4f63): Remove extra LICENSE file, fix link in LICENSE.md (#39). Committed by w-bonelli on 2022-12-30.
+
+#### Refactoring
+
+* [refactor(utilities)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/5a1c49bef57eacb49114976f336823ab9fb8964b): Restore get_model_paths function name (#41). Committed by w-bonelli on 2022-12-30.
+
 ### Version 0.1.0
 
 #### Refactoring
