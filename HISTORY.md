@@ -1,3 +1,9 @@
+### Version 0.1.2
+
+#### Bug fixes
+
+* [fix(fixtures)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/aeccdb3d66f5f927ae9b7b4c66bf6d4d0610e379): Fix model filtering by package (#44). Committed by w-bonelli on 2023-01-04.
+
 ### Version 0.1.1
 
 #### Bug fixes
