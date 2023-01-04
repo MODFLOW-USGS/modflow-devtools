@@ -157,7 +157,7 @@ def get_packages(namefile_path: PathLike) -> List[str]:
 def has_package(namefile_path: PathLike, package: str) -> bool:
     """Determines whether the model with the given namefile contains the selected package"""
     packages = get_packages(namefile_path)
-    return package.lower in packages
+    return package.lower() in packages
 
 
 def get_namefile_paths(
