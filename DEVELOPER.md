@@ -5,12 +5,14 @@ This document provides guidance to set up a development environment and discusse
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
+- [Requirements](#requirements)
 - [Installation](#installation)
 - [Testing](#testing)
   - [Environment variables](#environment-variables)
   - [Running the tests](#running-the-tests)
   - [Writing new tests](#writing-new-tests)
     - [Temporary directories](#temporary-directories)
+- [Releasing](#releasing)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
