@@ -1,31 +1,64 @@
 # Executables
 
-The `Executables` class is just a mapping between executable names and paths on the filesystem. This can be useful to test multiple versions of the same program, and is easily injected into test functions as a fixture:
+The `Executables` class maps executable names to paths on the filesystem. This is useful mainly for testing multiple versions of the same program.
+
+## Usage
+
+For example, assuming you have some development binaries in `bin` relative to your current working directory, and an official installation of the same programs in `~/.local.bin`:
 
 ```python
-from os import environ
 from pathlib import Path
-import subprocess
-import sys
-
-import pytest
-
-from modflow_devtools.misc import get_suffixes
 from modflow_devtools.executables import Executables
 
-_bin_path = Path("~/.local/bin/modflow").expanduser()
-_dev_path = Path(environ.get("BIN_PATH")).absolute()
-_ext, _ = get_suffixes(sys.platform) 
+bindir_path = Path("~/.local/bin").expanduser()
+executables = Executables(mf6=bindir_path / "mf6", mf6_dev=Path("mf6"))
+
+# constructor also supports kwargs
+executables = Executables(**{"mf6": bindir_path / "mf6", "mf6_dev": Path("mf6")})
+
+def test_executables():
+    assert executables.mf6.is_file()
+    assert executables.mf6_dev.is_file()
+
+    assert executables.mf6 == bindir_path / "mf6"
+    assert executables.mf6_dev == Path("mf6")
+```
+
+The class is easily injected into test functions as a fixture:
+
+```python
+import pytest
 
 @pytest.fixture
-@pytest.mark.skipif(not (_bin_path.is_dir() and _dev_path.is_dir()))
+@pytest.mark.skipif(not bindir_path.is_dir())
 def exes():
-    return Executables(
-        mf6_rel=_bin_path / f"mf6{_ext}",
-        mf6_dev=_dev_path / f"mf6{_ext}"
-    )
+    return executables
+```
 
-def test_exes(exes):
-    print(subprocess.check_output([f"{exes.mf6_rel}", "-v"]).decode('utf-8'))
-    print(subprocess.check_output([f"{exes.mf6_dev}", "-v"]).decode('utf-8'))
+Dictionary-style access is also supported:
+
+```python
+def test_executables_access(executables):
+    assert executables["mf6"] == executables.mf6 == Path("mf6")
+```
+
+There is a convenience function for getting a program's version string. The function will automatically strip the program name from the output (assumed delimited with `:`).
+
+```python
+import subprocess
+
+def test_executables_version(exes):
+    # e.g. '6.4.1 Release 12/09/2022'
+    assert exes.get_version(exes.mf6) == \  
+           subprocess.check_output([f"{exes.mf6}", "-v"]).decode('utf-8').strip().split(":")[1].strip()
+```
+
+## Default mapping
+
+A utility function is provided to create the default executable mapping used by MODFLOW 6 autotests:
+
+```python
+from modflow_devtools.executables import build_default_exe_dict, Executables
+
+exes = Executables(**build_default_exe_dict())
 ```

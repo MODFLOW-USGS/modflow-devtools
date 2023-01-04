@@ -28,5 +28,5 @@ pip install ".[lint, test, docs]"
 Fixtures provided by `modflow-devtools` can be imported into a `pytest` test suite by adding the following to the consuming project's top-level `conftest.py` file:
 
 ```python
-pytest_plugins = ["modflow_devtools"]
+pytest_plugins = ["modflow_devtools.fixtures"]
 ```
