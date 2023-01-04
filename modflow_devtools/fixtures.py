@@ -6,11 +6,7 @@ from shutil import copytree
 from typing import Dict, List, Optional
 
 import pytest
-from modflow_devtools.misc import (
-    get_model_paths,
-    get_namefile_paths,
-    get_packages,
-)
+from modflow_devtools.misc import get_namefile_paths, get_packages
 
 # temporary directory fixtures
 
@@ -284,7 +280,7 @@ def pytest_generate_tests(metafunc):
                 for name, namefiles in examples.items():
                     ftypes = []
                     for namefile in namefiles:
-                        ftype = get_packages(namefile, packages_selected)
+                        ftype = get_packages(namefile)
                         if ftype not in ftypes:
                             ftypes += ftype
                     if len(ftypes) > 0:

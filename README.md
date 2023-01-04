@@ -16,6 +16,7 @@ Python tools for MODFLOW development and testing.
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [Use cases](#use-cases)
+- [Quickstart](#quickstart)
 - [Documentation](#documentation)
 - [MODFLOW Resources](#modflow-resources)
 
@@ -23,14 +24,26 @@ Python tools for MODFLOW development and testing.
 
 ## Requirements
 
-This package requires Python3.8+. Its only dependencies are `numpy` and `pytest`.
+This project requires Python3.8+. Its only core dependencies are `numpy` and `pytest`.
 
 ## Installation
 
-The package is available on PyPI and can be installed with pip:
+`modflow-devtools` is available on PyPI and can be installed with pip:
 
 ```shell
 pip install modflow-devtools
+```
+
+This package pairs well with a few pytest plugins:
+
+- `pytest-cases`
+- `pytest-dotenv`
+- `pytest-xdist`
+
+These and a few other optional dependencies can be installed with:
+
+```shell
+pip install "modflow-devtools[test]"
 ```
 
 To install from source and set up a development environment please see the [developer documentation](DEVELOPER.md).
@@ -39,15 +52,20 @@ To install from source and set up a development environment please see the [deve
 
 This package contains shared tools for developing and testing MODFLOW 6 and FloPy, including standalone utilities as well as `pytest` fixtures, CLI options, and test cases:
 
-- a `ZipFile` subclass preserving file attributes
-- variably-scoped `pytest` temporary directory fixtures
-- a `pytest` smoke test CLI option (to run a fast subset of cases)
-- a minimal `pytest` framework for reusing test functions and data
-- a `pytest_generate_tests` hook to load example/test model fixtures
+- a `ZipFile` subclass preserving file permissions ([more information here](https://stackoverflow.com/questions/39296101/python-zipfile-removes-execute-permissions-from-binaries))
+- a `pytest` CLI option for smoke testing (running a fast subset of cases)
+- a minimal `pytest-cases` framework for reusing test functions and data
+- a set of keepable `pytest` temporary directory fixtures for each scope
+- a set of fixtures to parametrize tests with models from external repos
+  - `MODFLOW-USGS/modflow6-examples`
+  - `MODFLOW-USGS/modflow6-testmodels`
+  - `MODFLOW-USGS/modflow6-largetestmodels`
 - a set of `pytest` markers to conditionally skip test cases based on
   - operating system
   - Python packages installed
   - executables available on the path
+
+## Quickstart
 
 To import `pytest` fixtures in a project consuming `modflow-devtools`, add the following to a `conftest.py` file in the project root:
 
@@ -55,7 +73,7 @@ To import `pytest` fixtures in a project consuming `modflow-devtools`, add the f
 pytest_plugins = [ "modflow_devtools.fixtures" ]
 ```
 
-Note that `pytest` requires this to be a top-level `conftest.py` living in your project root. Nested `conftest.py` files may override or extend this package's behavior.
+**Note**: `pytest` requires this to be a top-level `conftest.py` file. Nested `conftest.py` files may override or extend this package's fixtures.
 
 ## Documentation
 

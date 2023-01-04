@@ -8,6 +8,7 @@ from modflow_devtools.misc import (
     get_model_paths,
     get_namefile_paths,
     get_packages,
+    has_package,
     set_dir,
 )
 
@@ -32,10 +33,19 @@ _example_paths = (
 
 
 @pytest.mark.skipif(not any(_example_paths), reason="examples not found")
-def test_has_packages():
-    example_path = _example_paths[0]
-    packages = get_packages(example_path / "mfsim.nam")
+def test_get_packages():
+    namefile_path = _example_paths[0]
+    packages = get_packages(namefile_path / "mfsim.nam")
     assert set(packages) == {"tdis", "gwf", "ims"}
+
+
+@pytest.mark.skipif(not any(_example_paths), reason="examples not found")
+def test_has_package():
+    namefile_path = _example_paths[0] / "mfsim.nam"
+    assert has_package(namefile_path, "tdis")
+    assert has_package(namefile_path, "gwf")
+    assert has_package(namefile_path, "ims")
+    assert not has_package(namefile_path, "gwt")
 
 
 def get_expected_model_dirs(path, pattern="mfsim.nam") -> List[Path]:
