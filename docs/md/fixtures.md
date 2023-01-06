@@ -55,9 +55,7 @@ These models can be requested like any other `pytest` fixture, by adding one of 
 - `large_test_model`
 - `example_scenario`
 
-To use these fixtures, the environment variable `REPOS_PATH` must point to the location of model repositories on the filesystem. Model repositories must live side-by-side in this location, and repository directories are expected to be named identically to GitHub repositories. If `REPOS_PATH` is not configured, test functions requesting these fixtures will be skipped.
-
-**Note**: example models must be built by running the `ci_build_files.py` script in `modflow6-examples/etc` before running tests using the `example_scenario` fixture.
+It is recommended to set the environment variable `REPOS_PATH` to the location of the model repositories on the filesystem. Model repositories must live side-by-side in this location, and repository directories are expected to be named identically to GitHub repositories. If `REPOS_PATH` is not configured, `modflow-devtools` assumes tests are being run from an `autotest` subdirectory of the consuming project's root, and model repos live side-by-side with the consuming project. If this guess is incorrect and repositories cannot be found, tests requesting these fixtures will be skipped.
 
 ### Test models
 
@@ -89,6 +87,8 @@ def test_example_scenario(tmp_path, example_scenario):
         # load and run model
         # ...
 ```
+
+**Note**: example models must be built by running the `ci_build_files.py` script in `modflow6-examples/etc` before running tests using the `example_scenario` fixture.
 
 ### Utility functions
 

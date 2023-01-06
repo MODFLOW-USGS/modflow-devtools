@@ -170,6 +170,11 @@ def pytest_generate_tests(metafunc):
     models_selected = metafunc.config.getoption("--model", None)
     packages_selected = metafunc.config.getoption("--package", None)
     repos_path = environ.get("REPOS_PATH")
+    if repos_path is None:
+        # by default, assume external repositories are
+        # in the same directory as the current project
+        # and tests are run from <proj root>/autotest.
+        repos_path = Path.cwd().parent.parent
 
     key = "test_model_mf6"
     if key in metafunc.fixturenames:
