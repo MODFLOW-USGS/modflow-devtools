@@ -263,4 +263,4 @@ def test_large_test_model(large_test_model):
     print(large_test_model)
     assert isinstance(large_test_model, Path)
     assert large_test_model.is_file()
-    assert large_test_model.suffix == ".nam"
+    assert large_test_model.name == "mfsim.nam"

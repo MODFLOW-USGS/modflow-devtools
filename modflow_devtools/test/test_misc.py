@@ -20,7 +20,10 @@ def test_set_dir(tmp_path):
     assert Path(os.getcwd()) != tmp_path
 
 
-_repos_path = Path(environ.get("REPOS_PATH")).expanduser().absolute()
+_repos_path = environ.get("REPOS_PATH")
+if _repos_path is None:
+    _repos_path = Path(__file__).parent.parent.parent.parent
+_repos_path = Path(_repos_path).expanduser().absolute()
 _largetestmodels_repo_path = _repos_path / "modflow6-largetestmodels"
 _largetestmodel_paths = sorted(list(_largetestmodels_repo_path.glob("test*")))
 _examples_repo_path = _repos_path / "modflow6-examples"
