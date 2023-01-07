@@ -8,7 +8,7 @@
 
 project = "modflow-devtools"
 author = "MODFLOW Team"
-release = "0.1.3"
+release = "0.1.4"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
