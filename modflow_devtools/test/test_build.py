@@ -6,7 +6,10 @@ import pytest
 from modflow_devtools.build import meson_build
 from modflow_devtools.markers import requires_pkg
 
-_repos_path = Path(environ.get("REPOS_PATH")).expanduser().absolute()
+_repos_path = environ.get("REPOS_PATH")
+if _repos_path is None:
+    _repos_path = Path(__file__).parent.parent.parent.parent
+_repos_path = Path(_repos_path).expanduser().absolute()
 _project_root_path = Path(__file__).parent.parent.parent.parent
 _modflow6_repo_path = _repos_path / "modflow6"
 _system = platform.system()
