@@ -42,7 +42,7 @@ There is also a `--keep-failed <path>` option which preserves outputs only from 
 
 ## Loading example models
 
-Fixtures are provided to find and enumerate models from the MODFLOW 6 example and test model repositories and feed them to test functions. Models can be loaded from:
+Fixtures are provided to find models from the MODFLOW 6 example and test model repositories and feed them to test functions. Models can be loaded from:
 
 - [`MODFLOW-USGS/modflow6-examples`](https://github.com/MODFLOW-USGS/modflow6-examples)
 - [`MODFLOW-USGS/modflow6-testmodels`](https://github.com/MODFLOW-USGS/modflow6-testmodels)
@@ -50,33 +50,65 @@ Fixtures are provided to find and enumerate models from the MODFLOW 6 example an
 
 These models can be requested like any other `pytest` fixture, by adding one of the following parameters to test functions:
 
-- `test_model_mf5to6`
-- `test_model_mf6`
-- `large_test_model`
-- `example_scenario`
+- `test_model_mf5to6`: a `Path` to a MODFLOW 2005 model namefile, loaded from the `mf5to6` subdirectory of the `modflow6-testmodels` repository
+- `test_model_mf6`: a `Path` to a MODFLOW 6 model namefile, loaded from the `mf6` subdirectory of the `modflow6-testmodels` repository
+- `large_test_model`: a `Path` to a large MODFLOW 6 model namefile, loaded from the `modflow6-largetestmodels` repository
+- `example_scenario`: a `Tuple[str, List[Path]]` containing the name of a MODFLOW 6 example scenario and a list of paths to its model namefiles, loaded from the `modflow6-examples` repository
+
+### Configuration
+
+Model repositories must first be cloned
 
 It is recommended to set the environment variable `REPOS_PATH` to the location of the model repositories on the filesystem. Model repositories must live side-by-side in this location, and repository directories are expected to be named identically to GitHub repositories. If `REPOS_PATH` is not configured, `modflow-devtools` assumes tests are being run from an `autotest` subdirectory of the consuming project's root, and model repos live side-by-side with the consuming project. If this guess is incorrect and repositories cannot be found, tests requesting these fixtures will be skipped.
 
-### Test models
+**Note:** by default, all models found in the respective external repository will be returned by these fixtures. It is up to the consuming project to exclude models if needed.
 
-The `test_model_mf5to6`, `test_model_mf6` and `large_test_model` fixtures are each a `Path` to the model's namefile. For example:, to load `mf5to6` models from the  repository:
+### MODFLOW 2005 test models
+
+The `test_model_mf5to6` fixture are each a `Path` to the model's namefile. For example, to load `mf5to6` models from the `MODFLOW-USGS/modflow6-testmodels` repo:
 
 ```python
 def test_mf5to6_model(test_model_mf5to6):
+    assert isinstance(test_model_mf5to6, Path)
     assert test_model_mf5to6.is_file()
     assert test_model_mf5to6.suffix == ".nam"
 ```
 
-This test function will be parametrized with all `mf5to6` models found in the [`MODFLOW-USGS/modflow6-testmodels`](https://github.com/MODFLOW-USGS/modflow6-testmodels).
+This test function will be parametrized with all models found in the `mf5to6` subdirectory of the [`MODFLOW-USGS/modflow6-testmodels`](https://github.com/MODFLOW-USGS/modflow6-testmodels) repository. Note that MODFLOW-2005 namefiles need not be named `mfsim.nam`.
+
+### MODFLOW 6 test models
+
+The `test_model_mf6` fixture loads all MODFLOW 6 models found in the `mf6` subdirectory of the `MODFLOW-USGS/modflow6-testmodels` repository.
+
+```python
+def test_test_model_mf6(test_model_mf6):
+    assert isinstance(test_model_mf6, Path)
+    assert test_model_mf6.is_file()
+    assert test_model_mf6.name == "mfsim.nam"
+```
+
+Because these are MODFLOW 6 models, each namefile will be named `mfsim.nam`. The model name can be inferred from the namefile's parent directory.
+
+### Large test models
+
+The `large_test_model` fixture loads all MODFLOW 6 models found in the `MODFLOW-USGS/modflow6-largetestmodels` repository.
+
+```python
+def test_large_test_model(large_test_model):
+    print(large_test_model)
+    assert isinstance(large_test_model, Path)
+    assert large_test_model.is_file()
+    assert large_test_model.name == "mfsim.nam"
+```
 
 ### Example scenarios
 
-The [`MODFLOW-USGS/modflow6-examples`](https://github.com/MODFLOW-USGS/modflow6-examples) repository contains a collection of scenarios, each consisting of 1 or more models. The `example_scenario` fixture is a `Tuple[str, List[Path]]`. The first item is the name of the scenario. The second item is a list of namefile `Path`s, ordered alphabetically by name. Model naming conventions are as follows:
+The [`MODFLOW-USGS/modflow6-examples`](https://github.com/MODFLOW-USGS/modflow6-examples) repository contains a collection of example scenarios, each with 1 or more models. The `example_scenario` fixture is a `Tuple[str, List[Path]]`. The first item is the name of the scenario. The second item is a list of MODFLOW 6 namefile `Path`s, ordered alphabetically by name, with models generally named as follows:
 
-- groundwater flow models begin with prefix `gwf*`
+- groundwater flow models begin with `gwf*`
 - transport models begin with `gwt*`
 
-Ordering as above permits models to be run directly in the order provided, with transport models potentially consuming the outputs of flow models. A straightforward pattern is to loop over models and run each in a subdirectory of the same top-level working directory.
+This naming permits models to be run in the order provided, with transport models potentially consuming the outputs of flow models. One possible pattern is to loop over models and run each in a subdirectory of the same top-level working directory.
 
 ```python
 def test_example_scenario(tmp_path, example_scenario):
@@ -88,7 +120,7 @@ def test_example_scenario(tmp_path, example_scenario):
         # ...
 ```
 
-**Note**: example models must be built by running the `ci_build_files.py` script in `modflow6-examples/etc` before running tests using the `example_scenario` fixture.
+**Note**: example models must first be built by running the `ci_build_files.py` script in `modflow6-examples/etc` before running tests using the `example_scenario` fixture. See the [install docs](https://modflow-devtools.readthedocs.io/en/latest/md/install.html) for more info.
 
 ### Utility functions
 
@@ -97,4 +129,4 @@ Model-loading fixtures use a set of utility functions to find and enumerate mode
 - `get_model_paths()`
 - `get_namefile_paths()`
 
-See this project's test suite for usage examples.
+These functions are used internally in a `pytest_generate_tests` hook to implement the above model-parametrization fixtures. See `fixtures.py` and/or this project's test suite for usage examples.

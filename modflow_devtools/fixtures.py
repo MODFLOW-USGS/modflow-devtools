@@ -157,7 +157,6 @@ def pytest_runtest_makereport(item, call):
     # this is necessary so temp dir fixtures can
     # inspect test results and check for failure
     # (see https://doc.pytest.org/en/latest/example/simple.html#making-test-result-information-available-in-fixtures)
-
     outcome = yield
     rep = outcome.get_result()
 
@@ -167,64 +166,81 @@ def pytest_runtest_makereport(item, call):
 
 
 def pytest_generate_tests(metafunc):
+    # user can filter by model name or packages the model uses
     models_selected = metafunc.config.getoption("--model", None)
     packages_selected = metafunc.config.getoption("--package", None)
+
+    # user can specify a path to folder containing model repos
     repos_path = environ.get("REPOS_PATH")
-    if repos_path is None:
+    if repos_path is not None:
+        repos_path = Path(repos_path)
+    else:
         # by default, assume external repositories are
         # in the same directory as the current project
         # and tests are run from <proj root>/autotest.
+        # if no models are found, tests requesting the
+        # fixtures will be skipped.
         repos_path = Path.cwd().parent.parent
 
     key = "test_model_mf6"
     if key in metafunc.fixturenames:
-        models = (
+        repo_path = repos_path / "modflow6-testmodels"
+        namefile_paths = (
             get_namefile_paths(
-                Path(repos_path) / "modflow6-testmodels" / "mf6",
+                repo_path / "mf6",
                 prefix="test",
-                excluded=["test205_gwtbuy-henrytidal"],
+                excluded=[],
                 selected=models_selected,
                 packages=packages_selected,
             )
-            if repos_path
+            if repo_path.is_dir()
             else []
         )
-        metafunc.parametrize(key, models, ids=[str(m) for m in models])
+        metafunc.parametrize(
+            key, namefile_paths, ids=[m.parent.name for m in namefile_paths]
+        )
 
     key = "test_model_mf5to6"
     if key in metafunc.fixturenames:
-        models = (
+        repo_path = repos_path / "modflow6-testmodels"
+        namefile_paths = (
             get_namefile_paths(
-                Path(repos_path) / "modflow6-testmodels" / "mf5to6",
+                repo_path / "mf5to6",
                 prefix="test",
                 namefile="*.nam",
-                excluded=["test205_gwtbuy-henrytidal"],
+                excluded=[],
                 selected=models_selected,
                 packages=packages_selected,
             )
-            if repos_path
+            if repo_path.is_dir()
             else []
         )
-        metafunc.parametrize(key, models, ids=[str(m) for m in models])
+        metafunc.parametrize(
+            key, namefile_paths, ids=[str(m) for m in namefile_paths]
+        )
 
     key = "large_test_model"
     if key in metafunc.fixturenames:
-        models = (
+        repo_path = repos_path / "modflow6-largetestmodels"
+        namefile_paths = (
             get_namefile_paths(
-                Path(repos_path) / "modflow6-largetestmodels",
+                repo_path,
                 prefix="test",
                 namefile="mfsim.nam",
                 excluded=[],
                 selected=models_selected,
                 packages=packages_selected,
             )
-            if repos_path
+            if repo_path.is_dir()
             else []
         )
-        metafunc.parametrize(key, models, ids=[str(m) for m in models])
+        metafunc.parametrize(
+            key, namefile_paths, ids=[str(m) for m in namefile_paths]
+        )
 
     key = "example_scenario"
     if key in metafunc.fixturenames:
+        repo_path = repos_path / "modflow6-examples"
 
         def is_nested(namfile_path: PathLike) -> bool:
             p = Path(namfile_path)
@@ -260,15 +276,10 @@ def pytest_generate_tests(metafunc):
             return d
 
         def get_examples():
-            # find and filter namfiles
-            namfiles = [
-                p
-                for p in (
-                    Path(repos_path) / "modflow6-examples" / "examples"
-                ).rglob("mfsim.nam")
-            ]
+            # find MODFLOW 6 namfiles
+            namfiles = [p for p in (repo_path / "examples").rglob("mfsim.nam")]
 
-            # group example scenarios with multiple models
+            # group by scenario
             examples = group_examples(namfiles)
 
             # filter by example name (optional)
@@ -300,7 +311,7 @@ def pytest_generate_tests(metafunc):
                     if name in filtered
                 }
 
-            # remove mf6gwf and mf6gwt
+            # exclude mf6gwf and mf6gwt subdirs
             examples = {
                 name: nfps
                 for name, nfps in examples.items()
@@ -309,7 +320,7 @@ def pytest_generate_tests(metafunc):
 
             return examples
 
-        example_scenarios = get_examples() if repos_path else dict()
+        example_scenarios = get_examples() if repo_path.is_dir() else dict()
         metafunc.parametrize(
             key,
             [(name, nfps) for name, nfps in example_scenarios.items()],
