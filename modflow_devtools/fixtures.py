@@ -197,7 +197,7 @@ def pytest_generate_tests(metafunc):
             else []
         )
         metafunc.parametrize(
-            key, namefile_paths, ids=[m.parent.name for m in namefile_paths]
+            key, namefile_paths, ids=[str(m) for m in namefile_paths]
         )
 
     key = "test_model_mf5to6"
