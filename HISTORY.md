@@ -1,3 +1,13 @@
+### Version 0.1.3
+
+#### Bug fixes
+
+* [fix(fixtures)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/32e227bd2a6db39d3dada29ceb4ea6279f215f94): Fix test_model_mf6 fixture node id (#49). Committed by w-bonelli on 2023-01-07.
+
+#### Refactoring
+
+* [refactor(fixtures)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/9987209620bf6b0422079d605c996c868116d725): Update defaults for model-finding fixtures (#48). Committed by w-bonelli on 2023-01-07.
+
 ### Version 0.1.2
 
 #### Bug fixes
