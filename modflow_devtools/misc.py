@@ -2,6 +2,7 @@ import importlib
 import socket
 import sys
 from contextlib import contextmanager
+from importlib import metadata
 from os import PathLike, chdir, environ, getcwd
 from os.path import basename, normpath
 from pathlib import Path
@@ -10,7 +11,6 @@ from subprocess import PIPE, Popen
 from typing import List, Optional, Tuple
 from urllib import request
 
-import pkg_resources
 from _warnings import warn
 
 
@@ -310,16 +310,14 @@ def has_pkg(pkg):
     Originally written by Mike Toews (mwtoews@gmail.com) for FloPy.
     """
     if pkg not in _has_pkg_cache:
-
-        # for some dependencies, package name and import name are different
-        # (e.g. pyshp/shapefile, mfpymake/pymake, python-dateutil/dateutil)
-        # pkg_resources expects package name, importlib expects import name
-        try:
-            _has_pkg_cache[pkg] = bool(importlib.import_module(pkg))
-        except (ImportError, ModuleNotFoundError):
-            try:
-                _has_pkg_cache[pkg] = bool(pkg_resources.get_distribution(pkg))
-            except pkg_resources.DistributionNotFound:
-                _has_pkg_cache[pkg] = False
+        found = True
+        try:  # package name, e.g. pyshp
+            metadata.distribution(pkg)
+        except metadata.PackageNotFoundError:
+            try:  # import name, e.g. "import shapefile"
+                importlib.import_module(pkg)
+            except ModuleNotFoundError:
+                found = False
+        _has_pkg_cache[pkg] = found
 
     return _has_pkg_cache[pkg]
