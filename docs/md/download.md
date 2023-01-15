@@ -2,6 +2,8 @@
 
 Some utility functions are provided to query information and download artifacts and assets from the GitHub API. These are available in the `modflow_devtools.download` module.
 
+**Note:** to avoid GitHub API rate limits when using these functions, it is recommended to set the `GITHUB_TOKEN` environment variable. If this variable is set, the token will automatically be borne on requests sent to the API.
+
 ## Retrieving information
 
 The following functions ask the GitHub API for information about a repository. The singular functions return a dictionary, while the plural functions return a list of dictionaries, with dictionary contents parsed directly from the API response's JSON.
@@ -11,7 +13,7 @@ The following functions ask the GitHub API for information about a repository. T
 - `list_release_assets(repo, tag="latest", quiet=False)`
 - `list_artifacts(repo, name, per_page=None, max_pages=None, quiet=False)`
 
-The `repo` format is `owner/name`, as in GitHub URLs.
+The `repo` parameter's format is `owner/name`, as in GitHub URLs.
 
 For instance, to download information about a release and inspect available assets:
 
