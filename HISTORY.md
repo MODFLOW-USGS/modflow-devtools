@@ -1,3 +1,13 @@
+### Version 0.1.4
+
+#### Bug fixes
+
+* [fix(fixtures)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/8b9aeec73885c3aa2f8bbcfa84c99824fe703cbb): Fix package detection/selection (#60). Committed by w-bonelli on 2023-01-18.
+
+#### Refactoring
+
+* [refactor(has_pkg)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/861fa80f236bb9fcfcf4cfb1e9a391ad33076060): Use import.metadata instead of pkg_resources (#54). Committed by Mike Taves on 2023-01-09.
+
 ### Version 0.1.3
 
 #### Bug fixes
