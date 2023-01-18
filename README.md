@@ -1,6 +1,6 @@
 # MODFLOW developer tools
 
-### Version 0.1.3 &mdash; release candidate
+### Version 0.1.4 &mdash; release candidate
 [![GitHub tag](https://img.shields.io/github/tag/MODFLOW-USGS/modflow-devtools.svg)](https://github.com/MODFLOW-USGS/modflow-devtools/tags/latest)
 [![PyPI Version](https://img.shields.io/pypi/v/modflow-devtools.png)](https://pypi.python.org/pypi/modflow-devtools)
 [![PyPI Versions](https://img.shields.io/pypi/pyversions/modflow-devtools.png)](https://pypi.python.org/pypi/modflow-devtools)
@@ -52,7 +52,8 @@ To install from source and set up a development environment please see the [deve
 
 This package contains shared tools for developing and testing MODFLOW 6 and FloPy, including standalone utilities as well as `pytest` fixtures, CLI options, and test cases:
 
-- a `ZipFile` subclass preserving file permissions ([more information here](https://stackoverflow.com/questions/39296101/python-zipfile-removes-execute-permissions-from-binaries))
+- utilities for retrieving release information and downloading assets from the GitHub API
+- a `ZipFile` subclass that [preserves file permissions](https://stackoverflow.com/questions/39296101/python-zipfile-removes-execute-permissions-from-binaries) (workaround for [Python #15795](https://bugs.python.org/issue15795))
 - a `pytest` CLI option for smoke testing (running a fast subset of cases)
 - a minimal `pytest-cases` framework for reusing test functions and data
 - a set of keepable `pytest` temporary directory fixtures for each scope

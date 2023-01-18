@@ -51,7 +51,7 @@ GITHUB_TOKEN=yourtoken...
 
 The tests use [`pytest-dotenv`](https://github.com/quiqua/pytest-dotenv) to detect and load variables from this file.
 
-**Note:** at minimum, the tests require that the `mf6` executable is present in `BIN_PATH`.
+**Note:** at minimum, the tests require that the `mf6` (or `mf6.exe` on Windows) executable is present in `BIN_PATH`.
 
 ### Running the tests
 
