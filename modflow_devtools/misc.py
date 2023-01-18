@@ -1,6 +1,7 @@
 import importlib
 import socket
 import sys
+import traceback
 from contextlib import contextmanager
 from importlib import metadata
 from os import PathLike, chdir, environ, getcwd
@@ -118,20 +119,46 @@ def get_current_branch() -> str:
 
 def get_packages(namefile_path: PathLike) -> List[str]:
     """
-    Return a list of packages used by the model defined in the given namefile.
+    Return a list of packages used by the simulation or model defined in the given namefile.
+    The namefile may be for an entire simulation or for a GWF or GWT model. If a simulation
+    namefile is given, packages used in its component model namefiles will be included.
 
     Parameters
     ----------
     namefile_path : PathLike
-        path to MODFLOW 6 name file
+        path to MODFLOW 6 simulation or model name file
     Returns
     -------
-        list of package types
+        a list of packages used by the simulation or model
     """
-    with open(namefile_path, "r") as f:
-        lines = f.readlines()
 
-    ftypes = []
+    packages = []
+    path = Path(namefile_path).expanduser().absolute()
+    lines = open(path, "r").readlines()
+    gwf_lines = [l for l in lines if l.strip().lower().startswith("gwf6 ")]
+    gwt_lines = [l for l in lines if l.strip().lower().startswith("gwt6 ")]
+
+    def parse_model_namefile(line):
+        nf_path = [path.parent / s for s in line.split(" ") if s != ""][1]
+        if nf_path.suffix != ".nam":
+            raise ValueError(
+                f"Failed to parse GWF or GWT model namefile from simulation namefile line: {line}"
+            )
+        return nf_path
+
+    # load model namefiles
+    try:
+        for line in gwf_lines:
+            packages = (
+                packages + get_packages(parse_model_namefile(line)) + ["gwf"]
+            )
+        for line in gwt_lines:
+            packages = (
+                packages + get_packages(parse_model_namefile(line)) + ["gwt"]
+            )
+    except:
+        warn(f"Invalid namefile format: {traceback.format_exc()}")
+
     for line in lines:
         # Skip over blank and commented lines
         ll = line.strip().split()
@@ -149,9 +176,9 @@ def get_packages(namefile_path: PathLike) -> List[str]:
         # strip "6" from package name
         l = l.replace("6", "")
 
-        ftypes.append(l.lower())
+        packages.append(l.lower())
 
-    return list(set(ftypes))
+    return list(set(packages))
 
 
 def has_package(namefile_path: PathLike, package: str) -> bool:
@@ -179,7 +206,7 @@ def get_namefile_paths(
     if not Path(path).is_dir():
         return []
 
-    # find namefiles
+    # find simulation namefiles
     paths = [
         p
         for p in Path(path).rglob(

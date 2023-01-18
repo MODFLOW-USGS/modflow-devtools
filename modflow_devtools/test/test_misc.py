@@ -1,4 +1,5 @@
 import os
+import shutil
 from os import environ
 from pathlib import Path
 from typing import List
@@ -24,6 +25,13 @@ _repos_path = environ.get("REPOS_PATH")
 if _repos_path is None:
     _repos_path = Path(__file__).parent.parent.parent.parent
 _repos_path = Path(_repos_path).expanduser().absolute()
+_testmodels_repo_path = _repos_path / "modflow6-testmodels"
+_testmodels_repo_paths_mf6 = sorted(
+    list((_testmodels_repo_path / "mf6").glob("test*"))
+)
+_testmodels_repo_paths_mf5to6 = sorted(
+    list((_testmodels_repo_path / "mf5to6").glob("test*"))
+)
 _largetestmodels_repo_path = _repos_path / "modflow6-largetestmodels"
 _largetestmodel_paths = sorted(list(_largetestmodels_repo_path.glob("test*")))
 _examples_repo_path = _repos_path / "modflow6-examples"
@@ -35,20 +43,68 @@ _example_paths = (
 )
 
 
-@pytest.mark.skipif(not any(_example_paths), reason="examples not found")
+@pytest.mark.skipif(
+    not any(_testmodels_repo_paths_mf6), reason="mf6 test models not found"
+)
 def test_get_packages():
-    namefile_path = _example_paths[0]
-    packages = get_packages(namefile_path / "mfsim.nam")
-    assert set(packages) == {"tdis", "gwf", "ims"}
+    model_path = _testmodels_repo_paths_mf6[0]
+
+    # simulation namefile
+    namefile_path = model_path / "mfsim.nam"
+    packages = get_packages(namefile_path)
+    assert model_path.name == "test001a_Tharmonic"
+    assert set(packages) >= {"tdis", "gwf", "ims", "npf", "chd", "oc", "dis"}
+
+    # model namefile
+    namefile_path = model_path / "flow15.nam"
+    packages = get_packages(namefile_path)
+    assert model_path.name == "test001a_Tharmonic"
+    assert set(packages) >= {"npf", "chd", "oc", "dis"}
+    assert "tdis" not in packages
+    assert "gwf" not in packages
+    assert "ims" not in packages
+
+
+@pytest.mark.skipif(
+    not any(_testmodels_repo_paths_mf6), reason="mf6 test models not found"
+)
+def test_get_packages_fails_on_invalid_namefile(module_tmpdir):
+    model_path = _testmodels_repo_paths_mf6[0]
+    new_model_path = module_tmpdir / model_path.name
+    namefile_path = new_model_path / "mfsim.nam"
+    shutil.copytree(model_path, new_model_path)
+
+    # invalid gwf namefile reference - result should only contain packages from mfsim.nam
+    lines = open(namefile_path, "r").read().splitlines()
+    with open(namefile_path, "w") as f:
+        for line in lines:
+            if "GWF6" in line:
+                line = line.replace("GWF6", "GWF6  garbage")
+            f.write(line + os.linesep)
+    assert set(get_packages(namefile_path)) == {"gwf", "tdis", "ims"}
+
+    # entirely unparseable namefile - result should be empty
+    lines = open(namefile_path, "r").read().splitlines()
+    with open(namefile_path, "w") as f:
+        for _ in lines:
+            f.write("garbage" + os.linesep)
+    assert not any(get_packages(namefile_path))
 
 
 @pytest.mark.skipif(not any(_example_paths), reason="examples not found")
 def test_has_package():
-    namefile_path = _example_paths[0] / "mfsim.nam"
+    model_path = _testmodels_repo_paths_mf6[0]
+    namefile_path = model_path / "mfsim.nam"
+    assert model_path.name == "test001a_Tharmonic"
     assert has_package(namefile_path, "tdis")
     assert has_package(namefile_path, "gwf")
     assert has_package(namefile_path, "ims")
+    assert has_package(namefile_path, "npf")
+    assert has_package(namefile_path, "chd")
+    assert has_package(namefile_path, "oc")
+    assert has_package(namefile_path, "dis")
     assert not has_package(namefile_path, "gwt")
+    assert not has_package(namefile_path, "wel")
 
 
 def get_expected_model_dirs(path, pattern="mfsim.nam") -> List[Path]:
@@ -174,7 +230,5 @@ def test_get_namefile_paths_select_patterns():
 
 @pytest.mark.skipif(not any(_example_paths), reason="examples not found")
 def test_get_namefile_paths_select_packages():
-    paths = get_namefile_paths(
-        _examples_path, namefile="*.nam", packages=["wel"]
-    )
-    assert len(paths) == 64
+    paths = get_namefile_paths(_examples_path, packages=["wel"])
+    assert len(paths) == 43
