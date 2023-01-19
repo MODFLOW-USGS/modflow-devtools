@@ -26,7 +26,7 @@ jobs:
         with:
           python-version: 3.8
           cache: 'pip'
-          cache-dependency-path: setup.cfg
+          cache-dependency-path: pyproject.toml
 
       - name: Install Python packages
         run: |
@@ -132,7 +132,7 @@ jobs:
           python-version: ${{ matrix.python }}
           cache: 'pip'
           cache-dependency-path: |
-            modflow-devtools/setup.cfg
+            modflow-devtools/pyproject.toml
             modflow6-examples/etc/requirements*.txt
 
       - name: Install Python packages
