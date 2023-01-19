@@ -1,10 +1,79 @@
 [build-system]
 # Minimum requirements for the build system to execute
 requires = [
-    "setuptools>=45",
-    "wheel",
+    "setuptools>=61",
 ]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "modflow-devtools"
+description = "Python tools for MODFLOW development"
+authors = [
+    {name = "Joseph D. Hughes", email = "modflow@usgs.gov"},
+]
+maintainers = [
+    {name = "Joseph D. Hughes", email = "modflow@usgs.gov"},
+]
+keywords = [
+    "MODFLOW",
+    "development",
+    "utilities",
+    "groundwater",
+    "hydrogeology"
+]
+readme = "README.md"
+license = {text = "CC0"}
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: CC0 1.0 Universal (CC0 1.0) Public Domain Dedication",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering :: Hydrology"
+]
+requires-python = ">=3.8"
+dependencies = [
+    "numpy",
+    "pytest"
+]
+dynamic = ["version"]
+
+[project.optional-dependencies]
+lint = [
+    "black",
+    "cffconvert",
+    "flake8",
+    "isort",
+    "pylint"
+]
+test = [
+    "modflow-devtools[lint]",
+    "coverage",
+    "flaky",
+    "filelock",
+    "meson!=0.63.0",
+    "ninja",
+    "pytest-cases",
+    "pytest-cov",
+    "pytest-dotenv",
+    "pytest-xdist",
+    "PyYaml"
+]
+docs = [
+    "sphinx",
+    "sphinx-rtd-theme",
+    "myst-parser"
+]
+
+[project.urls]
+"Documentation" = "https://modflow-devtools.readthedocs.io/en/latest/"
+"Bug Tracker" = "https://github.com/MODFLOW-USGS/modflow-devtools/issues"
+"Source Code" = "https://github.com/MODFLOW-USGS/modflow-devtools"
+
 
 [tool.black]
 line-length = 79
@@ -18,6 +87,13 @@ verbose = true
 profile = "black"
 src_paths = ["src/modflow_devtools"]
 line_length = 79
+
+[tool.setuptools]
+include-package-data = true
+zip-safe = false
+
+[tool.setuptools.dynamic]
+version = {file = "version.txt"}
 
 [tool.setuptools_scm]
 fallback_version = "999"
