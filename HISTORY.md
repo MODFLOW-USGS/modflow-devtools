@@ -1,3 +1,9 @@
+### Version 0.1.5
+
+#### Refactoring
+
+* [refactor(metadata)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/2edeacfd8cb10081c22d1ab0799aba1fa7522c0d): Use pyproject.toml, retire setup.cfg (#63). Committed by w-bonelli on 2023-01-19.
+
 ### Version 0.1.4
 
 #### Bug fixes
