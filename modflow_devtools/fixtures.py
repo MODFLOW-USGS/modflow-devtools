@@ -2,7 +2,7 @@ from collections import OrderedDict
 from itertools import groupby
 from os import PathLike, environ
 from pathlib import Path
-from shutil import copytree
+from shutil import copytree, rmtree
 from typing import Dict, List, Optional
 
 import pytest
@@ -23,11 +23,17 @@ def function_tmpdir(tmpdir_factory, request) -> Path:
 
     keep = request.config.getoption("--keep")
     if keep:
-        copytree(temp, Path(keep) / temp.name)
+        path = Path(keep) / temp.name
+        if path.is_dir():
+            rmtree(path)
+        copytree(temp, path)
 
     keep_failed = request.config.getoption("--keep-failed")
     if keep_failed and request.node.rep_call.failed:
-        copytree(temp, Path(keep_failed) / temp.name)
+        path = Path(keep_failed) / temp.name
+        if path.is_dir():
+            rmtree(path)
+        copytree(temp, path)
 
 
 @pytest.fixture(scope="class")
@@ -40,7 +46,10 @@ def class_tmpdir(tmpdir_factory, request) -> Path:
 
     keep = request.config.getoption("--keep")
     if keep:
-        copytree(temp, Path(keep) / temp.name)
+        path = Path(keep) / temp.name
+        if path.is_dir():
+            rmtree(path)
+        copytree(temp, path)
 
 
 @pytest.fixture(scope="module")
@@ -50,8 +59,10 @@ def module_tmpdir(tmpdir_factory, request) -> Path:
 
     keep = request.config.getoption("--keep")
     if keep:
-        copytree(temp, Path(keep) / temp.name)
-        print(list((Path(keep) / temp.name).rglob("*")))
+        path = Path(keep) / temp.name
+        if path.is_dir():
+            rmtree(path)
+        copytree(temp, path)
 
 
 @pytest.fixture(scope="session")
@@ -61,7 +72,10 @@ def session_tmpdir(tmpdir_factory, request) -> Path:
 
     keep = request.config.getoption("--keep")
     if keep:
-        copytree(temp, Path(keep) / temp.name)
+        path = Path(keep) / temp.name
+        if path.is_dir():
+            rmtree(path)
+        copytree(temp, path)
 
 
 # environment-dependent fixtures
