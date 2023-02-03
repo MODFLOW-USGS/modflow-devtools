@@ -158,7 +158,8 @@ class MFZipFile(ZipFile):
 
 
 def zip_all(path, file_pths=None, dir_pths=None, patterns=None):
-    """Compress all files in the user-provided list of file paths and directory
+    """
+    Compress all files in the user-provided list of file paths and directory
     paths that match the provided file patterns.
 
     Parameters

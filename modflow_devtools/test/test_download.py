@@ -16,17 +16,20 @@ _repos = [
 ]
 
 
-@pytest.mark.parametrize("per_page", [-1, 0, 101, 1000])
-def test_get_releases_bad_page_size(per_page):
+@pytest.mark.parametrize("per_page", [-1, 0, 1.5, 101, 1000])
+@pytest.mark.parametrize("retries", [-1, 0, 1.5])
+def test_get_releases_bad_params(per_page, retries):
     with pytest.raises(ValueError):
-        get_releases("executables", per_page=per_page)
+        get_releases(
+            "executables", per_page=per_page, retries=retries, verbose=True
+        )
 
 
 @flaky
 @requires_github
 @pytest.mark.parametrize("repo", _repos)
 def test_get_releases(repo):
-    releases = get_releases(repo)
+    releases = get_releases(repo, verbose=True)
     assert any(releases)
     assert all("created_at" in r for r in releases)
 
@@ -35,7 +38,7 @@ def test_get_releases(repo):
 
     # test page size option
     if repo == "MODFLOW-USGS/modflow6-nightly-build":
-        assert len(releases) == 30  # 30-day retention period
+        assert len(releases) <= 31  # 30-day retention period
 
 
 @flaky
@@ -43,7 +46,7 @@ def test_get_releases(repo):
 @pytest.mark.parametrize("repo", _repos)
 def test_get_release(repo):
     tag = "latest"
-    release = get_release(repo, tag)
+    release = get_release(repo, tag, verbose=True)
     assets = release["assets"]
     expected_names = ["linux.zip", "mac.zip", "win64.zip"]
     actual_names = [asset["name"] for asset in assets]
@@ -65,9 +68,9 @@ def test_list_artifacts(tmp_path, name, per_page):
     artifacts = list_artifacts(
         "MODFLOW-USGS/modflow6",
         name=name,
-        quiet=False,
         per_page=per_page,
         max_pages=3,
+        verbose=True,
     )
 
     if any(artifacts) and name:
@@ -79,7 +82,7 @@ def test_list_artifacts(tmp_path, name, per_page):
 @pytest.mark.parametrize("delete_zip", [True, False])
 def test_download_artifact(function_tmpdir, delete_zip):
     repo = "MODFLOW-USGS/modflow6"
-    artifacts = list_artifacts(repo, max_pages=1, quiet=False)
+    artifacts = list_artifacts(repo, max_pages=1, verbose=True)
     first = next(iter(artifacts), None)
 
     if not first:
@@ -91,7 +94,7 @@ def test_download_artifact(function_tmpdir, delete_zip):
         id=artifact_id,
         path=function_tmpdir,
         delete_zip=delete_zip,
-        quiet=False,
+        verbose=False,
     )
 
     assert len(list(function_tmpdir.rglob("*"))) >= (0 if delete_zip else 1)
