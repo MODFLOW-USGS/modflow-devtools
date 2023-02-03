@@ -239,7 +239,6 @@ class MFTestContext:
         return self._targets.get_mf6_version(version=version)
 
     def _update_context(self):
-
         if not self._exe.verify_exe() or (
             self._update and not self._exe.releases_current()
         ):
