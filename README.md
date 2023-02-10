@@ -68,7 +68,7 @@ This package contains shared tools for developing and testing MODFLOW 6 and FloP
 
 ## Quickstart
 
-To import `pytest` fixtures in a project consuming `modflow-devtools`, add the following to a `conftest.py` file in the project root:
+To import `pytest` fixtures in a project consuming `modflow-devtools`, add the following to a `conftest.py` file:
 
 ```python
 pytest_plugins = [ "modflow_devtools.fixtures" ]
