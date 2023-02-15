@@ -105,6 +105,7 @@ def test_keep_session_scoped_tmpdir_inner(session_tmpdir):
 @pytest.mark.parametrize("arg", ["--keep", "-K"])
 def test_keep_function_scoped_tmpdir(function_tmpdir, arg):
     inner_fn = test_keep_function_scoped_tmpdir_inner.__name__
+    file_path = Path(function_tmpdir / f"{inner_fn}0" / FILE_NAME)
     args = [
         __file__,
         "-v",
@@ -117,7 +118,15 @@ def test_keep_function_scoped_tmpdir(function_tmpdir, arg):
         function_tmpdir,
     ]
     assert pytest.main(args) == ExitCode.OK
-    assert Path(function_tmpdir / f"{inner_fn}0" / FILE_NAME).is_file()
+    assert file_path.is_file()
+    first_modified = file_path.stat().st_mtime
+
+    assert pytest.main(args) == ExitCode.OK
+    assert file_path.is_file()
+    second_modified = file_path.stat().st_mtime
+
+    # make sure contents were overwritten
+    assert first_modified < second_modified
 
 
 @pytest.mark.parametrize("arg", ["--keep", "-K"])

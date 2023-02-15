@@ -1,6 +1,6 @@
 # MODFLOW developer tools
 
-### Version 0.1.5 &mdash; release candidate
+### Version 0.1.6 &mdash; release candidate
 [![GitHub tag](https://img.shields.io/github/tag/MODFLOW-USGS/modflow-devtools.svg)](https://github.com/MODFLOW-USGS/modflow-devtools/tags/latest)
 [![PyPI Version](https://img.shields.io/pypi/v/modflow-devtools.png)](https://pypi.python.org/pypi/modflow-devtools)
 [![PyPI Versions](https://img.shields.io/pypi/pyversions/modflow-devtools.png)](https://pypi.python.org/pypi/modflow-devtools)
@@ -68,7 +68,7 @@ This package contains shared tools for developing and testing MODFLOW 6 and FloP
 
 ## Quickstart
 
-To import `pytest` fixtures in a project consuming `modflow-devtools`, add the following to a `conftest.py` file in the project root:
+To import `pytest` fixtures in a project consuming `modflow-devtools`, add the following to a `conftest.py` file:
 
 ```python
 pytest_plugins = [ "modflow_devtools.fixtures" ]

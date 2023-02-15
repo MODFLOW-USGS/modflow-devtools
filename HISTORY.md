@@ -1,3 +1,10 @@
+### Version 0.1.6
+
+#### Refactoring
+
+* [refactor(fixtures)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/a9570097d640a4c071dd1bee2d09ea99cac8ffa1): Overwrite keepable temp dirs by default (#67). Committed by w-bonelli on 2023-01-20.
+* [refactor(download)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/1ced91dc3a0619016728358d69e7563e175e6fac): Refactor GH API utils, add tests, update docs (#68). Committed by w-bonelli on 2023-02-03.
+
 ### Version 0.1.5
 
 #### Refactoring

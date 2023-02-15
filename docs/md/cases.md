@@ -2,7 +2,7 @@
 
 Constructing test models in code typically involves defining variables or `pytest` fixtures in the same test script as the test function. While this is quick and effective for manually defining new scenarios, it tightly couples test functions to test cases, makes reuse of the test case by other tests more difficult, and tends to lead to duplication, as test scripts may reproduce similar testing and data-generating procedures.
 
-A minimal framework is provided for self-describing test cases which can be plugged into arbitrary test functions. At its core is the `Case` class, which is just a `SimpleNamespace` with a few defaults and a `copy_update()` method. This pairs nicely with [`pytest-cases`](https://smarie.github.io/python-pytest-cases/), which is recommended but not required.
+A minimal framework is provided for self-describing test cases which can be plugged into arbitrary test functions. At its core is the `Case` class, which is just a `SimpleNamespace` with a few defaults and a `copy_update()` method. This pairs nicely with [`pytest-cases`](https://smarie.github.io/python-pytest-cases/).
 
 ## Overview
 

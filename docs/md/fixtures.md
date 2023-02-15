@@ -4,16 +4,18 @@ Several `pytest` fixtures are provided to help with testing.
 
 ## Keepable temporary directories
 
-Tests often need to exercise code that reads from and/or writes to disk. The test harness may also need to create test data during setup and clean up the filesystem on teardown. Temporary directories are built into `pytest` via the [`tmp_path`](https://docs.pytest.org/en/latest/how-to/tmp_path.html#the-tmp-path-fixture) and `tmp_path_factory` fixtures.
+Tests often need to exercise code that reads from and/or writes to disk. The test harness may also need to create test data during setup and clean up the filesystem on teardown. Temporary directories are built into `pytest` via the [`tmp_path`](https://docs.pytest.org/en/latest/how-to/tmp_path.html#the-tmp-path-fixture) and `tmp_path_factory` fixtures, however the default temporary directory location varies across platforms and may be inconvenient to access.
 
-Several fixtures are provided in `modflow_devtools/fixtures.py` to extend the behavior of temporary directories for test functions:
+`modflow-devtools` provides a set of fixtures to extend default `pytest` temporary directory fixtures' behavior with the ability to optionally save test outputs in a location of the user's choice:
 
 - `function_tmpdir`
 - `module_tmpdir`
 - `class_tmpdir`
 - `session_tmpdir`
 
-These are automatically created before test code runs and lazily removed afterwards, subject to the same [cleanup procedure](https://docs.pytest.org/en/latest/how-to/tmp_path.html#the-default-base-temporary-directory) used by the default `pytest` temporary directory fixtures. Their purpose is to allow test artifacts to be saved in a user-specified location when `pytest` is invoked with a `--keep` option &mdash; this can be useful to debug failing tests.
+When `pytest` is invoked with a `--keep <path>` option, files created by tests using any of the above fixtures are saved under the specified path, in subdirectories named according to the test function.
+
+The fixtures are named according to their [scope](https://docs.pytest.org/en/7.1.x/how-to/fixtures.html#scope-sharing-fixtures-across-classes-modules-packages-or-session), and are automatically created before test code runs and lazily removed afterwards, subject to the same [cleanup procedure](https://docs.pytest.org/en/latest/how-to/tmp_path.html#the-default-base-temporary-directory) used by the default `pytest` temporary directory fixtures. Functionally they are identical to the `pytest`-provided fixtures save for the behavior described above. 
 
 ```python
 from pathlib import Path
@@ -32,13 +34,7 @@ def test_tmpdirs(function_tmpdir, module_tmpdir):
         f2.write("hello, module")
 ```
 
-Any files written to the temporary directory will be saved to saved to subdirectories named according to the test case, class or module. To keep files created by a test case like above, run:
-
-```shell
-pytest --keep <path>
-```
-
-There is also a `--keep-failed <path>` option which preserves outputs only from failing test cases.
+There is also a `--keep-failed <path>` option which preserves outputs only from failing test cases. Note that this variant is only compatible with `function_tmpdir`.
 
 ## Loading example models
 
@@ -61,10 +57,11 @@ See the [installation docs](install.md) for more information on installing test 
 
 It is recommended to set the environment variable `REPOS_PATH` to the location of the model repositories on the filesystem. Model repositories must live side-by-side in this location, and repository directories are expected to be named identically to GitHub repositories. If `REPOS_PATH` is not configured, `modflow-devtools` assumes tests are being run from an `autotest` subdirectory of the consuming project's root, and model repos live side-by-side with the consuming project. If this guess is incorrect and repositories cannot be found, tests requesting these fixtures will be skipped.
 
-**Note:** by default, all models found in the respective external repository will be returned by these fixtures. It is up to the consuming project to exclude models if needed. This can be accomplished via:
+**Note:** by default, all models found in the respective external repository will be returned by these fixtures. It is up to the consuming project to exclude models if needed. This can be accomplished by:
 
-- custom markers
+- [custom markers](https://docs.pytest.org/en/7.1.x/example/markers.html)
 - [filtering with CLI options](#filtering)
+- [manually skipping with `pytest.skip(reason="...")`](https://docs.pytest.org/en/7.1.x/reference/reference.html?highlight=pytest%20skip#pytest.skip)
 - [using model-finding utility functions directly](#utility-functions)
 
 ### Usage
@@ -127,7 +124,6 @@ def test_example_scenario(tmp_path, example_scenario):
 ```
 
 **Note**: example models must first be built by running the `ci_build_files.py` script in `modflow6-examples/etc` before running tests using the `example_scenario` fixture. See the [install docs](https://modflow-devtools.readthedocs.io/en/latest/md/install.html) for more info.
-
 
 ### Filtering
 
