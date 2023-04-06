@@ -60,7 +60,7 @@ class Version(NamedTuple):
 
 class ReleaseType(Enum):
     CANDIDATE = "Release Candidate"
-    APPROVED = "Production"
+    RELEASE = "Release"
 
 
 _initial_version = Version(0, 0, 1)
@@ -92,19 +92,14 @@ def update_init_py(
 def update_readme_markdown(
     release_type: ReleaseType, timestamp: datetime, version: Version
 ):
-    # read README.md into memory
     lines = _readme_path.read_text().rstrip().split("\n")
-
-    # rewrite README.md
     with open(_readme_path, "w") as f:
         for line in lines:
             if "### Version " in line:
                 line = f"### Version {version}"
-                if release_type != ReleaseType.APPROVED:
+                if release_type != ReleaseType.RELEASE:
                     line += f" &mdash; {release_type.value.lower()}"
-
             f.write(f"{line}\n")
-
     print(f"Updated {_readme_path} to version {version}")
 
 
@@ -138,7 +133,7 @@ def update_version(
         with lock:
             update_version_txt(release_type, timestamp, version)
             update_init_py(release_type, timestamp, version)
-            update_readme_markdown(release_type, timestamp, version)
+            # update_readme_markdown(release_type, timestamp, version)
             update_docs_config(release_type, timestamp, version)
     finally:
         try:
@@ -187,7 +182,7 @@ if __name__ == "__main__":
         print(_current_version)
     else:
         update_version(
-            release_type=ReleaseType.APPROVED
+            release_type=ReleaseType.RELEASE
             if args.approve
             else ReleaseType.CANDIDATE,
             timestamp=datetime.now(),
