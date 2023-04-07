@@ -29,7 +29,7 @@ The `modflow-devtools` package provides a set of tools for developing and testin
    :maxdepth: 2
    :caption: Miscellaneous
 
-   md/web.md
+   md/download.md
    md/zip.md
 
 
