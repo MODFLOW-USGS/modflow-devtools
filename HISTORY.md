@@ -1,3 +1,10 @@
+### Version 0.1.7
+
+#### Refactoring
+
+* [refactor(fixtures)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/2bbe35f3a4b63d9c6d558d7669c986a6fb7056de): Add entries to default exe name/path mapping (#75). Committed by w-bonelli on 2023-03-01.
+* [refactor(versioning)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/5fbc6b98e34afe9e43cc1d8c1b26f87e64f00699): Don't track version explicitly in readme (#76). Committed by w-bonelli on 2023-04-06.
+
 ### Version 0.1.6
 
 #### Refactoring
