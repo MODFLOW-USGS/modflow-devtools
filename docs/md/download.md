@@ -1,19 +1,12 @@
-# Downloads
+# Web utilities 
 
-Some utility functions are provided to query information and download artifacts and assets from the GitHub API. These are available in the `modflow_devtools.download` module and are briefly described below. See this project's test cases (in particular `test_download.py`) for more usage examples.
+Some utility functions are provided for common web requests. Most use the GitHub API to query information or download artifacts and assets. See this project's test cases (in particular `test_download.py`) for detailed usage examples.
 
 **Note:** to avoid GitHub API rate limits when using these functions, it is recommended to set the `GITHUB_TOKEN` environment variable. If this variable is set, the token will be borne on requests sent to the API.
 
-## Retrieving information
+## Queries
 
-The following functions ask the GitHub API for information about a repository. The singular functions generally return a dictionary, while the plural functions return a list of dictionaries, with dictionary contents parsed directly from the API response's JSON.
-
-- `get_releases(repo, per_page=30, max_pages=10, retries=3, verbose=False)`
-- `get_release(repo, tag="latest", retries=3, verbose=False)`
-- `get_release_assets(repo, tag="latest", simple=False, retries=3, verbose=False)`
-- `list_artifacts(repo, name, per_page=None, max_pages=None, verbose=False)`
-
-The `repo` parameter's format is `owner/name`, as in GitHub URLs.
+The following functions ask the GitHub API for information about a repository. The singular functions generally return a dictionary, while the plural functions return a list of dictionaries, with dictionary contents parsed directly from the API response's JSON. The first parameter of each function is `repo`, a string whose format must be `owner/name`, as appearing in GitHub URLs.
 
 For instance, to retrieve information about the latest executables release, then manually inspect available assets:
 
@@ -54,11 +47,27 @@ This prints:
  'win64.zip': 'https://github.com/MODFLOW-USGS/executables/releases/download/12.0/win64.zip'}
 ```
 
-## Downloading assets
+## Downloads
 
-The `download_artifact(repo, id, path=None, delete_zip=True, verbose=False)` function downloads and unzips the GitHub Actions artifact with the given ID to the given path, optionally deleting the zipfile afterwards. The `repo` format is `owner/name`, as in GitHub URLs.
+The `download_artifact` function downloads and unzips the GitHub Actions artifact with the given ID to the given path, optionally deleting the zipfile afterwards. The `repo` format is `owner/name`, as in GitHub URLs. For instance:
 
-The `download_and_unzip(url, path=None, delete_zip=True, verbose=False)` function is a more generic alternative for downloading and unzipping files from arbitrary URLs.
+```python
+from modflow_devtools.download import list_artifacts, download_artifact
+
+repo = "MODFLOW-USGS/modflow6"
+artifacts = list_artifacts(repo, max_pages=1, verbose=True)
+artifact = next(iter(artifacts), None)
+if artifact:
+    download_artifact(
+        repo=repo,
+        id=artifact["id"],
+        path=function_tmpdir,
+        delete_zip=False,
+        verbose=False,
+    )
+```
+
+The `download_and_unzip` function is a more generic alternative for downloading and unzipping files from arbitrary URLs.
 
 For instance, to download a MODFLOW 6.4.1 Linux distribution and delete the zipfile after extracting:
 

@@ -52,15 +52,28 @@ def build_default_exe_dict(bin_path: PathLike) -> Dict[str, Path]:
     ext, so = get_suffixes(sys.platform)
 
     # downloaded executables
+    d["mf2000"] = dl_bin / f"mf2000{ext}"
     d["mf2005"] = dl_bin / f"mf2005dbl{ext}"
     d["mfnwt"] = dl_bin / f"mfnwtdbl{ext}"
     d["mfusg"] = dl_bin / f"mfusgdbl{ext}"
     d["mflgr"] = dl_bin / f"mflgrdbl{ext}"
     d["mf2005s"] = dl_bin / f"mf2005{ext}"
     d["mt3dms"] = dl_bin / f"mt3dms{ext}"
+    d["crt"] = dl_bin / f"crt{ext}"
+    d["gridgen"] = dl_bin / f"gridgen{ext}"
+    d["mp6"] = dl_bin / f"mp6{ext}"
+    d["mp7"] = dl_bin / f"mp7{ext}"
+    d["swtv4"] = dl_bin / f"swtv4{ext}"
+    d["sutra"] = dl_bin / f"sutra{ext}"
+    d["triangle"] = dl_bin / f"triangle{ext}"
+    d["vs2dt"] = dl_bin / f"vs2dt{ext}"
+    d["zonbudusg"] = dl_bin / f"zonbudusg{ext}"
 
     # executables rebuilt from last release
     d["mf6_regression"] = rb_bin / f"mf6{ext}"
+    d["libmf6_regression"] = rb_bin / f"libmf6{so}"
+    d["mf5to6_regression"] = rb_bin / f"mf5to6{ext}"
+    d["zbud6_regression"] = rb_bin / f"zbud6{ext}"
 
     # local development version
     d["mf6"] = d_bin / f"mf6{ext}"
