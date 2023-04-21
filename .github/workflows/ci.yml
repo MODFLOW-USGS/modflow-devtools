@@ -116,6 +116,7 @@ jobs:
         with:
           repository: MODFLOW-USGS/modflow6-largetestmodels
           path: modflow6-largetestmodels
+          token: ${{ github.token }}
 
       - name: Install executables
         uses: modflowpy/install-modflow-action@v1
@@ -160,10 +161,22 @@ jobs:
         working-directory: modflow6-examples/etc
         run: python ci_build_files.py
 
-      - name: Run tests
+      - name: Run local tests
         working-directory: modflow-devtools
         env:
           BIN_PATH: ~/.local/bin/modflow
           REPOS_PATH: ${{ github.workspace }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: pytest -v -n auto --durations 0
+          GITHUB_TOKEN: ${{ github.token }}
+        run: pytest -v -n auto --durations 0 --ignore modflow_devtools/test/test_download.py
+      
+      - name: Run network-dependent tests
+        # only invoke the GH API on one OS and Python version
+        # to avoid rate limits (1000 rqs / hour / repository)
+        # https://docs.github.com/en/actions/learn-github-actions/usage-limits-billing-and-administration#usage-limits
+        if: runner.os == 'Linux' && matrix.python == '3.8'
+        working-directory: modflow-devtools
+        env:
+          BIN_PATH: ~/.local/bin/modflow
+          REPOS_PATH: ${{ github.workspace }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: pytest -v -n auto --durations 0 modflow_devtools/test/test_download.py

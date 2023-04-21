@@ -162,7 +162,7 @@ def test_get_model_paths_largetestmodels():
     reason="repos not found",
 )
 @pytest.mark.parametrize(
-    "models", [(_examples_path, 63), (_largetestmodels_repo_path, 15)]
+    "models", [(_examples_path, 63), (_largetestmodels_repo_path, 16)]
 )
 def test_get_model_paths_exclude_patterns(models):
     path, expected_count = models
@@ -205,7 +205,7 @@ def test_get_namefile_paths_largetestmodels():
     reason="repos not found",
 )
 @pytest.mark.parametrize(
-    "models", [(_examples_path, 43), (_largetestmodels_repo_path, 18)]
+    "models", [(_examples_path, 43), (_largetestmodels_repo_path, 19)]
 )
 def test_get_namefile_paths_exclude_patterns(models):
     path, expected_count = models
