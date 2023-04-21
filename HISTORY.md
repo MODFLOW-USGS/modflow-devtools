@@ -1,3 +1,13 @@
+### Version 0.1.8
+
+#### New features
+
+* [feat(fixtures)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/3bf76d587a04954cc68a07d38e48876d42f06b58): Discover external model repo dirs with .git suffix (#80). Committed by w-bonelli on 2023-04-21.
+
+#### Bug fixes
+
+* [fix(multiple)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/2307add30eb3134a786f7c722656b4d99a0fe91a): Fix some CI and fixture issues (#81). Committed by w-bonelli on 2023-04-21.
+
 ### Version 0.1.7
 
 #### Refactoring
