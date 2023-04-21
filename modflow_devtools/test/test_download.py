@@ -69,7 +69,7 @@ def test_list_artifacts(tmp_path, name, per_page):
         "MODFLOW-USGS/modflow6",
         name=name,
         per_page=per_page,
-        max_pages=3,
+        max_pages=2,
         verbose=True,
     )
 

@@ -309,7 +309,12 @@ def pytest_generate_tests(metafunc):
 
         def get_examples():
             # find MODFLOW 6 namfiles
-            namfiles = [p for p in (repo_path / "examples").rglob("mfsim.nam")]
+            examples_path = repo_path / "examples"
+            namfiles = (
+                [p for p in examples_path.rglob("mfsim.nam")]
+                if examples_path.is_dir()
+                else []
+            )
 
             # group by scenario
             examples = group_examples(namfiles)
@@ -352,7 +357,7 @@ def pytest_generate_tests(metafunc):
 
             return examples
 
-        example_scenarios = get_examples() if repo_path.is_dir() else dict()
+        example_scenarios = get_examples() if repo_path else dict()
         metafunc.parametrize(
             key,
             [(name, nfps) for name, nfps in example_scenarios.items()],
