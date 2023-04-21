@@ -190,15 +190,33 @@ def pytest_generate_tests(metafunc):
         repos_path = Path(repos_path)
     else:
         # by default, assume external repositories are
-        # in the same directory as the current project
-        # and tests are run from <proj root>/autotest.
-        # if no models are found, tests requesting the
-        # fixtures will be skipped.
+        # level (side-by-side) on the filesystem with
+        # the consuming project. also assume tests are
+        # run from <proj root>/autotest.
+        #
+        # external model repo directories are expected
+        # to be named identically to the GitHub repos,
+        # e.g. "modflow6-testmodels", with an optional
+        # ".git" suffix appended to the directory name.
+        #
+        # if model repositories are not found in either
+        # the default location or in REPOS_PATH, tests
+        # requesting these fixtures will be skipped.
         repos_path = Path.cwd().parent.parent
+
+    def get_repo_path(repo_name: str) -> Optional[Path]:
+        """Get the path for the repository with the given name
+        (optionally with .git suffix), or None if not found"""
+        repo_path = repos_path / repo_name
+        if not repo_path.is_dir():
+            repo_path = repos_path / (repo_name + ".git")
+        if not repo_path.is_dir():
+            repo_path = None
+        return repo_path
 
     key = "test_model_mf6"
     if key in metafunc.fixturenames:
-        repo_path = repos_path / "modflow6-testmodels"
+        repo_path = get_repo_path("modflow6-testmodels")
         namefile_paths = (
             get_namefile_paths(
                 repo_path / "mf6",
@@ -207,7 +225,7 @@ def pytest_generate_tests(metafunc):
                 selected=models_selected,
                 packages=packages_selected,
             )
-            if repo_path.is_dir()
+            if repo_path
             else []
         )
         metafunc.parametrize(
@@ -216,7 +234,7 @@ def pytest_generate_tests(metafunc):
 
     key = "test_model_mf5to6"
     if key in metafunc.fixturenames:
-        repo_path = repos_path / "modflow6-testmodels"
+        repo_path = get_repo_path("modflow6-testmodels")
         namefile_paths = (
             get_namefile_paths(
                 repo_path / "mf5to6",
@@ -226,7 +244,7 @@ def pytest_generate_tests(metafunc):
                 selected=models_selected,
                 packages=packages_selected,
             )
-            if repo_path.is_dir()
+            if repo_path
             else []
         )
         metafunc.parametrize(
@@ -235,7 +253,7 @@ def pytest_generate_tests(metafunc):
 
     key = "large_test_model"
     if key in metafunc.fixturenames:
-        repo_path = repos_path / "modflow6-largetestmodels"
+        repo_path = get_repo_path("modflow6-largetestmodels")
         namefile_paths = (
             get_namefile_paths(
                 repo_path,
@@ -245,7 +263,7 @@ def pytest_generate_tests(metafunc):
                 selected=models_selected,
                 packages=packages_selected,
             )
-            if repo_path.is_dir()
+            if repo_path
             else []
         )
         metafunc.parametrize(
@@ -254,7 +272,7 @@ def pytest_generate_tests(metafunc):
 
     key = "example_scenario"
     if key in metafunc.fixturenames:
-        repo_path = repos_path / "modflow6-examples"
+        repo_path = get_repo_path("modflow6-examples")
 
         def is_nested(namfile_path: PathLike) -> bool:
             p = Path(namfile_path)

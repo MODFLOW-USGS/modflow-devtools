@@ -55,7 +55,7 @@ See the [installation docs](install.md) for more information on installing test 
 
 ### Configuration
 
-It is recommended to set the environment variable `REPOS_PATH` to the location of the model repositories on the filesystem. Model repositories must live side-by-side in this location, and repository directories are expected to be named identically to GitHub repositories. If `REPOS_PATH` is not configured, `modflow-devtools` assumes tests are being run from an `autotest` subdirectory of the consuming project's root, and model repos live side-by-side with the consuming project. If this guess is incorrect and repositories cannot be found, tests requesting these fixtures will be skipped.
+It is recommended to set the environment variable `REPOS_PATH` to the location of the model repositories on the filesystem. Model repositories must live side-by-side in this location, and repository directories are expected to be named identically to GitHub repositories (the directory may have a `.git` suffix). If `REPOS_PATH` is not configured, `modflow-devtools` assumes tests are being run from an `autotest` subdirectory of the consuming project's root, and model repos live side-by-side with the consuming project. If this guess is incorrect and repositories cannot be found, tests requesting these fixtures will be skipped.
 
 **Note:** by default, all models found in the respective external repository will be returned by these fixtures. It is up to the consuming project to exclude models if needed. This can be accomplished by:
 
