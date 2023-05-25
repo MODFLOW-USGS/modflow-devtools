@@ -2,11 +2,41 @@ name: Release
 on:
   push:
     branches:
-      - main
+      # initial trigger on semver branch with leading 'v'
       - v[0-9]+.[0-9]+.[0-9]+*
+      # second phase trigger after merging to trunk (either 'main' or 'master')
+      - main
+      - master
   release:
     types:
+      # third phase trigger after release is published
       - published
+  workflow_call:
+    inputs:
+      install_modflow:
+        description: whether to install MODFLOW and related executables for the build/test job
+        required: false
+        default: false
+        type: boolean
+      conda_env:
+        description: path to a conda environment file, relative to the project root (by default, an environment is created from dependencies in pyproject.toml with setup-python)
+        required: false
+        type: string
+      python_version:
+        description: the Python version to use to build and optionally test the package
+        required: true
+        default: 3.8
+        type: number
+      cliff_config:
+        description: path to the git-cliff config file, relative to the project root (empty string disables changelog generation)
+        required: false
+        default: cliff.toml
+        type: string
+    secrets:
+      pypi_username:
+        required: false
+      pypi_password:
+        required: false
 jobs:
   prep:
     name: Prepare release
