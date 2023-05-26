@@ -1,0 +1,290 @@
+name: Release
+on:
+  push:
+    branches:
+      # initial trigger on semver branch with leading 'v'
+      - v[0-9]+.[0-9]+.[0-9]+*
+      # second phase trigger after merging to trunk (either 'main' or 'master')
+      - main
+      - master
+  release:
+    types:
+      # third phase trigger after release is published
+      - published
+  workflow_call:
+    inputs:
+      package_name:
+        description: the name of the Python package to release (must be identical to the module name)
+        required: true
+        type: string
+      trunk_branch:
+        description: the name of the trunk branch (either 'main' or 'master')
+        required: false
+        default: main
+        type: string
+      python_version:
+        description: the Python version to use to build and optionally test the package
+        required: true
+        default: 3.8
+        type: number
+      cliff_config:
+        description: path to the git-cliff config file, relative to the project root
+        required: false
+        default: cliff.toml
+        type: string
+      cumulative_changelog:
+        description: path to the cumulative changelog file, relative to the project root
+        required: false
+        default: HISTORY.md
+        type: string
+jobs:
+  prep:
+    name: Prepare release
+    runs-on: ubuntu-22.04
+    if: github.event_name == 'push' && github.ref_name != ${{ inputs.trunk_branch }}
+    permissions:
+      contents: write
+      pull-requests: write
+    defaults:
+      run:
+        shell: bash
+    steps:
+
+      - name: Checkout release branch
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ inputs.python_version }}
+
+      - name: Install Python build/test dependencies
+        run: |
+          pip install --upgrade pip
+          pip install black build twine
+          pip install .
+
+      - name: Update version
+        id: version
+        run: |
+          ref="${{ github.ref_name }}"
+          version="${ref#"v"}"
+          python scripts/update_version.py -v "$version"
+          black -v ${{ inputs.package_name }}/version.py
+          python -c "import ${{ inputs.package_name }}; print('Version: ', ${{ inputs.package_name }}.__version__)"
+          echo "version=$version" >> $GITHUB_OUTPUT
+
+      - name: Touch changelog
+        run: touch HISTORY.md
+
+      - name: Generate changelog
+        id: cliff
+        uses: orhun/git-cliff-action@v1
+        with:
+          config: ${{ inputs.cliff_config }}
+          args: --verbose --unreleased --tag ${{ steps.version.outputs.version }}
+        env:
+          OUTPUT: CHANGELOG.md
+
+      - name: Update changelog
+        id: update-changelog
+        run: |
+          # move changelog
+          clog="CHANGELOG_${{ steps.version.outputs.version }}.md"
+          echo "changelog=$clog" >> $GITHUB_OUTPUT
+          sudo cp "${{ steps.cliff.outputs.changelog }}" "$clog"
+          
+          # show current release changelog
+          cat "$clog"
+          
+          # substitute full group names
+          sed -i 's/#### Ci/#### Continuous integration/' "$clog"
+          sed -i 's/#### Feat/#### New features/' "$clog"
+          sed -i 's/#### Fix/#### Bug fixes/' "$clog"
+          sed -i 's/#### Refactor/#### Refactoring/' "$clog"
+          sed -i 's/#### Test/#### Testing/' "$clog"
+          
+          cat "$clog" HISTORY.md > temp_history.md
+          sudo mv temp_history.md HISTORY.md
+          
+          # show full changelog
+          cat HISTORY.md
+
+      - name: Upload changelog
+        uses: actions/upload-artifact@v3
+        with:
+          name: changelog
+          path: ${{ steps.update-changelog.outputs.changelog }}
+
+      - name: Create release PR
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          ver="${{ steps.version.outputs.version }}"
+          changelog=$(cat ${{ steps.update-changelog.outputs.changelog }} | grep -v "### Version $ver")
+          
+          # remove this release's changelog so we don't commit it
+          # the changes have already been prepended to HISTORY.md
+          rm ${{ steps.update-changelog.outputs.changelog }}
+          rm -f CHANGELOG.md
+          
+          # commit and push changes
+          git config core.sharedRepository true
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "ci(release): version ${{ steps.version.outputs.version }}"
+          git push origin "${{ github.ref_name }}"
+
+          title="Release $ver"
+          body='
+          # Release '$ver'
+          
+          The release can be approved by merging this pull request into `${{ inputs.trunk_branch }}`. This will trigger jobs to publish the release to PyPI and reset `develop` from `${{ inputs.trunk_branch }}`.
+          
+          ## Changelog
+          
+          '$changelog'
+          '
+          gh pr create -B "${{ inputs.trunk_branch }}" -H "${{ github.ref_name }}" --title "$title" --draft --body "$body"
+
+  release:
+    name: Draft release
+    # runs only when changes are merged to trunk
+    if: github.event_name == 'push' && github.ref_name == ${{ inputs.trunk_branch }}
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+
+      - name: Checkout repo
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ inputs.trunk_branch }}
+
+      # actions/download-artifact won't look at previous workflow runs but we need to in order to get changelog
+      - name: Download artifacts
+        uses: dawidd6/action-download-artifact@v2
+
+      - name: Draft release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          version=$(cat version.txt)
+          title="${{ inputs.package_name }} $version"
+          notes=$(cat "changelog/CHANGELOG_$version.md" | grep -v "### Version $version")
+          gh release create "$version" \
+            --target ${{ inputs.trunk_branch }} \
+            --title "$title" \
+            --notes "$notes" \
+            --draft \
+            --latest
+
+  publish:
+    name: Publish package
+    # runs only after release is published (manually promoted from draft)
+    if: ${{ github.event_name == 'release' }}
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write  # mandatory for trusted publishing
+    environment:  # requires a 'pypi' environment in repo settings
+      name: pypi
+      url: https://pypi.org/p/${{ inputs.package_name }}
+    steps:
+
+      - name: Checkout trunk
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ inputs.trunk_branch }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ inputs.python_version }}
+
+      - name: Install Python dependencies
+        run: |
+          pip install --upgrade pip
+          pip install build twine
+          pip install .
+
+      - name: Build package
+        run: python -m build
+      
+      - name: Check package
+        run: twine check --strict dist/*
+
+      - name: Publish package
+        run: twine upload dist/*
+
+  reset:
+    name: Draft reset PR
+    if: ${{ github.event_name == 'release' }}
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+
+      - name: Checkout trunk branch
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ inputs.trunk_branch }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ inputs.python_version }}
+          cache: 'pip'
+          cache-dependency-path: pyproject.toml
+
+      - name: Install Python dependencies
+        run: |
+          pip install --upgrade pip
+          pip install black filelock
+
+      - name: Get release tag
+        uses: oprypin/find-latest-tag@v1
+        id: latest_tag
+        with:
+          repository: ${{ github.repository }}
+          releases-only: true
+
+      - name: Draft pull request
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          # create reset branch from trunk
+          reset_branch="post-release-${{ steps.latest_tag.outputs.tag }}-reset"
+          git switch -c $reset_branch
+
+          # increment patch version
+          major_version=$(echo "${{ steps.latest_tag.outputs.tag }}" | cut -d. -f1)
+          minor_version=$(echo "${{ steps.latest_tag.outputs.tag }}" | cut -d. -f2)
+          patch_version=$(echo "${{ steps.latest_tag.outputs.tag }}" | cut -d. -f3)
+          version="$major_version.$minor_version.$((patch_version + 1))"
+
+          # update version (add + to version.txt to indicate development status)
+          python scripts/update_version.py -v "$version"
+          black -v ${{ inputs.package_name}}/version.py
+
+          # commit and push reset branch
+          git config core.sharedRepository true
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "ci(post-release): update develop from ${{ inputs.trunk_branch }}"
+          git push -u origin $reset_branch
+
+          # create PR into develop
+          body='
+          # Reinitialize for development
+
+          Updates the `develop` branch from `${{ inputs.trunk_branch }}` following a successful release.
+          '
+          gh pr create -B "develop" -H "$reset_branch" --title "Reinitialize develop branch" --draft --body "$body"

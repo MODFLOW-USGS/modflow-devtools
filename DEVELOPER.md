@@ -71,6 +71,8 @@ Tests which must write to disk should use `pytest`'s built-in `temp_dir` fixture
 
 ## Releasing
 
+todo: update from https://github.com/EC-USGS/pywatershed/blob/develop/.github/RELEASE.md since it has more accurate/detailed explication, then once pywatershed consumes `reusable_release.yml` from this repo, just link from there back here
+
 The `modflow-devtools` release procedure is automated with GitHub Actions in [`.github/workflows/release.yml`](.github/workflows/release.yml). Making a release involves the following steps:
 
 1. Release from `master` branch

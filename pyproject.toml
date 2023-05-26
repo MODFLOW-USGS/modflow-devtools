@@ -68,6 +68,9 @@ docs = [
     "sphinx-rtd-theme",
     "myst-parser"
 ]
+all = [
+    "modflow-devtools[lint, test, docs]",
+]
 
 [project.urls]
 "Documentation" = "https://modflow-devtools.readthedocs.io/en/latest/"

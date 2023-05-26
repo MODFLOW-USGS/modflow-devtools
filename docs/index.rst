@@ -31,6 +31,7 @@ The `modflow-devtools` package provides a set of tools for developing and testin
 
    md/download.md
    md/zip.md
+   md/release.md
 
 
 .. toctree::

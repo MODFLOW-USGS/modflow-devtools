@@ -65,6 +65,8 @@ This package contains shared tools for developing and testing MODFLOW 6 and FloP
   - Python packages installed
   - executables available on the path
 
+A [reusable GitHub Actions workflow](https://docs.github.com/en/actions/using-workflows/reusing-workflows) is also available for EC-related Python package releases. This workflow is used by the `modflow-devtools` project itself, and can be consumed by other projects provided a few conventions are followed. See [the documentation](https://modflow-devtools.readthedocs.io/en/latest/md/release.html) for details.
+
 ## Quickstart
 
 To import `pytest` fixtures in a project consuming `modflow-devtools`, add the following to a `conftest.py` file:
