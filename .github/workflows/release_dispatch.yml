@@ -1,0 +1,18 @@
+name: Release
+on:
+  push:
+    branches:
+      # initial trigger on semver branch with leading 'v'
+      - v[0-9]+.[0-9]+.[0-9]+*
+      # second phase trigger after merging to trunk
+      - main
+  release:
+    types:
+      # third phase trigger after release is published
+      - published
+jobs:
+  release:
+    uses: ./.github/workflows/release.yml
+    with:
+      package_name: mypackage
+      python_version: 3.9
