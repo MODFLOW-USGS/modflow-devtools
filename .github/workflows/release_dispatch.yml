@@ -10,9 +10,98 @@ on:
     types:
       # third phase trigger after release is published
       - published
+  # workflow_dispatch trigger to start release via GitHub UI or CLI,
+  # as an alternative to triggering when a release branch is pushed.
+  # see https://docs.github.com/en/actions/managing-workflow-runs/manually-running-a-workflow
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to release from.'
+        required: true
+        type: string
+      draft_release:
+        description: Draft a release post with assets and changelog.
+        required: false
+        default: true
+        type: boolean
+      publish_package:
+        description: Publish the package to PyPI.
+        required: false
+        default: true
+        type: boolean
+      reset_develop:
+        description: Reset the develop branch from the trunk.
+        required: false
+        default: true
+        type: boolean
+      version:
+        description: 'Version number to use for release.'
+        required: true
+        type: string
 jobs:
+  set_options:
+    name: Set release options
+    if: github.ref_name != 'master'
+    runs-on: ubuntu-22.04
+    defaults:
+      run:
+        shell: bash -l {0}
+    outputs:
+      branch: ${{ steps.set_branch.outputs.branch }}
+      version: ${{ steps.set_version.outputs.version }}
+    steps:
+
+      - name: Set branch
+        id: set_branch
+        run: |
+          # if branch was provided explicitly via workflow_dispatch, use it
+          if [[ ("${{ github.event_name }}" == "workflow_dispatch") && (-n "${{ inputs.branch }}") ]]; then
+            branch="${{ inputs.branch }}"
+            # prevent releases from develop or master
+            if [[ ("$branch" == "develop") || ("$branch" == "master") ]]; then
+              echo "error: releases may not be triggered from branch $branch"
+              exit 1
+            fi
+            echo "using branch $branch from workflow_dispatch"
+          elif [[ ("${{ github.event_name }}" == "push") && ("${{ github.ref_name }}" != "master") ]]; then
+            # if release was triggered by pushing a release branch, use that branch
+            branch="${{ github.ref_name }}"
+            echo "using branch $branch from ref ${{ github.ref }}"
+          else
+            # otherwise exit with an error
+            echo "error: this workflow should not have triggered for event ${{ github.event_name }} on branch ${{ github.ref_name }}"
+            exit 1
+          fi
+          echo "branch=$branch" >> $GITHUB_OUTPUT
+
+      - name: Set version
+        id: set_version
+        run: |
+          # if version number was provided explicitly via workflow_dispatch, use it
+          if [[ ("${{ github.event_name }}" == "workflow_dispatch") && (-n "${{ inputs.version }}") ]]; then
+            ver="${{ inputs.version }}"
+            echo "using version number $ver from workflow_dispatch"
+          elif [[ ("${{ github.event_name }}" == "push") && ("${{ github.ref_name }}" != "master") ]]; then
+            # if release was triggered by pushing a release branch, parse version number from branch name (sans leading 'v')
+            ref="${{ github.ref_name }}"
+            ver="${ref#"v"}"
+            echo "parsed version number $ver from branch name $ref"
+          else
+            # otherwise exit with an error
+            echo "error: version number not provided explicitly (via workflow_dispatch input) or implicitly (via branch name)"
+            exit 1
+          fi
+          echo "version=$ver" >> $GITHUB_OUTPUT
+
   release:
+    name: Do release
     uses: ./.github/workflows/release.yml
+    needs: 
+      - set_options
     with:
       package_name: mypackage
       python_version: 3.9
+      draft_release: ${{ inputs.draft_release }}
+      publish_package: ${{ inputs.publish_package }}
+      reset_develop: ${{ inputs.reset_develop }}
+      version: ${{ needs.set_options.outputs.version }}

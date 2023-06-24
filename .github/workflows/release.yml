@@ -4,41 +4,41 @@ on:
   workflow_call:
     inputs:
       cliff_config:
-        description: path to the git-cliff config file, relative to the project root
+        description: Path to the git-cliff config ile, relative to the project root.
         required: false
         default: cliff.toml
         type: string
       cumulative_changelog:
-        description: path to the cumulative changelog file, relative to the project root
+        description: Path to the cumulative changelog file relative to the project root.
         required: false
         default: HISTORY.md
         type: string
       draft_release:
-        description: whether to draft a release post with assets and changelo
+        description: Draft a release post with assets and changelog.
         required: false
-        default: true
+        default: false
         type: boolean
       package_name:
-        description: the name of the Python package to release (must be identical to the module name)
+        description: Name of the Python package to release (must be identical to the module name).
         required: true
         type: string
       publish_package:
-        description: whether to publish the package to PyPI
+        description: Publish the package to PyPI.
         required: false
-        default: true
+        default: false
         type: boolean
       python_version:
-        description: the Python version to use to build and optionally test the package
+        description: Python version to use to build and test the package.
         required: true
         default: 3.8
         type: number
       reset_develop:
-        description: whether to reset the develop branch from the trunk branch after publishing the release
+        description: Reset the develop branch from the trunk.
         required: false
-        default: true
+        default: false
         type: boolean
       trunk_branch:
-        description: the name of the trunk branch (either 'main' or 'master')
+        description: Name of the trunk branch (either 'main' or 'master').
         required: false
         default: main
         type: string
