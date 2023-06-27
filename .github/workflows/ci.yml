@@ -142,22 +142,17 @@ jobs:
           pip install .
           pip install ".[test]"
       
-      - name: Cache modflow6 examples
-        id: cache-examples
-        uses: actions/cache@v3
-        with:
-          path: modflow6-examples/examples
-          key: modflow6-examples-${{ hashFiles('modflow6-examples/data/**') }}
-      
       - name: Install extra Python packages
-        if: steps.cache-examples.outputs.cache-hit != 'true'
         working-directory: modflow6-examples/etc
         run: |
           pip install -r requirements.pip.txt
           pip install -r requirements.usgs.txt
 
+      - name: Update flopy
+        working-directory: modflow6/autotest
+        run: python update_flopy.py
+
       - name: Build modflow6 example models
-        if: steps.cache-examples.outputs.cache-hit != 'true'
         working-directory: modflow6-examples/etc
         run: python ci_build_files.py
 
@@ -167,6 +162,7 @@ jobs:
           BIN_PATH: ~/.local/bin/modflow
           REPOS_PATH: ${{ github.workspace }}
           GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_USER: "MODFLOW-USGS"
         run: pytest -v -n auto --durations 0 --ignore modflow_devtools/test/test_download.py
       
       - name: Run network-dependent tests
@@ -179,4 +175,5 @@ jobs:
           BIN_PATH: ~/.local/bin/modflow
           REPOS_PATH: ${{ github.workspace }}
           GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_USER: "MODFLOW-USGS"
         run: pytest -v -n auto --durations 0 modflow_devtools/test/test_download.py
