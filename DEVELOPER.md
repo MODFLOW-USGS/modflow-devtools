@@ -40,6 +40,7 @@ This repository's tests expect a few environment variables:
 - `BIN_PATH`: path to MODFLOW 6 and related executables
 - `REPOS_PATH`: the path to MODFLOW 6 example model repositories
 - `GITHUB_TOKEN`: a GitHub authentication token
+- `GIITHUB_USER`: the developer's GitHub username
 
 These may be set manually, but the recommended approach is to configure environment variables in a `.env` file in the project root, for instance:
 
