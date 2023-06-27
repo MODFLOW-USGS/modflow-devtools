@@ -16,7 +16,7 @@ on:
   workflow_dispatch:
     inputs:
       branch:
-        description: 'Branch to release from.'
+        description: Branch to release from.
         required: true
         type: string
       draft_release:
@@ -29,16 +29,23 @@ on:
         required: false
         default: true
         type: boolean
+      python:
+        description: Python version to use for release.
+        required: false
+        default: '3.8'
+        type: string
       reset_develop:
         description: Reset the develop branch from the trunk.
         required: false
         default: true
         type: boolean
       version:
-        description: 'Version number to use for release.'
+        description: Version number to use for release.
         required: true
         type: string
 jobs:
+  # configure options which may be set as dispatch
+  # inputs or dynamically assigned default values
   set_options:
     name: Set release options
     if: github.ref_name != 'master'
@@ -48,6 +55,9 @@ jobs:
         shell: bash -l {0}
     outputs:
       branch: ${{ steps.set_branch.outputs.branch }}
+      package: ${{ steps.set_package.outputs.package }}
+      python: ${{ steps.set_python.outputs.python }}
+      trunk: ${{ steps.set_trunk.outputs.trunk }}
       version: ${{ steps.set_version.outputs.version }}
     steps:
 
@@ -73,6 +83,27 @@ jobs:
             exit 1
           fi
           echo "branch=$branch" >> $GITHUB_OUTPUT
+      
+      - name: Set package name
+        id: set_package
+        run: echo "package=modflow-devtools" >> $GITHUB_OUTPUT
+
+      - name: Set Python
+        id: set_python
+        run: |
+          # if python version was provided explicitly via workflow_dispatch, use it
+          if [[ ("${{ github.event_name }}" == "workflow_dispatch") && (-n "${{ inputs.python }}") ]]; then
+            python="${{ inputs.python }}"
+            echo "using python $python from workflow_dispatch"
+          else
+            # otherwise use 3.8
+            python=3.8
+          fi
+          echo "python=$python" >> $GITHUB_OUTPUT
+
+      - name: Set trunk branch
+        id: set_trunk
+        run: echo "trunk=main" >> $GITHUB_OUTPUT
 
       - name: Set version
         id: set_version
@@ -93,15 +124,240 @@ jobs:
           fi
           echo "version=$ver" >> $GITHUB_OUTPUT
 
-  release:
+  make_dist:
     name: Do release
     uses: ./.github/workflows/release.yml
     needs: 
       - set_options
     with:
-      package_name: mypackage
-      python_version: 3.9
-      draft_release: ${{ inputs.draft_release }}
-      publish_package: ${{ inputs.publish_package }}
-      reset_develop: ${{ inputs.reset_develop }}
+      branch: ${{ needs.set_options.outputs.branch }}
+      package_name: ${{ needs.set_options.outputs.package }}
+      python_version: ${{ needs.set_options.outputs.python }}
+      trunk_branch: ${{ needs.set_options.outputs.trunk }}
       version: ${{ needs.set_options.outputs.version }}
+  
+  pr:
+    name: Draft release PR
+    needs:
+      - set_options
+      - make_dist
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+
+      - name: Checkout repo
+        uses: actions/checkout@v3
+        with:
+          # use repository_owner to allow testing on a fork
+          repository: ${{ github.repository_owner }}/modflow-devtools
+          ref: ${{ github.ref }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ inputs.python }}
+
+      - name: Install Python build/test dependencies
+        run: |
+          pip install --upgrade pip
+          pip install black filelock
+
+      - name: Update version
+        id: version
+        run: |
+          ref="${{ github.ref_name }}"
+          version="${ref#"v"}"
+          package="${{ needs.set_options.outputs.package }}"
+          # assume module name is the same as package
+          # name with hyphens swapped for underscores
+          module="${package//-/_}"
+          python scripts/update_version.py -v "$version"
+          black -v $module/version.py
+          python -c "import $module; print('Version: ', $module.__version__)"
+          echo "version=$version" >> $GITHUB_OUTPUT
+
+      - name: Commit & push changes
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          ver="${{ needs.set_options.outputs.version }}"
+          
+          git config core.sharedRepository true
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "ci(release): version $ver"
+          git push origin "${{ github.ref_name }}"
+
+      # actions/download-artifact won't look at previous workflow runs but we need to in order to get changelog
+      - name: Download artifacts
+        uses: dawidd6/action-download-artifact@v2
+
+      - name: Create release PR
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          ver="${{ needs.set_options.outputs.version }}"
+          changelog=$(cat CHANGELOG.md)
+
+          title="Release $ver"
+          trunk="${{ needs.set_options.outputs.trunk }}"
+          body='
+          # Release '$ver'
+          
+          The release can be approved by merging this pull request into `$trunk`. This will trigger jobs to publish the release to PyPI and reset `develop` from `$trunk`.
+          
+          ## Changelog
+          
+          '$changelog'
+          '
+          gh pr create -B "$trunk" -H "${{ github.ref_name }}" --title "$title" --draft --body "$body"
+
+  release:
+    name: Draft release
+    needs: 
+      - set_options
+      - make_dist
+    # runs only when changes are merged to trunk
+    if: github.event_name == 'push' && github.ref_name == needs.set_options.outputs.trunk && inputs.draft_release == true
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+
+      - name: Checkout repo
+        uses: actions/checkout@v3
+        with:
+          # use repository_owner to allow testing on a fork
+          repository: ${{ github.repository_owner }}/modflow-devtools
+          ref: ${{ needs.set_options.outputs.trunk }}
+
+      # actions/download-artifact won't look at previous workflow runs but we need to in order to get changelog
+      - name: Download artifacts
+        uses: dawidd6/action-download-artifact@v2
+
+      - name: Draft release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          version=$(cat version.txt)
+          title="${{ needs.set_options.outputs.package }} $version"
+          notes=$(cat "changelog/CHANGELOG_$version.md" | grep -v "### Version $version")
+          gh release create "$version" \
+            --target ${{ needs.set_options.outputs.trunk }} \
+            --title "$title" \
+            --notes "$notes" \
+            --draft \
+            --latest
+
+  publish:
+    name: Publish package
+    needs:
+      - set_options
+      - make_dist
+    # runs only after release is published (manually promoted from draft)
+    if: github.event_name == 'release' && inputs.publish_package == true
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write  # mandatory for trusted publishing
+    environment:  # requires a 'pypi' environment in repo settings
+      name: pypi
+      url: https://pypi.org/p/${{ needs.set_options.outputs.package }}
+    steps:
+
+      - name: Checkout trunk
+        uses: actions/checkout@v3
+        with:
+           # use repository_owner to allow testing on a fork
+          repository: ${{ github.repository_owner }}/modflow-devtools
+          ref: ${{ needs.set_options.outputs.trunk }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ needs.set_options.outputs.python }}
+
+      - name: Install Python dependencies
+        run: |
+          pip install --upgrade pip
+          pip install twine
+      
+      - name: Check package
+        run: twine check --strict dist/*
+
+      - name: Publish package
+        run: twine upload dist/*
+  
+  reset:
+    name: Draft reset PR
+    needs:
+      - set_options
+      - make_dist
+    if: github.event_name == 'release' && inputs.reset_develop == true
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+
+      - name: Checkout trunk branch
+        uses: actions/checkout@v3
+        with:
+          # use repository_owner to allow testing on a fork
+          repository: ${{ github.repository_owner }}/modflow-devtools
+          ref: ${{ needs.set_options.outputs.trunk }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ needs.set_options.outputs.python }}
+          cache: 'pip'
+
+      - name: Install Python dependencies
+        run: |
+          pip install --upgrade pip
+          pip install black filelock
+
+      - name: Get release tag
+        uses: oprypin/find-latest-tag@v1
+        id: latest_tag
+        with:
+          repository: ${{ github.repository }}
+          releases-only: true
+
+      - name: Draft pull request
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          # create reset branch from trunk
+          reset_branch="post-release-${{ steps.latest_tag.outputs.tag }}-reset"
+          git switch -c $reset_branch
+
+          # update version (add + to version.txt to indicate development status)
+          package=${{ needs.set_options.outputs.package }}
+          module=${package//-/_}
+          version=$(python update_version.py -g)
+          python scripts/update_version.py -v "$version+"
+          black -v $module/version.py
+
+          # commit and push reset branch
+          trunk=${{ needs.set_options.outputs.trunk }}
+          git config core.sharedRepository true
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "ci(post-release): update develop from $trunk"
+          git push -u origin $reset_branch
+
+          # create PR into develop
+          body='
+          # Reinitialize for development
+
+          Updates the `develop` branch from `$trunk` following a successful release.
+          '
+          gh pr create -B "develop" -H "$reset_branch" --title "Reinitialize develop branch" --draft --body "$body"

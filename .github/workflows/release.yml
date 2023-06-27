@@ -1,47 +1,48 @@
 name: Release
 on:
-  # workflow_call event lets this workflow be called from elsewhere
+  # workflow_call trigger lets this workflow be called from elsewhere
   workflow_call:
     inputs:
+      branch:
+        description: Branch to release from.
+        required: true
+        type: string
       cliff_config:
-        description: Path to the git-cliff config ile, relative to the project root.
+        description: Path of the git-cliff config file relative to the project root.
         required: false
         default: cliff.toml
         type: string
       cumulative_changelog:
-        description: Path to the cumulative changelog file relative to the project root.
+        description: Path of the cumulative changelog file relative to the project root.
         required: false
         default: HISTORY.md
         type: string
-      draft_release:
-        description: Draft a release post with assets and changelog.
-        required: false
-        default: false
-        type: boolean
       package_name:
+        # currently assumes module dir is in project root
         description: Name of the Python package to release (must be identical to the module name).
         required: true
         type: string
-      publish_package:
-        description: Publish the package to PyPI.
-        required: false
-        default: false
-        type: boolean
       python_version:
-        description: Python version to use to build and test the package.
+        description: Python version to build the package with.
         required: true
-        default: 3.8
-        type: number
-      reset_develop:
-        description: Reset the develop branch from the trunk.
+        default: '3.8'
+        type: string
+      run_tests:
+        # currently assumes tests are in autotest/
+        description: Run tests after building binaries.
         required: false
-        default: false
         type: boolean
+        default: true
       trunk_branch:
-        description: Name of the trunk branch (either 'main' or 'master').
+        description: Name of the trunk branch (e.g. 'main' or 'master').
         required: false
         default: main
         type: string
+      version:
+        description: Version number to use for release.
+        required: true
+        type: string
+      
 jobs:
   prep:
     name: Prepare release
@@ -76,10 +77,34 @@ jobs:
         run: |
           ref="${{ github.ref_name }}"
           version="${ref#"v"}"
+          package="${{ inputs.package_name }}"
+          # assume module name is the same as package
+          # name with hyphens swapped for underscores
+          module="${package//-/_}"
           python scripts/update_version.py -v "$version"
-          black -v ${{ inputs.package_name }}/version.py
-          python -c "import ${{ inputs.package_name }}; print('Version: ', ${{ inputs.package_name }}.__version__)"
+          black -v $module/version.py
+          python -c "import $module; print('Version: ', $module.__version__)"
           echo "version=$version" >> $GITHUB_OUTPUT
+
+      - name: Build package
+        run: python -m build
+      
+      - name: Check package
+        run: twine check --strict dist/*
+
+      - name: Upload package
+        uses: actions/upload-artifact@v3
+        with:
+          name: dist
+          path: dist
+
+      - name: Run tests
+        if: inputs.run_tests == true
+        # todo make configurable
+        working-directory: autotest
+        run: pytest -v -n=auto --durations=0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Touch changelog
         run: touch HISTORY.md
@@ -122,174 +147,3 @@ jobs:
         with:
           name: changelog
           path: ${{ steps.update-changelog.outputs.changelog }}
-
-      - name: Create release PR
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        run: |
-          ver="${{ steps.version.outputs.version }}"
-          changelog=$(cat ${{ steps.update-changelog.outputs.changelog }} | grep -v "### Version $ver")
-          
-          # remove this release's changelog so we don't commit it
-          # the changes have already been prepended to HISTORY.md
-          rm ${{ steps.update-changelog.outputs.changelog }}
-          rm -f CHANGELOG.md
-          
-          # commit and push changes
-          git config core.sharedRepository true
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git commit -m "ci(release): version ${{ steps.version.outputs.version }}"
-          git push origin "${{ github.ref_name }}"
-
-          title="Release $ver"
-          body='
-          # Release '$ver'
-          
-          The release can be approved by merging this pull request into `${{ inputs.trunk_branch }}`. This will trigger jobs to publish the release to PyPI and reset `develop` from `${{ inputs.trunk_branch }}`.
-          
-          ## Changelog
-          
-          '$changelog'
-          '
-          gh pr create -B "${{ inputs.trunk_branch }}" -H "${{ github.ref_name }}" --title "$title" --draft --body "$body"
-
-  release:
-    name: Draft release
-    # runs only when changes are merged to trunk
-    if: github.event_name == 'push' && github.ref_name == inputs.trunk_branch && inputs.draft_release == true
-    runs-on: ubuntu-22.04
-    permissions:
-      contents: write
-      pull-requests: write
-    steps:
-
-      - name: Checkout repo
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ inputs.trunk_branch }}
-
-      # actions/download-artifact won't look at previous workflow runs but we need to in order to get changelog
-      - name: Download artifacts
-        uses: dawidd6/action-download-artifact@v2
-
-      - name: Draft release
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        run: |
-          version=$(cat version.txt)
-          title="${{ inputs.package_name }} $version"
-          notes=$(cat "changelog/CHANGELOG_$version.md" | grep -v "### Version $version")
-          gh release create "$version" \
-            --target ${{ inputs.trunk_branch }} \
-            --title "$title" \
-            --notes "$notes" \
-            --draft \
-            --latest
-
-  publish:
-    name: Publish package
-    # runs only after release is published (manually promoted from draft)
-    if: github.event_name == 'release' && inputs.publish_package == true
-    runs-on: ubuntu-22.04
-    permissions:
-      contents: write
-      pull-requests: write
-      id-token: write  # mandatory for trusted publishing
-    environment:  # requires a 'pypi' environment in repo settings
-      name: pypi
-      url: https://pypi.org/p/${{ inputs.package_name }}
-    steps:
-
-      - name: Checkout trunk
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ inputs.trunk_branch }}
-
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ inputs.python_version }}
-
-      - name: Install Python dependencies
-        run: |
-          pip install --upgrade pip
-          pip install build twine
-          pip install .
-
-      - name: Build package
-        run: python -m build
-      
-      - name: Check package
-        run: twine check --strict dist/*
-
-      - name: Publish package
-        run: twine upload dist/*
-
-  reset:
-    name: Draft reset PR
-    if: github.event_name == 'release' && inputs.reset_develop == true
-    runs-on: ubuntu-22.04
-    permissions:
-      contents: write
-      pull-requests: write
-    steps:
-
-      - name: Checkout trunk branch
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ inputs.trunk_branch }}
-
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ inputs.python_version }}
-          cache: 'pip'
-          cache-dependency-path: pyproject.toml
-
-      - name: Install Python dependencies
-        run: |
-          pip install --upgrade pip
-          pip install black filelock
-
-      - name: Get release tag
-        uses: oprypin/find-latest-tag@v1
-        id: latest_tag
-        with:
-          repository: ${{ github.repository }}
-          releases-only: true
-
-      - name: Draft pull request
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        run: |
-          # create reset branch from trunk
-          reset_branch="post-release-${{ steps.latest_tag.outputs.tag }}-reset"
-          git switch -c $reset_branch
-
-          # increment patch version
-          major_version=$(echo "${{ steps.latest_tag.outputs.tag }}" | cut -d. -f1)
-          minor_version=$(echo "${{ steps.latest_tag.outputs.tag }}" | cut -d. -f2)
-          patch_version=$(echo "${{ steps.latest_tag.outputs.tag }}" | cut -d. -f3)
-          version="$major_version.$minor_version.$((patch_version + 1))"
-
-          # update version (add + to version.txt to indicate development status)
-          python scripts/update_version.py -v "$version"
-          black -v ${{ inputs.package_name}}/version.py
-
-          # commit and push reset branch
-          git config core.sharedRepository true
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git commit -m "ci(post-release): update develop from ${{ inputs.trunk_branch }}"
-          git push -u origin $reset_branch
-
-          # create PR into develop
-          body='
-          # Reinitialize for development
-
-          Updates the `develop` branch from `${{ inputs.trunk_branch }}` following a successful release.
-          '
-          gh pr create -B "develop" -H "$reset_branch" --title "Reinitialize develop branch" --draft --body "$body"
