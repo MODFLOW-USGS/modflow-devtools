@@ -34,11 +34,11 @@ on:
         required: false
         default: '3.8'
         type: string
-      reset_develop:
-        description: Reset the develop branch from the trunk.
+      reset_develop_version:
+        description: Version to reset the develop branch to.
         required: false
-        default: true
-        type: boolean
+        default: ''
+        type: string
       version:
         description: Version number to use for release.
         required: true
@@ -125,7 +125,7 @@ jobs:
       package_name: modflow-devtools
       publish_package: false
       python: ${{ needs.set_options.outputs.python }}
-      reset_develop: true
+      reset_develop_version: ${{ inputs.reset_develop_version }}
       run_tests: true
       trunk_branch: main
       version: ${{ needs.set_options.outputs.version }}

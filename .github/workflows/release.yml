@@ -25,6 +25,11 @@ on:
         required: false
         default: true
         type: boolean
+      environment_name:
+        description: Name of the GitHub environment to use for the release.
+        required: false
+        default: release
+        type: string
       package_name:
         # currently assumes module dir is in project root,
         # and module name is the same as package name with
@@ -42,11 +47,11 @@ on:
         required: false
         default: '3.8'
         type: string
-      reset_develop:
-        description: Reset the develop branch from the trunk.
+      reset_develop_version:
+        description: Version to reset the develop branch to.
         required: false
-        default: true
-        type: boolean
+        default: ''
+        type: string
       run_tests:
         # currently assumes tests are in autotest/
         description: Run tests after building binaries.
@@ -203,8 +208,8 @@ jobs:
       contents: write
       pull-requests: write
       id-token: write  # mandatory for trusted publishing
-    environment:  # requires a 'pypi' environment in repo settings
-      name: pypi
+    environment:
+      name: ${{ inputs.environment_name }}
       url: https://pypi.org/p/${{ inputs.package_name }}
     steps:
 
@@ -220,6 +225,10 @@ jobs:
         with:
           python-version: ${{ inputs.python }}
 
+      # actions/download-artifact won't look at previous workflow runs but we need to in order to get changelog
+      - name: Download artifacts
+        uses: dawidd6/action-download-artifact@v2
+
       - name: Install Python dependencies
         run: |
           pip install --upgrade pip
@@ -228,15 +237,16 @@ jobs:
       - name: Check package
         run: twine check --strict dist/*
 
+      # looks in dist/ dir by default
       - name: Publish package
-        run: twine upload dist/*
+        uses: pypa/gh-action-pypi-publish@release/v1
   
   reset_pr:
     name: Draft reset PR
     needs:
       - make_dist
       - release
-    if: github.event_name == 'release' && (inputs.reset_develop == '' || inputs.reset_develop == true)
+    if: github.event_name == 'release' && inputs.reset_develop_version != ''
     runs-on: ubuntu-22.04
     permissions:
       contents: write
@@ -279,8 +289,7 @@ jobs:
           # update version (add + to version.txt to indicate development status)
           package=${{ inputs.package_name }}
           module=${package//-/_}
-          version=$(python update_version.py -g)
-          python scripts/update_version.py -v "$version+"
+          python scripts/update_version.py -v "${{ inputs.reset_develop_version }}"
           black -v $module/version.py
 
           # commit and push reset branch
