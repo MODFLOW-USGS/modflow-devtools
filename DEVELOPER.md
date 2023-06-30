@@ -40,6 +40,7 @@ This repository's tests expect a few environment variables:
 - `BIN_PATH`: path to MODFLOW 6 and related executables
 - `REPOS_PATH`: the path to MODFLOW 6 example model repositories
 - `GITHUB_TOKEN`: a GitHub authentication token
+- `GIITHUB_USER`: the developer's GitHub username
 
 These may be set manually, but the recommended approach is to configure environment variables in a `.env` file in the project root, for instance:
 
@@ -70,6 +71,8 @@ Tests should follow a few conventions for ease of use and maintenance.
 Tests which must write to disk should use `pytest`'s built-in `temp_dir` fixture or one of this package's own scoped temporary directory fixtures.
 
 ## Releasing
+
+todo: update from https://github.com/EC-USGS/pywatershed/blob/develop/.github/RELEASE.md since it has more accurate/detailed explication, then once pywatershed consumes `reusable_release.yml` from this repo, just link from there back here
 
 The `modflow-devtools` release procedure is automated with GitHub Actions in [`.github/workflows/release.yml`](.github/workflows/release.yml). Making a release involves the following steps:
 

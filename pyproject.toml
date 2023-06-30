@@ -24,7 +24,7 @@ keywords = [
 readme = "README.md"
 license = {text = "CC0"}
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Science/Research",
     "License :: CC0 1.0 Universal (CC0 1.0) Public Domain Dedication",
     "Programming Language :: Python :: 3 :: Only",
@@ -67,6 +67,9 @@ docs = [
     "sphinx",
     "sphinx-rtd-theme",
     "myst-parser"
+]
+all = [
+    "modflow-devtools[lint, test, docs]",
 ]
 
 [project.urls]

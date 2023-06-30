@@ -1,0 +1,152 @@
+name: Make package
+on:
+  # workflow_call trigger lets this workflow be called from elsewhere
+  workflow_call:
+    inputs:
+      branch:
+        description: Branch to release from.
+        required: true
+        type: string
+      cliff_config:
+        description: Path of the git-cliff config file relative to the project root.
+        required: false
+        default: cliff.toml
+        type: string
+      cumulative_changelog:
+        description: Path of the cumulative changelog file relative to the project root.
+        required: false
+        default: HISTORY.md
+        type: string
+      package_name:
+        # currently assumes module dir is in project root,
+        # and module name is the same as package name with
+        # hyphens swapped for underscores
+        description: Name of the Python package to release.
+        required: true
+        type: string
+      python:
+        description: Python version to build the package with.
+        required: true
+        default: '3.8'
+        type: string
+      run_tests:
+        # currently assumes tests are in autotest/
+        description: Run tests after building binaries.
+        required: false
+        type: boolean
+        default: true
+      trunk_branch:
+        description: Name of the trunk branch (e.g. 'main' or 'master').
+        required: false
+        default: main
+        type: string
+      version:
+        description: Version number to use for release.
+        required: true
+        type: string
+      
+jobs:
+  prep:
+    name: Prepare release
+    runs-on: ubuntu-22.04
+    if: github.event_name == 'push' && github.ref_name != inputs.trunk_branch
+    permissions:
+      contents: write
+      pull-requests: write
+    defaults:
+      run:
+        shell: bash
+    steps:
+
+      - name: Checkout release branch
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ inputs.python }}
+
+      - name: Install Python build/test dependencies
+        run: |
+          pip install --upgrade pip
+          pip install black build twine
+          pip install .
+          pip install ".[lint, test]"
+
+      - name: Update version
+        id: version
+        run: |
+          ref="${{ github.ref_name }}"
+          version="${ref#"v"}"
+          package="${{ inputs.package_name }}"
+          # assume module name is the same as package
+          # name with hyphens swapped for underscores
+          module="${package//-/_}"
+          python scripts/update_version.py -v "$version"
+          black -v $module/version.py
+          python -c "import $module; print('Version: ', $module.__version__)"
+          echo "version=$version" >> $GITHUB_OUTPUT
+
+      - name: Build package
+        run: python -m build
+      
+      - name: Check package
+        run: twine check --strict dist/*
+
+      - name: Upload package
+        uses: actions/upload-artifact@v3
+        with:
+          name: dist
+          path: dist
+
+      - name: Run tests
+        if: inputs.run_tests == true
+        # todo make configurable
+        working-directory: autotest
+        run: pytest -v -n=auto --durations=0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Touch changelog
+        run: touch HISTORY.md
+
+      - name: Generate changelog
+        id: cliff
+        uses: orhun/git-cliff-action@v1
+        with:
+          config: ${{ inputs.cliff_config }}
+          args: --verbose --unreleased --tag ${{ steps.version.outputs.version }}
+        env:
+          OUTPUT: CHANGELOG.md
+
+      - name: Update changelog
+        id: update-changelog
+        run: |
+          # move changelog
+          clog="CHANGELOG_${{ steps.version.outputs.version }}.md"
+          echo "changelog=$clog" >> $GITHUB_OUTPUT
+          sudo cp "${{ steps.cliff.outputs.changelog }}" "$clog"
+          
+          # show current release changelog
+          cat "$clog"
+          
+          # substitute full group names
+          sed -i 's/#### Ci/#### Continuous integration/' "$clog"
+          sed -i 's/#### Feat/#### New features/' "$clog"
+          sed -i 's/#### Fix/#### Bug fixes/' "$clog"
+          sed -i 's/#### Refactor/#### Refactoring/' "$clog"
+          sed -i 's/#### Test/#### Testing/' "$clog"
+          
+          cat "$clog" HISTORY.md > temp_history.md
+          sudo mv temp_history.md HISTORY.md
+          
+          # show full changelog
+          cat HISTORY.md
+
+      - name: Upload changelog
+        uses: actions/upload-artifact@v3
+        with:
+          name: changelog
+          path: ${{ steps.update-changelog.outputs.changelog }}
