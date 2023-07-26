@@ -1,3 +1,9 @@
+### Version 0.1.9
+
+#### New features
+
+* [feat(set_env)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/53b31cce34d221bade4c842efe3b5ed3034b2742): Add set_env contextmanager utility (#87). Committed by w-bonelli on 2023-07-26.
+
 ### Version 0.1.8
 
 #### New features
