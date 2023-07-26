@@ -66,7 +66,7 @@ def update_version(
         )
 
         with lock:
-            update_version_txt(timestamp, version)
+            update_version_txt(version)
             update_init_py(timestamp, version)
             update_docs_config(timestamp, version)
     finally:
