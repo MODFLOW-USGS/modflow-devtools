@@ -25,9 +25,7 @@ def update_version_txt(version: Version):
     print(f"Updated {_version_txt_path} to version {version}")
 
 
-def update_init_py(
-    timestamp: datetime, version: Version
-):
+def update_init_py(timestamp: datetime, version: Version):
     lines = _package_init_path.read_text().rstrip().split("\n")
     with open(_package_init_path, "w") as f:
         for line in lines:
@@ -39,9 +37,7 @@ def update_init_py(
     print(f"Updated {_package_init_path} to version {version}")
 
 
-def update_docs_config(
-    timestamp: datetime, version: Version
-):
+def update_docs_config(timestamp: datetime, version: Version):
     lines = _docs_config_path.read_text().rstrip().split("\n")
     with open(_docs_config_path, "w") as f:
         for line in lines:
