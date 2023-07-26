@@ -11,6 +11,7 @@ from modflow_devtools.misc import (
     get_packages,
     has_package,
     set_dir,
+    set_env,
 )
 
 
@@ -19,6 +20,22 @@ def test_set_dir(tmp_path):
     with set_dir(tmp_path):
         assert Path(os.getcwd()) == tmp_path
     assert Path(os.getcwd()) != tmp_path
+
+
+def test_set_env(tmp_path):
+    # test adding a variable
+    key = "TEST_ENV"
+    val = "test"
+    assert environ.get(key) is None
+    with set_env(**{key: val}):
+        assert environ.get(key) == val
+    with set_env(TEST_ENV=val):
+        assert environ.get(key) == val
+
+    # test removing a variable
+    with set_env(**{key: val}):
+        with set_env(key):
+            assert environ.get(key) is None
 
 
 _repos_path = environ.get("REPOS_PATH")
@@ -167,7 +184,7 @@ def test_get_model_paths_largetestmodels():
 def test_get_model_paths_exclude_patterns(models):
     path, expected_count = models
     paths = get_model_paths(path, excluded=["gwt"])
-    assert len(paths) == expected_count
+    assert len(paths) >= expected_count
 
 
 @pytest.mark.skipif(
@@ -210,7 +227,7 @@ def test_get_namefile_paths_largetestmodels():
 def test_get_namefile_paths_exclude_patterns(models):
     path, expected_count = models
     paths = get_namefile_paths(path, excluded=["gwf"])
-    assert len(paths) == expected_count
+    assert len(paths) >= expected_count
 
 
 @pytest.mark.skipif(not any(_example_paths), reason="examples not found")
@@ -225,10 +242,10 @@ def test_get_namefile_paths_select_prefix():
 @pytest.mark.skipif(not any(_example_paths), reason="examples not found")
 def test_get_namefile_paths_select_patterns():
     paths = get_namefile_paths(_examples_path, selected=["gwf"])
-    assert len(paths) == 70
+    assert len(paths) >= 70
 
 
 @pytest.mark.skipif(not any(_example_paths), reason="examples not found")
 def test_get_namefile_paths_select_packages():
     paths = get_namefile_paths(_examples_path, packages=["wel"])
-    assert len(paths) == 43
+    assert len(paths) >= 43

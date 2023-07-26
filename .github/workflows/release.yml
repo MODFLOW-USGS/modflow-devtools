@@ -237,11 +237,10 @@ jobs:
           reset_branch="post-release-${{ steps.latest_tag.outputs.tag }}-reset"
           git switch -c $reset_branch
 
-          # increment patch version
+          # increment minor version
           major_version=$(echo "${{ steps.latest_tag.outputs.tag }}" | cut -d. -f1)
           minor_version=$(echo "${{ steps.latest_tag.outputs.tag }}" | cut -d. -f2)
-          patch_version=$(echo "${{ steps.latest_tag.outputs.tag }}" | cut -d. -f3)
-          version="$major_version.$minor_version.$((patch_version + 1))"
+          version="$major_version.$((minor_version + 1)).0.dev0"
           python scripts/update_version.py -v "$version"
           python scripts/lint.py
 

@@ -29,6 +29,39 @@ def set_dir(path: PathLike):
         print(f"Returned to previous directory: {origin}")
 
 
+@contextmanager
+def set_env(*remove, **update):
+    """
+    Temporarily updates the ``os.environ`` dictionary in-place.
+
+    Referenced from https://stackoverflow.com/a/34333710/6514033.
+
+    The ``os.environ`` dictionary is updated in-place so that the modification
+    is sure to work in all situations.
+
+    :param remove: Environment variables to remove.
+    :param update: Dictionary of environment variables and values to add/update.
+    """
+    env = environ
+    update = update or {}
+    remove = remove or []
+
+    # List of environment variables being updated or removed.
+    stomped = (set(update.keys()) | set(remove)) & set(env.keys())
+    # Environment variables and values to restore on exit.
+    update_after = {k: env[k] for k in stomped}
+    # Environment variables and values to remove on exit.
+    remove_after = frozenset(k for k in update if k not in env)
+
+    try:
+        env.update(update)
+        [env.pop(k, None) for k in remove]
+        yield
+    finally:
+        env.update(update_after)
+        [env.pop(k) for k in remove_after]
+
+
 class add_sys_path:
     """
     Context manager for temporarily editing the system path
