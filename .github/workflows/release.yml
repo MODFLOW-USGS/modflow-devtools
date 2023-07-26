@@ -240,7 +240,7 @@ jobs:
           # increment minor version
           major_version=$(echo "${{ steps.latest_tag.outputs.tag }}" | cut -d. -f1)
           minor_version=$(echo "${{ steps.latest_tag.outputs.tag }}" | cut -d. -f2)
-          version="$major_version.$((minor_version + 1)).0"
+          version="$major_version.$((minor_version + 1)).0.dev0"
           python scripts/update_version.py -v "$version"
           python scripts/lint.py
 
