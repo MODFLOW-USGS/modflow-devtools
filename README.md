@@ -24,7 +24,7 @@ Python development tools for MODFLOW 6.
 
 This is a small toolkit for developing MODFLOW 6, FloPy, and related projects. It includes standalone utilities and optional [Pytest](https://github.com/pytest-dev/pytest) extensions.
 
-Standalone utilities include a very minimal GitHub API client, mainly for retrieving release information and downloading asset, and a `ZipFile` subclass that [preserves file permissions](https://stackoverflow.com/questions/39296101/python-zipfile-removes-execute-permissions-from-binaries) (workaround for [Python #15795](https://bugs.python.org/issue15795))
+Standalone utilities include a very minimal GitHub API client, mainly for retrieving release information and downloading assets, and a `ZipFile` subclass that [preserves file permissions](https://stackoverflow.com/questions/39296101/python-zipfile-removes-execute-permissions-from-binaries) (workaround for [Python #15795](https://bugs.python.org/issue15795))
 
 Pytest features include:
 
