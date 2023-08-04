@@ -77,3 +77,5 @@ from modflow_devtools.download import download_and_unzip
 url = f"https://github.com/MODFLOW-USGS/modflow6/releases/download/6.4.1/mf6.4.1_linux.zip"
 download_and_unzip(url, "~/Downloads", delete_zip=True, verbose=True)
 ```
+
+The function's return value is the `Path` the archive was extracted to.
