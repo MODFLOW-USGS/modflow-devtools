@@ -2,7 +2,7 @@
 
 ## Installing `modflow-devtools` from PyPI
 
-The `modflow-devtools` package is [available on PyPi](https://pypi.org/project/modflow-devtools/) and can be installed with `pip`:
+Packages are [available on PyPi](https://pypi.org/project/modflow-devtools/) and can be installed with `pip`:
 
 ```shell
 pip install modflow-devtools
