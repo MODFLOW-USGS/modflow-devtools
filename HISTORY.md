@@ -1,3 +1,10 @@
+### Version 0.3.0
+
+#### Refactoring
+
+* [refactor(dependencies)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/72e29e14e74c2b874cba89b1eb1563e1b4e6d0a0): Remove them, update readme (#95). Committed by w-bonelli on 2023-08-04.
+* [refactor(download_and_unzip)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/c1bdb3cf7cdd988df9f3ae8d67de7496f1603c38): Return path to extract locn (#96). Committed by w-bonelli on 2023-08-04.
+
 ### Version 0.2.0
 
 #### New features
