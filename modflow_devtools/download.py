@@ -438,7 +438,7 @@ def download_and_unzip(
     delete_zip=True,
     retries=3,
     verbose=False,
-):
+) -> Path:
     """
     Download and unzip a zip file from a URL.
     The filename must be the last element in the URL.
@@ -455,6 +455,11 @@ def download_and_unzip(
         The maximum number of retries for each request
     verbose : bool
         Whether to show verbose output
+
+    Returns
+    -------
+    Path
+        The path to the directory where the zip file was unzipped
     """
 
     path = Path(path if path else os.getcwd())
@@ -544,3 +549,5 @@ def download_and_unzip(
 
     if verbose:
         print(f"Done downloading and extracting {file_path.name} to {path}")
+
+    return path
