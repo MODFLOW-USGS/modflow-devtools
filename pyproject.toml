@@ -36,10 +36,6 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Hydrology"
 ]
 requires-python = ">=3.8"
-dependencies = [
-    "numpy",
-    "pytest"
-]
 dynamic = ["version"]
 
 [project.optional-dependencies]
@@ -57,6 +53,8 @@ test = [
     "filelock",
     "meson!=0.63.0",
     "ninja",
+    "numpy",
+    "pytest",
     "pytest-cases",
     "pytest-cov",
     "pytest-dotenv",
