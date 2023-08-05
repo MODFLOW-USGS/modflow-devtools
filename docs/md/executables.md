@@ -7,7 +7,7 @@ The `Executables` class maps executable names to paths on the filesystem. This i
 For example, assuming development binaries live in `bin` relative to the project root (as is currently the convention for `modflow6`), the following `pytest` fixtures could be defined:
 
 ```python
-from modflow_devtools.executables import build_default_exe_dict, Executables
+from modflow_devtools.executables import Executables
 
 @pytest.fixture(scope="session")
 def bin_path() -> Path:
@@ -16,7 +16,10 @@ def bin_path() -> Path:
 
 @pytest.fixture(scope="session")
 def targets(bin_path) -> Executables:
-    return Executables(**build_default_exe_dict(bin_path))
+    exes = {
+        # ...map names to paths
+    }
+    return Executables(**exes)
 ```
 
 The `targets` fixture can then be injected into test functions:
@@ -26,8 +29,6 @@ def test_targets(targets):
     # attribute- and dictionary-style access is supported
     assert targets["mf6"] == targets.mf6
 ```
-
-The `build_default_exe_dict` function is provided to create the default executable mapping used by MODFLOW 6 autotests.
 
 There is also a convenience function for getting a program's version string. The function will automatically strip the program name from the output (assumed delimited with `:`).
 
