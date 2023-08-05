@@ -4,7 +4,7 @@ from os import environ
 from pathlib import Path
 
 import pytest
-from modflow_devtools.executables import Executables, build_default_exe_dict
+from modflow_devtools.executables import Executables
 from modflow_devtools.misc import add_sys_path, get_suffixes
 
 _bin_path = Path(environ.get("BIN_PATH")).expanduser().absolute()
@@ -17,7 +17,11 @@ def exes():
         pytest.skip(f"BIN_PATH ({_bin_path}) is not a directory")
 
     with add_sys_path(str(_bin_path)):
-        yield Executables(**build_default_exe_dict(_bin_path))
+        yield Executables(
+            **{
+                "mf6": _bin_path / f"mf6{_ext}",
+            }
+        )
 
 
 def test_get_version(exes):
@@ -38,4 +42,3 @@ def test_mapping(exes):
         exes.mf6 == exes["mf6"]
     )  # should support both attribute and dictionary access
     assert exes.mf6 == _bin_path / f"mf6{_ext}"  # should be the correct path
-    assert exes.mf6_regression.parent.parent == _bin_path
