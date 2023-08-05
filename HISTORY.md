@@ -1,3 +1,13 @@
+### Version 1.0.0
+
+#### New features
+
+* [feat(ostags)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/33ab22a5f7e1c88258038e9881f22c6cd537965c): Add OS tag conversion utilities (#99). Committed by w-bonelli on 2023-08-05.
+
+#### Refactoring
+
+* [refactor](https://github.com/MODFLOW-USGS/modflow-devtools/commit/07bd60fff92a0dab08721c167293344a827d6345): Multiple (#100). Committed by w-bonelli on 2023-08-05.
+
 ### Version 0.3.0
 
 #### Refactoring
