@@ -1,6 +1,6 @@
 from platform import system
 
-import pytest
+from modflow_devtools.imports import import_optional_dependency
 from modflow_devtools.misc import (
     get_current_branch,
     has_exe,
@@ -8,6 +8,8 @@ from modflow_devtools.misc import (
     is_connected,
     is_in_ci,
 )
+
+pytest = import_optional_dependency("pytest")
 
 
 def requires_exe(*exes):

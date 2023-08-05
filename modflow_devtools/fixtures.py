@@ -5,8 +5,10 @@ from pathlib import Path
 from shutil import copytree, rmtree
 from typing import Dict, List, Optional
 
-import pytest
+from modflow_devtools.imports import import_optional_dependency
 from modflow_devtools.misc import get_namefile_paths, get_packages
+
+pytest = import_optional_dependency("pytest")
 
 # temporary directory fixtures
 
