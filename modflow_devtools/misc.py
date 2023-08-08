@@ -82,7 +82,12 @@ class add_sys_path:
 
 
 def get_ostag() -> str:
-    """Determine operating system tag from sys.platform."""
+    """
+    Determine operating system tag from sys.platform.
+
+    .. deprecated:: 1.1.0
+        Use ``ostags.get_modflow_ostag()`` instead.
+    """
     if sys.platform.startswith("linux"):
         return "linux"
     elif sys.platform.startswith("win"):
@@ -93,7 +98,12 @@ def get_ostag() -> str:
 
 
 def get_suffixes(ostag) -> Tuple[str, str]:
-    """Returns executable and library suffixes for the given OS (as returned by sys.platform)"""
+    """
+    Returns executable and library suffixes for the given OS (as returned by sys.platform)
+
+    .. deprecated:: 1.1.0
+        Use ``ostags.get_binary_suffixes()`` instead.
+    """
 
     tag = ostag.lower()
 
@@ -136,6 +146,23 @@ def run_py_script(script, *args, verbose=False):
 
 
 def get_current_branch() -> str:
+    """
+    Tries to determine the name of the current branch, first by the GITHUB_REF
+    environent variable, then by asking ``git`` if GITHUB_REF is not set.
+
+    Returns
+    -------
+    str
+        name of the current branch
+
+    Raises
+    ------
+    RuntimeError
+        if ``git`` is not available
+    ValueError
+        if the current branch could not be determined
+    """
+
     # check if on GitHub Actions CI
     ref = environ.get("GITHUB_REF")
     if ref is not None:
@@ -160,6 +187,7 @@ def get_packages(namefile_path: PathLike) -> List[str]:
     ----------
     namefile_path : PathLike
         path to MODFLOW 6 simulation or model name file
+
     Returns
     -------
         a list of packages used by the simulation or model
@@ -215,7 +243,9 @@ def get_packages(namefile_path: PathLike) -> List[str]:
 
 
 def has_package(namefile_path: PathLike, package: str) -> bool:
-    """Determines whether the model with the given namefile contains the selected package"""
+    """
+    Determines whether the model with the given namefile contains the selected package.
+    """
     packages = get_packages(namefile_path)
     return package.lower() in packages
 
@@ -306,7 +336,9 @@ def get_model_paths(
 def is_connected(hostname):
     """
     Tests whether the given URL is accessible.
-    See https://stackoverflow.com/a/20913928/."""
+    See https://stackoverflow.com/a/20913928/.
+    """
+
     try:
         host = socket.gethostbyname(hostname)
         s = socket.create_connection((host, 80), 2)
@@ -318,7 +350,10 @@ def is_connected(hostname):
 
 
 def is_in_ci():
-    """Determines whether the current process is running GitHub Actions CI"""
+    """
+    Determines whether the current process is running GitHub Actions CI
+    by checking for the "CI" environment variable.
+    """
 
     # if running in GitHub Actions CI, "CI" variable always set to true
     # https://docs.github.com/en/actions/learn-github-actions/environment-variables#default-environment-variables
@@ -328,7 +363,7 @@ def is_in_ci():
 def is_github_rate_limited() -> Optional[bool]:
     """
     Determines if a GitHub API rate limit is applied to the current IP.
-    Running this function will consume an API request!
+    Calling this function will consume an API request!
 
     Returns
     -------
