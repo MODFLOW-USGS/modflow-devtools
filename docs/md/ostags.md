@@ -43,3 +43,14 @@ OSTag.convert(platform.system(), "py2mf")
 The second argument specifies the mapping in format `<source>2<target>`, where `<source>` and `<target>` may take values `py`, `mf`, or `gh`.
 
 **Note**: source and target must be different.
+
+## Getting suffixes
+
+A convenience function is available to get the appropriate binary file extensions for a given operating system, identified by tag (or the current operating system if no tag is provided). The return value is a 2-tuple containing the executable and library extensions, respectively.
+
+```python
+get_binary_suffixes()  # get extensions for current OS
+get_binary_suffixes("linux")  # returns ("", ".so")
+get_binary_suffixes("linux")  # returns ("", ".so")
+get_binary_suffixes("win64")  # returns (".exe", ".dll")
+```
