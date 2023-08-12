@@ -1,18 +1,20 @@
 """
-MODFLOW 6, Python3, and build servers may all refer to operating
-systems by different names. This module contains conversion utilities.
+MODFLOW 6, Python3, and GitHub Actions refer to operating
+systems differently. This module contains conversion utilities.
 """
 
 
+import sys
 from enum import Enum
 from platform import system
+from typing import Tuple
 
 _system = system()
 
 
 def get_modflow_ostag() -> str:
     if _system == "Windows":
-        return "win64"
+        return "win" + ("64" if sys.maxsize > 2**32 else "32")
     elif _system == "Linux":
         return "linux"
     elif _system == "Darwin":
@@ -28,6 +30,44 @@ def get_github_ostag() -> str:
         return "macOS"
     else:
         raise NotImplementedError(f"Unsupported system: {_system}")
+
+
+def get_binary_suffixes(ostag: str = None) -> Tuple[str, str]:
+    """
+    Returns executable and library suffixes for the given OS tag, if provided,
+    otherwise for the current operating system.
+
+    Parameters
+    ----------
+    ostag : str, optional
+        The OS tag. May be provided in modflow, python, or github format.
+
+    Returns
+    -------
+    Tuple[str, str]
+        The executable and library suffixes, respectively.
+    """
+
+    if ostag is None:
+        ostag = get_modflow_ostag()
+
+    def _suffixes(tag):
+        if tag in ["win32", "win64"]:
+            return ".exe", ".dll"
+        elif tag == "linux":
+            return "", ".so"
+        elif tag == "mac" or tag == "darwin":
+            return "", ".dylib"
+        else:
+            raise KeyError(f"unrecognized OS tag: {tag!r}")
+
+    try:
+        return _suffixes(ostag.lower())
+    except:
+        try:
+            return _suffixes(python_to_modflow_ostag(ostag))
+        except:
+            return _suffixes(github_to_modflow_ostag(ostag))
 
 
 def python_to_modflow_ostag(tag: str) -> str:
