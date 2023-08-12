@@ -1,3 +1,10 @@
+### Version 1.0.1
+
+#### Refactoring
+
+* [refactor](https://github.com/MODFLOW-USGS/modflow-devtools/commit/582d48a4d72f18a787216ada5befb7543cebdfcf): Deprecate misc functions, add ostags alternatives (#105). Committed by w-bonelli on 2023-08-08.
+* [refactor(has_pkg)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/03ea04157190480b455e174de64c692ff3bb86a3): Introduce strict flag (#106). Committed by w-bonelli on 2023-08-12.
+
 ### Version 1.0.0
 
 #### New features
