@@ -398,21 +398,47 @@ def has_exe(exe):
     return _has_exe_cache[exe]
 
 
-def has_pkg(pkg):
+def has_pkg(pkg: str, strict: bool = False) -> bool:
     """
     Determines if the given Python package is installed.
 
+    Parameters
+    ----------
+    pkg : str
+        Name of the package to check.
+    strict : bool
+        If False, only check if package metadata is available.
+        If True, try to import the package (all dependencies must be present).
+
+    Returns
+    -------
+    bool
+        True if the package is installed, otherwise False.
+
+    Notes
+    -----
     Originally written by Mike Toews (mwtoews@gmail.com) for FloPy.
     """
-    if pkg not in _has_pkg_cache:
-        found = True
+
+    def try_import():
+        try:  # import name, e.g. "import shapefile"
+            importlib.import_module(pkg)
+            return True
+        except ModuleNotFoundError:
+            return False
+
+    def try_metadata() -> bool:
         try:  # package name, e.g. pyshp
             metadata.distribution(pkg)
+            return True
         except metadata.PackageNotFoundError:
-            try:  # import name, e.g. "import shapefile"
-                importlib.import_module(pkg)
-            except ModuleNotFoundError:
-                found = False
-        _has_pkg_cache[pkg] = found
+            return False
+
+    found = False
+    if not strict:
+        found = pkg in _has_pkg_cache or try_metadata()
+    if not found:
+        found = try_import()
+    _has_pkg_cache[pkg] = found
 
     return _has_pkg_cache[pkg]

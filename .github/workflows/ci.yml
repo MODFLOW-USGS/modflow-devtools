@@ -167,7 +167,8 @@ jobs:
           BIN_PATH: ~/.local/bin/modflow
           REPOS_PATH: ${{ github.workspace }}
           GITHUB_TOKEN: ${{ github.token }}
-        run: pytest -v -n auto --durations 0 --ignore modflow_devtools/test/test_download.py
+        # use --dist loadfile to so tests requiring pytest-virtualenv run on the same worker
+        run: pytest -v -n auto --dist loadfile --durations 0 --ignore modflow_devtools/test/test_download.py
       
       - name: Run network-dependent tests
         # only invoke the GH API on one OS and Python version

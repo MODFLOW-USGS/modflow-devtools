@@ -22,7 +22,7 @@ def requires_exe(*exes):
 
 
 def requires_pkg(*pkgs):
-    missing = {pkg for pkg in pkgs if not has_pkg(pkg)}
+    missing = {pkg for pkg in pkgs if not has_pkg(pkg, strict=True)}
     return pytest.mark.skipif(
         missing,
         reason=f"missing package{'s' if len(missing) != 1 else ''}: "
