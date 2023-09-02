@@ -1,17 +1,24 @@
 # MODFLOW developer tools
 
-[![GitHub tag](https://img.shields.io/github/tag/MODFLOW-USGS/modflow-devtools.svg)](https://github.com/MODFLOW-USGS/modflow-devtools/tags/latest)
-[![PyPI Version](https://img.shields.io/pypi/v/modflow-devtools.png)](https://pypi.python.org/pypi/modflow-devtools)
-[![PyPI Versions](https://img.shields.io/pypi/pyversions/modflow-devtools.png)](https://pypi.python.org/pypi/modflow-devtools)
-[![PyPI Status](https://img.shields.io/pypi/status/modflow-devtools.png)](https://pypi.python.org/pypi/modflow-devtools)
 [![CI](https://github.com/MODFLOW-USGS/modflow-devtools/actions/workflows/ci.yml/badge.svg)](https://github.com/MODFLOW-USGS/modflow-devtools/actions/workflows/ci.yml)
 [![Documentation Status](https://readthedocs.org/projects/modflow-devtools/badge/?version=latest)](https://modflow-devtools.readthedocs.io/en/latest/?badge=latest)
+[![GitHub contributors](https://img.shields.io/github/contributors/MODFLOW-USGS/modflow-devtools)](https://img.shields.io/github/contributors/MODFLOW-USGS/modflow-devtools)
+[![GitHub tag](https://img.shields.io/github/tag/MODFLOW-USGS/modflow-devtools.svg)](https://github.com/MODFLOW-USGS/modflow-devtools/tags/latest)
 
-Python development tools for MODFLOW 6.
+[![PyPI License](https://img.shields.io/pypi/l/modflow-devtools)](https://pypi.python.org/pypi/modflow-devtools)
+[![PyPI Status](https://img.shields.io/pypi/status/modflow-devtools.png)](https://pypi.python.org/pypi/modflow-devtools)
+[![PyPI Format](https://img.shields.io/pypi/format/modflow-devtools)](https://pypi.python.org/pypi/modflow-devtools)
+[![PyPI Version](https://img.shields.io/pypi/v/modflow-devtools.png)](https://pypi.python.org/pypi/modflow-devtools)
+[![PyPI Versions](https://img.shields.io/pypi/pyversions/modflow-devtools.png)](https://pypi.python.org/pypi/modflow-devtools)
+
+[![Anaconda License](https://anaconda.org/conda-forge/modflow-devtools/badges/license.svg)](https://anaconda.org/conda-forge/modflow-devtools/badges/license.svg)
+[![Anaconda Version](https://anaconda.org/conda-forge/modflow-devtools/badges/version.svg)](https://anaconda.org/conda-forge/modflow-devtools)
+[![Anaconda Updated](https://anaconda.org/conda-forge/modflow-devtools/badges/latest_release_date.svg)](https://anaconda.org/conda-forge/modflow-devtools)
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
+Python development tools for MODFLOW 6.
 
 - [Use cases](#use-cases)
 - [Requirements](#requirements)
