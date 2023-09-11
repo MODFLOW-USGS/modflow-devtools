@@ -47,18 +47,18 @@ def test_function_scoped_tmpdir_slash_in_name(function_tmpdir, name):
 
 
 class TestClassScopedTmpdir:
-    filename = "hello.txt"
+    fname = "hello.txt"
 
     @pytest.fixture(autouse=True)
     def setup(self, class_tmpdir):
-        with open(class_tmpdir / self.filename, "w") as file:
+        with open(class_tmpdir / self.fname, "w") as file:
             file.write("hello, class-scoped tmpdir")
 
     def test_class_scoped_tmpdir(self, class_tmpdir):
         assert isinstance(class_tmpdir, Path)
         assert class_tmpdir.is_dir()
         assert self.__class__.__name__ in class_tmpdir.stem
-        assert Path(class_tmpdir / self.filename).is_file()
+        assert Path(class_tmpdir / self.fname).is_file()
 
 
 def test_module_scoped_tmpdir(module_tmpdir):
@@ -74,38 +74,38 @@ def test_session_scoped_tmpdir(session_tmpdir):
 
 # test CLI arguments --keep (-K) and --keep-failed for temp dir fixtures
 
-FILE_NAME = "hello.txt"
+test_keep_fname = "hello.txt"
 
 
 @pytest.mark.meta("test_keep")
 def test_keep_function_scoped_tmpdir_inner(function_tmpdir):
-    with open(function_tmpdir / FILE_NAME, "w") as f:
+    with open(function_tmpdir / test_keep_fname, "w") as f:
         f.write("hello, function-scoped tmpdir")
 
 
 @pytest.mark.meta("test_keep")
 class TestKeepClassScopedTmpdirInner:
     def test_keep_class_scoped_tmpdir_inner(self, class_tmpdir):
-        with open(class_tmpdir / FILE_NAME, "w") as f:
+        with open(class_tmpdir / test_keep_fname, "w") as f:
             f.write("hello, class-scoped tmpdir")
 
 
 @pytest.mark.meta("test_keep")
 def test_keep_module_scoped_tmpdir_inner(module_tmpdir):
-    with open(module_tmpdir / FILE_NAME, "w") as f:
+    with open(module_tmpdir / test_keep_fname, "w") as f:
         f.write("hello, module-scoped tmpdir")
 
 
 @pytest.mark.meta("test_keep")
 def test_keep_session_scoped_tmpdir_inner(session_tmpdir):
-    with open(session_tmpdir / FILE_NAME, "w") as f:
+    with open(session_tmpdir / test_keep_fname, "w") as f:
         f.write("hello, session-scoped tmpdir")
 
 
 @pytest.mark.parametrize("arg", ["--keep", "-K"])
 def test_keep_function_scoped_tmpdir(function_tmpdir, arg):
     inner_fn = test_keep_function_scoped_tmpdir_inner.__name__
-    file_path = Path(function_tmpdir / f"{inner_fn}0" / FILE_NAME)
+    file_path = Path(function_tmpdir / f"{inner_fn}0" / test_keep_fname)
     args = [
         __file__,
         "-v",
@@ -144,7 +144,9 @@ def test_keep_class_scoped_tmpdir(tmp_path, arg):
     ]
     assert pytest.main(args) == ExitCode.OK
     assert Path(
-        tmp_path / f"{TestKeepClassScopedTmpdirInner.__name__}0" / FILE_NAME
+        tmp_path
+        / f"{TestKeepClassScopedTmpdirInner.__name__}0"
+        / test_keep_fname
     ).is_file()
 
 
@@ -171,7 +173,7 @@ def test_keep_module_scoped_tmpdir(tmp_path, arg):
 
     print(keep_path)
     pprint(list(keep_path.glob("*")))
-    assert FILE_NAME in [f.name for f in keep_path.glob("*")]
+    assert test_keep_fname in [f.name for f in keep_path.glob("*")]
 
 
 @pytest.mark.parametrize("arg", ["--keep", "-K"])
@@ -188,12 +190,14 @@ def test_keep_session_scoped_tmpdir(tmp_path, arg, request):
         tmp_path,
     ]
     assert pytest.main(args) == ExitCode.OK
-    assert Path(tmp_path / f"{request.session.name}0" / FILE_NAME).is_file()
+    assert Path(
+        tmp_path / f"{request.session.name}0" / test_keep_fname
+    ).is_file()
 
 
 @pytest.mark.meta("test_keep_failed")
 def test_keep_failed_function_scoped_tmpdir_inner(function_tmpdir):
-    with open(function_tmpdir / FILE_NAME, "w") as f:
+    with open(function_tmpdir / test_keep_fname, "w") as f:
         f.write("hello, function-scoped tmpdir")
 
     assert False, "oh no"
@@ -207,7 +211,9 @@ def test_keep_failed_function_scoped_tmpdir(function_tmpdir, keep):
         args += ["--keep-failed", function_tmpdir]
     assert pytest.main(args) == ExitCode.TESTS_FAILED
 
-    kept_file = Path(function_tmpdir / f"{inner_fn}0" / FILE_NAME).is_file()
+    kept_file = Path(
+        function_tmpdir / f"{inner_fn}0" / test_keep_fname
+    ).is_file()
     assert kept_file if keep else not kept_file
 
 
@@ -234,7 +240,7 @@ class TestMeta:
 
 def test_meta():
     args = [
-        f"{__file__}",
+        __file__,
         "-v",
         "-s",
         "-k",
@@ -273,3 +279,40 @@ def test_large_test_model(large_test_model):
     assert isinstance(large_test_model, Path)
     assert large_test_model.is_file()
     assert large_test_model.name == "mfsim.nam"
+
+
+# test pandas fixture
+
+test_pandas_fname = "pandas.txt"
+
+
+@pytest.mark.meta("test_pandas")
+def test_pandas_inner(function_tmpdir, use_pandas):
+    with open(function_tmpdir / test_pandas_fname, "w") as f:
+        f.write(str(use_pandas))
+
+
+@pytest.mark.parametrize("pandas", ["yes", "no", "random"])
+@pytest.mark.parametrize("arg", ["--pandas", "-P"])
+def test_pandas(pandas, arg, function_tmpdir):
+    inner_fn = test_pandas_inner.__name__
+    args = [
+        __file__,
+        "-v",
+        "-s",
+        "-k",
+        inner_fn,
+        arg,
+        pandas,
+        "--keep",
+        function_tmpdir,
+        "-M",
+        "test_pandas",
+    ]
+    assert pytest.main(args) == ExitCode.OK
+    res = open(next(function_tmpdir.rglob(test_pandas_fname))).readlines()[0]
+    assert res
+    if pandas == "yes":
+        assert "True" in res
+    elif pandas == "no":
+        assert "False" in res
