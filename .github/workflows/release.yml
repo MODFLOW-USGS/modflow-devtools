@@ -164,6 +164,10 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      id-token: write  # mandatory for trusted publishing
+    environment:  # requires a 'release' environment in repo settings
+      name: release
+      url: https://pypi.org/p/modflow-devtools
     steps:
 
       - name: Checkout main branch
@@ -188,12 +192,14 @@ jobs:
       - name: Check package
         run: twine check --strict dist/*
 
-      - name: Publish package
-        if: ${{ env.TWINE_USERNAME != '' }}
-        env:
-          TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
-          TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-        run: twine upload dist/*
+      - name: Upload package
+        uses: actions/upload-artifact@v3
+        with:
+          name: dist
+          path: dist
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
 
   reset:
     name: Draft reset PR
