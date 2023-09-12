@@ -1,10 +1,8 @@
 import importlib
 import socket
 import sys
-import time
 import traceback
 from contextlib import contextmanager
-from functools import wraps
 from importlib import metadata
 from os import PathLike, chdir, environ, getcwd
 from os.path import basename, normpath
@@ -444,38 +442,3 @@ def has_pkg(pkg: str, strict: bool = False) -> bool:
     _has_pkg_cache[pkg] = found
 
     return _has_pkg_cache[pkg]
-
-
-def timeit(f):
-    """
-    Decorator for estimating runtime of any function.
-    Prints estimated time to stdout, in milliseconds.
-
-    Parameters
-    ----------
-    f : function
-        Function to time.
-
-    Notes
-    -----
-    Adapted from https://stackoverflow.com/a/27737385/6514033.
-
-    Returns
-    -------
-    function
-        The decorated function.
-    """
-
-    @wraps(f)
-    def timed(*args, **kw):
-        ts = time.time()
-        res = f(*args, **kw)
-        te = time.time()
-        if "log_time" in kw:
-            name = kw.get("log_name", f.__name__.upper())
-            kw["log_time"][name] = int((te - ts) * 1000)
-        else:
-            print(f"{f.__name__} took {(te - ts) * 1000:.2f} ms")
-        return res
-
-    return timed
