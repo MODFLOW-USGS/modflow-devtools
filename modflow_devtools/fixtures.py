@@ -101,6 +101,14 @@ def use_pandas(request):
         raise ValueError(f"Unsupported value for --pandas: {pandas}")
 
 
+@pytest.fixture
+def tabular(request):
+    tab = request.config.option.TABULAR
+    if tab not in ["raw", "recarray", "dataframe"]:
+        raise ValueError(f"Unsupported value for --tabular: {tab}")
+    return tab
+
+
 # configuration hooks
 
 
@@ -163,7 +171,16 @@ def pytest_addoption(parser):
         action="store",
         default="yes",
         dest="PANDAS",
-        help="Package input data can be provided as either pandas dataframes or numpy recarrays. By default, pandas dataframes are used. To test with numpy recarrays, use 'no'. To randomize selection (per test), use 'random'.",
+        help="Indicates whether to use pandas, where multiple approaches are available. Select 'yes', 'no', or 'random'.",
+    )
+
+    parser.addoption(
+        "-T",
+        "--tabular",
+        action="store",
+        default="raw",
+        dest="TABULAR",
+        help="Configure tabular data representation for model input. Select 'raw', 'recarray', or 'dataframe'.",
     )
 
 
