@@ -1,3 +1,9 @@
+### Version 1.2.0
+
+#### New features
+
+* [feat(fixtures)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/a41caa75f8519780c7ee60daf61d8225b4380dd5): Add use_pandas pytest fixture and --pandas CLI arg (#112). Committed by wpbonelli on 2023-09-12.
+
 ### Version 1.1.0
 
 #### Refactoring
