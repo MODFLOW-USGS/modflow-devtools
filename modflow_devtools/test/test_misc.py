@@ -1,10 +1,8 @@
 import os
-import re
 import shutil
 from os import environ
 from pathlib import Path
 from pprint import pprint
-from time import sleep
 from typing import List
 
 import pytest
@@ -17,7 +15,6 @@ from modflow_devtools.misc import (
     has_pkg,
     set_dir,
     set_env,
-    timeit,
 )
 
 
@@ -286,24 +283,3 @@ def test_has_pkg(virtualenv):
             ).strip()
             == exp
         )
-
-
-def test_timeit1(capfd):
-    def sleep1():
-        sleep(0.001)
-
-    timeit(sleep1)()
-    cap = capfd.readouterr()
-    print(cap.out)
-    assert re.match(r"sleep1 took \d+\.\d+ ms", cap.out)
-
-
-def test_timeit2(capfd):
-    @timeit
-    def sleep1dec():
-        sleep(0.001)
-
-    sleep1dec()
-    cap = capfd.readouterr()
-    print(cap.out)
-    assert re.match(r"sleep1dec took \d+\.\d+ ms", cap.out)
