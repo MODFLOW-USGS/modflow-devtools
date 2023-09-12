@@ -1,3 +1,4 @@
+import random
 from collections import OrderedDict
 from itertools import groupby
 from os import PathLike, environ
@@ -10,7 +11,8 @@ from modflow_devtools.misc import get_namefile_paths, get_packages
 
 pytest = import_optional_dependency("pytest")
 
-# temporary directory fixtures
+
+# fixtures
 
 
 @pytest.fixture(scope="function")
@@ -23,7 +25,7 @@ def function_tmpdir(tmpdir_factory, request) -> Path:
     temp = Path(tmpdir_factory.mktemp(node))
     yield Path(temp)
 
-    keep = request.config.getoption("--keep")
+    keep = request.config.option.KEEP
     if keep:
         path = Path(keep) / temp.name
         if path.is_dir():
@@ -46,7 +48,7 @@ def class_tmpdir(tmpdir_factory, request) -> Path:
     temp = Path(tmpdir_factory.mktemp(request.cls.__name__))
     yield temp
 
-    keep = request.config.getoption("--keep")
+    keep = request.config.option.KEEP
     if keep:
         path = Path(keep) / temp.name
         if path.is_dir():
@@ -59,7 +61,7 @@ def module_tmpdir(tmpdir_factory, request) -> Path:
     temp = Path(tmpdir_factory.mktemp(request.module.__name__))
     yield temp
 
-    keep = request.config.getoption("--keep")
+    keep = request.config.option.KEEP
     if keep:
         path = Path(keep) / temp.name
         if path.is_dir():
@@ -72,15 +74,12 @@ def session_tmpdir(tmpdir_factory, request) -> Path:
     temp = Path(tmpdir_factory.mktemp(request.session.name))
     yield temp
 
-    keep = request.config.getoption("--keep")
+    keep = request.config.option.KEEP
     if keep:
         path = Path(keep) / temp.name
         if path.is_dir():
             rmtree(path)
         copytree(temp, path)
-
-
-# environment-dependent fixtures
 
 
 @pytest.fixture
@@ -89,7 +88,20 @@ def repos_path() -> Optional[Path]:
     return environ.get("REPOS_PATH", None)
 
 
-# pytest configuration hooks
+@pytest.fixture
+def use_pandas(request):
+    pandas = request.config.option.PANDAS
+    if pandas == "yes":
+        return True
+    elif pandas == "no":
+        return False
+    elif pandas == "random":
+        return random.randint(0, 1) == 0
+    else:
+        raise ValueError(f"Unsupported value for --pandas: {pandas}")
+
+
+# configuration hooks
 
 
 def pytest_addoption(parser):
@@ -98,6 +110,7 @@ def pytest_addoption(parser):
         "--keep",
         action="store",
         default=None,
+        dest="KEEP",
         help="Move the contents of temporary test directories to correspondingly named subdirectories at the given "
         "location after tests complete. This option can be used to exclude test results from automatic cleanup, "
         "e.g. for manual inspection. The provided path is created if it does not already exist. An error is "
@@ -142,6 +155,15 @@ def pytest_addoption(parser):
         action="append",
         type=str,
         help="Select a subset of packages to run.",
+    )
+
+    parser.addoption(
+        "-P",
+        "--pandas",
+        action="store",
+        default="yes",
+        dest="PANDAS",
+        help="Package input data can be provided as either pandas dataframes or numpy recarrays. By default, pandas dataframes are used. To test with numpy recarrays, use 'no'. To randomize selection (per test), use 'random'.",
     )
 
 
