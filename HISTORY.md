@@ -1,3 +1,9 @@
+### Version 1.3.0
+
+#### New features
+
+* [feat(fixtures)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/0ce571411b6b35bc62d4f333d1a961bd2f202784): Add --tabular pytest CLI arg and corresponding fixture (#116). Committed by wpbonelli on 2023-09-12.
+
 ### Version 1.2.0
 
 #### New features
