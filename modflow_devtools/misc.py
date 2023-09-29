@@ -1,7 +1,6 @@
 import importlib
 import socket
 import sys
-import time
 import traceback
 from contextlib import contextmanager
 from functools import wraps
@@ -11,6 +10,7 @@ from os.path import basename, normpath
 from pathlib import Path
 from shutil import which
 from subprocess import PIPE, Popen
+from timeit import timeit
 from typing import List, Optional, Tuple
 from urllib import request
 
@@ -446,7 +446,7 @@ def has_pkg(pkg: str, strict: bool = False) -> bool:
     return _has_pkg_cache[pkg]
 
 
-def timeit(f):
+def timed(f):
     """
     Decorator for estimating runtime of any function.
     Prints estimated time to stdout, in milliseconds.
@@ -459,6 +459,7 @@ def timeit(f):
     Notes
     -----
     Adapted from https://stackoverflow.com/a/27737385/6514033.
+    Uses the built-in timeit module internally.
 
     Returns
     -------
@@ -467,15 +468,20 @@ def timeit(f):
     """
 
     @wraps(f)
-    def timed(*args, **kw):
-        ts = time.time()
-        res = f(*args, **kw)
-        te = time.time()
+    def _timed(*args, **kw):
+        res = None
+
+        def call():
+            nonlocal res
+            res = f(*args, **kw)
+
+        t = timeit(lambda: call(), number=1)
         if "log_time" in kw:
             name = kw.get("log_name", f.__name__.upper())
-            kw["log_time"][name] = int((te - ts) * 1000)
+            kw["log_time"][name] = int(t * 1000)
         else:
-            print(f"{f.__name__} took {(te - ts) * 1000:.2f} ms")
+            print(f"{f.__name__} took {t * 1000:.2f} ms")
+
         return res
 
-    return timed
+    return _timed
