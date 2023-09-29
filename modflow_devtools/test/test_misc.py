@@ -1,8 +1,9 @@
 import os
+import re
 import shutil
 from os import environ
 from pathlib import Path
-from pprint import pprint
+from time import sleep
 from typing import List
 
 import pytest
@@ -12,9 +13,9 @@ from modflow_devtools.misc import (
     get_namefile_paths,
     get_packages,
     has_package,
-    has_pkg,
     set_dir,
     set_env,
+    timed,
 )
 
 
@@ -25,7 +26,7 @@ def test_set_dir(tmp_path):
     assert Path(os.getcwd()) != tmp_path
 
 
-def test_set_env(tmp_path):
+def test_set_env():
     # test adding a variable
     key = "TEST_ENV"
     val = "test"
@@ -283,3 +284,24 @@ def test_has_pkg(virtualenv):
             ).strip()
             == exp
         )
+
+
+def test_timed1(capfd):
+    def sleep1():
+        sleep(0.001)
+
+    timed(sleep1)()
+    cap = capfd.readouterr()
+    print(cap.out)
+    assert re.match(r"sleep1 took \d+\.\d+ ms", cap.out)
+
+
+def test_timed2(capfd):
+    @timed
+    def sleep1dec():
+        sleep(0.001)
+
+    sleep1dec()
+    cap = capfd.readouterr()
+    print(cap.out)
+    assert re.match(r"sleep1dec took \d+\.\d+ ms", cap.out)
