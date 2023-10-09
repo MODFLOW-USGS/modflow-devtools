@@ -20,7 +20,7 @@ print([asset["name"] for asset in assets])
 
 This yields `['code.json', 'linux.zip', 'mac.zip', 'win64.zip']`.
 
-Equivalently, using the `list_release_assets()` function to list the latest release assets directly:
+Equivalently, using the `get_release_assets()` function to list the latest release assets directly:
 
 ```python
 from modflow_devtools.download import get_release_assets
