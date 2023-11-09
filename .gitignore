@@ -128,8 +128,9 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# pycharme
+# IDEs
 .idea/
+.vscode/
 
 # downloaded exe
 modflow_devtools/bin/
