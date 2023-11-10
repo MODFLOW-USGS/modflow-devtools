@@ -1,4 +1,11 @@
-from platform import system
+"""
+Pytest markers to toggle tests based on environment conditions.
+Occasionally useful to directly assert environment expectations.
+"""
+
+from platform import python_version, system
+
+from packaging.version import Version
 
 from modflow_devtools.imports import import_optional_dependency
 from modflow_devtools.misc import (
@@ -10,6 +17,7 @@ from modflow_devtools.misc import (
 )
 
 pytest = import_optional_dependency("pytest")
+py_ver = Version(python_version())
 
 
 def requires_exe(*exes):
@@ -19,6 +27,23 @@ def requires_exe(*exes):
         reason=f"missing executable{'s' if len(missing) != 1 else ''}: "
         + ", ".join(missing),
     )
+
+
+def requires_python(version, bound="lower"):
+    if not isinstance(version, str):
+        raise ValueError(f"Version must a string")
+
+    py_tgt = Version(version)
+    if bound == "lower":
+        return py_ver >= py_tgt
+    elif bound == "upper":
+        return py_ver <= py_tgt
+    elif bound == "exact":
+        return py_ver == py_tgt
+    else:
+        return ValueError(
+            f"Invalid bound type: {bound} (use 'upper', 'lower', or 'exact')"
+        )
 
 
 def requires_pkg(*pkgs):
@@ -69,3 +94,20 @@ requires_spatial_reference = pytest.mark.skipif(
     not is_connected("spatialreference.org"),
     reason="spatialreference.org is required.",
 )
+
+
+# imperative mood renaming, and some aliases
+
+require_exe = requires_exe
+require_program = requires_exe
+requires_program = requires_exe
+require_python = requires_python
+require_pkg = requires_pkg
+require_package = requires_pkg
+requires_package = requires_pkg
+require_platform = requires_platform
+exclude_platform = excludes_platform
+require_branch = requires_branch
+exclude_branch = excludes_branch
+require_github = requires_github
+require_spatial_reference = requires_spatial_reference

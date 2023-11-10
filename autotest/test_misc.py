@@ -7,7 +7,7 @@ from time import sleep
 from typing import List
 
 import pytest
-from conftest import project_root_path
+
 from modflow_devtools.misc import (
     get_model_paths,
     get_namefile_paths,

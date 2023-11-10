@@ -1,6 +1,7 @@
 from platform import system
 
 import pytest
+
 from modflow_devtools.ostags import (
     OSTag,
     get_binary_suffixes,

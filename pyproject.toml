@@ -10,6 +10,9 @@ name = "modflow-devtools"
 description = "Python tools for MODFLOW development"
 authors = [
     {name = "Joseph D. Hughes", email = "modflow@usgs.gov"},
+    {name = "Michael Reno", email = "mreno@ucar.edu"},
+    {name = "Mike Taves", email = "mwtoews@gmail.com"},
+    {name = "Wes Bonelli", email = "wbonelli@ucar.edu"},
 ]
 maintainers = [
     {name = "Joseph D. Hughes", email = "modflow@usgs.gov"},
@@ -84,10 +87,11 @@ verbose = true
 
 [tool.isort]
 profile = "black"
-src_paths = ["src/modflow_devtools"]
+src_paths = ["modflow_devtools"]
 line_length = 79
 
 [tool.setuptools]
+packages = ["modflow_devtools"]
 include-package-data = true
 zip-safe = false
 

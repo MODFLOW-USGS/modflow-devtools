@@ -80,7 +80,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ ubuntu-22.04, macos-12, windows-2022 ]
-        python: [ 3.8, 3.9, "3.10", "3.11" ]
+        python: [ 3.8, 3.9, "3.10", "3.11", "3.12" ]
     env:
       GCC_V: 11
     steps:
@@ -159,11 +159,9 @@ jobs:
         run: python ci_build_files.py
 
       - name: Run local tests
-        working-directory: modflow-devtools
+        working-directory: modflow-devtools/autotest
         env:
-          BIN_PATH: ~/.local/bin/modflow
           REPOS_PATH: ${{ github.workspace }}
-          GITHUB_TOKEN: ${{ github.token }}
         # use --dist loadfile to so tests requiring pytest-virtualenv run on the same worker
         run: pytest -v -n auto --dist loadfile --durations 0 --ignore modflow_devtools/test/test_download.py
       
@@ -172,9 +170,8 @@ jobs:
         # to avoid rate limits (1000 rqs / hour / repository)
         # https://docs.github.com/en/actions/learn-github-actions/usage-limits-billing-and-administration#usage-limits
         if: runner.os == 'Linux' && matrix.python == '3.8'
-        working-directory: modflow-devtools
+        working-directory: modflow-devtools/autotest
         env:
-          BIN_PATH: ~/.local/bin/modflow
           REPOS_PATH: ${{ github.workspace }}
           GITHUB_TOKEN: ${{ github.token }}
         run: pytest -v -n auto --durations 0 modflow_devtools/test/test_download.py
