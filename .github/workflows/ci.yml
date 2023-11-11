@@ -16,7 +16,7 @@ jobs:
     steps:
 
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Python
         uses: actions/setup-python@v4
@@ -80,24 +80,24 @@ jobs:
       fail-fast: false
       matrix:
         os: [ ubuntu-22.04, macos-12, windows-2022 ]
-        python: [ 3.8, 3.9, "3.10", "3.11" ]
+        python: [ 3.8, 3.9, "3.10", "3.11", "3.12" ]
     env:
       GCC_V: 11
     steps:
 
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           path: modflow-devtools
       
       - name: Checkout modflow6
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: MODFLOW-USGS/modflow6
           path: modflow6
       
       - name: Checkout modflow6 examples
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: MODFLOW-USGS/modflow6-examples
           path: modflow6-examples
@@ -113,7 +113,6 @@ jobs:
         with:
           repository: MODFLOW-USGS/modflow6-largetestmodels
           path: modflow6-largetestmodels
-          token: ${{ github.token }}
 
       - name: Install executables
         uses: modflowpy/install-modflow-action@v1
@@ -128,10 +127,6 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
-          cache: 'pip'
-          cache-dependency-path: |
-            modflow-devtools/pyproject.toml
-            modflow6-examples/etc/requirements*.txt
 
       - name: Install Python packages
         working-directory: modflow-devtools
@@ -159,22 +154,19 @@ jobs:
         run: python ci_build_files.py
 
       - name: Run local tests
-        working-directory: modflow-devtools
+        working-directory: modflow-devtools/autotest
         env:
-          BIN_PATH: ~/.local/bin/modflow
           REPOS_PATH: ${{ github.workspace }}
-          GITHUB_TOKEN: ${{ github.token }}
         # use --dist loadfile to so tests requiring pytest-virtualenv run on the same worker
-        run: pytest -v -n auto --dist loadfile --durations 0 --ignore modflow_devtools/test/test_download.py
+        run: pytest -v -n auto --dist loadfile --durations 0 --ignore test_download.py
       
       - name: Run network-dependent tests
         # only invoke the GH API on one OS and Python version
         # to avoid rate limits (1000 rqs / hour / repository)
         # https://docs.github.com/en/actions/learn-github-actions/usage-limits-billing-and-administration#usage-limits
         if: runner.os == 'Linux' && matrix.python == '3.8'
-        working-directory: modflow-devtools
+        working-directory: modflow-devtools/autotest
         env:
-          BIN_PATH: ~/.local/bin/modflow
           REPOS_PATH: ${{ github.workspace }}
           GITHUB_TOKEN: ${{ github.token }}
-        run: pytest -v -n auto --durations 0 modflow_devtools/test/test_download.py
+        run: pytest -v -n auto --durations 0 test_download.py

@@ -66,8 +66,9 @@ def set_env(*remove, **update):
 
 class add_sys_path:
     """
-    Context manager for temporarily editing the system path
-    (https://stackoverflow.com/a/39855753/6514033)
+    Context manager to add temporarily to the system path.
+
+    Adapted from https://stackoverflow.com/a/39855753/6514033.
     """
 
     def __init__(self, path):

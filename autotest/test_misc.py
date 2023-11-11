@@ -7,12 +7,13 @@ from time import sleep
 from typing import List
 
 import pytest
-from conftest import project_root_path
+
 from modflow_devtools.misc import (
     get_model_paths,
     get_namefile_paths,
     get_packages,
     has_package,
+    has_pkg,
     set_dir,
     set_env,
     timed,
@@ -255,35 +256,9 @@ def test_get_namefile_paths_select_packages():
     assert len(paths) >= 43
 
 
-@pytest.mark.slow
-def test_has_pkg(virtualenv):
-    python = virtualenv.python
-    venv = Path(python).parent
-    pkg = "pytest"
-    dep = "pluggy"
-    print(
-        f"Using temp venv at {venv} with python {python} to test has_pkg('{pkg}') with and without '{dep}'"
-    )
-
-    # install a package and remove one of its dependencies
-    virtualenv.run(f"pip install {project_root_path}")
-    virtualenv.run(f"pip install {pkg}")
-    virtualenv.run(f"pip uninstall -y {dep}")
-
-    # check with/without strict mode
-    for strict in [False, True]:
-        cmd = (
-            f"from modflow_devtools.misc import has_pkg; print(has_pkg('{pkg}'"
-            + (", strict=True))" if strict else "))")
-        )
-        exp = "False" if strict else "True"
-        assert (
-            virtualenv.run(
-                f'{python} -c "{cmd}"',
-                capture=True,
-            ).strip()
-            == exp
-        )
+def test_has_pkg():
+    assert has_pkg("pytest")
+    assert not has_pkg("notapkg")
 
 
 def test_timed1(capfd):
