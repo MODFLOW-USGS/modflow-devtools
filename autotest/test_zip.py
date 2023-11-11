@@ -16,7 +16,6 @@ from modflow_devtools.zip import MFZipFile
 ext, _ = get_suffixes(sys.platform)
 exe_stem = "pytest"
 exe_path = Path(which(exe_stem))
-bin_path = exe_path.parent
 exe_name = f"{exe_stem}{ext}"
 
 
