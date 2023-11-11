@@ -139,7 +139,7 @@ def test_keep_class_scoped_tmpdir(tmp_path, arg):
         TestKeepClassScopedTmpdirInner.test_keep_class_scoped_tmpdir_inner.__name__,
         "-M",
         "test_keep",
-        "-K",
+        arg,
         tmp_path,
     ]
     assert pytest.main(args) == ExitCode.OK
@@ -160,19 +160,14 @@ def test_keep_module_scoped_tmpdir(tmp_path, arg):
         test_keep_module_scoped_tmpdir_inner.__name__,
         "-M",
         "test_keep",
-        "-K",
+        arg,
         tmp_path,
     ]
     assert pytest.main(args) == ExitCode.OK
     this_path = Path(__file__)
     keep_path = (
-        tmp_path
-        / f"{str(this_path.parent.parent.name)}.{str(this_path.parent.name)}.{str(this_path.stem)}0"
+        tmp_path / f"{str(this_path.parent.name)}.{str(this_path.stem)}0"
     )
-    from pprint import pprint
-
-    print(keep_path)
-    pprint(list(keep_path.glob("*")))
     assert test_keep_fname in [f.name for f in keep_path.glob("*")]
 
 
@@ -186,7 +181,7 @@ def test_keep_session_scoped_tmpdir(tmp_path, arg, request):
         test_keep_session_scoped_tmpdir_inner.__name__,
         "-M",
         "test_keep",
-        "-K",
+        arg,
         tmp_path,
     ]
     assert pytest.main(args) == ExitCode.OK

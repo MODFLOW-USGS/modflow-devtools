@@ -44,7 +44,7 @@ def empty_archive(module_tmpdir) -> Path:
     path = module_tmpdir / "empty.zip"
     with open(path, "wb") as zip:
         zip.write(data)
-    return path
+    yield path
 
 
 def test_extractall_empty(empty_archive, function_tmpdir):
@@ -61,7 +61,7 @@ def archive(module_tmpdir) -> Path:
         zip = MFZipFile(zip_path.name, "w")
         zip.write(exe_path.name, compress_type=zipfile.ZIP_DEFLATED)
         zip.close()
-    return zip_path
+    yield zip_path
 
 
 @pytest.mark.parametrize("mf", [True, False])

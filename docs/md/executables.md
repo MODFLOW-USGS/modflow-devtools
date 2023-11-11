@@ -29,14 +29,3 @@ def test_targets(targets):
     # attribute- and dictionary-style access is supported
     assert targets["mf6"] == targets.mf6
 ```
-
-There is also a convenience function for getting a program's version string. The function will automatically strip the program name from the output (assumed delimited with `:`).
-
-```python
-import subprocess
-
-def test_executables_version(targets):
-    # returns e.g. '6.4.1 Release 12/09/2022'
-    assert targets.get_version(targets.mf6) == \  
-           subprocess.check_output([f"{targets.mf6}", "-v"]).decode('utf-8').strip().split(":")[1].strip()
-```
