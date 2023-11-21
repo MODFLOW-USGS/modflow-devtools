@@ -1,3 +1,9 @@
+### Version 1.3.1
+
+#### Refactoring
+
+* [refactor](https://github.com/MODFLOW-USGS/modflow-devtools/commit/ec3859af81e103f307586eec82e86cf63ee1e41c): Re-export get_suffixes from executables module (#128). Committed by wpbonelli on 2023-11-21.
+
 ### Version 1.3.0
 
 #### New features
