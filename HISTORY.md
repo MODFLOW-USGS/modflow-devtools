@@ -1,3 +1,15 @@
+### Version 1.3.0
+
+#### New features
+
+* [feat(fixtures)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/0ce571411b6b35bc62d4f333d1a961bd2f202784): Add --tabular pytest CLI arg and corresponding fixture (#116). Committed by wpbonelli on 2023-09-12.
+* [feat(timeit)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/506a238f6f31d827015a6c6f5ba1867ee55948a7): Add function timing decorator (#118). Committed by wpbonelli on 2023-09-12.
+* [feat(executables)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/5b61a4b393b0bcd40aafeb87d1e80b3e557e0f05): Support .get(key, default) like dict (#125). Committed by wpbonelli on 2023-11-21.
+
+#### Refactoring
+
+* [refactor](https://github.com/MODFLOW-USGS/modflow-devtools/commit/cd644fa90885cde04f36f24e44cfe922b2a38897): Support python 3.12, various updates (#124). Committed by wpbonelli on 2023-11-11.
+
 ### Version 1.2.0
 
 #### New features
