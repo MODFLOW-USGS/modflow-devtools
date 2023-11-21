@@ -2,6 +2,11 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import Dict
 
+from modflow_devtools.misc import get_suffixes
+
+# re-export for backwards-compatibility (used to be here)
+get_suffixes = get_suffixes
+
 
 class Executables(SimpleNamespace):
     """
