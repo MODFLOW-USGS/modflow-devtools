@@ -28,4 +28,6 @@ The `targets` fixture can then be injected into test functions:
 def test_targets(targets):
     # attribute- and dictionary-style access is supported
     assert targets["mf6"] == targets.mf6
+    # .get() works too
+    assert targets.get("not a target") is None
 ```
