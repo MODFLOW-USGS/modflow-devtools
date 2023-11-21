@@ -17,6 +17,9 @@ class Executables(SimpleNamespace):
     def __getitem__(self, key):
         return self.__dict__[key]
 
+    def get(self, key, default=None):
+        return self.as_dict().get(key, default)
+
     def as_dict(self) -> Dict[str, Path]:
         """
         Returns a dictionary mapping executable names to paths.

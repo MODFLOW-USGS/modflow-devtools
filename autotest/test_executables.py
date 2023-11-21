@@ -1,4 +1,3 @@
-import subprocess
 import sys
 from pathlib import Path
 from shutil import which
@@ -24,3 +23,6 @@ def exes():
 def test_access(exes):
     # support both attribute and dictionary style access
     assert exes.pytest == exes["pytest"] == exe_path
+    # .get() works too
+    assert exes.get("not a target") is None
+    assert exes.get("not a target", exes["pytest"]) == exes["pytest"]
