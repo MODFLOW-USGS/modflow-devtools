@@ -87,7 +87,7 @@ def get_releases(
                     return json.loads(resp.read().decode())
             except urllib.error.HTTPError as err:
                 if err.code == 401 and os.environ.get("GITHUB_TOKEN"):
-                    raise ValueError("GITHUB_TOKEN env is invalid") from err
+                    raise ValueError("GITHUB_TOKEN is invalid") from err
                 elif err.code == 403 and "rate limit exceeded" in err.reason:
                     raise ValueError(
                         f"use GITHUB_TOKEN env to bypass rate limit ({err})"

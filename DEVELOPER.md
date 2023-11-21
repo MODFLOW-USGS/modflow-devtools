@@ -38,25 +38,21 @@ This repository's tests use [`pytest`](https://docs.pytest.org/en/latest/) and s
 
 This repository's tests expect a few environment variables:
 
-- `BIN_PATH`: path to MODFLOW 6 and related executables
 - `REPOS_PATH`: the path to MODFLOW 6 example model repositories
 - `GITHUB_TOKEN`: a GitHub authentication token
 
 These may be set manually, but the recommended approach is to configure environment variables in a `.env` file in the project root, for instance:
 
 ```
-BIN_PATH=/path/to/modflow/executables
 REPOS_PATH=/path/to/repos
 GITHUB_TOKEN=yourtoken...
 ```
 
 The tests use [`pytest-dotenv`](https://github.com/quiqua/pytest-dotenv) to detect and load variables from this file.
 
-**Note:** at minimum, the tests require that the `mf6` (or `mf6.exe` on Windows) executable is present in `BIN_PATH`.
-
 ### Running the tests
 
-Tests should be run from the project root. To run the tests in parallel with verbose output:
+Tests should be run from the `autotest` directory. To run the tests in parallel with verbose output:
 
 ```shell
 pytest -v -n auto
@@ -64,11 +60,11 @@ pytest -v -n auto
 
 ### Writing new tests
 
-Tests should follow a few conventions for ease of use and maintenance.
+Tests follow a few conventions for ease of use and maintenance.
 
 #### Temporary directories
 
-Tests which must write to disk should use `pytest`'s built-in `temp_dir` fixture or one of this package's own scoped temporary directory fixtures.
+Tests which must write to disk use `pytest`'s built-in `temp_dir` fixture or one of this package's own scoped temporary directory fixtures.
 
 ## Releasing
 

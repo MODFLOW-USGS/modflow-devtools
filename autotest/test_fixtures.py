@@ -139,7 +139,7 @@ def test_keep_class_scoped_tmpdir(tmp_path, arg):
         TestKeepClassScopedTmpdirInner.test_keep_class_scoped_tmpdir_inner.__name__,
         "-M",
         "test_keep",
-        "-K",
+        arg,
         tmp_path,
     ]
     assert pytest.main(args) == ExitCode.OK
@@ -160,19 +160,14 @@ def test_keep_module_scoped_tmpdir(tmp_path, arg):
         test_keep_module_scoped_tmpdir_inner.__name__,
         "-M",
         "test_keep",
-        "-K",
+        arg,
         tmp_path,
     ]
     assert pytest.main(args) == ExitCode.OK
     this_path = Path(__file__)
     keep_path = (
-        tmp_path
-        / f"{str(this_path.parent.parent.name)}.{str(this_path.parent.name)}.{str(this_path.stem)}0"
+        tmp_path / f"{str(this_path.parent.name)}.{str(this_path.stem)}0"
     )
-    from pprint import pprint
-
-    print(keep_path)
-    pprint(list(keep_path.glob("*")))
     assert test_keep_fname in [f.name for f in keep_path.glob("*")]
 
 
@@ -186,7 +181,7 @@ def test_keep_session_scoped_tmpdir(tmp_path, arg, request):
         test_keep_session_scoped_tmpdir_inner.__name__,
         "-M",
         "test_keep",
-        "-K",
+        arg,
         tmp_path,
     ]
     assert pytest.main(args) == ExitCode.OK
@@ -316,3 +311,34 @@ def test_pandas(pandas, arg, function_tmpdir):
         assert "True" in res
     elif pandas == "no":
         assert "False" in res
+
+
+test_tabular_fname = "tabular.txt"
+
+
+@pytest.mark.meta("test_tabular")
+def test_tabular_inner(function_tmpdir, tabular):
+    with open(function_tmpdir / test_tabular_fname, "w") as f:
+        f.write(str(tabular))
+
+
+@pytest.mark.parametrize("tabular", ["raw", "recarray", "dataframe"])
+@pytest.mark.parametrize("arg", ["--tabular", "-T"])
+def test_tabular(tabular, arg, function_tmpdir):
+    inner_fn = test_tabular_inner.__name__
+    args = [
+        __file__,
+        "-v",
+        "-s",
+        "-k",
+        inner_fn,
+        arg,
+        tabular,
+        "--keep",
+        function_tmpdir,
+        "-M",
+        "test_tabular",
+    ]
+    assert pytest.main(args) == ExitCode.OK
+    res = open(next(function_tmpdir.rglob(test_tabular_fname))).readlines()[0]
+    assert tabular == res

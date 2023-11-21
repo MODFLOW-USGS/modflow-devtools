@@ -31,6 +31,7 @@ The `modflow-devtools` package provides a set of tools for developing and testin
    md/download.md
    md/ostags.md
    md/zip.md
+   md/timed.md
 
 
 .. toctree::

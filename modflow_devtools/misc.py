@@ -3,12 +3,14 @@ import socket
 import sys
 import traceback
 from contextlib import contextmanager
+from functools import wraps
 from importlib import metadata
 from os import PathLike, chdir, environ, getcwd
 from os.path import basename, normpath
 from pathlib import Path
 from shutil import which
 from subprocess import PIPE, Popen
+from timeit import timeit
 from typing import List, Optional, Tuple
 from urllib import request
 
@@ -64,8 +66,9 @@ def set_env(*remove, **update):
 
 class add_sys_path:
     """
-    Context manager for temporarily editing the system path
-    (https://stackoverflow.com/a/39855753/6514033)
+    Context manager to add temporarily to the system path.
+
+    Adapted from https://stackoverflow.com/a/39855753/6514033.
     """
 
     def __init__(self, path):
@@ -442,3 +445,44 @@ def has_pkg(pkg: str, strict: bool = False) -> bool:
     _has_pkg_cache[pkg] = found
 
     return _has_pkg_cache[pkg]
+
+
+def timed(f):
+    """
+    Decorator for estimating runtime of any function.
+    Prints estimated time to stdout, in milliseconds.
+
+    Parameters
+    ----------
+    f : function
+        Function to time.
+
+    Notes
+    -----
+    Adapted from https://stackoverflow.com/a/27737385/6514033.
+    Uses the built-in timeit module internally.
+
+    Returns
+    -------
+    function
+        The decorated function.
+    """
+
+    @wraps(f)
+    def _timed(*args, **kw):
+        res = None
+
+        def call():
+            nonlocal res
+            res = f(*args, **kw)
+
+        t = timeit(lambda: call(), number=1)
+        if "log_time" in kw:
+            name = kw.get("log_name", f.__name__.upper())
+            kw["log_time"][name] = int(t * 1000)
+        else:
+            print(f"{f.__name__} took {t * 1000:.2f} ms")
+
+        return res
+
+    return _timed

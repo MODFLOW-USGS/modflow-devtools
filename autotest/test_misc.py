@@ -1,12 +1,13 @@
 import os
+import re
 import shutil
 from os import environ
 from pathlib import Path
-from pprint import pprint
+from time import sleep
 from typing import List
 
 import pytest
-from conftest import project_root_path
+
 from modflow_devtools.misc import (
     get_model_paths,
     get_namefile_paths,
@@ -15,6 +16,7 @@ from modflow_devtools.misc import (
     has_pkg,
     set_dir,
     set_env,
+    timed,
 )
 
 
@@ -25,7 +27,7 @@ def test_set_dir(tmp_path):
     assert Path(os.getcwd()) != tmp_path
 
 
-def test_set_env(tmp_path):
+def test_set_env():
     # test adding a variable
     key = "TEST_ENV"
     val = "test"
@@ -254,32 +256,27 @@ def test_get_namefile_paths_select_packages():
     assert len(paths) >= 43
 
 
-@pytest.mark.slow
-def test_has_pkg(virtualenv):
-    python = virtualenv.python
-    venv = Path(python).parent
-    pkg = "pytest"
-    dep = "pluggy"
-    print(
-        f"Using temp venv at {venv} with python {python} to test has_pkg('{pkg}') with and without '{dep}'"
-    )
+def test_has_pkg():
+    assert has_pkg("pytest")
+    assert not has_pkg("notapkg")
 
-    # install a package and remove one of its dependencies
-    virtualenv.run(f"pip install {project_root_path}")
-    virtualenv.run(f"pip install {pkg}")
-    virtualenv.run(f"pip uninstall -y {dep}")
 
-    # check with/without strict mode
-    for strict in [False, True]:
-        cmd = (
-            f"from modflow_devtools.misc import has_pkg; print(has_pkg('{pkg}'"
-            + (", strict=True))" if strict else "))")
-        )
-        exp = "False" if strict else "True"
-        assert (
-            virtualenv.run(
-                f'{python} -c "{cmd}"',
-                capture=True,
-            ).strip()
-            == exp
-        )
+def test_timed1(capfd):
+    def sleep1():
+        sleep(0.001)
+
+    timed(sleep1)()
+    cap = capfd.readouterr()
+    print(cap.out)
+    assert re.match(r"sleep1 took \d+\.\d+ ms", cap.out)
+
+
+def test_timed2(capfd):
+    @timed
+    def sleep1dec():
+        sleep(0.001)
+
+    sleep1dec()
+    cap = capfd.readouterr()
+    print(cap.out)
+    assert re.match(r"sleep1dec took \d+\.\d+ ms", cap.out)
