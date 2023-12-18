@@ -26,3 +26,6 @@ def test_access(exes):
     # .get() works too
     assert exes.get("not a target") is None
     assert exes.get("not a target", exes["pytest"]) == exes["pytest"]
+    # membership test
+    assert "not a target" not in exes
+    assert "pytest" in exes

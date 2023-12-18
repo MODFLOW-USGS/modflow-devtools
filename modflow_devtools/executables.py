@@ -16,6 +16,9 @@ class Executables(SimpleNamespace):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
+    def __contains__(self, item):
+        return item in self.__dict__
+
     def __setitem__(self, key, item):
         self.__dict__[key] = item
 
