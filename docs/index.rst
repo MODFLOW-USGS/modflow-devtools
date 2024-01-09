@@ -29,7 +29,6 @@ The `modflow-devtools` package provides a set of tools for developing and testin
    :caption: Miscellaneous
 
    md/download.md
-   md/figspec.md
    md/latex.md
    md/ostags.md
    md/zip.md

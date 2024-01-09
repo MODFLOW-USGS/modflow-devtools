@@ -29,7 +29,7 @@ Python development tools for MODFLOW 6.
 
 ## Use cases
 
-This is a small toolkit for developing MODFLOW 6, FloPy, and related projects. It includes standalone utilities and optional [Pytest](https://github.com/pytest-dev/pytest) and [Matplotlib](https://matplotlib.org/stable/) extensions.
+This is a small toolkit for developing MODFLOW 6, FloPy, and related projects. It includes standalone utilities and optional [Pytest](https://github.com/pytest-dev/pytest) extensions.
 
 Utilities include:
 
@@ -49,8 +49,6 @@ Pytest features include:
   - `MODFLOW-USGS/modflow6-examples`
   - `MODFLOW-USGS/modflow6-testmodels`
   - `MODFLOW-USGS/modflow6-largetestmodels`
-
-Matplotlib styles are provided in the `modflow_devtools.figspecs` module.
 
 ## Requirements
 

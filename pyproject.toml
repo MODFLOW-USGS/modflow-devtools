@@ -50,10 +50,6 @@ lint = [
     "isort",
     "pylint"
 ]
-optional = [
-    "matplotlib",
-    "pytest",
-]
 test = [
     "modflow-devtools[lint]",
     "coverage",
