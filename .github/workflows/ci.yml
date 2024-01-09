@@ -132,7 +132,7 @@ jobs:
         working-directory: modflow-devtools
         run: |
           pip install .
-          pip install ".[test]"
+          pip install ".[test, optional]"
       
       - name: Cache modflow6 examples
         id: cache-examples

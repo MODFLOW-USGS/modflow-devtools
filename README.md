@@ -29,9 +29,13 @@ Python development tools for MODFLOW 6.
 
 ## Use cases
 
-This is a small toolkit for developing MODFLOW 6, FloPy, and related projects. It includes standalone utilities and optional [Pytest](https://github.com/pytest-dev/pytest) extensions.
+This is a small toolkit for developing MODFLOW 6, FloPy, and related projects. It includes standalone utilities and optional [Pytest](https://github.com/pytest-dev/pytest) and [Matplotlib](https://matplotlib.org/stable/) extensions.
 
-The former include a very minimal GitHub API client for retrieving release information and downloading assets, a `ZipFile` subclass that [preserves file permissions](https://stackoverflow.com/questions/39296101/python-zipfile-removes-execute-permissions-from-binaries) (workaround for [Python #15795](https://bugs.python.org/issue15795)), and other release/distribution-related tools.
+Utilities include:
+
+* a minimal GitHub API client for retrieving release information and downloading assets
+* a `ZipFile` subclass that [preserves file permissions](https://stackoverflow.com/questions/39296101/python-zipfile-removes-execute-permissions-from-binaries) (workaround for [Python #15795](https://bugs.python.org/issue15795))
+* other release/distribution-related tools
 
 Pytest features include:
 
@@ -45,6 +49,8 @@ Pytest features include:
   - `MODFLOW-USGS/modflow6-examples`
   - `MODFLOW-USGS/modflow6-testmodels`
   - `MODFLOW-USGS/modflow6-largetestmodels`
+
+Matplotlib styles are provided in the `modflow_devtools.figspecs` module.
 
 ## Requirements
 
