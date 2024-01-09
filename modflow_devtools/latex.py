@@ -24,11 +24,8 @@ def build_table(caption, fpth, arr, headings=None, col_widths=None):
     # footer
     line += get_footer()
 
-    f = open(fpth, "w")
-    f.write(line)
-    f.close()
-
-    return
+    with open(fpth, "w") as f:
+        f.write(line)
 
 
 def get_header(
