@@ -9,6 +9,7 @@ from typing import List
 import pytest
 
 from modflow_devtools.misc import (
+    get_env,
     get_model_paths,
     get_namefile_paths,
     get_packages,
@@ -280,3 +281,25 @@ def test_timed2(capfd):
     cap = capfd.readouterr()
     print(cap.out)
     assert re.match(r"sleep1dec took \d+\.\d+ ms", cap.out)
+
+
+def test_get_env():
+    assert get_env("NO_VALUE") is None
+
+    with set_env(TEST_VALUE=str(True)):
+        assert get_env("NO_VALUE", True) == True
+        assert get_env("TEST_VALUE") == True
+        assert get_env("TEST_VALUE", default=False) == True
+        assert get_env("TEST_VALUE", default=1) == 1
+
+    with set_env(TEST_VALUE=str(1)):
+        assert get_env("NO_VALUE", 1) == 1
+        assert get_env("TEST_VALUE") == 1
+        assert get_env("TEST_VALUE", default=2) == 1
+        assert get_env("TEST_VALUE", default=2.1) == 2.1
+
+    with set_env(TEST_VALUE=str(1.1)):
+        assert get_env("NO_VALUE", 1.1) == 1.1
+        assert get_env("TEST_VALUE") == 1.1
+        assert get_env("TEST_VALUE", default=2.1) == 1.1
+        assert get_env("TEST_VALUE", default=False) == False
