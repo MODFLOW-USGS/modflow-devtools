@@ -456,7 +456,7 @@ def timed(f):
     return _timed
 
 
-def get_env(key: str, default: object = None) -> Optional[object]:
+def get_env(name: str, default: object = None) -> Optional[object]:
     """
     Try to parse the given environment variable as the type of the given
     default value, if one is provided, otherwise any type is acceptable.
@@ -477,7 +477,7 @@ def get_env(key: str, default: object = None) -> Optional[object]:
     otherwise the default value if the environment variable is not set.
     """
     try:
-        v = environ.get(key)
+        v = environ.get(name)
         if isinstance(default, bool):
             v = v.lower().title()
         v = literal_eval(v)
