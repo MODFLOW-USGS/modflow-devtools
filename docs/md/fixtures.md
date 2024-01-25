@@ -123,7 +123,7 @@ def test_example_scenario(tmp_path, example_scenario):
         # ...
 ```
 
-**Note**: example models must first be built by running the `ci_build_files.py` script in `modflow6-examples/etc` before running tests using the `example_scenario` fixture. See the [install docs](https://modflow-devtools.readthedocs.io/en/latest/md/install.html) for more info.
+**Note**: example models must first be built by running `pytest -v -n auto test_scripts.py --init` in `modflow6-examples/autotest` before running tests using the `example_scenario` fixture. See the [install docs](https://modflow-devtools.readthedocs.io/en/latest/md/install.html) for more info.
 
 ### Filtering
 
