@@ -19,7 +19,6 @@ The `modflow-devtools` package provides a set of tools for developing and testin
    :maxdepth: 2
    :caption: Test fixtures
 
-   md/executables.md
    md/fixtures.md
    md/markers.md
 
