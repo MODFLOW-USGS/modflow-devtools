@@ -186,7 +186,7 @@ def test_keep_session_scoped_tmpdir(tmp_path, arg, request):
     ]
     assert pytest.main(args) == ExitCode.OK
     assert Path(
-        tmp_path / f"{request.session.name}0" / test_keep_fname
+        tmp_path / f"{request.config.rootpath.name}0" / test_keep_fname
     ).is_file()
 
 

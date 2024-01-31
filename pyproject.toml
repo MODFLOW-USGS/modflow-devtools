@@ -59,7 +59,6 @@ test = [
     "ninja",
     "numpy",
     "pytest",
-    "pytest-cases",
     "pytest-cov",
     "pytest-dotenv",
     "pytest-xdist",
