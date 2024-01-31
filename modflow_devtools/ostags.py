@@ -3,7 +3,6 @@ MODFLOW 6, Python3, and GitHub Actions refer to operating
 systems differently. This module contains conversion utilities.
 """
 
-
 import sys
 from enum import Enum
 from platform import system
