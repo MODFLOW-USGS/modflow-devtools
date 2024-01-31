@@ -71,7 +71,7 @@ def module_tmpdir(tmpdir_factory, request) -> Path:
 
 @pytest.fixture(scope="session")
 def session_tmpdir(tmpdir_factory, request) -> Path:
-    temp = Path(tmpdir_factory.mktemp(request.session.name))
+    temp = Path(tmpdir_factory.mktemp(request.config.rootpath.name))
     yield temp
 
     keep = request.config.option.KEEP
