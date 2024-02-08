@@ -3,12 +3,16 @@ on:
   push:
     paths-ignore:
       - '**.md'
+      - '.github/workflows/release.yml'
+      - '.gitignore'
   pull_request:
     branches:
       - main
       - develop
     paths-ignore:
       - '**.md'
+      - '.github/workflows/release.yml'
+      - '.gitignore'
 jobs:
   lint:
     name: Lint
