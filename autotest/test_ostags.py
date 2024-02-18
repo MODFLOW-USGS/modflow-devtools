@@ -1,15 +1,16 @@
-from platform import system
+from platform import processor, system
 
 import pytest
 
 from modflow_devtools.ostags import (
-    OSTag,
+    convert_ostag,
     get_binary_suffixes,
     get_github_ostag,
     get_modflow_ostag,
 )
 
 _system = system()
+_processor = processor()
 
 
 def test_get_modflow_ostag():
@@ -19,7 +20,7 @@ def test_get_modflow_ostag():
     elif _system == "Linux":
         assert t == "linux"
     elif _system == "Darwin":
-        assert t == "mac"
+        assert t == "macarm" if _processor == "arm" else "mac"
     else:
         pytest.skip(reason="Unsupported platform")
 
@@ -35,17 +36,17 @@ def test_get_github_ostag():
 
 
 @pytest.mark.parametrize(
-    "cvt,tag,exp",
+    "map,tag,exp",
     [
         ("py2mf", "Windows", "win64"),
         ("mf2py", "win64", "Windows"),
-        ("py2mf", "Darwin", "mac"),
+        ("py2mf", "Darwin", "macarm" if _processor == "arm" else "mac"),
         ("mf2py", "mac", "Darwin"),
         ("py2mf", "Linux", "linux"),
         ("mf2py", "linux", "Linux"),
         ("gh2mf", "Windows", "win64"),
         ("mf2gh", "win64", "Windows"),
-        ("gh2mf", "macOS", "mac"),
+        ("gh2mf", "macOS", "macarm" if _processor == "arm" else "mac"),
         ("mf2gh", "mac", "macOS"),
         ("gh2mf", "Linux", "linux"),
         ("mf2gh", "linux", "Linux"),
@@ -57,8 +58,8 @@ def test_get_github_ostag():
         ("gh2py", "Linux", "Linux"),
     ],
 )
-def test_ostag_convert(cvt, tag, exp):
-    assert OSTag.convert(tag, cvt) == exp
+def test_convert_ostag(map, tag, exp):
+    assert convert_ostag(tag, map) == exp
 
 
 def test_get_binary_suffixes():
