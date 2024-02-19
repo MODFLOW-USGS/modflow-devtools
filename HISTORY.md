@@ -1,3 +1,16 @@
+### Version 1.4.0
+
+#### New features
+
+* [feat(latex)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/6728859a984a3080f8fd4f1135de36bc17454098): Add latex utilities (#132). Committed by wpbonelli on 2024-01-09.
+* [feat(misc)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/a9b801932866a26a996ed3a45f16048b15246472): Parse literals from environment variables (#135). Committed by wpbonelli on 2024-01-21.
+* [feat(ostags)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/0ad10751ea6ce752e59d83e8cd6275906d73fa70): add OS tags for Apple silicon (#139). Committed by wpbonelli on 2024-02-18.
+
+#### Refactoring
+
+* [refactor](https://github.com/MODFLOW-USGS/modflow-devtools/commit/9356e067ea813aeeeda2582cf7ec174c11d80159): Remove executables module/class (#136). Committed by wpbonelli on 2024-01-25. Should be in a major release per semver, but nothing is using it, so this should be safe.
+* [refactor(fixtures)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/613ad010ff6fc782f231b7fa21d1cc660732e7be): Support pytest>=8, drop pytest-cases dependency (#137). Committed by wpbonelli on 2024-01-31.
+
 ### Version 1.3.1
 
 #### Refactoring
