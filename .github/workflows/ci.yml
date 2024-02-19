@@ -3,12 +3,16 @@ on:
   push:
     paths-ignore:
       - '**.md'
+      - '.github/workflows/release.yml'
+      - '.gitignore'
   pull_request:
     branches:
       - main
       - develop
     paths-ignore:
       - '**.md'
+      - '.github/workflows/release.yml'
+      - '.gitignore'
 jobs:
   lint:
     name: Lint
@@ -150,8 +154,8 @@ jobs:
 
       - name: Build modflow6 example models
         if: steps.cache-examples.outputs.cache-hit != 'true'
-        working-directory: modflow6-examples/etc
-        run: python ci_build_files.py
+        working-directory: modflow6-examples/autotest
+        run: pytest -v -n auto test_scripts.py --init
 
       - name: Run local tests
         working-directory: modflow-devtools/autotest

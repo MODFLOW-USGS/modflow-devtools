@@ -3,13 +3,14 @@ MODFLOW 6, Python3, and GitHub Actions refer to operating
 systems differently. This module contains conversion utilities.
 """
 
-
 import sys
-from enum import Enum
-from platform import system
+from platform import processor, system
 from typing import Tuple
 
 _system = system()
+_processor = processor()
+
+SUPPORTED_OSTAGS = ["linux", "mac", "macarm", "win32", "win64"]
 
 
 def get_modflow_ostag() -> str:
@@ -18,7 +19,7 @@ def get_modflow_ostag() -> str:
     elif _system == "Linux":
         return "linux"
     elif _system == "Darwin":
-        return "mac"
+        return "macarm" if _processor == "arm" else "mac"
     else:
         raise NotImplementedError(f"Unsupported system: {_system}")
 
@@ -30,6 +31,15 @@ def get_github_ostag() -> str:
         return "macOS"
     else:
         raise NotImplementedError(f"Unsupported system: {_system}")
+
+
+def get_ostag(kind: str = "modflow") -> str:
+    if kind == "modflow":
+        return get_modflow_ostag()
+    elif kind == "github":
+        return get_github_ostag()
+    else:
+        raise ValueError(f"Invalid kind: {kind}")
 
 
 def get_binary_suffixes(ostag: str = None) -> Tuple[str, str]:
@@ -56,10 +66,10 @@ def get_binary_suffixes(ostag: str = None) -> Tuple[str, str]:
             return ".exe", ".dll"
         elif tag == "linux":
             return "", ".so"
-        elif tag == "mac" or tag == "darwin":
+        elif tag == "darwin" or "mac" in tag:
             return "", ".dylib"
         else:
-            raise KeyError(f"unrecognized OS tag: {tag!r}")
+            raise KeyError(f"Invalid OS tag: {tag!r}")
 
     try:
         return _suffixes(ostag.lower())
@@ -90,9 +100,9 @@ def python_to_modflow_ostag(tag: str) -> str:
     elif tag == "Linux":
         return "linux"
     elif tag == "Darwin":
-        return "mac"
+        return "macarm" if _processor == "arm" else "mac"
     else:
-        raise ValueError(f"Invalid or unsupported tag: {tag}")
+        raise ValueError(f"Invalid tag: {tag}")
 
 
 def modflow_to_python_ostag(tag: str) -> str:
@@ -113,10 +123,10 @@ def modflow_to_python_ostag(tag: str) -> str:
         return "Windows"
     elif tag == "linux":
         return "Linux"
-    elif tag == "mac":
+    elif "mac" in tag:
         return "Darwin"
     else:
-        raise ValueError(f"Invalid or unsupported tag: {tag}")
+        raise ValueError(f"Invalid tag: {tag}")
 
 
 def modflow_to_github_ostag(tag: str) -> str:
@@ -124,7 +134,7 @@ def modflow_to_github_ostag(tag: str) -> str:
         return "Windows"
     elif tag == "linux":
         return "Linux"
-    elif tag == "mac":
+    elif "mac" in tag:
         return "macOS"
     else:
         raise ValueError(f"Invalid modflow os tag: {tag}")
@@ -136,7 +146,7 @@ def github_to_modflow_ostag(tag: str) -> str:
     elif tag == "Linux":
         return "linux"
     elif tag == "macOS":
-        return "mac"
+        return "macarm" if _processor == "arm" else "mac"
     else:
         raise ValueError(f"Invalid github os tag: {tag}")
 
@@ -149,39 +159,18 @@ def github_to_python_ostag(tag: str) -> str:
     return modflow_to_python_ostag(github_to_modflow_ostag(tag))
 
 
-def get_ostag(kind: str = "modflow") -> str:
-    if kind == "modflow":
-        return get_modflow_ostag()
-    elif kind == "github":
-        return get_github_ostag()
+def convert_ostag(tag: str, mapping: str) -> str:
+    if mapping == "py2mf":
+        return python_to_modflow_ostag(tag)
+    elif mapping == "mf2py":
+        return modflow_to_python_ostag(tag)
+    elif mapping == "gh2mf":
+        return github_to_modflow_ostag(tag)
+    elif mapping == "mf2gh":
+        return modflow_to_github_ostag(tag)
+    elif mapping == "py2gh":
+        return python_to_github_ostag(tag)
+    elif mapping == "gh2py":
+        return github_to_python_ostag(tag)
     else:
-        raise ValueError(f"Invalid kind: {kind}")
-
-
-class OSTagCvt(Enum):
-    py2mf = "py2mf"
-    mf2py = "mf2py"
-    gh2mf = "gh2mf"
-    mf2gh = "mf2gh"
-    py2gh = "py2gh"
-    gh2py = "gh2py"
-
-
-class OSTag:
-    @staticmethod
-    def convert(tag: str, cvt: str) -> str:
-        cvt = OSTagCvt(cvt)
-        if cvt == OSTagCvt.py2mf:
-            return python_to_modflow_ostag(tag)
-        elif cvt == OSTagCvt.mf2py:
-            return modflow_to_python_ostag(tag)
-        elif cvt == OSTagCvt.gh2mf:
-            return github_to_modflow_ostag(tag)
-        elif cvt == OSTagCvt.mf2gh:
-            return modflow_to_github_ostag(tag)
-        elif cvt == OSTagCvt.py2gh:
-            return python_to_github_ostag(tag)
-        elif cvt == OSTagCvt.gh2py:
-            return github_to_python_ostag(tag)
-        else:
-            raise ValueError(f"Unsupported mapping: {cvt}")
+        raise ValueError(f"Invalid mapping: {mapping}")

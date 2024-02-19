@@ -14,7 +14,7 @@ Python3's `platform.system()` returns "Linux", "Darwin", and "Windows", respecti
 
 GitHub Actions (e.g. `runner.os` context) use "Linux", "macOS" and "Windows".
 
-MODFLOW 6 release asset names end with "linux", "mac" or "win64".
+MODFLOW 6 release asset names end with "linux", "mac" (Intel), "macarm", "win32", or "win64".
 
 ## Getting tags
 
@@ -37,7 +37,8 @@ Conversion functions are available for each direction:
 Alternatively:
 
 ```python
-OSTag.convert(platform.system(), "py2mf")
+convert_ostag(platform.system(), "py2mf") # prints linux, mac, macarm, win32, or win64
+convert_ostag(platform.system(), "py2mf") # prints Linux, macOS, or Windows
 ```
 
 The second argument specifies the mapping in format `<source>2<target>`, where `<source>` and `<target>` may take values `py`, `mf`, or `gh`.

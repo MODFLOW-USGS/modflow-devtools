@@ -142,3 +142,5 @@ app
 # in case developer installs modflow executables in the project root
 bin
 
+**.DS_Store
+data_backup

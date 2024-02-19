@@ -67,10 +67,10 @@ cd modflow6-examples/etc
 pip install -r requirements.pip.txt
 ```
 
-Then, still from the `etc` folder, run:
+Then, from the `autotest` folder, run:
 
 ```shell
-python ci_build_files.py
+pytest -v -n auto test_scripts.py --init
 ```
 
-This will build the examples for subsequent use by the tests.
+This will build the examples for subsequent use by the tests. To save time, models will not be run &mdash; to run the models too, omit `--init`.
