@@ -142,7 +142,7 @@ jobs:
         run: |
           pip install .
           pip install ".[test]"
-      
+
       - name: Cache modflow6 examples
         id: cache-examples
         uses: actions/cache@v3
@@ -156,6 +156,9 @@ jobs:
         run: |
           pip install -r requirements.pip.txt
           pip install -r requirements.usgs.txt
+
+      - name: Update FloPy packages
+        run: python -m flopy.mf6.utils.generate_classes --ref develop --no-backup
 
       - name: Build modflow6 example models
         if: steps.cache-examples.outputs.cache-hit != 'true'
