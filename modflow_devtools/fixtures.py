@@ -17,11 +17,7 @@ pytest = import_optional_dependency("pytest")
 
 @pytest.fixture(scope="function")
 def function_tmpdir(tmpdir_factory, request) -> Path:
-    node = (
-        request.node.name.replace("/", "_")
-        .replace("\\", "_")
-        .replace(":", "_")
-    )
+    node = request.node.name.replace("/", "_").replace("\\", "_").replace(":", "_")
     temp = Path(tmpdir_factory.mktemp(node))
     yield Path(temp)
 
@@ -269,9 +265,7 @@ def pytest_generate_tests(metafunc):
             if repo_path
             else []
         )
-        metafunc.parametrize(
-            key, namefile_paths, ids=[str(m) for m in namefile_paths]
-        )
+        metafunc.parametrize(key, namefile_paths, ids=[str(m) for m in namefile_paths])
 
     key = "test_model_mf5to6"
     if key in metafunc.fixturenames:
@@ -288,9 +282,7 @@ def pytest_generate_tests(metafunc):
             if repo_path
             else []
         )
-        metafunc.parametrize(
-            key, namefile_paths, ids=[str(m) for m in namefile_paths]
-        )
+        metafunc.parametrize(key, namefile_paths, ids=[str(m) for m in namefile_paths])
 
     key = "large_test_model"
     if key in metafunc.fixturenames:
@@ -307,9 +299,7 @@ def pytest_generate_tests(metafunc):
             if repo_path
             else []
         )
-        metafunc.parametrize(
-            key, namefile_paths, ids=[str(m) for m in namefile_paths]
-        )
+        metafunc.parametrize(key, namefile_paths, ids=[str(m) for m in namefile_paths])
 
     key = "example_scenario"
     if key in metafunc.fixturenames:
@@ -384,9 +374,7 @@ def pytest_generate_tests(metafunc):
                                 filtered.append(name)
                                 break
                 examples = {
-                    name: nfps
-                    for name, nfps in examples.items()
-                    if name in filtered
+                    name: nfps for name, nfps in examples.items() if name in filtered
                 }
 
             # exclude mf6gwf and mf6gwt subdirs

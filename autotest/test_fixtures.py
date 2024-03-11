@@ -39,8 +39,7 @@ def test_function_scoped_tmpdir_slash_in_name(function_tmpdir, name):
     replaced1 = name.replace("/", "_").replace("\\", "_").replace(":", "_")
     replaced2 = name.replace("/", "_").replace("\\", "__").replace(":", "_")
     assert (
-        f"{inspect.currentframe().f_code.co_name}[{replaced1}]"
-        in function_tmpdir.stem
+        f"{inspect.currentframe().f_code.co_name}[{replaced1}]" in function_tmpdir.stem
         or f"{inspect.currentframe().f_code.co_name}[{replaced2}]"
         in function_tmpdir.stem
     )
@@ -144,9 +143,7 @@ def test_keep_class_scoped_tmpdir(tmp_path, arg):
     ]
     assert pytest.main(args) == ExitCode.OK
     assert Path(
-        tmp_path
-        / f"{TestKeepClassScopedTmpdirInner.__name__}0"
-        / test_keep_fname
+        tmp_path / f"{TestKeepClassScopedTmpdirInner.__name__}0" / test_keep_fname
     ).is_file()
 
 
@@ -165,9 +162,7 @@ def test_keep_module_scoped_tmpdir(tmp_path, arg):
     ]
     assert pytest.main(args) == ExitCode.OK
     this_path = Path(__file__)
-    keep_path = (
-        tmp_path / f"{str(this_path.parent.name)}.{str(this_path.stem)}0"
-    )
+    keep_path = tmp_path / f"{str(this_path.parent.name)}.{str(this_path.stem)}0"
     assert test_keep_fname in [f.name for f in keep_path.glob("*")]
 
 
@@ -206,9 +201,7 @@ def test_keep_failed_function_scoped_tmpdir(function_tmpdir, keep):
         args += ["--keep-failed", function_tmpdir]
     assert pytest.main(args) == ExitCode.TESTS_FAILED
 
-    kept_file = Path(
-        function_tmpdir / f"{inner_fn}0" / test_keep_fname
-    ).is_file()
+    kept_file = Path(function_tmpdir / f"{inner_fn}0" / test_keep_fname).is_file()
     assert kept_file if keep else not kept_file
 
 

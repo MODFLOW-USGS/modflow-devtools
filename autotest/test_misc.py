@@ -49,9 +49,7 @@ if _repos_path is None:
     _repos_path = Path(__file__).parent.parent.parent.parent
 _repos_path = Path(_repos_path).expanduser().absolute()
 _testmodels_repo_path = _repos_path / "modflow6-testmodels"
-_testmodels_repo_paths_mf6 = sorted(
-    list((_testmodels_repo_path / "mf6").glob("test*"))
-)
+_testmodels_repo_paths_mf6 = sorted(list((_testmodels_repo_path / "mf6").glob("test*")))
 _testmodels_repo_paths_mf5to6 = sorted(
     list((_testmodels_repo_path / "mf5to6").glob("test*"))
 )
@@ -60,9 +58,7 @@ _largetestmodel_paths = sorted(list(_largetestmodels_repo_path.glob("test*")))
 _examples_repo_path = _repos_path / "modflow6-examples"
 _examples_path = _examples_repo_path / "examples"
 _example_paths = (
-    sorted(list(_examples_path.glob("ex-*")))
-    if _examples_path.is_dir()
-    else []
+    sorted(list(_examples_path.glob("ex-*"))) if _examples_path.is_dir() else []
 )
 
 
@@ -150,9 +146,7 @@ def get_expected_namefiles(path, pattern="mfsim.nam") -> List[Path]:
     return sorted(list(set(folders)))
 
 
-@pytest.mark.skipif(
-    not any(_example_paths), reason="modflow6-examples repo not found"
-)
+@pytest.mark.skipif(not any(_example_paths), reason="modflow6-examples repo not found")
 def test_get_model_paths_examples():
     expected_paths = get_expected_model_dirs(_examples_path)
     paths = get_model_paths(_examples_path)
@@ -193,9 +187,7 @@ def test_get_model_paths_exclude_patterns(models):
     assert len(paths) >= expected_count
 
 
-@pytest.mark.skipif(
-    not any(_example_paths), reason="modflow6-examples repo not found"
-)
+@pytest.mark.skipif(not any(_example_paths), reason="modflow6-examples repo not found")
 def test_get_namefile_paths_examples():
     expected_paths = get_expected_namefiles(_examples_path)
     paths = get_namefile_paths(_examples_path)
@@ -287,9 +279,9 @@ def test_get_env():
     assert get_env("NO_VALUE") is None
 
     with set_env(TEST_VALUE=str(True)):
-        assert get_env("NO_VALUE", True) == True
-        assert get_env("TEST_VALUE") == True
-        assert get_env("TEST_VALUE", default=False) == True
+        assert get_env("NO_VALUE", True)
+        assert get_env("TEST_VALUE")
+        assert get_env("TEST_VALUE", default=False)
         assert get_env("TEST_VALUE", default=1) == 1
 
     with set_env(TEST_VALUE=str(1)):
@@ -302,4 +294,4 @@ def test_get_env():
         assert get_env("NO_VALUE", 1.1) == 1.1
         assert get_env("TEST_VALUE") == 1.1
         assert get_env("TEST_VALUE", default=2.1) == 1.1
-        assert get_env("TEST_VALUE", default=False) == False
+        assert not get_env("TEST_VALUE", default=False)

@@ -16,6 +16,7 @@ from typing import List, Optional, Tuple
 from urllib import request
 
 from _warnings import warn
+from urllib.error import URLError
 
 
 @contextmanager
@@ -167,8 +168,8 @@ def get_packages(namefile_path: PathLike) -> List[str]:
     packages = []
     path = Path(namefile_path).expanduser().absolute()
     lines = open(path, "r").readlines()
-    gwf_lines = [l for l in lines if l.strip().lower().startswith("gwf6 ")]
-    gwt_lines = [l for l in lines if l.strip().lower().startswith("gwt6 ")]
+    gwf_lines = [ln for ln in lines if ln.strip().lower().startswith("gwf6 ")]
+    gwt_lines = [ln for ln in lines if ln.strip().lower().startswith("gwt6 ")]
 
     def parse_model_namefile(line):
         nf_path = [path.parent / s for s in line.split(" ") if s != ""][1]
@@ -181,24 +182,20 @@ def get_packages(namefile_path: PathLike) -> List[str]:
     # load model namefiles
     try:
         for line in gwf_lines:
-            packages = (
-                packages + get_packages(parse_model_namefile(line)) + ["gwf"]
-            )
+            packages = packages + get_packages(parse_model_namefile(line)) + ["gwf"]
         for line in gwt_lines:
-            packages = (
-                packages + get_packages(parse_model_namefile(line)) + ["gwt"]
-            )
-    except:
+            packages = packages + get_packages(parse_model_namefile(line)) + ["gwt"]
+    except:  # noqa: E722
         warn(f"Invalid namefile format: {traceback.format_exc()}")
 
     for line in lines:
         # Skip over blank and commented lines
-        ll = line.strip().split()
-        if len(ll) < 2:
+        line = line.strip().split()
+        if len(line) < 2:
             continue
 
-        l = ll[0].lower()
-        if any(l.startswith(c) for c in ["#", "!", "data", "list"]) or l in [
+        line = line[0].lower()
+        if any(line.startswith(c) for c in ["#", "!", "data", "list"]) or line in [
             "begin",
             "end",
             "memory_print_option",
@@ -206,9 +203,9 @@ def get_packages(namefile_path: PathLike) -> List[str]:
             continue
 
         # strip "6" from package name
-        l = l.replace("6", "")
+        line = line.replace("6", "")
 
-        packages.append(l.lower())
+        packages.append(line.lower())
 
     return list(set(packages))
 
@@ -242,17 +239,12 @@ def get_namefile_paths(
 
     # find simulation namefiles
     paths = [
-        p
-        for p in Path(path).rglob(
-            f"{prefix}*/**/{namefile}" if prefix else namefile
-        )
+        p for p in Path(path).rglob(f"{prefix}*/**/{namefile}" if prefix else namefile)
     ]
 
     # remove excluded
     paths = [
-        p
-        for p in paths
-        if (not excluded or not any(e in str(p) for e in excluded))
+        p for p in paths if (not excluded or not any(e in str(p) for e in excluded))
     ]
 
     # filter by package
@@ -260,9 +252,7 @@ def get_namefile_paths(
         filtered = []
         for nfp in paths:
             nf_pkgs = get_packages(nfp)
-            shared = set(nf_pkgs).intersection(
-                set([p.lower() for p in packages])
-            )
+            shared = set(nf_pkgs).intersection(set([p.lower() for p in packages]))
             if any(shared):
                 filtered.append(nfp)
         paths = filtered
@@ -271,9 +261,7 @@ def get_namefile_paths(
     if selected:
         paths = [
             namfile_path
-            for (namfile_path, model_path) in zip(
-                paths, [p.parent for p in paths]
-            )
+            for (namfile_path, model_path) in zip(paths, [p.parent for p in paths])
             if any(s in model_path.name for s in selected)
         ]
 
@@ -298,9 +286,7 @@ def get_model_paths(
     namefile_paths = get_namefile_paths(
         path, prefix, namefile, excluded, selected, packages
     )
-    model_paths = sorted(
-        list(set([p.parent for p in namefile_paths if p.parent.name]))
-    )
+    model_paths = sorted(list(set([p.parent for p in namefile_paths if p.parent.name])))
     return model_paths
 
 
@@ -341,16 +327,14 @@ def is_github_rate_limited() -> Optional[bool]:
         True if rate-limiting is applied, otherwise False (or None if the connection fails).
     """
     try:
-        with request.urlopen(
-            "https://api.github.com/users/octocat"
-        ) as response:
+        with request.urlopen("https://api.github.com/users/octocat") as response:
             remaining = int(response.headers["x-ratelimit-remaining"])
             if remaining < 10:
                 warn(
                     f"Only {remaining} GitHub API requests remaining before rate-limiting"
                 )
             return remaining > 0
-    except:
+    except (ValueError, URLError):
         return None
 
 
@@ -481,7 +465,7 @@ def get_env(name: str, default: object = None) -> Optional[object]:
         if isinstance(default, bool):
             v = v.lower().title()
         v = literal_eval(v)
-    except:
+    except ValueError | TypeError | SyntaxError | MemoryError | RecursionError:
         return default
     if default is None:
         return v

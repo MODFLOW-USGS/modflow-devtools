@@ -92,11 +92,7 @@ def get_header(
     header = "\\small\n"
     header += "\\begin{longtable}[!htbp]{\n"
     for col_width in col_widths:
-        header += (
-            38 * " "
-            + f"{align}"
-            + f"{{{col_width}\\linewidth-2\\arraycolsep}}\n"
-        )
+        header += 38 * " " + f"{align}" + f"{{{col_width}\\linewidth-2\\arraycolsep}}\n"
     header += 38 * " " + "}\n"
     header += f"\t\\caption{{{caption}}} \\label{{{label}}} \\\\\n\n"
 

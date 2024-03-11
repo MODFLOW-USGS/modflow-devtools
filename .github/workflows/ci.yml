@@ -30,21 +30,10 @@ jobs:
           cache-dependency-path: pyproject.toml
 
       - name: Install Python packages
-        run: |
-          pip install .
-          pip install ".[lint]"
+        run: pip install ".[lint]"
 
       - name: Run isort
-        run: isort --verbose --check --diff modflow_devtools
-
-      - name: Run black
-        run: black --check --diff modflow_devtools
-
-      - name: Run flake8
-        run: flake8 --count --show-source --exit-zero modflow_devtools
-
-      - name: Run pylint
-        run: pylint --jobs=0 --errors-only --exit-zero modflow_devtools
+        run: ruff check modflow_devtools
   
   build:
     name: Build
