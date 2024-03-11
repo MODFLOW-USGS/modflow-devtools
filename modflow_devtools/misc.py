@@ -465,7 +465,7 @@ def get_env(name: str, default: object = None) -> Optional[object]:
         if isinstance(default, bool):
             v = v.lower().title()
         v = literal_eval(v)
-    except ValueError | TypeError | SyntaxError | MemoryError | RecursionError:
+    except (AttributeError, ValueError, TypeError, SyntaxError, MemoryError, RecursionError):
         return default
     if default is None:
         return v
