@@ -83,8 +83,7 @@ include = [
 ]
 
 [tool.ruff.lint]
-ignore = [
-]
+select = ["NPY201"]
 
 [tool.setuptools]
 packages = ["modflow_devtools"]
