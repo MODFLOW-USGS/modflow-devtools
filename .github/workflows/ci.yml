@@ -32,8 +32,8 @@ jobs:
       - name: Install Python packages
         run: pip install ".[lint]"
 
-      - name: Run isort
-        run: ruff check modflow_devtools
+      - name: Run ruff
+        run: ruff check .
   
   build:
     name: Build
