@@ -31,7 +31,7 @@ def requires_exe(*exes):
 
 def requires_python(version, bound="lower"):
     if not isinstance(version, str):
-        raise ValueError(f"Version must a string")
+        raise ValueError("Version must a string")
 
     py_tgt = Version(version)
     if bound == "lower":
@@ -57,25 +57,21 @@ def requires_pkg(*pkgs):
 
 def requires_platform(platform, ci_only=False):
     return pytest.mark.skipif(
-        system().lower() != platform.lower()
-        and (is_in_ci() if ci_only else True),
+        system().lower() != platform.lower() and (is_in_ci() if ci_only else True),
         reason=f"only compatible with platform: {platform.lower()}",
     )
 
 
 def excludes_platform(platform, ci_only=False):
     return pytest.mark.skipif(
-        system().lower() == platform.lower()
-        and (is_in_ci() if ci_only else True),
+        system().lower() == platform.lower() and (is_in_ci() if ci_only else True),
         reason=f"not compatible with platform: {platform.lower()}",
     )
 
 
 def requires_branch(branch):
     current = get_current_branch()
-    return pytest.mark.skipif(
-        current != branch, reason=f"must run on branch: {branch}"
-    )
+    return pytest.mark.skipif(current != branch, reason=f"must run on branch: {branch}")
 
 
 def excludes_branch(branch):

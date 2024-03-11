@@ -21,9 +21,7 @@ _repos = [
 @pytest.mark.parametrize("retries", [-1, 0, 1.5])
 def test_get_releases_bad_params(per_page, retries):
     with pytest.raises(ValueError):
-        get_releases(
-            "executables", per_page=per_page, retries=retries, verbose=True
-        )
+        get_releases("executables", per_page=per_page, retries=retries, verbose=True)
 
 
 @flaky
@@ -109,9 +107,7 @@ def test_download_and_unzip(function_tmpdir, delete_zip):
     zip_name = "mf6.3.0_linux.zip"
     dir_name = zip_name.replace(".zip", "")
     url = f"https://github.com/MODFLOW-USGS/modflow6/releases/download/6.3.0/{zip_name}"
-    download_and_unzip(
-        url, function_tmpdir, delete_zip=delete_zip, verbose=True
-    )
+    download_and_unzip(url, function_tmpdir, delete_zip=delete_zip, verbose=True)
 
     assert (function_tmpdir / zip_name).is_file() != delete_zip
 

@@ -30,21 +30,10 @@ jobs:
           cache-dependency-path: pyproject.toml
 
       - name: Install Python packages
-        run: |
-          pip install .
-          pip install ".[lint]"
+        run: pip install ".[lint]"
 
-      - name: Run isort
-        run: isort --verbose --check --diff modflow_devtools
-
-      - name: Run black
-        run: black --check --diff modflow_devtools
-
-      - name: Run flake8
-        run: flake8 --count --show-source --exit-zero modflow_devtools
-
-      - name: Run pylint
-        run: pylint --jobs=0 --errors-only --exit-zero modflow_devtools
+      - name: Run ruff
+        run: ruff check .
   
   build:
     name: Build
@@ -139,11 +128,10 @@ jobs:
 
       - name: Install Python packages
         working-directory: modflow-devtools
-        run: |
-          pip install .
-          pip install ".[test]"
+        run: pip install ".[test]"
 
       - name: Cache modflow6 examples
+        if: matrix.python != 3.8
         id: cache-examples
         uses: actions/cache@v3
         with:
@@ -151,16 +139,18 @@ jobs:
           key: modflow6-examples-${{ hashFiles('modflow6-examples/data/**') }}
       
       - name: Install extra Python packages
+        if: matrix.python != 3.8
         working-directory: modflow6-examples/etc
         run: |
           pip install -r requirements.pip.txt
           pip install -r requirements.usgs.txt
 
       - name: Update FloPy packages
+        if: matrix.python != 3.8
         run: python -m flopy.mf6.utils.generate_classes --ref develop --no-backup
 
       - name: Build modflow6 example models
-        if: steps.cache-examples.outputs.cache-hit != 'true'
+        if: matrix.python != 3.8 && steps.cache-examples.outputs.cache-hit != 'true'
         working-directory: modflow6-examples/autotest
         run: pytest -v -n auto test_scripts.py --init
 

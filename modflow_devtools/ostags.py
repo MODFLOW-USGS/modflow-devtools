@@ -73,10 +73,10 @@ def get_binary_suffixes(ostag: str = None) -> Tuple[str, str]:
 
     try:
         return _suffixes(ostag.lower())
-    except:
+    except KeyError:
         try:
             return _suffixes(python_to_modflow_ostag(ostag))
-        except:
+        except KeyError:
             return _suffixes(github_to_modflow_ostag(ostag))
 
 
