@@ -93,7 +93,8 @@ def test_get_packages_fails_on_invalid_namefile(module_tmpdir):
     namefile_path = new_model_path / "mfsim.nam"
     shutil.copytree(model_path, new_model_path)
 
-    # invalid gwf namefile reference - result should only contain packages from mfsim.nam
+    # invalid gwf namefile reference:
+    # result should only contain packages from mfsim.nam
     lines = open(namefile_path, "r").read().splitlines()
     with open(namefile_path, "w") as f:
         for line in lines:

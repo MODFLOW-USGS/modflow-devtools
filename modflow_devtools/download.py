@@ -81,7 +81,10 @@ def get_releases(
             try:
                 if verbose:
                     print(
-                        f"Fetching releases for repo {repo} (page {page}, {per_page} per page)"
+                        f"Fetching releases for "
+                        f"repo {repo} "
+                        f"(page {page}, "
+                        f"{per_page} per page)"
                     )
                 with urllib.request.urlopen(request, timeout=10) as resp:
                     return json.loads(resp.read().decode())
@@ -285,8 +288,8 @@ def list_artifacts(
 
     Returns
     -------
-        A list of dictionaries, each containing information about an artifact as returned
-        by the GitHub API.
+        A list of dictionaries, each containing information
+        about an artifact as returned by the GitHub API.
     """
 
     if "/" not in repo:

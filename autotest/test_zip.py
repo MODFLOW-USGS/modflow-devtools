@@ -40,7 +40,7 @@ def test_compressall(function_tmpdir):
 @pytest.fixture(scope="module")
 def empty_archive(module_tmpdir) -> Path:
     # https://stackoverflow.com/a/25195628/6514033
-    data = b"PK\x05\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    data = b"PK\x05\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"  # noqa: E501
     path = module_tmpdir / "empty.zip"
     with open(path, "wb") as zip:
         zip.write(data)

@@ -14,9 +14,9 @@ from subprocess import PIPE, Popen
 from timeit import timeit
 from typing import List, Optional, Tuple
 from urllib import request
+from urllib.error import URLError
 
 from _warnings import warn
-from urllib.error import URLError
 
 
 @contextmanager
@@ -71,7 +71,8 @@ def get_ostag() -> str:
 
 def get_suffixes(ostag) -> Tuple[str, str]:
     """
-    Returns executable and library suffixes for the given OS (as returned by sys.platform)
+    Returns executable and library suffixes for the
+    given OS (as returned by sys.platform)
 
     .. deprecated:: 1.1.0
         Use ``ostags.get_binary_suffixes()`` instead.
@@ -151,9 +152,11 @@ def get_current_branch() -> str:
 
 def get_packages(namefile_path: PathLike) -> List[str]:
     """
-    Return a list of packages used by the simulation or model defined in the given namefile.
-    The namefile may be for an entire simulation or for a GWF or GWT model. If a simulation
-    namefile is given, packages used in its component model namefiles will be included.
+    Return a list of packages used by the simulation
+    or model defined in the given namefile. The namefile
+    may be for an entire simulation or  for a GWF or GWT
+    model. If a simulation namefile is given, packages
+    used in its component  model namefiles will be included.
 
     Parameters
     ----------
@@ -175,7 +178,8 @@ def get_packages(namefile_path: PathLike) -> List[str]:
         nf_path = [path.parent / s for s in line.split(" ") if s != ""][1]
         if nf_path.suffix != ".nam":
             raise ValueError(
-                f"Failed to parse GWF or GWT model namefile from simulation namefile line: {line}"
+                "Failed to parse GWF or GWT model namefile "
+                f"from simulation namefile line: {line}"
             )
         return nf_path
 
@@ -324,14 +328,16 @@ def is_github_rate_limited() -> Optional[bool]:
 
     Returns
     -------
-        True if rate-limiting is applied, otherwise False (or None if the connection fails).
+        True if rate-limiting is applied, otherwise False
+        (or None if the connection fails).
     """
     try:
         with request.urlopen("https://api.github.com/users/octocat") as response:
             remaining = int(response.headers["x-ratelimit-remaining"])
             if remaining < 10:
                 warn(
-                    f"Only {remaining} GitHub API requests remaining before rate-limiting"
+                    f"Only {remaining} GitHub API requests "
+                    "remaining before rate-limiting"
                 )
             return remaining > 0
     except (ValueError, URLError):
@@ -465,7 +471,14 @@ def get_env(name: str, default: object = None) -> Optional[object]:
         if isinstance(default, bool):
             v = v.lower().title()
         v = literal_eval(v)
-    except (AttributeError, ValueError, TypeError, SyntaxError, MemoryError, RecursionError):
+    except (
+        AttributeError,
+        ValueError,
+        TypeError,
+        SyntaxError,
+        MemoryError,
+        RecursionError,
+    ):
         return default
     if default is None:
         return v

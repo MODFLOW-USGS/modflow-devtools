@@ -3,7 +3,7 @@
 # This file is dual licensed under the terms of the BSD 3-Clause License.
 # BSD 3-Clause License
 #
-# Copyright (c) 2008-2011, AQR Capital Management, LLC, Lambda Foundry, Inc. and PyData Development Team
+# Copyright (c) 2008-2011, AQR Capital Management, LLC, Lambda Foundry, Inc. and PyData Development Team  # noqa: E501
 # All rights reserved.
 #
 # Copyright (c) 2011-2021, Open source contributors.
