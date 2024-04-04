@@ -51,7 +51,8 @@ def test_get_release(repo):
     actual_names = [asset["name"] for asset in assets]
 
     if repo == "MODFLOW-USGS/modflow6":
-        # can remove if modflow6 releases follow asset name conventions followed in executables and nightly build repos
+        # can remove if modflow6 releases follow asset name
+        # conventions followed in executables and nightly build repos
         assert set([a.rpartition("_")[2] for a in actual_names]) >= set(
             [a for a in expected_names if not a.startswith("win")]
         )

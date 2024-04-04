@@ -2,21 +2,21 @@ from os import environ
 from platform import python_version, system
 from shutil import which
 
-from packaging.version import Version
 import pytest
+from packaging.version import Version
 
 from modflow_devtools.markers import (
-    requires_exe,
-    require_exe,
-    requires_program,
-    require_program,
-    requires_pkg,
-    require_package,
-    requires_platform,
-    require_platform,
     excludes_platform,
-    requires_python,
+    require_exe,
+    require_package,
+    require_platform,
+    require_program,
     require_python,
+    requires_exe,
+    requires_pkg,
+    requires_platform,
+    requires_program,
+    requires_python,
 )
 
 exe = "pytest"

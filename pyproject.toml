@@ -82,6 +82,9 @@ include = [
     ".github/**/*.py",
 ]
 
+[tool.ruff.lint]
+select = ["F", "E", "I001"]
+
 [tool.setuptools]
 packages = ["modflow_devtools"]
 include-package-data = true

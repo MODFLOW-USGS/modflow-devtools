@@ -115,9 +115,12 @@ def pytest_addoption(parser):
         action="store",
         default=None,
         dest="KEEP",
-        help="Move the contents of temporary test directories to correspondingly named subdirectories at the given "
-        "location after tests complete. This option can be used to exclude test results from automatic cleanup, "
-        "e.g. for manual inspection. The provided path is created if it does not already exist. An error is "
+        help="Move the contents of temporary test directories to "
+        "correspondingly named subdirectories at the given "
+        "location after tests complete. This option can be used "
+        "to exclude test results from automatic cleanup, "
+        "e.g. for manual inspection. The provided path is "
+        "created if it does not already exist. An error is "
         "thrown if any matching files already exist.",
     )
 
@@ -125,9 +128,12 @@ def pytest_addoption(parser):
         "--keep-failed",
         action="store",
         default=None,
-        help="Move the contents of temporary test directories to correspondingly named subdirectories at the given "
-        "location if the test case fails. This option automatically saves the outputs of failed tests in the "
-        "given location. The path is created if it doesn't already exist. An error is thrown if files with the "
+        help="Move the contents of temporary test directories to "
+        "correspondingly named subdirectories at the given "
+        "location if the test case fails. This option saves "
+        "the outputs of failed tests in the "
+        "given location. The path is created if it doesn't "
+        "already exist. An error is thrown if files with the "
         "same names already exist in the given location.",
     )
 
@@ -144,7 +150,8 @@ def pytest_addoption(parser):
         "--meta",
         action="store",
         metavar="NAME",
-        help="Indicates a test should only be run by other tests (e.g., to test framework or fixtures).",
+        help="Indicates a test should only be run by other tests (e.g., "
+        "to test framework or fixtures).",
     )
 
     parser.addoption(
@@ -167,7 +174,8 @@ def pytest_addoption(parser):
         action="store",
         default="yes",
         dest="PANDAS",
-        help="Indicates whether to use pandas, where multiple approaches are available. Select 'yes', 'no', or 'random'.",
+        help="Indicates whether to use pandas, where multiple approaches "
+        "are available. Select 'yes', 'no', or 'random'.",
     )
 
     parser.addoption(
@@ -176,7 +184,8 @@ def pytest_addoption(parser):
         action="store",
         default="raw",
         dest="TABULAR",
-        help="Configure tabular data representation for model input. Select 'raw', 'recarray', or 'dataframe'.",
+        help="Configure tabular data representation for model input. "
+        "Select 'raw', 'recarray', or 'dataframe'.",
     )
 
 
