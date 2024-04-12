@@ -3,7 +3,9 @@ Pytest markers to toggle tests based on environment conditions.
 Occasionally useful to directly assert environment expectations.
 """
 
+from os import environ
 from platform import python_version, system
+from typing import Dict, Optional
 
 from packaging.version import Version
 
@@ -46,8 +48,8 @@ def requires_python(version, bound="lower"):
         )
 
 
-def requires_pkg(*pkgs):
-    missing = {pkg for pkg in pkgs if not has_pkg(pkg, strict=True)}
+def requires_pkg(*pkgs, name_map: Optional[Dict[str, str]] = None):
+    missing = {pkg for pkg in pkgs if not has_pkg(pkg, strict=True, name_map=name_map)}
     return pytest.mark.skipif(
         missing,
         reason=f"missing package{'s' if len(missing) != 1 else ''}: "
@@ -79,6 +81,11 @@ def excludes_branch(branch):
     return pytest.mark.skipif(
         current == branch, reason=f"can't run on branch: {branch}"
     )
+
+
+no_parallel = pytest.mark.skipif(
+    environ.get("PYTEST_XDIST_WORKER_COUNT"), reason="can't run in parallel"
+)
 
 
 requires_github = pytest.mark.skipif(

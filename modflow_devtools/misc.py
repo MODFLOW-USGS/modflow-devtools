@@ -12,7 +12,7 @@ from pathlib import Path
 from shutil import which
 from subprocess import PIPE, Popen
 from timeit import timeit
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 from urllib import request
 from urllib.error import URLError
 
@@ -359,7 +359,9 @@ def has_exe(exe):
     return _has_exe_cache[exe]
 
 
-def has_pkg(pkg: str, strict: bool = False) -> bool:
+def has_pkg(
+    pkg: str, strict: bool = False, name_map: Optional[Dict[str, str]] = None
+) -> bool:
     """
     Determines if the given Python package is installed.
 
@@ -368,8 +370,13 @@ def has_pkg(pkg: str, strict: bool = False) -> bool:
     pkg : str
         Name of the package to check.
     strict : bool
-        If False, only check if package metadata is available.
+        If False, only check if the package is cached or metadata is available.
         If True, try to import the package (all dependencies must be present).
+    name_map : dict, optional
+        Custom mapping between package names (as provided to `metadata.distribution`)
+        and module names (as used in import statements or `importlib.import_module`).
+        Useful for packages whose package names do not match the module name, e.g.
+        `pytest-xdist` and `xdist`, respectively, or `mfpymake` and `pymake`.
 
     Returns
     -------
@@ -378,12 +385,19 @@ def has_pkg(pkg: str, strict: bool = False) -> bool:
 
     Notes
     -----
+    If `strict=True` and a package name differs from its top-level module name, a
+    `name_map` must be provided, otherwise this function will return False even if
+    the package is installed.
+
     Originally written by Mike Toews (mwtoews@gmail.com) for FloPy.
     """
 
-    def try_import():
+    def get_module_name() -> str:
+        return pkg if name_map is None else name_map.get(pkg, pkg)
+
+    def try_import() -> bool:
         try:  # import name, e.g. "import shapefile"
-            importlib.import_module(pkg)
+            importlib.import_module(get_module_name())
             return True
         except ModuleNotFoundError:
             return False
@@ -395,14 +409,15 @@ def has_pkg(pkg: str, strict: bool = False) -> bool:
         except metadata.PackageNotFoundError:
             return False
 
-    found = False
-    if not strict:
-        found = pkg in _has_pkg_cache or try_metadata()
-    if not found:
-        found = try_import()
+    is_cached = pkg in _has_pkg_cache
+    has_metadata = try_metadata()
+    can_import = try_import()
+    if strict:
+        found = has_metadata and can_import
+    else:
+        found = has_metadata or is_cached
     _has_pkg_cache[pkg] = found
-
-    return _has_pkg_cache[pkg]
+    return found
 
 
 def timed(f):

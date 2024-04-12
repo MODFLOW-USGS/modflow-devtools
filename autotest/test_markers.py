@@ -7,6 +7,7 @@ from packaging.version import Version
 
 from modflow_devtools.markers import (
     excludes_platform,
+    no_parallel,
     require_exe,
     require_package,
     require_platform,
@@ -75,3 +76,18 @@ def test_requires_python(version):
     if Version(py_ver) >= Version(version):
         assert requires_python(version)
         assert require_python(version)
+
+
+@no_parallel
+@requires_pkg("pytest-xdist", name_map={"pytest-xdist": "xdist"})
+def test_no_parallel(worker_id):
+    """
+    Should only run with xdist disabled, in which case:
+        - xdist environment variables are not set
+        - worker_id is 'master' (assuming xdist is installed)
+
+    See https://pytest-xdist.readthedocs.io/en/stable/how-to.html#identifying-the-worker-process-during-a-test.
+    """
+
+    assert environ.get("PYTEST_XDIST_WORKER") is None
+    assert worker_id == "master"
