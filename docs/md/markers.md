@@ -96,5 +96,5 @@ def test_only_serially():
 
 All markers are aliased to imperative mood, e.g. `require_github`. Some have other aliases as well:
 
-`requires_pkg` -> `require[s]_package`
-`requires_exe` -> `require[s]_program`
+- `requires_pkg` -> `require[s]_package`
+- `requires_exe` -> `require[s]_program`
