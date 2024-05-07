@@ -1,22 +1,106 @@
-import random
 from collections import OrderedDict
+from io import BytesIO, StringIO
 from itertools import groupby
 from os import PathLike, environ
 from pathlib import Path
 from shutil import copytree, rmtree
-from typing import Dict, List, Optional
+from typing import Dict, Generator, List, Optional
 
-from modflow_devtools.imports import import_optional_dependency
+import numpy as np
+import pytest
+from syrupy.extensions.single_file import (
+    SingleFileSnapshotExtension,
+    WriteMode,
+)
+from syrupy.types import (
+    PropertyFilter,
+    PropertyMatcher,
+    SerializableData,
+    SerializedData,
+)
+
 from modflow_devtools.misc import get_namefile_paths, get_packages
 
-pytest = import_optional_dependency("pytest")
+# snapshot extensions
+
+
+def _serialize_bytes(data):
+    buffer = BytesIO()
+    np.save(buffer, data)
+    return buffer.getvalue()
+
+
+class BinaryArrayExtension(SingleFileSnapshotExtension):
+    """
+    Binary snapshot of a NumPy array. Can be read back into NumPy with
+    .load(), preserving dtype and shape. This is the recommended array
+    snapshot approach if human-readability is not a necessity, as disk
+    space is minimized.
+    """
+
+    _write_mode = WriteMode.BINARY
+    _file_extension = "npy"
+
+    def serialize(
+        self,
+        data,
+        *,
+        exclude=None,
+        include=None,
+        matcher=None,
+    ):
+        return _serialize_bytes(data)
+
+
+class TextArrayExtension(SingleFileSnapshotExtension):
+    """
+    Text snapshot of a NumPy array. Flattens the array before writing.
+    Can be read back into NumPy with .loadtxt() assuming you know the
+    shape of the expected data and subsequently reshape it if needed.
+    """
+
+    _write_mode = WriteMode.TEXT
+    _file_extension = "txt"
+
+    def serialize(
+        self,
+        data: "SerializableData",
+        *,
+        exclude: Optional["PropertyFilter"] = None,
+        include: Optional["PropertyFilter"] = None,
+        matcher: Optional["PropertyMatcher"] = None,
+    ) -> "SerializedData":
+        buffer = StringIO()
+        np.savetxt(buffer, data.ravel())
+        return buffer.getvalue()
+
+
+class ReadableArrayExtension(SingleFileSnapshotExtension):
+    """
+    Human-readable snapshot of a NumPy array. Preserves array shape
+    at the expense of possible loss of precision (default 8 places)
+    and more difficulty loading into NumPy than TextArrayExtension.
+    """
+
+    _write_mode = WriteMode.TEXT
+    _file_extension = "txt"
+
+    def serialize(
+        self,
+        data: "SerializableData",
+        *,
+        exclude: Optional["PropertyFilter"] = None,
+        include: Optional["PropertyFilter"] = None,
+        matcher: Optional["PropertyMatcher"] = None,
+    ) -> "SerializedData":
+        return np.array2string(data, threshold=np.inf)
 
 
 # fixtures
 
 
 @pytest.fixture(scope="function")
-def function_tmpdir(tmpdir_factory, request) -> Path:
+def function_tmpdir(tmpdir_factory, request) -> Generator[Path, None, None]:
     node = request.node.name.replace("/", "_").replace("\\", "_").replace(":", "_")
     temp = Path(tmpdir_factory.mktemp(node))
     yield Path(temp)
@@ -37,7 +121,7 @@ def function_tmpdir(tmpdir_factory, request) -> Path:
 
 
 @pytest.fixture(scope="class")
-def class_tmpdir(tmpdir_factory, request) -> Path:
+def class_tmpdir(tmpdir_factory, request) -> Generator[Path, None, None]:
     assert (
         request.cls is not None
     ), "Class-scoped temp dir fixture must be used on class"
@@ -53,7 +137,7 @@ def class_tmpdir(tmpdir_factory, request) -> Path:
 
 
 @pytest.fixture(scope="module")
-def module_tmpdir(tmpdir_factory, request) -> Path:
+def module_tmpdir(tmpdir_factory, request) -> Generator[Path, None, None]:
     temp = Path(tmpdir_factory.mktemp(request.module.__name__))
     yield temp
 
@@ -66,7 +150,7 @@ def module_tmpdir(tmpdir_factory, request) -> Path:
 
 
 @pytest.fixture(scope="session")
-def session_tmpdir(tmpdir_factory, request) -> Path:
+def session_tmpdir(tmpdir_factory, request) -> Generator[Path, None, None]:
     temp = Path(tmpdir_factory.mktemp(request.config.rootpath.name))
     yield temp
 
@@ -85,24 +169,26 @@ def repos_path() -> Optional[Path]:
 
 
 @pytest.fixture
-def use_pandas(request):
-    pandas = request.config.option.PANDAS
-    if pandas == "yes":
-        return True
-    elif pandas == "no":
-        return False
-    elif pandas == "random":
-        return random.randint(0, 1) == 0
-    else:
-        raise ValueError(f"Unsupported value for --pandas: {pandas}")
-
-
-@pytest.fixture
-def tabular(request):
+def tabular(request) -> str:
     tab = request.config.option.TABULAR
     if tab not in ["raw", "recarray", "dataframe"]:
         raise ValueError(f"Unsupported value for --tabular: {tab}")
     return tab
+
+
+@pytest.fixture
+def array_snapshot(snapshot):
+    return snapshot.use_extension(BinaryArrayExtension)
+
+
+@pytest.fixture
+def text_array_snapshot(snapshot):
+    return snapshot.use_extension(TextArrayExtension)
+
+
+@pytest.fixture
+def readable_array_snapshot(snapshot):
+    return snapshot.use_extension(ReadableArrayExtension)
 
 
 # configuration hooks
@@ -166,16 +252,6 @@ def pytest_addoption(parser):
         action="append",
         type=str,
         help="Select a subset of packages to run.",
-    )
-
-    parser.addoption(
-        "-P",
-        "--pandas",
-        action="store",
-        default="yes",
-        dest="PANDAS",
-        help="Indicates whether to use pandas, where multiple approaches "
-        "are available. Select 'yes', 'no', or 'random'.",
     )
 
     parser.addoption(
@@ -399,5 +475,5 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize(
             key,
             [(name, nfps) for name, nfps in example_scenarios.items()],
-            ids=[name for name, ex in example_scenarios.items()],
+            ids=list(example_scenarios.keys()),
         )
