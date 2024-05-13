@@ -6,8 +6,14 @@ from pathlib import Path
 from shutil import copytree, rmtree
 from typing import Dict, Generator, List, Optional
 
-import numpy as np
-import pytest
+from modflow_devtools.imports import import_optional_dependency
+from modflow_devtools.misc import get_namefile_paths, get_packages
+
+np = import_optional_dependency("numpy")
+pytest = import_optional_dependency("pytest")
+syrupy = import_optional_dependency("syrupy")
+
+# ruff: noqa: E402
 from syrupy.extensions.single_file import (
     SingleFileSnapshotExtension,
     WriteMode,
@@ -19,14 +25,15 @@ from syrupy.types import (
     SerializedData,
 )
 
-from modflow_devtools.misc import get_namefile_paths, get_packages
-
 # snapshot extensions
 
 
 def _serialize_bytes(data):
     buffer = BytesIO()
-    np.save(buffer, data)
+    if isinstance(data, dict):
+        np.savez_compressed(buffer, **data)
+    else:
+        np.save(buffer, data)
     return buffer.getvalue()
 
 
@@ -40,6 +47,28 @@ class BinaryArrayExtension(SingleFileSnapshotExtension):
 
     _write_mode = WriteMode.BINARY
     _file_extension = "npy"
+
+    def serialize(
+        self,
+        data,
+        *,
+        exclude=None,
+        include=None,
+        matcher=None,
+    ):
+        return _serialize_bytes(data)
+
+
+class CompressedArrayExtension(SingleFileSnapshotExtension):
+    """
+    Compressed snapshot of one or more NumPy arrays. Can be read back into
+    NumPy with .load(), preserving dtype and shape. Note that .load() will
+    return a dict mapping array names to arrays. Use this extension rather
+    than BinaryArrayExtension for tests requiring multiple array snapshots.
+    """
+
+    _write_mode = WriteMode.BINARY
+    _file_extension = "npz"
 
     def serialize(
         self,
@@ -179,6 +208,11 @@ def tabular(request) -> str:
 @pytest.fixture
 def array_snapshot(snapshot):
     return snapshot.use_extension(BinaryArrayExtension)
+
+
+@pytest.fixture
+def multi_array_snapshot(snapshot):
+    return snapshot.use_extension(CompressedArrayExtension)
 
 
 @pytest.fixture
