@@ -45,7 +45,6 @@ jobs:
           ref="${{ github.ref_name }}"
           version="${ref#"v"}"
           python scripts/update_version.py -v "$version"
-          python scripts/lint.py
           python -c "import modflow_devtools; print('Version: ', modflow_devtools.__version__)"
           echo "version=$version" >> $GITHUB_OUTPUT
 
