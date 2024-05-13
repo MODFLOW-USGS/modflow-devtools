@@ -33,7 +33,7 @@ def _serialize_bytes(data):
     if isinstance(data, dict):
         # sort by keys
         data = OrderedDict(sorted(data.items()))
-        np.savez_compressed(buffer, **data)
+        np.savez(buffer, **data)
     else:
         np.save(buffer, data)
     return buffer.getvalue()
@@ -41,36 +41,14 @@ def _serialize_bytes(data):
 
 class BinaryArrayExtension(SingleFileSnapshotExtension):
     """
-    Binary snapshot of a NumPy array. Can be read back into NumPy with
-    .load(), preserving dtype and shape. This is the recommended array
-    snapshot approach if human-readability is not a necessity, as disk
-    space is minimized.
+    Binary snapshot of one or more NumPy arrays. Can be read back into
+    NumPy with .load(), preserving dtype and shape. Note, .load() will
+    return a dict mapping array names to arrays if such a dict was the
+    snapshot value, otherwise .load() just returns the snapshot array.
     """
 
     _write_mode = WriteMode.BINARY
     _file_extension = "npy"
-
-    def serialize(
-        self,
-        data,
-        *,
-        exclude=None,
-        include=None,
-        matcher=None,
-    ):
-        return _serialize_bytes(data)
-
-
-class CompressedArrayExtension(SingleFileSnapshotExtension):
-    """
-    Compressed snapshot of one or more NumPy arrays. Can be read back into
-    NumPy with .load(), preserving dtype and shape. Note that .load() will
-    return a dict mapping array names to arrays. Use this extension rather
-    than BinaryArrayExtension for tests requiring multiple array snapshots.
-    """
-
-    _write_mode = WriteMode.BINARY
-    _file_extension = "npz"
 
     def serialize(
         self,
@@ -210,11 +188,6 @@ def tabular(request) -> str:
 @pytest.fixture
 def array_snapshot(snapshot):
     return snapshot.use_extension(BinaryArrayExtension)
-
-
-@pytest.fixture
-def multi_array_snapshot(snapshot):
-    return snapshot.use_extension(CompressedArrayExtension)
 
 
 @pytest.fixture

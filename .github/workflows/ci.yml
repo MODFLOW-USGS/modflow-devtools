@@ -154,10 +154,6 @@ jobs:
         working-directory: modflow6-examples/autotest
         run: pytest -v -n auto test_scripts.py --init
 
-      - name: Debug with tmate
-        if: matrix.os == 'ubuntu-22.04'
-        uses: mxschmitt/action-tmate@v3
-
       - name: Run local tests
         working-directory: modflow-devtools/autotest
         env:
