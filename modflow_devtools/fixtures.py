@@ -31,6 +31,8 @@ from syrupy.types import (
 def _serialize_bytes(data):
     buffer = BytesIO()
     if isinstance(data, dict):
+        # sort by keys
+        data = OrderedDict(sorted(data.items()))
         np.savez_compressed(buffer, **data)
     else:
         np.save(buffer, data)
