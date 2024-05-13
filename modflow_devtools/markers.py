@@ -7,9 +7,9 @@ from os import environ
 from platform import python_version, system
 from typing import Dict, Optional
 
-import pytest
 from packaging.version import Version
 
+from modflow_devtools.imports import import_optional_dependency
 from modflow_devtools.misc import (
     get_current_branch,
     has_exe,
@@ -18,6 +18,7 @@ from modflow_devtools.misc import (
     is_in_ci,
 )
 
+pytest = import_optional_dependency("pytest")
 py_ver = Version(python_version())
 
 
