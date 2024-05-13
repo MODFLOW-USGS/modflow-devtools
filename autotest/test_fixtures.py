@@ -2,11 +2,13 @@ import inspect
 import platform
 from pathlib import Path
 
+import numpy as np
 import pytest
 from _pytest.config import ExitCode
 
 system = platform.system()
-proj_root = Path(__file__).parent.parent.parent.parent
+proj_root = Path(__file__).parents[1]
+module_path = Path(inspect.getmodulename(__file__))
 
 
 # test temporary directory fixtures
@@ -63,7 +65,7 @@ class TestClassScopedTmpdir:
 def test_module_scoped_tmpdir(module_tmpdir):
     assert isinstance(module_tmpdir, Path)
     assert module_tmpdir.is_dir()
-    assert Path(inspect.getmodulename(__file__)).stem in module_tmpdir.name
+    assert module_path.stem in module_tmpdir.name
 
 
 def test_session_scoped_tmpdir(session_tmpdir):
@@ -269,41 +271,7 @@ def test_large_test_model(large_test_model):
     assert large_test_model.name == "mfsim.nam"
 
 
-# test pandas fixture
-
-test_pandas_fname = "pandas.txt"
-
-
-@pytest.mark.meta("test_pandas")
-def test_pandas_inner(function_tmpdir, use_pandas):
-    with open(function_tmpdir / test_pandas_fname, "w") as f:
-        f.write(str(use_pandas))
-
-
-@pytest.mark.parametrize("pandas", ["yes", "no", "random"])
-@pytest.mark.parametrize("arg", ["--pandas", "-P"])
-def test_pandas(pandas, arg, function_tmpdir):
-    inner_fn = test_pandas_inner.__name__
-    args = [
-        __file__,
-        "-v",
-        "-s",
-        "-k",
-        inner_fn,
-        arg,
-        pandas,
-        "--keep",
-        function_tmpdir,
-        "-M",
-        "test_pandas",
-    ]
-    assert pytest.main(args) == ExitCode.OK
-    res = open(next(function_tmpdir.rglob(test_pandas_fname))).readlines()[0]
-    assert res
-    if pandas == "yes":
-        assert "True" in res
-    elif pandas == "no":
-        assert "False" in res
+# test tabular data format fixture
 
 
 test_tabular_fname = "tabular.txt"
@@ -335,3 +303,63 @@ def test_tabular(tabular, arg, function_tmpdir):
     assert pytest.main(args) == ExitCode.OK
     res = open(next(function_tmpdir.rglob(test_tabular_fname))).readlines()[0]
     assert tabular == res
+
+
+# test snapshot fixtures
+
+
+snapshot_array = np.array([1.1, 2.2, 3.3])
+snapshots_path = proj_root / "autotest" / "__snapshots__"
+
+
+def test_binary_array_snapshot(array_snapshot):
+    assert array_snapshot == snapshot_array
+    snapshot_path = (
+        snapshots_path
+        / module_path.stem
+        / f"{inspect.currentframe().f_code.co_name}.npy"
+    )
+    assert snapshot_path.is_file()
+    assert np.allclose(np.load(snapshot_path), snapshot_array)
+
+
+# todo: reinstate if/when we support multiple arrays
+# def test_binary_array_snapshot_multi(array_snapshot):
+#     arrays = {"ascending": snapshot_array, "descending": np.flip(snapshot_array)}
+#     assert array_snapshot == arrays
+#     snapshot_path = (
+#         snapshots_path
+#         / module_path.stem
+#         / f"{inspect.currentframe().f_code.co_name}.npy"
+#     )
+#     assert snapshot_path.is_file()
+#     assert np.allclose(np.load(snapshot_path)["ascending"], snapshot_array)
+#     assert np.allclose(np.load(snapshot_path)["descending"], np.flip(snapshot_array))
+
+
+def test_text_array_snapshot(text_array_snapshot):
+    assert text_array_snapshot == snapshot_array
+    snapshot_path = (
+        snapshots_path
+        / module_path.stem
+        / f"{inspect.currentframe().f_code.co_name}.txt"
+    )
+    assert snapshot_path.is_file()
+    assert np.allclose(np.loadtxt(snapshot_path), snapshot_array)
+
+
+def test_readable_text_array_snapshot(readable_array_snapshot):
+    assert readable_array_snapshot == snapshot_array
+    snapshot_path = (
+        snapshots_path
+        / module_path.stem
+        / f"{inspect.currentframe().f_code.co_name}.txt"
+    )
+    assert snapshot_path.is_file()
+    assert np.allclose(
+        np.fromstring(
+            open(snapshot_path).readlines()[0].replace("[", "").replace("]", ""),
+            sep=" ",
+        ),
+        snapshot_array,
+    )

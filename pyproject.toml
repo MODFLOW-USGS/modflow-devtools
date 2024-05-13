@@ -54,11 +54,13 @@ test = [
     "meson!=0.63.0",
     "ninja",
     "numpy",
+    "pandas",
     "pytest!=8.1.0",
     "pytest-cov",
     "pytest-dotenv",
     "pytest-xdist",
-    "PyYaml"
+    "PyYaml",
+    "syrupy"
 ]
 docs = [
     "sphinx",
