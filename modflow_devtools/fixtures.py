@@ -28,23 +28,12 @@ from syrupy.types import (
 # snapshot extensions
 
 
-def _serialize_bytes(data):
-    buffer = BytesIO()
-    if isinstance(data, dict):
-        # sort by keys
-        data = OrderedDict(sorted(data.items()))
-        np.savez(buffer, **data)
-    else:
-        np.save(buffer, data)
-    return buffer.getvalue()
-
-
 class BinaryArrayExtension(SingleFileSnapshotExtension):
     """
-    Binary snapshot of one or more NumPy arrays. Can be read back into
-    NumPy with .load(), preserving dtype and shape. Note, .load() will
-    return a dict mapping array names to arrays if such a dict was the
-    snapshot value, otherwise .load() just returns the snapshot array.
+    Binary snapshot of a NumPy array. Can be read back into NumPy with
+    .load(), preserving dtype and shape. This is the recommended array
+    snapshot approach if human-readability is not a necessity, as disk
+    space is minimized.
     """
 
     _write_mode = WriteMode.BINARY
@@ -58,7 +47,9 @@ class BinaryArrayExtension(SingleFileSnapshotExtension):
         include=None,
         matcher=None,
     ):
-        return _serialize_bytes(data)
+        buffer = BytesIO()
+        np.save(buffer, data)
+        return buffer.getvalue()
 
 
 class TextArrayExtension(SingleFileSnapshotExtension):

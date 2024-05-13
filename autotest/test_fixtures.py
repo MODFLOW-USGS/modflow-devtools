@@ -323,17 +323,18 @@ def test_binary_array_snapshot(array_snapshot):
     assert np.allclose(np.load(snapshot_path), snapshot_array)
 
 
-def test_binary_array_snapshot_multi(array_snapshot):
-    arrays = {"ascending": snapshot_array, "descending": np.flip(snapshot_array)}
-    assert array_snapshot == arrays
-    snapshot_path = (
-        snapshots_path
-        / module_path.stem
-        / f"{inspect.currentframe().f_code.co_name}.npy"
-    )
-    assert snapshot_path.is_file()
-    assert np.allclose(np.load(snapshot_path)["ascending"], snapshot_array)
-    assert np.allclose(np.load(snapshot_path)["descending"], np.flip(snapshot_array))
+# todo: reinstate if/when we support multiple arrays
+# def test_binary_array_snapshot_multi(array_snapshot):
+#     arrays = {"ascending": snapshot_array, "descending": np.flip(snapshot_array)}
+#     assert array_snapshot == arrays
+#     snapshot_path = (
+#         snapshots_path
+#         / module_path.stem
+#         / f"{inspect.currentframe().f_code.co_name}.npy"
+#     )
+#     assert snapshot_path.is_file()
+#     assert np.allclose(np.load(snapshot_path)["ascending"], snapshot_array)
+#     assert np.allclose(np.load(snapshot_path)["descending"], np.flip(snapshot_array))
 
 
 def test_text_array_snapshot(text_array_snapshot):
