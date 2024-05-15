@@ -2,11 +2,26 @@ from os import environ
 from platform import python_version, system
 from shutil import which
 
+import pytest
 from packaging.version import Version
 
-from modflow_devtools.markers import *
+from modflow_devtools.markers import (
+    excludes_platform,
+    no_parallel,
+    require_exe,
+    require_package,
+    require_platform,
+    require_program,
+    require_python,
+    requires_exe,
+    requires_pkg,
+    requires_platform,
+    requires_program,
+    requires_python,
+)
 
 exe = "pytest"
+pkg = exe
 
 
 @requires_exe(exe)
@@ -14,6 +29,7 @@ def test_require_exe():
     assert which(exe)
     require_exe(exe)
     require_program(exe)
+    requires_program(exe)
 
 
 exes = [exe, "python"]
@@ -24,14 +40,15 @@ def test_require_exe_multiple():
     assert all(which(exe) for exe in exes)
 
 
-@requires_pkg("pytest")
+@requires_pkg(pkg)
 def test_requires_pkg():
     import numpy
 
     assert numpy is not None
+    require_package(pkg)
 
 
-@requires_pkg("pytest", "pluggy")
+@requires_pkg(pkg, "pluggy")
 def test_requires_pkg_multiple():
     import pluggy
     import pytest
@@ -42,6 +59,7 @@ def test_requires_pkg_multiple():
 @requires_platform("Windows")
 def test_requires_platform():
     assert system() == "Windows"
+    require_platform("Windows")
 
 
 @excludes_platform("Darwin", ci_only=True)
@@ -57,3 +75,19 @@ py_ver = python_version()
 def test_requires_python(version):
     if Version(py_ver) >= Version(version):
         assert requires_python(version)
+        assert require_python(version)
+
+
+@no_parallel
+@requires_pkg("pytest-xdist", name_map={"pytest-xdist": "xdist"})
+def test_no_parallel(worker_id):
+    """
+    Should only run with xdist disabled, in which case:
+        - xdist environment variables are not set
+        - worker_id is 'master' (assuming xdist is installed)
+
+    See https://pytest-xdist.readthedocs.io/en/stable/how-to.html#identifying-the-worker-process-during-a-test.
+    """
+
+    assert environ.get("PYTEST_XDIST_WORKER") is None
+    assert worker_id == "master"

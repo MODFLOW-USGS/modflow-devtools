@@ -21,6 +21,7 @@ The `modflow-devtools` package provides a set of tools for developing and testin
 
    md/fixtures.md
    md/markers.md
+   md/snapshots.md
 
 
 .. toctree::

@@ -44,11 +44,7 @@ dynamic = ["version"]
 
 [project.optional-dependencies]
 lint = [
-    "black",
-    "cffconvert",
-    "flake8",
-    "isort",
-    "pylint"
+    "ruff"
 ]
 test = [
     "modflow-devtools[lint]",
@@ -58,11 +54,13 @@ test = [
     "meson!=0.63.0",
     "ninja",
     "numpy",
-    "pytest",
+    "pandas",
+    "pytest!=8.1.0",
     "pytest-cov",
     "pytest-dotenv",
     "pytest-xdist",
-    "PyYaml"
+    "PyYaml",
+    "syrupy"
 ]
 docs = [
     "sphinx",
@@ -75,19 +73,19 @@ docs = [
 "Bug Tracker" = "https://github.com/MODFLOW-USGS/modflow-devtools/issues"
 "Source Code" = "https://github.com/MODFLOW-USGS/modflow-devtools"
 
+[tool.ruff]
+target-version = "py38"
+include = [
+    "pyproject.toml",
+    "modflow_devtools/**/*.py",
+    "autotest/**/*.py",
+    "docs/**/*.py",
+    "scripts/**/*.py",
+    ".github/**/*.py",
+]
 
-[tool.black]
-line-length = 79
-target_version = ["py37"]
-
-[tool.flynt]
-line-length = 79
-verbose = true
-
-[tool.isort]
-profile = "black"
-src_paths = ["modflow_devtools"]
-line_length = 79
+[tool.ruff.lint]
+select = ["F", "E", "I001"]
 
 [tool.setuptools]
 packages = ["modflow_devtools"]

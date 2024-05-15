@@ -133,34 +133,22 @@ External model test cases can be filtered by model name or by the packages the m
 
 Filtering models by name is functionally equivalent to filtering `pytest` cases with `-k`. (In the former case the filter is applied before test collection, while the latter collects tests as usual and then applies the filter.)
 
-With no filtering, collecting models from the `modflow6-largetestmodels` repo:
+For instance, running the `test_largetestmodels.py` script in the `MODFLOW-USGS/modflow6` repository's `autotest/` folder, and selecting a particular model from the `MODFLOW-USGS/largetestmodels` repository by name:
 
 ```shell
-autotest % pytest -v test_z03_largetestmodels.py --collect-only
-...
-collected 18 items
-```
-
-Selecting a particular model by name:
-
-```shell
-autotest % pytest -v test_z03_largetestmodels.py --collect-only --model test1002_biscqtg_disv_gnc_nr_dev
+autotest % pytest -v test_largetestmodels.py --collect-only --model test1002_biscqtg_disv_gnc_nr_dev
 ...
 collected 1 item
-
-<Module test_z03_largetestmodels.py>
-  <Function test_model[/path/to/modflow6-largetestmodels/test1002_biscqtg_disv_gnc_nr_dev/mfsim.nam]>
+...
 ```
 
 Equivalently:
 
 ```shell
-autotest % pytest -v test_z03_largetestmodels.py --collect-only -k test1002_biscqtg_disv_gnc_nr_dev
+autotest % pytest -v test_largetestmodels.py --collect-only -k test1002_biscqtg_disv_gnc_nr_dev
 ...
 collected 18 items / 17 deselected / 1 selected
-
-<Module test_z03_largetestmodels.py>
-  <Function test_model[/path/to/modflow6-largetestmodels/test1002_biscqtg_disv_gnc_nr_dev/mfsim.nam]>
+...
 ```
 
 The `--model` option can be used multiple times, e.g. `--model <model 1> --model <model 2>`.
@@ -170,14 +158,7 @@ The `--model` option can be used multiple times, e.g. `--model <model 1> --model
 MODFLOW 6 models from external repos can also be filtered by packages used. For instance, to select only large GWT models:
 
 ```shell
-autotest % pytest -v test_z03_largetestmodels.py --collect-only --package gwt
-...
-collected 3 items
-
-<Module test_z03_largetestmodels.py>
-  <Function test_model[/path/to/modflow6-largetestmodels/test1200_gwtbuy-goswami/mfsim.nam]>
-  <Function test_model[/path/to/modflow6-largetestmodels/test1201_gwtbuy-elderRa60/mfsim.nam]>
-  <Function test_model[/path/to/modflow6-largetestmodels/test2001_gwtbuy-elderRa400/mfsim.nam]>
+autotest % pytest -v --package gwt
 ```
 
 ### Utility functions

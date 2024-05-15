@@ -1,13 +1,38 @@
-import os
+from os import PathLike
+from pathlib import Path
+from typing import Iterable, Union
 
 
-def build_table(caption, fpth, arr, headings=None, col_widths=None):
+def build_table(
+    caption: str,
+    fpth: Union[str, PathLike],
+    arr,
+    headings: Iterable[str] = None,
+    col_widths: Iterable[float] = None,
+):
+    """
+    Build a LaTeX table from the given NumPy array.
+
+    Parameters
+    ----------
+    caption : str
+        The table's caption
+    fpth : str or path-like
+        The LaTeX file to create
+    arr : numpy recarray
+        The array
+    headings : iterable of str
+        The table headings
+    col_widths : iterable of float
+        The table's column widths
+    """
+
+    fpth = Path(fpth).expanduser().absolute().with_suffix(".tex")
+
     if headings is None:
         headings = arr.dtype.names
     ncols = len(arr.dtype.names)
-    if not fpth.endswith(".tex"):
-        fpth += ".tex"
-    label = "tab:{}".format(os.path.basename(fpth).replace(".tex", ""))
+    label = "tab:{}".format(fpth.stem)
 
     line = get_header(caption, label, headings, col_widths=col_widths)
 
@@ -29,8 +54,32 @@ def build_table(caption, fpth, arr, headings=None, col_widths=None):
 
 
 def get_header(
-    caption, label, headings, col_widths=None, center=True, firsthead=False
+    caption: str,
+    label: str,
+    headings: Iterable[str],
+    col_widths: Iterable[float] = None,
+    center: bool = True,
+    firsthead: bool = False,
 ):
+    """
+    Build a LaTeX table header.
+
+    Parameters
+    ----------
+    caption : str
+        The table's caption
+    label : str
+        The table's label
+    headings : iterable of str
+        The table's heading
+    col_widths : iterable of float
+        The table's column widths
+    center : bool
+        Whether to center-align the table text
+    firsthead : bool
+        Whether to add first header
+    """
+
     ncol = len(headings)
     if col_widths is None:
         dx = 0.8 / float(ncol)
@@ -43,11 +92,7 @@ def get_header(
     header = "\\small\n"
     header += "\\begin{longtable}[!htbp]{\n"
     for col_width in col_widths:
-        header += (
-            38 * " "
-            + f"{align}"
-            + f"{{{col_width}\\linewidth-2\\arraycolsep}}\n"
-        )
+        header += 38 * " " + f"{align}" + f"{{{col_width}\\linewidth-2\\arraycolsep}}\n"
     header += 38 * " " + "}\n"
     header += f"\t\\caption{{{caption}}} \\label{{{label}}} \\\\\n\n"
 
@@ -85,7 +130,6 @@ def exp_format(v):
     s = f"{v:.2e}"
     s = s.replace("e-0", "e-")
     s = s.replace("e+0", "e+")
-    # s = s.replace("e", " \\times 10^{") + "}$"
     return s
 
 

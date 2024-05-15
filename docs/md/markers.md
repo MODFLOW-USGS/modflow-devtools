@@ -80,9 +80,21 @@ Markers are also provided to ping network resources and skip if unavailable:
 - `@requires_github`: skips if `github.com` is unreachable
 - `@requires_spatial_reference`: skips if `spatialreference.org` is unreachable
 
+A marker is also available to skip tests if `pytest` is running in parallel with [`pytest-xdist`](https://pytest-xdist.readthedocs.io/en/latest/):
+
+```python
+from os import environ
+from modflow_devtools.markers import no_parallel
+
+@no_parallel
+def test_only_serially():
+    # https://pytest-xdist.readthedocs.io/en/stable/how-to.html#identifying-the-worker-process-during-a-test.
+    assert environ.get("PYTEST_XDIST_WORKER") is None
+```
+
 ## Aliases
 
 All markers are aliased to imperative mood, e.g. `require_github`. Some have other aliases as well:
 
-`requires_pkg` -> `require[s]_package`
-`requires_exe` -> `require[s]_program`
+- `requires_pkg` -> `require[s]_package`
+- `requires_exe` -> `require[s]_program`

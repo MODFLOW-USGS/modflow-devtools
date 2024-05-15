@@ -12,8 +12,9 @@ from pathlib import Path
 from shutil import which
 from subprocess import PIPE, Popen
 from timeit import timeit
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 from urllib import request
+from urllib.error import URLError
 
 from _warnings import warn
 
@@ -70,7 +71,8 @@ def get_ostag() -> str:
 
 def get_suffixes(ostag) -> Tuple[str, str]:
     """
-    Returns executable and library suffixes for the given OS (as returned by sys.platform)
+    Returns executable and library suffixes for the
+    given OS (as returned by sys.platform)
 
     .. deprecated:: 1.1.0
         Use ``ostags.get_binary_suffixes()`` instead.
@@ -150,9 +152,11 @@ def get_current_branch() -> str:
 
 def get_packages(namefile_path: PathLike) -> List[str]:
     """
-    Return a list of packages used by the simulation or model defined in the given namefile.
-    The namefile may be for an entire simulation or for a GWF or GWT model. If a simulation
-    namefile is given, packages used in its component model namefiles will be included.
+    Return a list of packages used by the simulation
+    or model defined in the given namefile. The namefile
+    may be for an entire simulation or  for a GWF or GWT
+    model. If a simulation namefile is given, packages
+    used in its component  model namefiles will be included.
 
     Parameters
     ----------
@@ -167,38 +171,35 @@ def get_packages(namefile_path: PathLike) -> List[str]:
     packages = []
     path = Path(namefile_path).expanduser().absolute()
     lines = open(path, "r").readlines()
-    gwf_lines = [l for l in lines if l.strip().lower().startswith("gwf6 ")]
-    gwt_lines = [l for l in lines if l.strip().lower().startswith("gwt6 ")]
+    gwf_lines = [ln for ln in lines if ln.strip().lower().startswith("gwf6 ")]
+    gwt_lines = [ln for ln in lines if ln.strip().lower().startswith("gwt6 ")]
 
     def parse_model_namefile(line):
         nf_path = [path.parent / s for s in line.split(" ") if s != ""][1]
         if nf_path.suffix != ".nam":
             raise ValueError(
-                f"Failed to parse GWF or GWT model namefile from simulation namefile line: {line}"
+                "Failed to parse GWF or GWT model namefile "
+                f"from simulation namefile line: {line}"
             )
         return nf_path
 
     # load model namefiles
     try:
         for line in gwf_lines:
-            packages = (
-                packages + get_packages(parse_model_namefile(line)) + ["gwf"]
-            )
+            packages = packages + get_packages(parse_model_namefile(line)) + ["gwf"]
         for line in gwt_lines:
-            packages = (
-                packages + get_packages(parse_model_namefile(line)) + ["gwt"]
-            )
-    except:
+            packages = packages + get_packages(parse_model_namefile(line)) + ["gwt"]
+    except:  # noqa: E722
         warn(f"Invalid namefile format: {traceback.format_exc()}")
 
     for line in lines:
         # Skip over blank and commented lines
-        ll = line.strip().split()
-        if len(ll) < 2:
+        line = line.strip().split()
+        if len(line) < 2:
             continue
 
-        l = ll[0].lower()
-        if any(l.startswith(c) for c in ["#", "!", "data", "list"]) or l in [
+        line = line[0].lower()
+        if any(line.startswith(c) for c in ["#", "!", "data", "list"]) or line in [
             "begin",
             "end",
             "memory_print_option",
@@ -206,9 +207,9 @@ def get_packages(namefile_path: PathLike) -> List[str]:
             continue
 
         # strip "6" from package name
-        l = l.replace("6", "")
+        line = line.replace("6", "")
 
-        packages.append(l.lower())
+        packages.append(line.lower())
 
     return list(set(packages))
 
@@ -242,17 +243,12 @@ def get_namefile_paths(
 
     # find simulation namefiles
     paths = [
-        p
-        for p in Path(path).rglob(
-            f"{prefix}*/**/{namefile}" if prefix else namefile
-        )
+        p for p in Path(path).rglob(f"{prefix}*/**/{namefile}" if prefix else namefile)
     ]
 
     # remove excluded
     paths = [
-        p
-        for p in paths
-        if (not excluded or not any(e in str(p) for e in excluded))
+        p for p in paths if (not excluded or not any(e in str(p) for e in excluded))
     ]
 
     # filter by package
@@ -260,9 +256,7 @@ def get_namefile_paths(
         filtered = []
         for nfp in paths:
             nf_pkgs = get_packages(nfp)
-            shared = set(nf_pkgs).intersection(
-                set([p.lower() for p in packages])
-            )
+            shared = set(nf_pkgs).intersection(set([p.lower() for p in packages]))
             if any(shared):
                 filtered.append(nfp)
         paths = filtered
@@ -271,9 +265,7 @@ def get_namefile_paths(
     if selected:
         paths = [
             namfile_path
-            for (namfile_path, model_path) in zip(
-                paths, [p.parent for p in paths]
-            )
+            for (namfile_path, model_path) in zip(paths, [p.parent for p in paths])
             if any(s in model_path.name for s in selected)
         ]
 
@@ -298,9 +290,7 @@ def get_model_paths(
     namefile_paths = get_namefile_paths(
         path, prefix, namefile, excluded, selected, packages
     )
-    model_paths = sorted(
-        list(set([p.parent for p in namefile_paths if p.parent.name]))
-    )
+    model_paths = sorted(list(set([p.parent for p in namefile_paths if p.parent.name])))
     return model_paths
 
 
@@ -338,19 +328,19 @@ def is_github_rate_limited() -> Optional[bool]:
 
     Returns
     -------
-        True if rate-limiting is applied, otherwise False (or None if the connection fails).
+        True if rate-limiting is applied, otherwise False
+        (or None if the connection fails).
     """
     try:
-        with request.urlopen(
-            "https://api.github.com/users/octocat"
-        ) as response:
+        with request.urlopen("https://api.github.com/users/octocat") as response:
             remaining = int(response.headers["x-ratelimit-remaining"])
             if remaining < 10:
                 warn(
-                    f"Only {remaining} GitHub API requests remaining before rate-limiting"
+                    f"Only {remaining} GitHub API requests "
+                    "remaining before rate-limiting"
                 )
             return remaining > 0
-    except:
+    except (ValueError, URLError):
         return None
 
 
@@ -369,7 +359,9 @@ def has_exe(exe):
     return _has_exe_cache[exe]
 
 
-def has_pkg(pkg: str, strict: bool = False) -> bool:
+def has_pkg(
+    pkg: str, strict: bool = False, name_map: Optional[Dict[str, str]] = None
+) -> bool:
     """
     Determines if the given Python package is installed.
 
@@ -378,8 +370,13 @@ def has_pkg(pkg: str, strict: bool = False) -> bool:
     pkg : str
         Name of the package to check.
     strict : bool
-        If False, only check if package metadata is available.
+        If False, only check if the package is cached or metadata is available.
         If True, try to import the package (all dependencies must be present).
+    name_map : dict, optional
+        Custom mapping between package names (as provided to `metadata.distribution`)
+        and module names (as used in import statements or `importlib.import_module`).
+        Useful for packages whose package names do not match the module name, e.g.
+        `pytest-xdist` and `xdist`, respectively, or `mfpymake` and `pymake`.
 
     Returns
     -------
@@ -388,12 +385,19 @@ def has_pkg(pkg: str, strict: bool = False) -> bool:
 
     Notes
     -----
+    If `strict=True` and a package name differs from its top-level module name, a
+    `name_map` must be provided, otherwise this function will return False even if
+    the package is installed.
+
     Originally written by Mike Toews (mwtoews@gmail.com) for FloPy.
     """
 
-    def try_import():
+    def get_module_name() -> str:
+        return pkg if name_map is None else name_map.get(pkg, pkg)
+
+    def try_import() -> bool:
         try:  # import name, e.g. "import shapefile"
-            importlib.import_module(pkg)
+            importlib.import_module(get_module_name())
             return True
         except ModuleNotFoundError:
             return False
@@ -405,14 +409,15 @@ def has_pkg(pkg: str, strict: bool = False) -> bool:
         except metadata.PackageNotFoundError:
             return False
 
-    found = False
-    if not strict:
-        found = pkg in _has_pkg_cache or try_metadata()
-    if not found:
-        found = try_import()
+    is_cached = pkg in _has_pkg_cache
+    has_metadata = try_metadata()
+    can_import = try_import()
+    if strict:
+        found = has_metadata and can_import
+    else:
+        found = has_metadata or is_cached
     _has_pkg_cache[pkg] = found
-
-    return _has_pkg_cache[pkg]
+    return found
 
 
 def timed(f):
@@ -481,7 +486,14 @@ def get_env(name: str, default: object = None) -> Optional[object]:
         if isinstance(default, bool):
             v = v.lower().title()
         v = literal_eval(v)
-    except:
+    except (
+        AttributeError,
+        ValueError,
+        TypeError,
+        SyntaxError,
+        MemoryError,
+        RecursionError,
+    ):
         return default
     if default is None:
         return v

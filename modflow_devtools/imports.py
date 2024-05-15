@@ -3,7 +3,7 @@
 # This file is dual licensed under the terms of the BSD 3-Clause License.
 # BSD 3-Clause License
 #
-# Copyright (c) 2008-2011, AQR Capital Management, LLC, Lambda Foundry, Inc. and PyData Development Team
+# Copyright (c) 2008-2011, AQR Capital Management, LLC, Lambda Foundry, Inc. and PyData Development Team  # noqa: E501
 # All rights reserved.
 #
 # Copyright (c) 2011-2021, Open source contributors.
@@ -130,9 +130,7 @@ def import_optional_dependency(
         module_to_get = sys.modules[install_name]
     else:
         module_to_get = module
-    minimum_version = (
-        min_version if min_version is not None else VERSIONS.get(parent)
-    )
+    minimum_version = min_version if min_version is not None else VERSIONS.get(parent)
     if minimum_version:
         version = get_version(module_to_get)
         if Version(version) < Version(minimum_version):

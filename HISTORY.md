@@ -1,19 +1,26 @@
+### Version 1.5.0
+
+#### New features
+
+* [feat(markers)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/1f358de2bc721c1000c3d0823b9440776432e3b0): Add no_parallel marker, support differing pkg/module names (#148). Committed by wpbonelli on 2024-04-12.
+* [feat(snapshots)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/c9e445dd1544413f3729c7a78c2a77038db80050): Add snapshot fixtures, remove pandas fixture (#151). Committed by wpbonelli on 2024-05-13.
+
+#### Refactoring
+
+* [refactor(latex)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/827b5ec63ebe0b9ea833957637d6b60fdc2f3198): Support path-like, add docstrings (#142). Committed by wpbonelli on 2024-02-25.
+* [refactor(snapshots)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/d96089e512fbb79408e4fb58c89ee63da60dc727): Move to separate module (#152). Committed by wpbonelli on 2024-05-13.
+
 ### Version 1.4.0
 
 #### New features
 
-* [feat(Executables)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/3129417dae2de3aece80c8056a2ac50eede56b91): Support collection-style membership test (#131). Committed by wpbonelli on 2023-12-18.
-* [feat](https://github.com/MODFLOW-USGS/modflow-devtools/commit/6728859a984a3080f8fd4f1135de36bc17454098): Add latex and plot style utilities (#132). Committed by wpbonelli on 2024-01-09.
+* [feat(latex)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/6728859a984a3080f8fd4f1135de36bc17454098): Add latex utilities (#132). Committed by wpbonelli on 2024-01-09.
 * [feat(misc)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/a9b801932866a26a996ed3a45f16048b15246472): Parse literals from environment variables (#135). Committed by wpbonelli on 2024-01-21.
-* [feat(ostags)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/0ad10751ea6ce752e59d83e8cd6275906d73fa70): Apple silicon (#139). Committed by wpbonelli on 2024-02-18.
-
-#### Bug fixes
-
-* [fix](https://github.com/MODFLOW-USGS/modflow-devtools/commit/fd215000c6215b0891e78ee621e40abb2a20b28a): Drop plot styles (already in flopy) (#133). Committed by wpbonelli on 2024-01-09.
+* [feat(ostags)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/0ad10751ea6ce752e59d83e8cd6275906d73fa70): add OS tags for Apple silicon (#139). Committed by wpbonelli on 2024-02-18.
 
 #### Refactoring
 
-* [refactor](https://github.com/MODFLOW-USGS/modflow-devtools/commit/9356e067ea813aeeeda2582cf7ec174c11d80159): Remove executables module/class (#136). Committed by wpbonelli on 2024-01-25.
+* [refactor](https://github.com/MODFLOW-USGS/modflow-devtools/commit/9356e067ea813aeeeda2582cf7ec174c11d80159): Remove executables module/class (#136). Committed by wpbonelli on 2024-01-25. Should be in a major release per semver, but nothing is using it, so this should be safe.
 * [refactor(fixtures)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/613ad010ff6fc782f231b7fa21d1cc660732e7be): Support pytest>=8, drop pytest-cases dependency (#137). Committed by wpbonelli on 2024-01-31.
 
 ### Version 1.3.1

@@ -58,10 +58,10 @@ def get_releases(
     """
 
     if "/" not in repo:
-        raise ValueError(f"repo format must be owner/name")
+        raise ValueError("repo format must be owner/name")
 
     if not isinstance(retries, int) or retries < 1:
-        raise ValueError(f"retries must be a positive int")
+        raise ValueError("retries must be a positive int")
 
     params = {}
     if per_page is not None:
@@ -81,7 +81,10 @@ def get_releases(
             try:
                 if verbose:
                     print(
-                        f"Fetching releases for repo {repo} (page {page}, {per_page} per page)"
+                        f"Fetching releases for "
+                        f"repo {repo} "
+                        f"(page {page}, "
+                        f"{per_page} per page)"
                     )
                 with urllib.request.urlopen(request, timeout=10) as resp:
                     return json.loads(resp.read().decode())
@@ -96,9 +99,7 @@ def get_releases(
                     # GitHub sometimes returns this error for valid URLs, so retry
                     warn(f"URL request try {tries} failed ({err})")
                     continue
-                raise RuntimeError(
-                    f"cannot retrieve data from {req_url}"
-                ) from err
+                raise RuntimeError(f"cannot retrieve data from {req_url}") from err
 
     releases = []
     max_pages = max_pages if max_pages else sys.maxsize
@@ -132,13 +133,13 @@ def get_release(repo, tag="latest", retries=3, verbose=False) -> dict:
     """
 
     if "/" not in repo:
-        raise ValueError(f"repo format must be owner/name")
+        raise ValueError("repo format must be owner/name")
 
     if not isinstance(tag, str) or not any(tag):
-        raise ValueError(f"tag must be a non-empty string")
+        raise ValueError("tag must be a non-empty string")
 
     if not isinstance(retries, int) or retries < 1:
-        raise ValueError(f"retries must be a positive int")
+        raise ValueError("retries must be a positive int")
 
     req_url = f"https://api.github.com/repos/{repo}"
     req_url = (
@@ -209,10 +210,10 @@ def get_latest_version(repo, retries=3, verbose=False) -> str:
     """
 
     if "/" not in repo:
-        raise ValueError(f"repo format must be owner/name")
+        raise ValueError("repo format must be owner/name")
 
     if not isinstance(retries, int) or retries < 1:
-        raise ValueError(f"retries must be a positive int")
+        raise ValueError("retries must be a positive int")
 
     release = get_release(repo, retries=retries, verbose=verbose)
     return release["tag_name"]
@@ -245,13 +246,13 @@ def get_release_assets(
     """
 
     if "/" not in repo:
-        raise ValueError(f"repo format must be owner/name")
+        raise ValueError("repo format must be owner/name")
 
     if not isinstance(tag, str) or not any(tag):
-        raise ValueError(f"tag must be a non-empty string")
+        raise ValueError("tag must be a non-empty string")
 
     if not isinstance(retries, int) or retries < 1:
-        raise ValueError(f"retries must be a positive int")
+        raise ValueError("retries must be a positive int")
 
     release = get_release(repo, tag=tag, retries=retries, verbose=verbose)
     return (
@@ -287,26 +288,24 @@ def list_artifacts(
 
     Returns
     -------
-        A list of dictionaries, each containing information about an artifact as returned
-        by the GitHub API.
+        A list of dictionaries, each containing information
+        about an artifact as returned by the GitHub API.
     """
 
     if "/" not in repo:
-        raise ValueError(f"repo format must be owner/name")
+        raise ValueError("repo format must be owner/name")
 
     if not isinstance(retries, int) or retries < 1:
-        raise ValueError(f"retries must be a positive int")
+        raise ValueError("retries must be a positive int")
 
-    msg = f"artifact(s) for {repo}" + (
-        f" matching name {name}" if name else ""
-    )
+    msg = f"artifact(s) for {repo}" + (f" matching name {name}" if name else "")
     req_url = f"https://api.github.com/repos/{repo}/actions/artifacts"
     page = 1
     params = {}
 
     if name is not None:
         if not isinstance(name, str) or len(name) == 0:
-            raise ValueError(f"name must be a non-empty string")
+            raise ValueError("name must be a non-empty string")
         params["name"] = name
 
     if per_page is not None:
@@ -336,9 +335,7 @@ def list_artifacts(
                     # GitHub sometimes returns this error for valid URLs, so retry
                     warn(f"URL request try {tries} failed ({err})")
                     continue
-                raise RuntimeError(
-                    f"cannot retrieve data from {req_url}"
-                ) from err
+                raise RuntimeError(f"cannot retrieve data from {req_url}") from err
 
     artifacts = []
     diff = 1
@@ -387,10 +384,10 @@ def download_artifact(
     """
 
     if "/" not in repo:
-        raise ValueError(f"repo format must be owner/name")
+        raise ValueError("repo format must be owner/name")
 
     if not isinstance(retries, int) or retries < 1:
-        raise ValueError(f"retries must be a positive int")
+        raise ValueError("retries must be a positive int")
 
     req_url = f"https://api.github.com/repos/{repo}/actions/artifacts/{id}/zip"
     request = urllib.request.Request(req_url)
@@ -415,9 +412,7 @@ def download_artifact(
                 warn(f"URL request try {tries} failed ({err})")
                 continue
             else:
-                raise RuntimeError(
-                    f"cannot retrieve data from {req_url}"
-                ) from err
+                raise RuntimeError(f"cannot retrieve data from {req_url}") from err
 
     if verbose:
         print(f"Uncompressing: {zip_path}")
@@ -496,14 +491,8 @@ def download_and_unzip(
                     file_size = int(file_size)
 
                     bfmt = "{:" + f"{len_file_size}" + ",d}"
-                    sbfmt = (
-                        "{:>"
-                        + f"{len(bfmt.format(int(file_size)))}"
-                        + "s} bytes"
-                    )
-                    print(
-                        f"   file size: {sbfmt.format(bfmt.format(int(file_size)))}"
-                    )
+                    sbfmt = "{:>" + f"{len(bfmt.format(int(file_size)))}" + "s} bytes"
+                    print(f"   file size: {sbfmt.format(bfmt.format(int(file_size)))}")
 
                 break
         except urllib.error.HTTPError as err:
@@ -526,7 +515,7 @@ def download_and_unzip(
 
             # extract the files
             z.extractall(str(path))
-        except:
+        except:  # noqa: E722
             p = "Could not unzip the file. Stopping."
             raise Exception(p)
         z.close()

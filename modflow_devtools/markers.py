@@ -3,7 +3,9 @@ Pytest markers to toggle tests based on environment conditions.
 Occasionally useful to directly assert environment expectations.
 """
 
+from os import environ
 from platform import python_version, system
+from typing import Dict, Optional
 
 from packaging.version import Version
 
@@ -31,7 +33,7 @@ def requires_exe(*exes):
 
 def requires_python(version, bound="lower"):
     if not isinstance(version, str):
-        raise ValueError(f"Version must a string")
+        raise ValueError("Version must a string")
 
     py_tgt = Version(version)
     if bound == "lower":
@@ -46,8 +48,8 @@ def requires_python(version, bound="lower"):
         )
 
 
-def requires_pkg(*pkgs):
-    missing = {pkg for pkg in pkgs if not has_pkg(pkg, strict=True)}
+def requires_pkg(*pkgs, name_map: Optional[Dict[str, str]] = None):
+    missing = {pkg for pkg in pkgs if not has_pkg(pkg, strict=True, name_map=name_map)}
     return pytest.mark.skipif(
         missing,
         reason=f"missing package{'s' if len(missing) != 1 else ''}: "
@@ -57,25 +59,21 @@ def requires_pkg(*pkgs):
 
 def requires_platform(platform, ci_only=False):
     return pytest.mark.skipif(
-        system().lower() != platform.lower()
-        and (is_in_ci() if ci_only else True),
+        system().lower() != platform.lower() and (is_in_ci() if ci_only else True),
         reason=f"only compatible with platform: {platform.lower()}",
     )
 
 
 def excludes_platform(platform, ci_only=False):
     return pytest.mark.skipif(
-        system().lower() == platform.lower()
-        and (is_in_ci() if ci_only else True),
+        system().lower() == platform.lower() and (is_in_ci() if ci_only else True),
         reason=f"not compatible with platform: {platform.lower()}",
     )
 
 
 def requires_branch(branch):
     current = get_current_branch()
-    return pytest.mark.skipif(
-        current != branch, reason=f"must run on branch: {branch}"
-    )
+    return pytest.mark.skipif(current != branch, reason=f"must run on branch: {branch}")
 
 
 def excludes_branch(branch):
@@ -83,6 +81,11 @@ def excludes_branch(branch):
     return pytest.mark.skipif(
         current == branch, reason=f"can't run on branch: {branch}"
     )
+
+
+no_parallel = pytest.mark.skipif(
+    environ.get("PYTEST_XDIST_WORKER_COUNT"), reason="can't run in parallel"
+)
 
 
 requires_github = pytest.mark.skipif(

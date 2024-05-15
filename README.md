@@ -56,6 +56,7 @@ Python3.8+, dependency-free, but pairs well with `pytest` and select plugins, e.
 
 - [`pytest-dotenv`](https://github.com/quiqua/pytest-dotenv)
 - [`pytest-xdist`](https://github.com/pytest-dev/pytest-xdist)
+- [`syrupy`](https://github.com/tophat/syrupy)
 
 ## Installation
 
@@ -65,7 +66,7 @@ Python3.8+, dependency-free, but pairs well with `pytest` and select plugins, e.
 pip install modflow-devtools
 ```
 
-Pytest, pytest plugins, and other optional dependencies can be installed with:
+Pytest, pytest plugins, and other testing-related dependencies can be installed with:
 
 ```shell
 pip install "modflow-devtools[test]"
@@ -73,7 +74,7 @@ pip install "modflow-devtools[test]"
 
 To install from source and set up a development environment please see the [developer documentation](DEVELOPER.md).
 
-To import `pytest` fixtures in a project consuming `modflow-devtools`, add the following to a `conftest.py` file:
+To import `pytest` fixtures in a project consuming `modflow-devtools`, add the following to a test file or `conftest.py` file:
 
 ```python
 pytest_plugins = [ "modflow_devtools.fixtures" ]

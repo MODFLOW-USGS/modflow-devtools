@@ -6,7 +6,8 @@ import pytest
 from _pytest.config import ExitCode
 
 system = platform.system()
-proj_root = Path(__file__).parent.parent.parent.parent
+proj_root = Path(__file__).parents[1]
+module_path = Path(inspect.getmodulename(__file__))
 
 
 # test temporary directory fixtures
@@ -39,8 +40,7 @@ def test_function_scoped_tmpdir_slash_in_name(function_tmpdir, name):
     replaced1 = name.replace("/", "_").replace("\\", "_").replace(":", "_")
     replaced2 = name.replace("/", "_").replace("\\", "__").replace(":", "_")
     assert (
-        f"{inspect.currentframe().f_code.co_name}[{replaced1}]"
-        in function_tmpdir.stem
+        f"{inspect.currentframe().f_code.co_name}[{replaced1}]" in function_tmpdir.stem
         or f"{inspect.currentframe().f_code.co_name}[{replaced2}]"
         in function_tmpdir.stem
     )
@@ -64,7 +64,7 @@ class TestClassScopedTmpdir:
 def test_module_scoped_tmpdir(module_tmpdir):
     assert isinstance(module_tmpdir, Path)
     assert module_tmpdir.is_dir()
-    assert Path(inspect.getmodulename(__file__)).stem in module_tmpdir.name
+    assert module_path.stem in module_tmpdir.name
 
 
 def test_session_scoped_tmpdir(session_tmpdir):
@@ -144,9 +144,7 @@ def test_keep_class_scoped_tmpdir(tmp_path, arg):
     ]
     assert pytest.main(args) == ExitCode.OK
     assert Path(
-        tmp_path
-        / f"{TestKeepClassScopedTmpdirInner.__name__}0"
-        / test_keep_fname
+        tmp_path / f"{TestKeepClassScopedTmpdirInner.__name__}0" / test_keep_fname
     ).is_file()
 
 
@@ -165,9 +163,7 @@ def test_keep_module_scoped_tmpdir(tmp_path, arg):
     ]
     assert pytest.main(args) == ExitCode.OK
     this_path = Path(__file__)
-    keep_path = (
-        tmp_path / f"{str(this_path.parent.name)}.{str(this_path.stem)}0"
-    )
+    keep_path = tmp_path / f"{str(this_path.parent.name)}.{str(this_path.stem)}0"
     assert test_keep_fname in [f.name for f in keep_path.glob("*")]
 
 
@@ -206,9 +202,7 @@ def test_keep_failed_function_scoped_tmpdir(function_tmpdir, keep):
         args += ["--keep-failed", function_tmpdir]
     assert pytest.main(args) == ExitCode.TESTS_FAILED
 
-    kept_file = Path(
-        function_tmpdir / f"{inner_fn}0" / test_keep_fname
-    ).is_file()
+    kept_file = Path(function_tmpdir / f"{inner_fn}0" / test_keep_fname).is_file()
     assert kept_file if keep else not kept_file
 
 
@@ -276,41 +270,7 @@ def test_large_test_model(large_test_model):
     assert large_test_model.name == "mfsim.nam"
 
 
-# test pandas fixture
-
-test_pandas_fname = "pandas.txt"
-
-
-@pytest.mark.meta("test_pandas")
-def test_pandas_inner(function_tmpdir, use_pandas):
-    with open(function_tmpdir / test_pandas_fname, "w") as f:
-        f.write(str(use_pandas))
-
-
-@pytest.mark.parametrize("pandas", ["yes", "no", "random"])
-@pytest.mark.parametrize("arg", ["--pandas", "-P"])
-def test_pandas(pandas, arg, function_tmpdir):
-    inner_fn = test_pandas_inner.__name__
-    args = [
-        __file__,
-        "-v",
-        "-s",
-        "-k",
-        inner_fn,
-        arg,
-        pandas,
-        "--keep",
-        function_tmpdir,
-        "-M",
-        "test_pandas",
-    ]
-    assert pytest.main(args) == ExitCode.OK
-    res = open(next(function_tmpdir.rglob(test_pandas_fname))).readlines()[0]
-    assert res
-    if pandas == "yes":
-        assert "True" in res
-    elif pandas == "no":
-        assert "False" in res
+# test tabular data format fixture
 
 
 test_tabular_fname = "tabular.txt"
