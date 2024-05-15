@@ -5,7 +5,7 @@ import numpy as np
 
 proj_root = Path(__file__).parents[1]
 module_path = Path(inspect.getmodulename(__file__))
-pytest_plugins = [ "modflow_devtools.snapshots" ]  # activate snapshot fixtures
+pytest_plugins = ["modflow_devtools.snapshots"]  # activate snapshot fixtures
 snapshot_array = np.array([1.1, 2.2, 3.3])
 snapshots_path = proj_root / "autotest" / "__snapshots__"
 

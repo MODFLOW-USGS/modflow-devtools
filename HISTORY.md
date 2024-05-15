@@ -1,3 +1,15 @@
+### Version 1.5.0
+
+#### New features
+
+* [feat(markers)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/1f358de2bc721c1000c3d0823b9440776432e3b0): Add no_parallel marker, support differing pkg/module names (#148). Committed by wpbonelli on 2024-04-12.
+* [feat(snapshots)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/c9e445dd1544413f3729c7a78c2a77038db80050): Add snapshot fixtures, remove pandas fixture (#151). Committed by wpbonelli on 2024-05-13.
+
+#### Refactoring
+
+* [refactor(latex)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/827b5ec63ebe0b9ea833957637d6b60fdc2f3198): Support path-like, add docstrings (#142). Committed by wpbonelli on 2024-02-25.
+* [refactor(snapshots)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/d96089e512fbb79408e4fb58c89ee63da60dc727): Move to separate module (#152). Committed by wpbonelli on 2024-05-13.
+
 ### Version 1.4.0
 
 #### New features
