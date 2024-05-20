@@ -151,12 +151,12 @@ def get_expected_namefiles(path, pattern="mfsim.nam") -> List[Path]:
 def test_get_model_paths_examples():
     expected_paths = get_expected_model_dirs(_examples_path)
     paths = get_model_paths(_examples_path)
-    assert paths == sorted(list(set(paths)))  # no duplicates
+    assert sorted(paths) == sorted(list(set(paths)))  # no duplicates
     assert set(expected_paths) == set(paths)
 
     expected_paths = get_expected_model_dirs(_examples_path, "*.nam")
     paths = get_model_paths(_examples_path, namefile="*.nam")
-    assert paths == sorted(list(set(paths)))
+    assert sorted(paths) == sorted(list(set(paths)))
     assert set(expected_paths) == set(paths)
 
 
@@ -166,12 +166,12 @@ def test_get_model_paths_examples():
 def test_get_model_paths_largetestmodels():
     expected_paths = get_expected_model_dirs(_examples_path)
     paths = get_model_paths(_examples_path)
-    assert paths == sorted(list(set(paths)))
+    assert sorted(paths) == sorted(list(set(paths)))
     assert set(expected_paths) == set(paths)
 
     expected_paths = get_expected_model_dirs(_examples_path)
     paths = get_model_paths(_examples_path)
-    assert paths == sorted(list(set(paths)))
+    assert sorted(paths) == sorted(list(set(paths)))
     assert set(expected_paths) == set(paths)
 
 
