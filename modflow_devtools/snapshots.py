@@ -8,10 +8,13 @@ pytest = import_optional_dependency("pytest")
 syrupy = import_optional_dependency("syrupy")
 
 # ruff: noqa: E402
+from syrupy import __import_extension
+from syrupy.assertion import SnapshotAssertion
 from syrupy.extensions.single_file import (
     SingleFileSnapshotExtension,
     WriteMode,
 )
+from syrupy.location import PyTestLocation
 from syrupy.types import (
     PropertyFilter,
     PropertyMatcher,
@@ -90,19 +93,67 @@ class ReadableArrayExtension(SingleFileSnapshotExtension):
         return np.array2string(data, threshold=np.inf)
 
 
+class MatchAnything:
+    def __eq__(self, _):
+        return True
+
+
 # fixtures
 
 
-@pytest.fixture
-def array_snapshot(snapshot):
-    return snapshot.use_extension(BinaryArrayExtension)
+@pytest.fixture(scope="session")
+def snapshot_disable(pytestconfig) -> bool:
+    return pytestconfig.getoption("--snapshot-disable")
 
 
 @pytest.fixture
-def text_array_snapshot(snapshot):
-    return snapshot.use_extension(TextArrayExtension)
+def snapshot(request, snapshot_disable) -> "SnapshotAssertion":
+    return (
+        MatchAnything()
+        if snapshot_disable
+        else SnapshotAssertion(
+            update_snapshots=request.config.option.update_snapshots,
+            extension_class=__import_extension(request.config.option.default_extension),
+            test_location=PyTestLocation(request.node),
+            session=request.session.config._syrupy,
+        )
+    )
 
 
 @pytest.fixture
-def readable_array_snapshot(snapshot):
-    return snapshot.use_extension(ReadableArrayExtension)
+def array_snapshot(snapshot, snapshot_disable):
+    return (
+        MatchAnything()
+        if snapshot_disable
+        else snapshot.use_extension(BinaryArrayExtension)
+    )
+
+
+@pytest.fixture
+def text_array_snapshot(snapshot, snapshot_disable):
+    return (
+        MatchAnything()
+        if snapshot_disable
+        else snapshot.use_extension(TextArrayExtension)
+    )
+
+
+@pytest.fixture
+def readable_array_snapshot(snapshot, snapshot_disable):
+    return (
+        MatchAnything()
+        if snapshot_disable
+        else snapshot.use_extension(ReadableArrayExtension)
+    )
+
+
+# pytest config hooks
+
+
+def pytest_addoption(parser):
+    parser.addoption(
+        "--snapshot-disable",
+        action="store_true",
+        default=False,
+        help="Disable snapshot comparisons.",
+    )
