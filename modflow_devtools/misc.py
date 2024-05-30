@@ -284,13 +284,41 @@ def get_model_paths(
     Find model directories recursively in the given location.
     A model directory is any directory containing one or more
     namefiles. Model directories can be filtered or excluded,
-    by prefix, pattern, namefile name, or packages used.
+    by prefix, pattern, namefile name, or packages used. The
+    directories are returned in order within scenario folders
+    such that groundwater flow model workspaces precede other
+    model types. This allows models which depend on the flow
+    model's outputs to consume its head or budget, and models
+    should successfully run in the sequence returned provided
+    input files (e.g. FMI) refer to output via relative paths.
     """
 
-    namefile_paths = get_namefile_paths(
-        path, prefix, namefile, excluded, selected, packages
-    )
-    model_paths = sorted(list(set([p.parent for p in namefile_paths if p.parent.name])))
+    def keyfunc(v):
+        v = str(v)
+        if "gwf" in v:
+            return 0
+        else:
+            return 1
+
+    model_paths = []
+    globbed = path.rglob(f"{prefix if prefix else ''}*")
+    example_paths = [p for p in globbed if p.is_dir()]
+    for p in example_paths:
+        for mp in sorted(
+            list(
+                set(
+                    [
+                        p.parent
+                        for p in get_namefile_paths(
+                            p, prefix, namefile, excluded, selected, packages
+                        )
+                    ]
+                )
+            ),
+            key=keyfunc,
+        ):
+            if mp not in model_paths:
+                model_paths.append(mp)
     return model_paths
 
 

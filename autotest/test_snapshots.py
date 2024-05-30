@@ -2,10 +2,11 @@ import inspect
 from pathlib import Path
 
 import numpy as np
+import pytest
+from _pytest.config import ExitCode
 
 proj_root = Path(__file__).parents[1]
 module_path = Path(inspect.getmodulename(__file__))
-pytest_plugins = [ "modflow_devtools.snapshots" ]  # activate snapshot fixtures
 snapshot_array = np.array([1.1, 2.2, 3.3])
 snapshots_path = proj_root / "autotest" / "__snapshots__"
 
@@ -61,3 +62,47 @@ def test_readable_text_array_snapshot(readable_array_snapshot):
         ),
         snapshot_array,
     )
+
+
+@pytest.mark.meta("test_snapshot_disable")
+def test_snapshot_disable_inner(snapshot):
+    assert snapshot == "match this!"
+
+
+@pytest.mark.parametrize("disable", [True, False])
+def test_snapshot_disable(disable):
+    inner_fn = test_snapshot_disable_inner.__name__
+    args = [
+        __file__,
+        "-v",
+        "-s",
+        "-k",
+        inner_fn,
+        "-M",
+        "test_snapshot_disable",
+    ]
+    if disable:
+        args.append("--snapshot-disable")
+    assert pytest.main(args) == (ExitCode.OK if disable else ExitCode.TESTS_FAILED)
+
+
+@pytest.mark.meta("test_array_snapshot_disable")
+def test_array_snapshot_disable_inner(array_snapshot):
+    assert array_snapshot == "can you match that?"
+
+
+@pytest.mark.parametrize("disable", [True, False])
+def test_array_snapshot_disable(disable):
+    inner_fn = test_array_snapshot_disable_inner.__name__
+    args = [
+        __file__,
+        "-v",
+        "-s",
+        "-k",
+        inner_fn,
+        "-M",
+        "test_array_snapshot_disable",
+    ]
+    if disable:
+        args.append("--snapshot-disable")
+    assert pytest.main(args) == (ExitCode.OK if disable else ExitCode.TESTS_FAILED)

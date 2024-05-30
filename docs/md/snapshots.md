@@ -15,3 +15,7 @@ To use snapshot fixtures, add the following line to a test file or `conftest.py`
 ```python
 pytest_plugins = [ "modflow_devtools.snapshots" ]
 ```
+
+## Disable snapshots
+
+Snapshot comparisons can be disabled by invoked `pytest` with the `--snapshot-disable` flag.
