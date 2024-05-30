@@ -1,3 +1,13 @@
+### Version 1.6.0
+
+#### New features
+
+* [feat(snapshots)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/4e289ee4a13d13724c5cbcb7a1ee5328fc588c13): Add --snapshot-disable cli option (#157). Committed by wpbonelli on 2024-05-21.
+
+#### Bug fixes
+
+* [fix(get_model_paths)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/0e3120a9d1cf53ecc98b861aeb05e3a8fa7afb71): Fix model order within scenario (#156). Committed by wpbonelli on 2024-05-21.
+
 ### Version 1.5.0
 
 #### New features
