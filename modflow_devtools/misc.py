@@ -2,6 +2,7 @@ import importlib
 import socket
 import sys
 import traceback
+from _warnings import warn
 from ast import literal_eval
 from contextlib import contextmanager
 from functools import wraps
@@ -15,8 +16,6 @@ from timeit import timeit
 from typing import Dict, List, Optional, Tuple
 from urllib import request
 from urllib.error import URLError
-
-from _warnings import warn
 
 
 @contextmanager
