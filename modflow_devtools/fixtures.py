@@ -16,8 +16,14 @@ pytest = import_optional_dependency("pytest")
 
 @pytest.fixture(scope="function")
 def function_tmpdir(tmpdir_factory, request) -> Generator[Path, None, None]:
-    node = request.node.name.replace("/", "_").replace("\\", "_").replace(":", "_")
-    temp = Path(tmpdir_factory.mktemp(node))
+    node_name = (
+        request.node.name.replace("/", "_")
+        .replace("\\", "_")
+        .replace(":", "_")
+        .replace("[", "_")
+        .replace("]", "_")
+    )
+    temp = Path(tmpdir_factory.mktemp(node_name))
     yield Path(temp)
 
     keep = request.config.option.KEEP

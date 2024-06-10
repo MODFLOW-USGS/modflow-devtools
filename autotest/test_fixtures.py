@@ -37,11 +37,23 @@ def test_function_scoped_tmpdir_slash_in_name(function_tmpdir, name):
 
     # node name might have slashes if test function is parametrized
     # (e.g., test_function_scoped_tmpdir_slash_in_name[a/slash])
-    replaced1 = name.replace("/", "_").replace("\\", "_").replace(":", "_")
-    replaced2 = name.replace("/", "_").replace("\\", "__").replace(":", "_")
+    replaced1 = (
+        name.replace("/", "_")
+        .replace("\\", "_")
+        .replace(":", "_")
+        .replace("[", "")
+        .replace("]", "")
+    )
+    replaced2 = (
+        name.replace("/", "_")
+        .replace("\\", "__")
+        .replace(":", "_")
+        .replace("[", "")
+        .replace("]", "")
+    )
     assert (
-        f"{inspect.currentframe().f_code.co_name}[{replaced1}]" in function_tmpdir.stem
-        or f"{inspect.currentframe().f_code.co_name}[{replaced2}]"
+        f"{inspect.currentframe().f_code.co_name}_{replaced1}_" in function_tmpdir.stem
+        or f"{inspect.currentframe().f_code.co_name}_{replaced2}_"
         in function_tmpdir.stem
     )
 
