@@ -19,3 +19,7 @@ pytest_plugins = [ "modflow_devtools.snapshots" ]
 ## Disable snapshots
 
 Snapshot comparisons can be disabled by invoked `pytest` with the `--snapshot-disable` flag.
+
+## Caveats & gotchas
+
+NumPy major versions may introduce changes to `np.save()`'s binary format, causing binary array snapshot failures for arrays with object dtypes. To avoid this, check object (e.g. string) columns explicitly and then omit them from the comparison array.
