@@ -19,3 +19,4 @@ class Field:
     shape: str | None = None
     valid: tuple[str, ...] | None = None
     netcdf: bool = False
+    tagged: bool = False
