@@ -422,7 +422,7 @@ def test_fieldv1_to_fieldv2_conversion():
     assert save_flows.type == "keyword"
     assert save_flows.block == "options"
     assert save_flows.description == "save calculated flows"
-    assert not hasattr(save_flows, "tagged")
+    assert hasattr(save_flows, "tagged")
     assert not hasattr(save_flows, "in_record")
     assert not hasattr(save_flows, "reader")
 
