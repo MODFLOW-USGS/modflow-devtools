@@ -29,7 +29,6 @@ from modflow_devtools.dfns.parse import (
 )
 from modflow_devtools.dfns.schema.block import Block, Blocks, block_sort_key
 from modflow_devtools.dfns.schema.field import Field, Fields
-from modflow_devtools.dfns.schema.ref import Ref
 from modflow_devtools.dfns.schema.v1 import SCALAR_TYPES as V1_SCALAR_TYPES
 from modflow_devtools.dfns.schema.v1 import FieldV1
 from modflow_devtools.dfns.schema.v2 import FieldV2
@@ -61,7 +60,6 @@ __all__ = [
     "FieldV2",
     "Fields",
     "LocalDfnRegistry",
-    "Ref",
     "RemoteDfnRegistry",
     "block_sort_key",
     "get_dfn",
@@ -106,9 +104,6 @@ class Dfn:
         Whether this is a multi-package.
     ftype : str | None
         File type identifier.
-    ref : Ref | None
-        Metadata if this component is a subpackage (child's perspective).
-        Populated from DFN comments like: # flopy subpackage <key> <abbr> <param> <val>
     blocks : Blocks | None
         Block definitions containing field specifications.
     children : Dfns | None
@@ -125,7 +120,6 @@ class Dfn:
     advanced: bool = False
     multi: bool = False
     ftype: str | None = None
-    ref: Ref | None = None
     blocks: Blocks | None = None
     children: Dfns | None = None
     subcomponents: list[str] | None = None
@@ -257,6 +251,23 @@ class DfnSpec(Mapping):
     def __contains__(self, name: object) -> bool:
         """Check if a component exists by name."""
         return name in self._flat
+
+    def dump(self, f) -> None:
+        """Serialize the full spec to a TOML byte stream."""
+        import tomli_w
+
+        doc = {"schema_version": str(self.schema_version)}
+        for name, dfn in self._flat.items():
+            doc[name] = _toml_safe(remap(asdict(dfn), visit=drop_none_or_empty))
+        f.write(tomli_w.dumps(doc).encode())
+
+    def dumps(self) -> str:
+        """Serialize the full spec to a TOML string."""
+        import io
+
+        buf = io.BytesIO()
+        self.dump(buf)
+        return buf.getvalue().decode()
 
     @classmethod
     def load(
@@ -563,11 +574,21 @@ class MapV1To2(SchemaMap):
             advanced=dfn.advanced,
             multi=dfn.multi,
             ftype=dfn.ftype or (dfn.name.split("-", 1)[1].upper() if "-" in dfn.name else None),
-            ref=dfn.ref,
             blocks=MapV1To2.map_blocks(dfn),
             schema_version=v2,
             parent=dfn.parent,
         )
+
+
+def _toml_safe(obj):
+    """Recursively coerce non-TOML-native types to str."""
+    if isinstance(obj, dict):
+        return {k: _toml_safe(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_toml_safe(v) for v in obj]
+    if isinstance(obj, (str, int, float, bool)) or obj is None:
+        return obj
+    return str(obj)
 
 
 def map(
@@ -618,7 +639,6 @@ def load(f, format: str = "dfn", **kwargs) -> Dfn:
             "multi": data.pop("multi", False),
             "ftype": data.pop("ftype", None)
             or (dfn_name.split("-", 1)[1].upper() if dfn_name and "-" in dfn_name else None),
-            "ref": data.pop("ref", None),
         }
 
         if (expected_name := kwargs.pop("name", None)) is not None:

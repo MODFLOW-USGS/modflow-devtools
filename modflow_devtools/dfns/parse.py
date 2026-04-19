@@ -101,17 +101,16 @@ def parse_mf6_subpackages(meta: list[str]) -> list[str]:
     Returns
     -------
     list[str]
-        List of uppercase component abbreviations (e.g., ['UTL-NCF']).
+        List of lowercase component abbreviations (e.g., ['utl-ncf']).
 
     See Also
     --------
     Dfn.subcomponents : Stores the result (schema-level constraint).
-    Dfn.fkeys : Field-level foreign keys from flopy subpackage declarations.
     """
     result = []
     for m in meta:
         if m.startswith("mf6-subpackage "):
-            abbr = m.removeprefix("mf6-subpackage ").strip().upper()
+            abbr = m.removeprefix("mf6-subpackage ").strip().lower()
             result.append(abbr)
     return result
 
