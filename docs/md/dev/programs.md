@@ -106,7 +106,7 @@ The Programs API mirrors the Models API architecture with adaptations for progra
 
 ### Bootstrap file
 
-The **bootstrap** file tells `modflow-devtools` where to look for programs. This file will be checked into the repository at `modflow_devtools/programs/programs.toml` and distributed with the package.
+The **bootstrap** file tells `modflow-devtools` where to look for programs. It is at `modflow_devtools/programs/programs.toml` and distributed with the package.
 
 #### Bootstrap file contents
 
@@ -127,7 +127,7 @@ The user config follows the same format as the bundled bootstrap file. Sources d
 - Point to forks of existing repositories (useful for testing)
 - Override default refs for existing sources
 
-**Implementation note**: The user config path logic (`get_user_config_path("programs")`) is shared across all three APIs (Models, Programs, DFNs) via `modflow_devtools.config`, but each API implements its own `merge_bootstrap()` function using API-specific bootstrap schemas.
+**Implementation note**: Each API (`models`, `programs`, `dfns`) implements its own `get_user_config_path()` function, returning a platform-appropriate config path. Sources defined in the user config override or extend those in the bundled bootstrap.
 
 #### Sample bootstrap file
 
@@ -377,13 +377,13 @@ Cache structure:
 │   ├── registries/
 │   │   ├── modflow6/              # by source repo
 │   │   │   └── 6.6.3/
-│   │   │       └── registry.toml
+│   │   │       └── programs.toml
 │   │   ├── modpath7/
 │   │   │   └── 7.2.001/
-│   │   │       └── registry.toml
+│   │   │       └── programs.toml
 │   │   └── executables/
 │   │       └── latest/
-│   │           └── registry.toml
+│   │           └── programs.toml
 │   ├── archives/
 │   │   ├── mf6/                    # downloaded archives
 │   │   │   └── 6.6.3/
@@ -493,22 +493,22 @@ mf programs list
 Or via Python API:
 
 ```python
-from modflow_devtools.programs import sync_registries, get_sync_status
+from modflow_devtools.programs import ProgramSourceConfig
 
 # Sync all
-sync_registries()
+config = ProgramSourceConfig.load()
+config.sync()
 
-# Sync specific
-sync_registries(repo="MODFLOW-ORG/modflow6", version="6.6.3")
+# Sync specific source
+config.sync(source="modflow6")
 
 # Check status
-status = get_sync_status()
+status = config.status
 ```
 
 #### Automatic sync
 
-- **At install time**: Best-effort sync during package installation (fail silently on network errors)
-- **On first use**: If registry cache is empty, attempt to sync before raising errors
+- **On first use**: If registry cache is empty, `install()` attempts to sync before raising errors
 - **Configurable (Experimental)**: Auto-sync is opt-in via environment variable: `MODFLOW_DEVTOOLS_AUTO_SYNC=1` (set to "1", "true", or "yes")
 
 #### Force semantics
@@ -615,10 +615,9 @@ installed = list_installed()
 **Version management**:
 - Multiple versions cached separately in `~/.cache/modflow-devtools/programs/binaries/{program}/{version}/`
 - User can install to different bindirs (e.g., `/usr/local/bin`, `~/.local/bin`)
-- Only one version is "active" per bindir (the actual copy at that location)
-- `select` command re-copies a different version from cache to bindir
-- Metadata tracks which version is active in each bindir
-- Version switching is fast (copy operation, milliseconds for typical MODFLOW binaries)
+- The "active" version is simply whatever binary is in the bindir — no separate active-state tracking
+- To switch versions, call `install()` again with the desired version; the archive is already cached so no re-download occurs
+- Version switching is fast (copy from cache, milliseconds for typical MODFLOW binaries)
 
 **Why copy instead of symlink?**
 - **Simplicity**: Single code path for all platforms (Unix, Windows, macOS)
@@ -841,7 +840,8 @@ class ProgramSourceConfig(BaseModel):
 Tracks a single program installation:
 
 ```python
-class ProgramInstallation(BaseModel):
+@dataclass
+class ProgramInstallation:
     """A single program installation."""
     version: str
     platform: str
@@ -849,7 +849,6 @@ class ProgramInstallation(BaseModel):
     installed_at: datetime
     source: dict[str, str]  # repo, tag, asset_url, hash
     executables: list[str]
-    active: bool
 ```
 
 #### InstallationMetadata
@@ -859,15 +858,12 @@ Manages installation metadata for a program:
 ```python
 class InstallationMetadata:
     """Manages installation metadata for a program."""
-    def __init__(self, program: str, cache: ProgramCache | None = None)
+    def __init__(self, program: str)
     def load(self) -> bool
     def save(self) -> None
     def add_installation(self, installation: ProgramInstallation) -> None
-    def remove_installation(self, version: str, bindir: Path | None) -> None
-    def get_installation(self, version: str, bindir: Path | None) -> ProgramInstallation | None
+    def remove_installation(self, version: str, bindir: Path) -> None
     def list_installations(self) -> list[ProgramInstallation]
-    def get_active_installation(self, bindir: Path | None) -> ProgramInstallation | None
-    def set_active(self, version: str, bindir: Path) -> None
 ```
 
 #### ProgramManager
@@ -892,14 +888,6 @@ class ProgramManager:
         verbose: bool = False,
     ) -> list[Path]
 
-    def select(
-        self,
-        program: str,
-        version: str,
-        bindir: Path | None = None,
-        verbose: bool = False,
-    ) -> list[Path]
-
     def uninstall(
         self,
         program: str,
@@ -909,13 +897,6 @@ class ProgramManager:
         remove_cache: bool = False,
         verbose: bool = False,
     ) -> None
-
-    def get_executable(
-        self,
-        program: str,
-        version: str | None = None,
-        bindir: Path | None = None,
-    ) -> Path
 
     def list_installed(
         self,
@@ -938,12 +919,6 @@ manager = ProgramManager()
 # Install programs
 paths = manager.install("mf6", version="6.6.3", verbose=True)
 
-# Switch versions
-manager.select("mf6", version="6.5.0", verbose=True)
-
-# Get executable path
-mf6_path = manager.get_executable("mf6")
-
 # List installed programs
 installed = manager.list_installed()
 
@@ -956,20 +931,12 @@ manager.uninstall("mf6", version="6.5.0")
 ```python
 from modflow_devtools.programs import (
     install_program,
-    select_version,
-    get_executable,
     list_installed,
     uninstall_program,
 )
 
 # Install
 paths = install_program("mf6", version="6.6.3", verbose=True)
-
-# Switch versions
-select_version("mf6", version="6.5.0")
-
-# Get executable path
-mf6_path = get_executable("mf6")
 
 # List installed
 installed = list_installed()
@@ -1079,7 +1046,7 @@ The Programs API follows the same design patterns as the Models and DFNs APIs fo
 
 These features are in scope for the initial implementation:
 
-1. **Multiple versions side-by-side**: Users can install multiple versions of the same program in cache. Copy selected version to bindir to make it active. Fast version switching via re-copy from cache.
+1. **Multiple versions side-by-side**: Users can install multiple versions of the same program. Archives and extracted binaries are cached per version. To switch, call `install()` again — the cached archive is re-copied to the bindir without re-downloading.
 
 2. **Installation metadata tracking**: Maintain metadata about each installation (similar to flopy's `get-modflow`) to support executable discovery and version management.
 

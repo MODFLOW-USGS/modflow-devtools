@@ -161,13 +161,13 @@ python -m modflow_devtools.programs install mf6@6.6.3 --bindir /usr/local/bin
 ### Finding installed programs
 
 ```python
-from modflow_devtools.programs import get_executable, list_installed
+from modflow_devtools.programs import _DEFAULT_MANAGER, list_installed
 
 # Get path to installed executable
-mf6_path = get_executable("mf6")
+mf6_path = _DEFAULT_MANAGER.get_executable("mf6")
 
 # Get specific version
-mf6_path = get_executable("mf6", version="6.6.3")
+mf6_path = _DEFAULT_MANAGER.get_executable("mf6", version="6.6.3")
 
 # List all installed programs
 installed = list_installed()
@@ -190,30 +190,27 @@ python -m modflow_devtools.programs history mf6 --verbose
 
 ### Version management
 
-Multiple versions can be installed side-by-side. Switch between them using `select`:
+Multiple versions can be installed side-by-side. Switching between them is done by re-running `install` — the archive is already cached, so no re-download occurs:
 
 ```python
-from modflow_devtools.programs import install_program, select_version
+from modflow_devtools.programs import install_program
 
 # Install multiple versions
 install_program("mf6", version="6.6.3")
 install_program("mf6", version="6.5.0")
 
-# Switch active version
-select_version("mf6", version="6.5.0")
+# Switch back to 6.6.3 — re-copies from cache, no download
+install_program("mf6", version="6.6.3")
 ```
 
-Or by CLI (both forms are equivalent):
+Or by CLI:
 
 ```bash
-# Using the mf command
 mf programs install mf6@6.6.3
 mf programs install mf6@6.5.0
-# Version switching not yet implemented - use Python API
 
-# Or using the module form
-python -m modflow_devtools.programs install mf6@6.6.3
-python -m modflow_devtools.programs install mf6@6.5.0
+# Switch back — fast, uses cached archive
+mf programs install mf6@6.6.3
 ```
 
 ### Using the default manager
@@ -297,7 +294,7 @@ Examples:
 The Programs API automatically detects your platform and downloads the appropriate binaries:
 
 - **linux**: Linux x86_64
-- **mac**: macOS ARM64 (Apple Silicon)
+- **mac**: macOS (Intel and Apple Silicon)
 - **win64**: Windows 64-bit
 
 Programs must provide pre-built binaries for supported platforms. Building from source is not supported—program repositories are responsible for releasing platform-specific binaries.

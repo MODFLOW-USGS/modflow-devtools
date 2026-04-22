@@ -105,7 +105,7 @@ The design emphasizes encapsulation - each class has clear responsibilities and 
 
 ### Bootstrap file
 
-The **bootstrap** file will tell `modflow-devtools` where to look for remote model repositories. This file will be checked into the repository at `modflow_devtools/models/models.toml` and distributed with the package.
+The **bootstrap** file tells `modflow-devtools` where to look for remote model repositories. It is at `modflow_devtools/models/models.toml` and distributed with the package.
 
 #### Bootstrap file contents
 
@@ -162,7 +162,7 @@ This allows users to:
 
 The user config is automatically loaded and merged when using the default bootstrap location. For testing, a custom user config path can be specified via the `user_config_path` parameter to `load_bootstrap()`.
 
-**Implementation note**: The user config path logic (`get_user_config_path("models")`) is shared across all three APIs (Models, Programs, DFNs) via `modflow_devtools.config`, but each API implements its own `merge_bootstrap()` function using API-specific bootstrap schemas.
+**Implementation note**: Each API (`models`, `programs`, `dfns`) implements its own `get_user_config_path()` function, returning a platform-appropriate config path. Sources defined in the user config override or extend those in the bundled bootstrap.
 
 ### Registry files
 
@@ -292,26 +292,18 @@ Something like the following directory structure should work.
 ```
 ~/.cache/modflow-devtools/
 ├── registries/
-│   ├── modflow6-examples/
-│   │   ├── 1.2.3/          # release tag (if repo publishes releases)
-│   │   │   ├── registry.toml
-│   │   │   ├── models.toml
-│   │   │   └── examples.toml
-│   │   ├── master/         # branch
-│   │   │   ├── registry.toml
-│   │   │   ├── models.toml
-│   │   │   └── examples.toml
-│   │   └── develop/        # branch
-│   │       ├── registry.toml
-│   │       ├── models.toml
-│   │       └── examples.toml
-│   ├── modflow6-testmodels/
-│   │   ├── master/
-│   │   │   └── ...
-│   │   └── develop/
-│   │       └── ...
-│   └── modflow6-largetestmodels/
-│       └── ...
+│   ├── mf6/
+│   │   ├── example/
+│   │   │   └── current/
+│   │   │       └── registry.toml   # merged files/models/examples
+│   │   ├── test/
+│   │   │   ├── develop/
+│   │   │   │   └── registry.toml
+│   │   │   └── master/
+│   │   │       └── registry.toml
+│   │   └── large/
+│   │       └── develop/
+│   │           └── registry.toml
 └── models/  # Actual model files, managed by Pooch
     └── ...
 ```
@@ -371,7 +363,7 @@ The `mf` command provides a unified CLI namespace for all `modflow-devtools` com
 
 #### Automatic sync
 
-At install time, `modflow-devtools` can load the bootstrap file and attempt to sync to all configured repositories/registries. The install should not fail if registry sync fails (due either to network errors or misconfiguration), however &mdash; an informative warning can be shown, and sync retried on subsequent imports and/or manually (see below).
+Auto-sync is opt-in via `MODFLOW_DEVTOOLS_AUTO_SYNC=1`. When set, `modflow-devtools` performs a best-effort sync on first access and fails silently on network errors. Sync must otherwise be triggered manually.
 
 Synchronization involves:
 
@@ -483,8 +475,8 @@ The registry implementation uses several Pydantic-based classes organized in a s
 **`PoochRegistry`**:
 - Uses Pooch to fetch and cache models from remote
 - Constructs URLs dynamically from bootstrap metadata
-- Lazy-loads registry from cache on first access
-- Attempts auto-sync if registry not cached
+- Loads from the local registry cache on initialization
+- Raises `RuntimeError` with a helpful message if cache is empty (run `mf models sync` first)
 - Provides access to the underlying `ModelRegistry`
 
 **`DiscoveredModelRegistry`** (dataclass):
@@ -504,9 +496,7 @@ The registry implementation uses several Pydantic-based classes organized in a s
 
 Provide convenient APIs for common use cases, like synchronizing to a particular source or to all known sources, introspecting sync status, etc.
 
-Expose as `DEFAULT_REGISTRY` a `MergedRegistry` with all sources configured in the bootstrap file.
-
-This will break any code checking `isinstance(DEFAULT_REGISTRY, PoochRegistry)`, but it's unlikely anyone is doing that.
+Expose as `DEFAULT_REGISTRY` a `PoochRegistry` that lazily loads from the local cache (populated by sync). `DEFAULT_REGISTRY` is a lazy module attribute: it is initialized on first access.
 
 ## Status and Next Steps
 
@@ -528,7 +518,7 @@ The Models, Programs, and DFNs APIs share a consistent design for ease of use an
    - Recommended pattern for Programs and DFNs APIs to follow
 
 2. **Bootstrap files**: Separate files for each API, using identical naming to registry files but distinguished by location
-   - Bundled: `modflow_devtools/models/models.toml`, `modflow_devtools/programs/programs.toml`, `modflow_devtools/dfn/dfns.toml`
+   - Bundled: `modflow_devtools/models/models.toml`, `modflow_devtools/programs/programs.toml`, `modflow_devtools/dfns/dfns.toml`
    - User config: `~/.config/modflow-devtools/models.toml`, `~/.config/modflow-devtools/programs.toml`, `~/.config/modflow-devtools/dfns.toml`
 
 3. **Registry files**: Same naming as bootstrap files, distinguished by location (in source repos)

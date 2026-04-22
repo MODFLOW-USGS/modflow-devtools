@@ -227,9 +227,9 @@ if registry:
 
 ## Model Names
 
-Model names follow a hierarchical addressing scheme: `{source}@{ref}/{path/to/model}`.
+Model names follow a hierarchical addressing scheme: `{source}/{path/to/model}`.
 
-The `path/to/` part is referred to as the **prefix**. Valid prefixes include:
+The `source` is the short name configured in the bootstrap file (e.g., `mf6/example`, `mf6/test`). Valid source prefixes include:
 
 - **`mf6/example/...`**: MODFLOW 6 example models from [modflow6-examples](https://github.com/MODFLOW-ORG/modflow6-examples)
 - **`mf6/test/...`**: MODFLOW 6 test models from [modflow6-testmodels](https://github.com/MODFLOW-ORG/modflow6-testmodels)
@@ -254,8 +254,8 @@ from modflow_devtools.models import LocalRegistry
 registry = LocalRegistry()
 registry.index("path/to/models")
 
-# Index with custom namefile pattern (e.g., for MODFLOW-2005)
-registry.index("path/to/mf2005/models", namefile_pattern="*.nam")
+# Index with custom namefile name (e.g., for MODFLOW-2005)
+registry.index("path/to/mf2005/models", namefile="*.nam")
 
 # Use the local registry
 models = registry.models
