@@ -19,4 +19,4 @@ def block_sort_key(item) -> int:
     elif "period" in k:
         return 4
     else:
-        return 5
+        return 3

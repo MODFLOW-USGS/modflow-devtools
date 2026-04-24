@@ -613,7 +613,7 @@ def load(f, format: str = "dfn", **kwargs) -> Dfn:
         fields, meta = parse_dfn(f, **kwargs)
         blocks = {
             block_name: {field["name"]: FieldV1.from_dict(field) for field in block}
-            for block_name, block in groupby(fields.values(), lambda field: field["block"])
+            for block_name, block in groupby(fields.values(multi=True), lambda field: field["block"])
         }
         subcomponents = parse_mf6_subpackages(meta)
         return Dfn(
