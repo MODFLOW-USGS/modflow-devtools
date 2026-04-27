@@ -10,7 +10,11 @@ def block_sort_key(item) -> int:
     k, _ = item
     if k == "options":
         return 0
-    elif "period" in k:
-        return 2
-    else:
+    elif k == "dimensions":
         return 1
+    elif k == "griddata":
+        return 2
+    elif "period" in k:
+        return 4
+    else:
+        return 3
