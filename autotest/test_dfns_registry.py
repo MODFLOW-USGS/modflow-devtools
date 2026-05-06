@@ -131,14 +131,12 @@ class TestDfnSpec:
         # Root should be sim-nam
         assert spec.root.name == "sim-nam"
 
-        # Root should have children
-        assert spec.root.children is not None
-        assert "gwf-nam" in spec.root.children
+        # children_of is the query API; components carry parent, not children
+        root_children = spec.children_of("sim-nam")
+        assert "gwf-nam" in root_children
 
-        # gwf-nam should have its own children
-        gwf_nam = spec.root.children["gwf-nam"]
-        assert gwf_nam.children is not None
-        assert "gwf-chd" in gwf_nam.children
+        gwf_nam_children = spec.children_of("gwf-nam")
+        assert "gwf-chd" in gwf_nam_children
 
     def test_load_empty_directory_raises(self, tmp_path):
         """Test that loading from empty directory raises ValueError."""

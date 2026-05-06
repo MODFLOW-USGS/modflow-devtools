@@ -1,16 +1,12 @@
 # Programs API
 
-> **Experimental API Warning**
->
-> This API is experimental and may change or be removed in future versions without following normal deprecation procedures. Use at your own risk.
+> **Warning**: This API is experimental and may change or be removed in future versions without following normal deprecation procedures. Use at your own risk.
 >
 > When importing this module programmatically, you will see a `FutureWarning`. To suppress this warning:
 > ```python
 > import warnings
 > warnings.filterwarnings('ignore', message='.*modflow_devtools.programs.*experimental.*')
 > ```
->
-> The `mf programs` CLI command is stable and does not trigger warnings.
 
 The `modflow_devtools.programs` module provides programmatic access to MODFLOW and related programs in the MODFLOW ecosystem. It can be used with MODFLOW organization releases or custom program repositories.
 

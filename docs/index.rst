@@ -10,40 +10,46 @@ The `modflow-devtools` package provides a set of tools for developing and testin
 
 .. toctree::
    :maxdepth: 2
-   :caption: Introduction
+   :caption: Installation
 
    md/install.md
 
-
 .. toctree::
    :maxdepth: 2
-   :caption: Test fixtures
+   :caption: Testing
 
    md/fixtures.md
    md/markers.md
    md/snapshots.md
 
+.. toctree::
+   :maxdepth: 2
+   :caption: Specification
+
+   md/dfn-schema.md
+   md/dfns.md
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Models
+
+   md/models.md
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Programs
+
+   md/programs.md
+   md/ostags.md
 
 .. toctree::
    :maxdepth: 2
    :caption: Miscellaneous
-
-   md/dfns.md
-   md/download.md
-   md/latex.md
-   md/models.md
-   md/ostags.md
-   md/programs.md
-   md/timed.md
+   
    md/zip.md
-
-
-.. toctree::
-   :maxdepth: 2
-   :caption: External tools
-
-   md/act.md
-   md/doctoc.md
+   md/download.md
+   md/timed.md
+   md/latex.md
 
 .. toctree::
    :maxdepth: 2

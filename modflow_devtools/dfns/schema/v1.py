@@ -1,7 +1,5 @@
 from dataclasses import dataclass
-from typing import Literal
-
-from modflow_devtools.dfns.schema.field import Field
+from typing import Any, Literal
 
 FieldType = Literal[
     "keyword",
@@ -25,10 +23,22 @@ Reader = Literal[
 
 
 @dataclass(kw_only=True)
-class FieldV1(Field):
+class FieldV1:
+    # Shared base attributes (inlined from the deleted field.py)
+    name: str
+    type: str | None = None
+    block: str | None = None
+    default: Any | None = None
+    longname: str | None = None
+    description: str | None = None
+    optional: bool = False
+    developmode: bool = False
+    shape: str | None = None
     valid: tuple[str, ...] | None = None
-    reader: Reader = "urword"
+    netcdf: bool = False
     tagged: bool = False
+    # V1-specific attributes
+    reader: Reader = "urword"
     in_record: bool = False
     layered: bool | None = None
     preserve_case: bool = False
@@ -42,18 +52,7 @@ class FieldV1(Field):
 
     @classmethod
     def from_dict(cls, d: dict, strict: bool = False) -> "FieldV1":
-        """
-        Create a FieldV1 instance from a dictionary.
-
-        Parameters
-        ----------
-        d : dict
-            Dictionary containing field data
-        strict : bool, optional
-            If True, raise ValueError if dict contains unrecognized keys.
-            If False (default), ignore unrecognized keys.
-        """
-        keys = set(list(cls.__annotations__.keys()) + list(Field.__annotations__.keys()))
+        keys = set(cls.__dataclass_fields__.keys())
         if strict:
             if extra_keys := set(d.keys()) - keys:
                 raise ValueError(f"Unrecognized keys in field data: {extra_keys}")

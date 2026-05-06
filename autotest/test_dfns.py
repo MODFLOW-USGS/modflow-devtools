@@ -1,4 +1,3 @@
-from dataclasses import asdict
 from pathlib import Path
 
 import pytest
@@ -8,7 +7,17 @@ from modflow_devtools.dfns import Dfn, _load_common, load, load_flat
 from modflow_devtools.dfns.dfn2toml import convert, is_valid
 from modflow_devtools.dfns.fetch import fetch_dfns
 from modflow_devtools.dfns.schema.v1 import FieldV1
-from modflow_devtools.dfns.schema.v2 import FieldV2
+from modflow_devtools.dfns.schema.v2 import (
+    Array,
+    Double,
+    FieldBase,
+    FieldV2,
+    Integer,
+    Keyword,
+    Record,
+    String,
+    Union,
+)
 from modflow_devtools.markers import requires_pkg
 
 PROJ_ROOT = Path(__file__).parents[1]
@@ -31,13 +40,11 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize("dfn_name", dfn_names, ids=dfn_names)
 
     if "toml_name" in metafunc.fixturenames:
-        # Only convert if TOML files don't exist yet (avoid repeated conversions)
         dfn_paths = [p for p in DFN_DIR.glob("*.dfn") if p.stem not in ["common", "flopy"]]
         if not TOML_DIR.exists() or not all(
             (TOML_DIR / f"{dfn.stem}.toml").is_file() for dfn in dfn_paths
         ):
             convert(DFN_DIR, TOML_DIR)
-        # Verify all expected TOML files were created
         assert all((TOML_DIR / f"{dfn.stem}.toml").is_file() for dfn in dfn_paths)
         toml_names = [toml.stem for toml in TOML_DIR.glob("*.toml")]
         metafunc.parametrize("toml_name", toml_names, ids=toml_names)
@@ -108,11 +115,11 @@ def test_convert(function_tmpdir):
 
     if gwf := models.get("gwf-nam", None):
         pkgs = gwf.children or {}
-        pkgs = {k: v for k, v in pkgs.items() if k.startswith("gwf-") and isinstance(v, dict)}
+        pkgs = {k: v for k, v in pkgs.items() if k.startswith("gwf-")}
         assert len(pkgs) > 0
         if dis := pkgs.get("gwf-dis", None):
             assert dis.name == "gwf-dis"
-            assert dis.parent == "gwf"
+            assert dis.parent == "gwf-nam"
             assert "options" in (dis.blocks or {})
             assert "dimensions" in (dis.blocks or {})
 
@@ -166,7 +173,7 @@ def test_dfn_from_dict_roundtrip():
         multi=True,
         blocks={"options": {}},
     )
-    d = asdict(original)
+    d = original.model_dump()
     reconstructed = Dfn.from_dict(d)
     assert reconstructed.name == original.name
     assert reconstructed.schema_version == original.schema_version
@@ -183,9 +190,9 @@ def test_fieldv1_from_dict_ignores_extra_keys():
         "extra_key": "should be allowed",
         "another_extra": 123,
     }
-    field = FieldV1.from_dict(d)
-    assert field.name == "test_field"
-    assert field.type == "keyword"
+    f = FieldV1.from_dict(d)
+    assert f.name == "test_field"
+    assert f.type == "keyword"
 
 
 def test_fieldv1_from_dict_strict_mode():
@@ -199,6 +206,8 @@ def test_fieldv1_from_dict_strict_mode():
 
 
 def test_fieldv1_from_dict_roundtrip():
+    from dataclasses import asdict
+
     original = FieldV1(
         name="maxbound",
         type="integer",
@@ -222,9 +231,10 @@ def test_fieldv2_from_dict_ignores_extra_keys():
         "extra_key": "should be allowed",
         "another_extra": 123,
     }
-    field = FieldV2.from_dict(d)
-    assert field.name == "test_field"
-    assert field.type == "keyword"
+    f = FieldBase.from_dict(d)
+    assert f.name == "test_field"
+    assert f.type == "keyword"
+    assert isinstance(f, Keyword)
 
 
 def test_fieldv2_from_dict_strict_mode():
@@ -234,22 +244,20 @@ def test_fieldv2_from_dict_strict_mode():
         "extra_key": "should cause error",
     }
     with pytest.raises(ValueError, match="Unrecognized keys in field data"):
-        FieldV2.from_dict(d, strict=True)
+        FieldBase.from_dict(d, strict=True)
 
 
 def test_fieldv2_from_dict_roundtrip():
-    original = FieldV2(
+    original = Integer(
         name="nper",
-        type="integer",
-        block="dimensions",
         description="number of stress periods",
         optional=False,
     )
-    d = asdict(original)
-    reconstructed = FieldV2.from_dict(d)
+    d = original.model_dump()
+    reconstructed = FieldBase.from_dict(d)
+    assert isinstance(reconstructed, Integer)
     assert reconstructed.name == original.name
     assert reconstructed.type == original.type
-    assert reconstructed.block == original.block
     assert reconstructed.description == original.description
     assert reconstructed.optional == original.optional
 
@@ -276,12 +284,12 @@ def test_dfn_from_dict_with_v1_field_dicts():
     assert "options" in dfn.blocks
     assert "save_flows" in dfn.blocks["options"]
 
-    field = dfn.blocks["options"]["save_flows"]
-    assert isinstance(field, FieldV1)
-    assert field.name == "save_flows"
-    assert field.type == "keyword"
-    assert field.tagged is True
-    assert field.in_record is False
+    f = dfn.blocks["options"]["save_flows"]
+    assert isinstance(f, FieldV1)
+    assert f.name == "save_flows"
+    assert f.type == "keyword"
+    assert f.tagged is True
+    assert f.in_record is False
 
 
 def test_dfn_from_dict_with_v2_field_dicts():
@@ -305,11 +313,11 @@ def test_dfn_from_dict_with_v2_field_dicts():
     assert "dimensions" in dfn.blocks
     assert "nper" in dfn.blocks["dimensions"]
 
-    field = dfn.blocks["dimensions"]["nper"]
-    assert isinstance(field, FieldV2)
-    assert field.name == "nper"
-    assert field.type == "integer"
-    assert field.optional is False
+    f = dfn.blocks["dimensions"]["nper"]
+    assert isinstance(f, Integer)
+    assert f.name == "nper"
+    assert f.type == "integer"
+    assert f.optional is False
 
 
 def test_dfn_from_dict_defaults_to_v2_fields():
@@ -326,25 +334,26 @@ def test_dfn_from_dict_defaults_to_v2_fields():
     }
     dfn = Dfn.from_dict(d)
     assert dfn.blocks is not None
-    field = dfn.blocks["options"]["some_field"]
-    assert isinstance(field, FieldV2)
+    f = dfn.blocks["options"]["some_field"]
+    assert isinstance(f, Keyword)
+    assert isinstance(f, FieldBase)
     assert dfn.schema_version == Version("2")
 
 
 def test_dfn_from_dict_with_already_deserialized_fields():
-    field = FieldV2(name="test", type="keyword")
+    kw = Keyword(name="test")
     d = {
         "schema_version": Version("2"),
         "name": "test-dfn",
         "blocks": {
             "options": {
-                "test": field,
+                "test": kw,
             },
         },
     }
     dfn = Dfn.from_dict(d)
     assert dfn.blocks is not None
-    assert dfn.blocks["options"]["test"] is field
+    assert dfn.blocks["options"]["test"] is kw
 
 
 @requires_pkg("boltons")
@@ -383,7 +392,7 @@ def test_validate_nonexistent_file(function_tmpdir):
 
 
 def test_fieldv1_to_fieldv2_conversion():
-    """Test that FieldV1 instances are properly converted to FieldV2."""
+    """Test that FieldV1 instances are properly converted to typed v2 instances."""
     from modflow_devtools.dfns import map
 
     dfn_v1 = Dfn(
@@ -417,68 +426,57 @@ def test_fieldv1_to_fieldv2_conversion():
     assert "save_flows" in dfn_v2.blocks["options"]
 
     save_flows = dfn_v2.blocks["options"]["save_flows"]
-    assert isinstance(save_flows, FieldV2)
+    assert isinstance(save_flows, Keyword)
+    assert isinstance(save_flows, FieldBase)
     assert save_flows.name == "save_flows"
     assert save_flows.type == "keyword"
-    assert save_flows.block == "options"
     assert save_flows.description == "save calculated flows"
-    assert hasattr(save_flows, "tagged")
     assert not hasattr(save_flows, "in_record")
     assert not hasattr(save_flows, "reader")
 
     some_float = dfn_v2.blocks["options"]["some_float"]
-    assert isinstance(some_float, FieldV2)
+    assert isinstance(some_float, Double)
     assert some_float.name == "some_float"
     assert some_float.type == "double"
-    assert some_float.block == "options"
     assert some_float.description == "a floating point value"
 
 
 def test_fieldv1_to_fieldv2_conversion_with_children():
-    """Test that FieldV1 with nested children are properly converted to FieldV2."""
+    """Test that FieldV1 with nested children are properly converted to typed v2 instances."""
     from modflow_devtools.dfns import map
-
-    # Create nested fields for a record
-    child_field_v1 = FieldV1(
-        name="cellid",
-        type="integer",
-        block="period",
-        description="cell identifier",
-        in_record=True,
-        tagged=False,
-    )
-
-    parent_field_v1 = FieldV1(
-        name="stress_period_data",
-        type="recarray cellid",
-        block="period",
-        description="stress period data",
-        in_record=False,
-    )
 
     dfn_v1 = Dfn(
         schema_version=Version("1"),
         name="test-dfn",
         blocks={
             "period": {
-                "stress_period_data": parent_field_v1,
-                "cellid": child_field_v1,
+                "stress_period_data": FieldV1(
+                    name="stress_period_data",
+                    type="recarray cellid",
+                    block="period",
+                    description="stress period data",
+                    in_record=False,
+                ),
+                "cellid": FieldV1(
+                    name="cellid",
+                    type="integer",
+                    block="period",
+                    description="cell identifier",
+                    in_record=True,
+                    tagged=False,
+                ),
             }
         },
     )
 
-    # Convert to v2
     dfn_v2 = map(dfn_v1, schema_version="2")
-
-    # Check that all fields are FieldV2 instances
     assert dfn_v2.blocks is not None
-    for block_name, block_fields in dfn_v2.blocks.items():
-        for field_name, field in block_fields.items():
-            assert isinstance(field, FieldV2)
-            # Check nested children too
-            if field.children:
-                for child_name, child_field in field.children.items():
-                    assert isinstance(child_field, FieldV2)
+    for block_fields in dfn_v2.blocks.values():
+        for f in block_fields.values():
+            assert isinstance(f, FieldBase)
+            if f.children:
+                for child in f.children.values():
+                    assert isinstance(child, FieldBase)
 
 
 def test_period_block_conversion():
@@ -517,13 +515,13 @@ def test_period_block_conversion():
     dfn_v2 = map(dfn_v1, schema_version="2")
 
     period_block = dfn_v2.blocks["period"]
-    assert "cellid" not in period_block  # cellid removed
+    assert "cellid" not in period_block
     assert "q" in period_block
-    assert isinstance(period_block["q"], FieldV2)
-    # Shape should be transformed: maxbound removed, nper and nnodes added
-    assert "nper" in period_block["q"].shape
-    assert "nnodes" in period_block["q"].shape
-    assert "maxbound" not in period_block["q"].shape
+    q = period_block["q"]
+    assert isinstance(q, Array)
+    assert "nper" in q.shape
+    assert "nodes" in q.shape
+    assert "maxbound" not in q.shape
 
 
 def test_record_type_conversion():
@@ -560,17 +558,17 @@ def test_record_type_conversion():
     dfn_v2 = map(dfn_v1, schema_version="2")
 
     auxrecord = dfn_v2.blocks["options"]["auxrecord"]
-    assert isinstance(auxrecord, FieldV2)
+    assert isinstance(auxrecord, Record)
     assert auxrecord.type == "record"
     assert auxrecord.children is not None
     assert "auxiliary" in auxrecord.children
     assert "auxname" in auxrecord.children
-    assert isinstance(auxrecord.children["auxiliary"], FieldV2)
-    assert isinstance(auxrecord.children["auxname"], FieldV2)
+    assert isinstance(auxrecord.children["auxiliary"], Keyword)
+    assert isinstance(auxrecord.children["auxname"], String)
 
 
 def test_keystring_type_conversion():
-    """Test keystring type conversion."""
+    """Test keystring (union) type conversion."""
     from modflow_devtools.dfns import map
 
     dfn_v1 = Dfn(
@@ -610,7 +608,7 @@ def test_keystring_type_conversion():
     dfn_v2 = map(dfn_v1, schema_version="2")
 
     obs_rec = dfn_v2.blocks["options"]["obs_filerecord"]
-    assert isinstance(obs_rec, FieldV2)
+    assert isinstance(obs_rec, Record)
     assert obs_rec.type == "record"
     assert obs_rec.children is not None
-    assert all(isinstance(child, FieldV2) for child in obs_rec.children.values())
+    assert all(isinstance(child, FieldBase) for child in obs_rec.children.values())
