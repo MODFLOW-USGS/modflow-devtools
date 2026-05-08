@@ -1,4 +1,6 @@
+import warnings
 from io import BytesIO, StringIO
+from pathlib import Path
 from typing import Optional, Union
 
 from modflow_devtools.imports import import_optional_dependency
@@ -136,6 +138,47 @@ def readable_array_snapshot(snapshot, snapshot_disable):
 
 
 # pytest config hooks
+
+_NUMPY_VERSION_FILENAME = ".numpy_snapshot_version"
+
+
+def _find_snapshot_dirs(rootdir: Path) -> list:
+    return [p for p in rootdir.rglob("__snapshots__") if p.is_dir()]
+
+
+def pytest_sessionstart(session):
+    if np is None:
+        return
+    current_major = int(np.__version__.split(".")[0])
+    rootdir = Path(session.config.rootdir)
+    for snap_dir in _find_snapshot_dirs(rootdir):
+        version_file = snap_dir / _NUMPY_VERSION_FILENAME
+        if not version_file.exists():
+            continue
+        stored = version_file.read_text().strip()
+        try:
+            stored_major = int(stored.split(".")[0])
+        except (ValueError, IndexError):
+            continue
+        if stored_major != current_major:
+            warnings.warn(
+                f"NumPy major version changed from {stored_major} to {current_major}. "
+                "Array snapshots may no longer match. "
+                "Regenerate them with: pytest --snapshot-update",
+                UserWarning,
+                stacklevel=2,
+            )
+            break
+
+
+def pytest_sessionfinish(session, exitstatus):
+    if np is None:
+        return
+    if not getattr(session.config.option, "update_snapshots", False):
+        return
+    rootdir = Path(session.config.rootdir)
+    for snap_dir in _find_snapshot_dirs(rootdir):
+        (snap_dir / _NUMPY_VERSION_FILENAME).write_text(np.__version__ + "\n")
 
 
 def pytest_addoption(parser):

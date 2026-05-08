@@ -22,4 +22,18 @@ Snapshot comparisons can be disabled by invoked `pytest` with the `--snapshot-di
 
 ## Caveats & gotchas
 
-NumPy major versions may introduce changes to `np.save()`'s binary format, causing binary array snapshot failures for arrays with object dtypes. To avoid this, check object (e.g. string) columns explicitly and then omit them from the comparison array.
+### NumPy version compatibility
+
+Snapshot files are tied to the NumPy major version used to generate them. Upgrading NumPy may cause snapshot failures.
+
+- **`array_snapshot` (binary)**: `np.save()` uses `.npy` format version 3.0 in NumPy 2.0+ for arrays whose dtype description cannot be encoded as Latin-1 (e.g. structured arrays with unicode field names). Snapshots generated with NumPy 1.x will not match bytes produced by NumPy 2.x for these arrays. For plain numeric dtypes (`float64`, `int32`, etc.) the format is stable across versions.
+- **`readable_array_snapshot` (text)**: `np.array2string()` output can differ between major versions for structured arrays, void dtypes, and object arrays. Plain numeric arrays are generally stable.
+- **`text_array_snapshot` (text)**: `np.savetxt()` output is stable across NumPy versions and is the safest choice when version-portability matters.
+
+As such, snapshot fixtures should ideally be used in a dependency-locked environment. At minimum, NumPy should be pinned, and after upgrading NumPy, all snapshots regenerated:
+
+```shell
+pytest --snapshot-update
+```
+
+To make NumPy version mismatches easier to notice, a warning will be emitted at the start of a test session if the NumPy major version differs from the one used to create the snapshots. This mechanism works by storing a `.numpy_snapshot_version` file in the `__snapshots__` directory. This file should be committed alongside snapshot files.
