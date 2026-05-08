@@ -362,8 +362,8 @@ def is_github_rate_limited() -> bool | None:
         return None
 
 
-_has_exe_cache = {}
-_has_pkg_cache = {}
+_has_exe_cache = {}  # type: ignore
+_has_pkg_cache = {}  # type: ignore
 
 
 def has_exe(exe):

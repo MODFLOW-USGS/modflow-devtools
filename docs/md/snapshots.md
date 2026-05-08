@@ -27,7 +27,7 @@ Snapshot comparisons can be disabled by invoked `pytest` with the `--snapshot-di
 Snapshot files are tied to the NumPy major version used to generate them. Upgrading NumPy may cause snapshot failures.
 
 - **`array_snapshot` (binary)**: `np.save()` uses `.npy` format version 3.0 in NumPy 2.0+ for arrays whose dtype description cannot be encoded as Latin-1 (e.g. structured arrays with unicode field names). Snapshots generated with NumPy 1.x will not match bytes produced by NumPy 2.x for these arrays. For plain numeric dtypes (`float64`, `int32`, etc.) the format is stable across versions.
-- **`readable_array_snapshot` (text)**: `np.array2string()` output can differ between major versions for structured arrays, void dtypes, and object arrays. Plain numeric arrays are generally stable.
+- **`readable_array_snapshot` (text)**: `np.array2string()` array printing is stable across NumPy major versions. However, scalar `__repr__` changed in NumPy 2.0 (e.g. `np.float64(1.1)` instead of `1.1`), which does not affect array element printing but may affect snapshot output if scalars are passed directly rather than as arrays.
 - **`text_array_snapshot` (text)**: `np.savetxt()` output is stable across NumPy versions and is the safest choice when version-portability matters.
 
 As such, snapshot fixtures should ideally be used in a dependency-locked environment. At minimum, NumPy should be pinned, and after upgrading NumPy, all snapshots regenerated:
