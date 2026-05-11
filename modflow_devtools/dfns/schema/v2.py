@@ -1,6 +1,6 @@
 import ast
 import re
-from collections.abc import Iterator, Mapping, Sequence
+from collections.abc import Mapping
 from os import PathLike
 from typing import Annotated, Any, Literal
 
@@ -20,10 +20,6 @@ from pydantic_core import core_schema
 
 class FieldBase(BaseModel):
     model_config = ConfigDict(frozen=True)
-
-    @property
-    def children(self) -> "dict[str, Field] | None":
-        return None
 
     @classmethod
     def from_dict(cls, d: dict, strict: bool = False) -> "FieldBase":
@@ -166,7 +162,7 @@ class Array(FieldBase):
         return self
 
 
-class Record(FieldBase, Mapping):
+class Record(FieldBase):
     type: Literal["record"] = "record"
     name: str
     longname: str | None = None
@@ -180,17 +176,8 @@ class Record(FieldBase, Mapping):
     def children(self) -> "dict[str, Field]":
         return self.fields  # type: ignore[return-value]
 
-    def __getitem__(self, key: str) -> "Field":
-        return self.children[key]
 
-    def __iter__(self) -> Iterator[str]:
-        return iter(self.children)
-
-    def __len__(self) -> int:
-        return len(self.children)
-
-
-class Union(FieldBase, Mapping):
+class Union(FieldBase):
     type: Literal["union"] = "union"
     name: str
     longname: str | None = None
@@ -204,17 +191,8 @@ class Union(FieldBase, Mapping):
     def children(self) -> "dict[str, Field]":
         return self.arms  # type: ignore[return-value]
 
-    def __getitem__(self, key: str) -> "Field":
-        return self.children[key]
 
-    def __iter__(self) -> Iterator[str]:
-        return iter(self.children)
-
-    def __len__(self) -> int:
-        return len(self.children)
-
-
-class List(FieldBase, Sequence):
+class List(FieldBase):
     type: Literal["list"] = "list"
     name: str
     longname: str | None = None
@@ -228,15 +206,6 @@ class List(FieldBase, Sequence):
     @property
     def children(self) -> "dict[str, Field]":
         return {"item": self.item}  # type: ignore[return-value]
-
-    def __getitem__(self, key: str) -> "Field":
-        return self.children[key]
-
-    def __iter__(self) -> Iterator[str]:
-        return iter(self.children)
-
-    def __len__(self) -> int:
-        return len(self.children)
 
 
 Field = Annotated[
@@ -421,7 +390,7 @@ def _resolve_derived_dims(component: "ComponentBase", known_dims: set[str]) -> l
     return order
 
 
-class Block(BaseModel, Mapping):
+class Block(BaseModel):
     model_config = ConfigDict(frozen=True)
     name: str
     fields: dict[str, Field]
@@ -436,15 +405,6 @@ class Block(BaseModel, Mapping):
                 k: (val.model_dump() if isinstance(val, FieldBase) else val) for k, val in v.items()
             }
         return v
-
-    def __getitem__(self, key: str) -> Field:
-        return self.fields[key]
-
-    def __iter__(self) -> Iterator[str]:
-        return iter(self.fields)
-
-    def __len__(self) -> int:
-        return len(self.fields)
 
 
 Blocks = Mapping[str, Block]
@@ -557,7 +517,6 @@ def _validate_shape_element(
             f"does not resolve to a known dim "
             f"(explicit, derived, or grid)"
         )
-        return
 
     if m := _LOOKUP_RE.fullmatch(element):
         block_name, col_name, fk_field_name = m.groups()
@@ -716,20 +675,9 @@ def _validate_array_shapes(
                             _check_array(subfield, item)
 
 
-class DfnSpec(BaseModel, Mapping):
+class DfnSpec(BaseModel):
     model_config = ConfigDict(frozen=True)
     components: dict[str, Component]
-
-    # ── Mapping protocol ─────────────────────────────────────────────────────
-
-    def __getitem__(self, key: str) -> Component:
-        return self.components[key]
-
-    def __iter__(self) -> Iterator[str]:
-        return iter(self.components)
-
-    def __len__(self) -> int:
-        return len(self.components)
 
     # ── Properties ───────────────────────────────────────────────────────────
 

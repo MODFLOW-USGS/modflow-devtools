@@ -93,25 +93,25 @@ class TestDfnSpec:
         # Test __len__
         assert len(spec) > 100  # Should have many components
 
-        # Test __iter__
-        names = list(spec)
+        # Test components iteration
+        names = list(spec.components)
         assert "sim-nam" in names
         assert "gwf-nam" in names
         assert "gwf-chd" in names
 
-        # Test __getitem__
-        gwf_chd = spec["gwf-chd"]
+        # Test components access
+        gwf_chd = spec.components["gwf-chd"]
         assert gwf_chd.name == "gwf-chd"
         assert gwf_chd.parent == "gwf-nam"
 
-        # Test __contains__
-        assert "gwf-chd" in spec
-        assert "nonexistent" not in spec
+        # Test components containment
+        assert "gwf-chd" in spec.components
+        assert "nonexistent" not in spec.components
 
-        # Test keys(), values(), items()
-        assert "gwf-wel" in spec.keys()
-        assert any(d.name == "gwf-wel" for d in spec.values())
-        assert any(n == "gwf-wel" for n, d in spec.items())
+        # Test components keys(), values(), items()
+        assert "gwf-wel" in spec.components.keys()
+        assert any(d.name == "gwf-wel" for d in spec.components.values())
+        assert any(n == "gwf-wel" for n, d in spec.components.items())
 
     def test_getitem_raises_keyerror(self, dfn_dir):
         """Test that __getitem__ raises KeyError for missing components."""
@@ -120,7 +120,7 @@ class TestDfnSpec:
         spec = DfnSpec.load(dfn_dir)
 
         with pytest.raises(KeyError, match="nonexistent"):
-            _ = spec["nonexistent"]
+            _ = spec.components["nonexistent"]
 
     def test_hierarchical_access(self, dfn_dir):
         """Test accessing components through the hierarchical tree."""

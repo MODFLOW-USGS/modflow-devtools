@@ -22,7 +22,8 @@ from pydantic import BaseModel, Field
 if TYPE_CHECKING:
     import pooch
 
-    from modflow_devtools.dfns import Dfn, DfnSpec
+    from modflow_devtools.dfns import DfnSpec
+    from modflow_devtools.dfns.schema.v2 import Component
 
 __all__ = [
     "BootstrapConfig",
@@ -311,13 +312,13 @@ class DfnRegistry(BaseModel):
         return self.spec.schema_version
 
     @property
-    def components(self) -> dict[str, Dfn]:
+    def components(self) -> dict[str, Component]:
         """Get all components as a flat dictionary."""
-        return dict(self.spec.items())
+        return dict(self.spec.components)
 
-    def get_dfn(self, component: str) -> Dfn:
+    def get_dfn(self, component: str) -> Component:
         """
-        Get a DFN by component name.
+        Get a component definition by name.
 
         Parameters
         ----------
@@ -326,10 +327,10 @@ class DfnRegistry(BaseModel):
 
         Returns
         -------
-        Dfn
+        Component
             The requested component definition.
         """
-        return self.spec[component]
+        return self.spec.components[component]
 
     def get_dfn_path(self, component: str) -> Path:
         """

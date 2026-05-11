@@ -32,7 +32,7 @@ def _dim_block(*names: str) -> Block:
     """Build a dimensions Block with the named Integer dimension fields."""
     return Block(
         name="dimensions",
-        fields={n: Integer(name=n, dimension=True) for n in names},
+        fields={n: Integer(name=n, dimension="component") for n in names},
     )
 
 
@@ -252,7 +252,7 @@ def test_dfnspec_construction_validates_dims():
         derived_dims={"nodes": "nlay * nrow * ncol"},
     )
     spec = DfnSpec(components={"gwf-dis": pkg})
-    assert "gwf-dis" in spec
+    assert "gwf-dis" in spec.components
 
 
 def test_dfnspec_construction_cycle_raises():
@@ -270,7 +270,7 @@ def test_dfnspec_construction_unknown_operand_raises():
 def test_dfnspec_no_derived_dims_constructs_fine():
     pkg = _pkg("gwf-chd", blocks=None, derived_dims=None)
     spec = DfnSpec(components={"gwf-chd": pkg})
-    assert "gwf-chd" in spec
+    assert "gwf-chd" in spec.components
 
 
 # ── DfnSpec.explicit_dims_for ─────────────────────────────────────────────────
@@ -359,29 +359,29 @@ def test_dfnspec_grid_dims_for_non_dis_siblings_excluded():
 # ── DfnSpec Mapping protocol ──────────────────────────────────────────────────
 
 
-def test_dfnspec_mapping_getitem():
+def test_dfnspec_components_getitem():
     pkg = _pkg("gwf-chd", parent="gwf-nam")
     spec = DfnSpec(components={"gwf-chd": pkg})
-    assert spec["gwf-chd"] is pkg
+    assert spec.components["gwf-chd"] is pkg
 
 
-def test_dfnspec_mapping_iter():
+def test_dfnspec_components_iter():
     pkg = _pkg("gwf-chd", parent="gwf-nam")
     spec = DfnSpec(components={"gwf-chd": pkg})
-    assert list(spec) == ["gwf-chd"]
+    assert list(spec.components) == ["gwf-chd"]
 
 
-def test_dfnspec_mapping_len():
+def test_dfnspec_components_len():
     pkgs = {f"gwf-p{i}": _pkg(f"gwf-p{i}") for i in range(3)}
     spec = DfnSpec(components=pkgs)
-    assert len(spec) == 3
+    assert len(spec.components) == 3
 
 
-def test_dfnspec_mapping_contains():
+def test_dfnspec_components_contains():
     pkg = _pkg("gwf-chd")
     spec = DfnSpec(components={"gwf-chd": pkg})
-    assert "gwf-chd" in spec
-    assert "gwf-rch" not in spec
+    assert "gwf-chd" in spec.components
+    assert "gwf-rch" not in spec.components
 
 
 # ── DfnSpec.schema_version ────────────────────────────────────────────────────
@@ -666,7 +666,7 @@ def test_dfnspec_valid_top_level_array_shape():
     )
     gwf = Model(name="gwf-nam", blocks=None)
     spec = DfnSpec(components={"gwf-nam": gwf, "gwf-dis": dis})
-    assert "gwf-dis" in spec
+    assert "gwf-dis" in spec.components
 
 
 def test_dfnspec_valid_array_in_record():
@@ -775,7 +775,7 @@ def _fk_pkg_and_spec(fk_val, pk_on_item=True, fk_ref=None):
 def test_validate_fk_fields_valid():
     lak, gwf = _fk_pkg_and_spec("packagedata", pk_on_item=True)
     spec = DfnSpec(components={"gwf-nam": gwf, "gwf-lak": lak})
-    assert "gwf-lak" in spec
+    assert "gwf-lak" in spec.components
 
 
 def test_validate_fk_fields_unknown_block_raises():
@@ -793,7 +793,7 @@ def test_validate_fk_fields_no_pk_on_item_raises():
 def test_validate_fk_fields_fk_ref_valid():
     lak, gwf = _fk_pkg_and_spec("packagedata", pk_on_item=True, fk_ref="gwf-nam")
     spec = DfnSpec(components={"gwf-nam": gwf, "gwf-lak": lak})
-    assert "gwf-lak" in spec
+    assert "gwf-lak" in spec.components
 
 
 def test_validate_fk_fields_fk_ref_unknown_raises():
@@ -809,7 +809,7 @@ def test_validate_fk_fields_no_fk_set_passes():
     pkg = Package(name="gwf-test", blocks={"data": block})
     gwf = Model(name="gwf-nam", blocks=None)
     spec = DfnSpec(components={"gwf-nam": gwf, "gwf-test": pkg})
-    assert "gwf-test" in spec
+    assert "gwf-test" in spec.components
 
 
 def test_validate_fk_fields_called_directly():

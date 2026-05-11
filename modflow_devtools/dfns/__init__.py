@@ -36,6 +36,7 @@ from modflow_devtools.dfns.schema.v2 import (
     Array,
     Block,
     Blocks,
+    Component,
     DfnSpec,
     Double,
     FieldBase,
@@ -69,6 +70,7 @@ __all__ = [
     "Array",
     "Block",
     "Blocks",
+    "Component",
     "Dfn",
     "DfnRegistry",
     "DfnRegistryDiscoveryError",
@@ -343,18 +345,12 @@ class MapV1To2(SchemaMap):
             preserve_case: bool = _to_bool(fd.get("preserve_case"), False)
             time_series: bool = _to_bool(fd.get("time_series"), False)
             valid = fd.get("valid")
+            _default_raw = fd.get("default")
             default = (
-                try_literal_eval(fd.get("default")) if _type != "string" else fd.get("default")
+                try_literal_eval(_default_raw)
+                if _type != "string" and isinstance(_default_raw, str)
+                else _default_raw
             )
-
-            common = {
-                "name": _name,
-                "longname": longname,
-                "description": description,
-                "optional": optional,
-                "default": default,
-                "developmode": developmode,
-            }
 
             _COL_FK_RE = re.compile(r"^([A-Za-z_]\w*)\(([A-Za-z_]\w*)\)$")
 
@@ -414,10 +410,23 @@ class MapV1To2(SchemaMap):
             def _to_scalar() -> FieldBase:
                 assert _type is not None
                 if _type == "keyword":
-                    return Keyword(**common, netcdf=netcdf)
+                    return Keyword(
+                        name=_name,
+                        longname=longname,
+                        description=description,
+                        optional=optional,
+                        default=default,
+                        developmode=developmode,
+                        netcdf=netcdf,
+                    )
                 if _type == "string":
                     return String(
-                        **common,
+                        name=_name,
+                        longname=longname,
+                        description=description,
+                        optional=optional,
+                        default=default,
+                        developmode=developmode,
                         netcdf=netcdf,
                         tagged=tagged,
                         valid=list(valid) if valid else None,
@@ -430,7 +439,9 @@ class MapV1To2(SchemaMap):
                     v = [int(x) for x in valid] if valid else None
                     if fd.get("block") == "dimensions":
                         if _name in GRID_DIM_NAMESPACE:
-                            _dim_scope: str | None = "model"
+                            _dim_scope: (
+                                Literal["record", "component", "model", "simulation"] | None
+                            ) = "model"
                         elif dfn.name == "sim-tdis" and _name == "nper":
                             _dim_scope = "simulation"
                         else:
@@ -438,7 +449,12 @@ class MapV1To2(SchemaMap):
                     else:
                         _dim_scope = None
                     return Integer(
-                        **common,
+                        name=_name,
+                        longname=longname,
+                        description=description,
+                        optional=optional,
+                        default=default,
+                        developmode=developmode,
                         netcdf=netcdf,
                         tagged=tagged,
                         valid=v,
@@ -446,7 +462,17 @@ class MapV1To2(SchemaMap):
                         dimension=_dim_scope,
                     )
                 if _type in ("double", "double precision"):
-                    return Double(**common, netcdf=netcdf, tagged=tagged, time_series=time_series)
+                    return Double(
+                        name=_name,
+                        longname=longname,
+                        description=description,
+                        optional=optional,
+                        default=default,
+                        developmode=developmode,
+                        netcdf=netcdf,
+                        tagged=tagged,
+                        time_series=time_series,
+                    )
                 raise TypeError(f"Unsupported scalar type: {_type!r}")
 
             def _row_field() -> "Record | Union":
@@ -502,7 +528,7 @@ class MapV1To2(SchemaMap):
                     description=(
                         (description or "").replace("is the list of", "is the record of") or None
                     ),
-                    fields=children,
+                    fields=children,  # type: ignore[arg-type]
                 )
 
             def _union_fields() -> dict:
@@ -533,18 +559,43 @@ class MapV1To2(SchemaMap):
 
             if _type.startswith("recarray"):
                 item = _row_field()
-                return List(item=item, **common, netcdf=netcdf)
+                return List(
+                    name=_name,
+                    longname=longname,
+                    description=description,
+                    optional=optional,
+                    default=default,
+                    developmode=developmode,
+                    netcdf=netcdf,
+                    item=item,
+                )
 
             if _type.startswith("keystring"):
                 arms = _union_fields()
-                return Union(arms=arms, **common)
+                return Union(
+                    name=_name,
+                    longname=longname,
+                    description=description,
+                    optional=optional,
+                    default=default,
+                    developmode=developmode,
+                    arms=arms,  # type: ignore[arg-type]
+                )
 
             if _type.startswith("record"):
                 rec_fields = _record_fields()
-                return Record(fields=rec_fields, **common)
+                return Record(
+                    name=_name,
+                    longname=longname,
+                    description=description,
+                    optional=optional,
+                    default=default,
+                    developmode=developmode,
+                    fields=rec_fields,  # type: ignore[arg-type]
+                )
 
             if shape_str is not None:
-                dtype_map = {
+                dtype_map: dict[str, Literal["keyword", "integer", "double", "string"]] = {
                     "double precision": "double",
                     "double": "double",
                     "integer": "integer",
@@ -558,7 +609,12 @@ class MapV1To2(SchemaMap):
                         # the v1 shape expression. dimension=True is set in a
                         # second pass if another array references this field.
                         return Array(
-                            **common,
+                            name=_name,
+                            longname=longname,
+                            description=description,
+                            optional=optional,
+                            default=default,
+                            developmode=developmode,
                             netcdf=netcdf,
                             time_series=time_series,
                             dtype="string",
@@ -566,7 +622,12 @@ class MapV1To2(SchemaMap):
                         )
                     parsed_shape = _parse_shape(shape_str)
                     return Array(
-                        **common,
+                        name=_name,
+                        longname=longname,
+                        description=description,
+                        optional=optional,
+                        default=default,
+                        developmode=developmode,
                         netcdf=netcdf,
                         time_series=time_series,
                         dtype=dtype,
@@ -672,6 +733,7 @@ class MapV1To2(SchemaMap):
                     f = f.model_copy(update={"arms": _mark(f.arms)})
                 elif isinstance(f, List):
                     item = f.item
+                    new_item: Record | Union
                     if isinstance(item, Record):
                         local_dims = _record_local_dims(item)
                         new_item_fields = _mark(item.fields)
@@ -685,10 +747,8 @@ class MapV1To2(SchemaMap):
                                 for fn, sf in new_item_fields.items()
                             }
                         new_item = item.model_copy(update={"fields": new_item_fields})
-                    elif isinstance(item, Union):
-                        new_item = item.model_copy(update={"arms": _mark(item.arms)})
                     else:
-                        new_item = item
+                        new_item = item.model_copy(update={"arms": _mark(item.arms)})
                     f = f.model_copy(update={"item": new_item})
                 result[name] = f
             return result
@@ -774,12 +834,11 @@ class MapV1To2(SchemaMap):
                     f = f.model_copy(update={"arms": _apply(f.arms, block_name)})
                 elif isinstance(f, List):
                     item = f.item
+                    new_item: Record | Union
                     if isinstance(item, Record):
                         new_item = _apply_record(item, block_name)
-                    elif isinstance(item, Union):
-                        new_item = item.model_copy(update={"arms": _apply(item.arms, block_name)})
                     else:
-                        new_item = item
+                        new_item = item.model_copy(update={"arms": _apply(item.arms, block_name)})
                     f = f.model_copy(update={"item": new_item})
                 result[name] = f
             return result
@@ -850,7 +909,7 @@ class MapV1To2(SchemaMap):
             blocks = {
                 block_name: Block(
                     name=block_name,
-                    fields={k: v for k, v in block_fields.items() if isinstance(v, FieldBase)},
+                    fields={k: v for k, v in block_fields.items() if isinstance(v, FieldBase)},  # type: ignore[misc]
                 )
                 for block_name, block_fields in dfn.blocks.items()
                 if isinstance(block_fields, dict)
@@ -873,7 +932,9 @@ class MapV1To2(SchemaMap):
         if name.startswith("utl-"):
             return Package(**common, subtype="utility", multi=dfn.multi, variant_of=dfn.variant_of)
         has_period = bool(blocks and any("period" in k for k in blocks))
-        subtype = "advanced" if dfn.advanced else "stress" if has_period else None
+        subtype: Literal["solution", "exchange", "stress", "advanced", "utility"] | None = (
+            "advanced" if dfn.advanced else "stress" if has_period else None
+        )
         return Package(**common, subtype=subtype, multi=dfn.multi, variant_of=dfn.variant_of)
 
     def map(self, dfn: "Dfn") -> "Dfn":
@@ -1142,9 +1203,9 @@ def get_dfn(
     ref: str = "develop",
     source: str = "modflow6",
     path: str | PathLike | None = None,
-) -> "Dfn":
+) -> "Component":
     """
-    Get a DFN by component name from the registry.
+    Get a component definition by name from the registry.
     """
     registry = _get_registry_module()
     reg = registry.get_registry(source=source, ref=ref, path=path)
@@ -1175,4 +1236,4 @@ def list_components(
     """
     registry = _get_registry_module()
     reg = registry.get_registry(source=source, ref=ref, path=path)
-    return list(reg.spec.keys())
+    return list(reg.spec.components.keys())

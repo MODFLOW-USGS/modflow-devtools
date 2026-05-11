@@ -128,7 +128,7 @@ def cmd_list(args: argparse.Namespace) -> int:
 
     try:
         registry = get_registry(source=source, ref=ref, auto_sync=True)
-        components = list(registry.spec.keys())
+        components = list(registry.spec.components.keys())
 
         print(f"Components in {source}@{ref} ({len(components)} total):")
         for component in sorted(components):
