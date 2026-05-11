@@ -11,12 +11,10 @@ from modflow_devtools.dfns.schema.v2 import (
     Array,
     Double,
     FieldBase,
-    FieldV2,
     Integer,
     Keyword,
     Record,
     String,
-    Union,
 )
 from modflow_devtools.markers import requires_pkg
 

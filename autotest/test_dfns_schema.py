@@ -7,18 +7,15 @@ import pytest
 from modflow_devtools.dfns.schema.v2 import (
     Array,
     Block,
-    ComponentBase,
     DfnSpec,
     Double,
     Integer,
-    Keyword,
     List,
     Model,
     Package,
     Record,
     Simulation,
     String,
-    Union,
     _collect_explicit_dims,
     _known_dims_for,
     _names_in_expr,
@@ -27,7 +24,6 @@ from modflow_devtools.dfns.schema.v2 import (
     _validate_shape_element,
     _validate_sum_call,
 )
-
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -41,9 +37,7 @@ def _dim_block(*names: str) -> Block:
 
 
 def _pkg(name: str, blocks=None, derived_dims=None, parent=None, **kw) -> Package:
-    return Package(
-        name=name, blocks=blocks, derived_dims=derived_dims, parent=parent, **kw
-    )
+    return Package(name=name, blocks=blocks, derived_dims=derived_dims, parent=parent, **kw)
 
 
 # ── _collect_explicit_dims ────────────────────────────────────────────────────
@@ -417,9 +411,7 @@ def test_dfnspec_children_of():
     chd = _pkg("gwf-chd", parent="gwf-nam")
     rch = _pkg("gwf-rch", parent="gwf-nam")
     sim = Simulation(name="sim-nam", blocks=None)
-    spec = DfnSpec(
-        components={"sim-nam": sim, "gwf-nam": gwf, "gwf-chd": chd, "gwf-rch": rch}
-    )
+    spec = DfnSpec(components={"sim-nam": sim, "gwf-nam": gwf, "gwf-chd": chd, "gwf-rch": rch})
     children = spec.children_of("gwf-nam")
     assert set(children) == {"gwf-chd", "gwf-rch"}
 
@@ -491,8 +483,8 @@ def test_known_dims_includes_grid_dims():
     chd = _pkg("gwf-chd", parent="gwf-nam")
     spec2 = DfnSpec(components=dict(spec.components) | {"gwf-chd": chd})
     known = _known_dims_for(spec2, "gwf-chd")
-    assert "nodes" in known   # GRID_DIM_NAMESPACE
-    assert "nlay" in known    # from gwf-dis (sibling dis package)
+    assert "nodes" in known  # GRID_DIM_NAMESPACE
+    assert "nlay" in known  # from gwf-dis (sibling dis package)
 
 
 # ── _validate_shape_element: dim reference ────────────────────────────────────
@@ -521,9 +513,7 @@ def test_shape_element_valid_grid_dim():
 
 
 def test_shape_element_valid_derived_dim():
-    arr, pkg, known = _make_ctx(
-        {"nlay", "nrow", "ncol"}, derived={"nodes": "nlay * nrow * ncol"}
-    )
+    arr, pkg, known = _make_ctx({"nlay", "nrow", "ncol"}, derived={"nodes": "nlay * nrow * ncol"})
     _validate_shape_element("nodes", arr, pkg, None, known)
 
 
@@ -585,7 +575,7 @@ def test_shape_element_valid_row_level_lookup():
 
 
 def test_shape_element_lookup_on_top_level_array_raises():
-    arr, enc, pkg, known = _lookup_ctx()
+    arr, _enc, pkg, known = _lookup_ctx()
     with pytest.raises(ValueError, match="not inside a record"):
         _validate_shape_element("packagedata.nlakeconn(lakeno)", arr, pkg, None, known)
 

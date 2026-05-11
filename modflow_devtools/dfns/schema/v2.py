@@ -4,7 +4,17 @@ from collections.abc import Iterator, Mapping, Sequence
 from os import PathLike
 from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field as PydanticField, GetCoreSchemaHandler, field_validator, model_validator
+from packaging.version import Version
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    GetCoreSchemaHandler,
+    field_validator,
+    model_validator,
+)
+from pydantic import (
+    Field as PydanticField,
+)
 from pydantic_core import core_schema
 
 
@@ -152,9 +162,7 @@ class Array(FieldBase):
     @model_validator(mode="after")
     def _validate_dimension(self) -> "Array":
         if self.dimension is not None and self.dtype != "string":
-            raise ValueError(
-                f"Array {self.name!r}: dimension may only be set when dtype='string'"
-            )
+            raise ValueError(f"Array {self.name!r}: dimension may only be set when dtype='string'")
         return self
 
 
@@ -171,8 +179,8 @@ class Record(FieldBase, Mapping):
     @property
     def children(self) -> "dict[str, Field]":
         return self.fields  # type: ignore[return-value]
-    
-    def __getitem__(self, key: str) -> Field:
+
+    def __getitem__(self, key: str) -> "Field":
         return self.children[key]
 
     def __iter__(self) -> Iterator[str]:
@@ -195,8 +203,8 @@ class Union(FieldBase, Mapping):
     @property
     def children(self) -> "dict[str, Field]":
         return self.arms  # type: ignore[return-value]
-    
-    def __getitem__(self, key: str) -> Field:
+
+    def __getitem__(self, key: str) -> "Field":
         return self.children[key]
 
     def __iter__(self) -> Iterator[str]:
@@ -220,8 +228,8 @@ class List(FieldBase, Sequence):
     @property
     def children(self) -> "dict[str, Field]":
         return {"item": self.item}  # type: ignore[return-value]
-    
-    def __getitem__(self, key: str) -> Field:
+
+    def __getitem__(self, key: str) -> "Field":
         return self.children[key]
 
     def __iter__(self) -> Iterator[str]:
@@ -248,9 +256,9 @@ List.model_rebuild()
 # Fallback set of well-known grid dim names used by grid_dims_for and the v1
 # mapper (map_period_block).  Once all dims in the v1 corpus carry explicit
 # "model" scope, this constant becomes unnecessary and will be removed.
-GRID_DIM_NAMESPACE: frozenset[str] = frozenset({
-    "nodes", "nlay", "nrow", "ncol", "ncpl", "nja", "ncelldim", "nvert"
-})
+GRID_DIM_NAMESPACE: frozenset[str] = frozenset(
+    {"nodes", "nlay", "nrow", "ncol", "ncpl", "nja", "ncelldim", "nvert"}
+)
 
 
 def _collect_explicit_dims(component: "ComponentBase") -> set[str]:
@@ -293,11 +301,7 @@ def _names_in_expr(expr: str) -> set[str]:
 
     sum_interior_ids: set[int] = set()
     for node in ast.walk(tree):
-        if (
-            isinstance(node, ast.Call)
-            and isinstance(node.func, ast.Name)
-            and node.func.id == "sum"
-        ):
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == "sum":
             for child in ast.walk(node):
                 if child is not node:
                     sum_interior_ids.add(id(child))
@@ -312,9 +316,7 @@ def _names_in_expr(expr: str) -> set[str]:
 def _validate_sum_call(call: ast.Call, component: "ComponentBase", expr: str) -> None:
     """Validate a sum(list.col) or sum(block.list.col) call in a derived_dims expression."""
     if len(call.args) != 1:
-        raise ValueError(
-            f"sum() in derived_dims must have exactly one argument in {expr!r}"
-        )
+        raise ValueError(f"sum() in derived_dims must have exactly one argument in {expr!r}")
     arg = call.args[0]
     if not isinstance(arg, ast.Attribute):
         raise ValueError(f"sum() argument must be an attribute expression in {expr!r}")
@@ -330,7 +332,7 @@ def _validate_sum_call(call: ast.Call, component: "ComponentBase", expr: str) ->
         raise ValueError(f"Unrecognised sum() form in {expr!r}")
 
     found_block: str | None = None
-    found_list: "List | None" = None
+    found_list: List | None = None
     for block_name, block in (component.blocks or {}).items():
         f = block.fields.get(list_name)
         if isinstance(f, List):
@@ -339,9 +341,7 @@ def _validate_sum_call(call: ast.Call, component: "ComponentBase", expr: str) ->
             break
 
     if found_list is None:
-        raise ValueError(
-            f"sum() references unknown list field {list_name!r} in {expr!r}"
-        )
+        raise ValueError(f"sum() references unknown list field {list_name!r} in {expr!r}")
     if block_qualifier is not None and block_qualifier != found_block:
         raise ValueError(
             f"sum() block qualifier {block_qualifier!r} does not match "
@@ -357,8 +357,7 @@ def _validate_sum_call(call: ast.Call, component: "ComponentBase", expr: str) ->
         )
     if not isinstance(col_field, Integer):
         raise ValueError(
-            f"sum() column {col_name!r} is {type(col_field).__name__}, "
-            f"must be Integer in {expr!r}"
+            f"sum() column {col_name!r} is {type(col_field).__name__}, must be Integer in {expr!r}"
         )
 
 
@@ -395,12 +394,10 @@ def _resolve_derived_dims(component: "ComponentBase", known_dims: set[str]) -> l
         operands = _names_in_expr(expr)
         for op in operands:
             if op not in known_dims and op not in derived_names:
-                raise ValueError(
-                    f"derived_dims {name!r} operand {op!r} is not a known dimension"
-                )
+                raise ValueError(f"derived_dims {name!r} operand {op!r} is not a known dimension")
         deps[name] = operands & derived_names
 
-    in_degree = {n: 0 for n in derived_names}
+    in_degree = dict.fromkeys(derived_names, 0)
     dependents: dict[str, set[str]] = {n: set() for n in derived_names}
     for name, dep_set in deps.items():
         for dep in dep_set:
@@ -436,8 +433,7 @@ class Block(BaseModel, Mapping):
     def _coerce_field_instances(cls, v: Any) -> Any:
         if isinstance(v, dict):
             return {
-                k: (val.model_dump() if isinstance(val, FieldBase) else val)
-                for k, val in v.items()
+                k: (val.model_dump() if isinstance(val, FieldBase) else val) for k, val in v.items()
             }
         return v
 
@@ -454,10 +450,6 @@ class Block(BaseModel, Mapping):
 Blocks = Mapping[str, Block]
 
 
-from packaging.version import Version
-from pydantic import GetCoreSchemaHandler
-from pydantic_core import core_schema
-
 class _VersionPydanticAnnotation:
     @classmethod
     def __get_pydantic_core_schema__(cls, source, handler: GetCoreSchemaHandler):
@@ -465,6 +457,7 @@ class _VersionPydanticAnnotation:
             lambda v: Version(str(v)) if not isinstance(v, Version) else v,
             serialization=core_schema.to_string_ser_schema(),
         )
+
 
 VersionField = Annotated[Version, _VersionPydanticAnnotation]
 
@@ -481,9 +474,11 @@ class ComponentBase(BaseModel):
 class Simulation(ComponentBase):
     type: Literal["simulation"] = "simulation"
 
+
 class Model(ComponentBase):
     type: Literal["model"] = "model"
     solution: str | list[str] | None = None  # compatible solution type(s)
+
 
 class Package(ComponentBase):
     type: Literal["package"] = "package"
@@ -652,9 +647,7 @@ def _validate_fk_fields(component: "ComponentBase", spec: "DfnSpec") -> None:
                         f"{block_name!r} is not a list block in this component"
                     )
                 item = list_field.item
-                item_fields: dict = (
-                    item.fields if isinstance(item, Record) else item.arms
-                )
+                item_fields: dict = item.fields if isinstance(item, Record) else item.arms
                 has_pk = any(getattr(f, "pk", False) for f in item_fields.values())
                 if not has_pk:
                     raise ValueError(

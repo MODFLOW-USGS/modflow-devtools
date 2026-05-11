@@ -16,8 +16,6 @@ from typing import (
     cast,
 )
 
-_IDENT_RE = re.compile(r"^[A-Za-z_]\w*$")
-
 import tomli
 from boltons.dictutils import OMD
 from packaging.version import Version
@@ -45,12 +43,16 @@ from modflow_devtools.dfns.schema.v2 import (
     Integer,
     Keyword,
     List,
-    Path as PathField,
     Record,
     String,
     Union,
 )
+from modflow_devtools.dfns.schema.v2 import (
+    Path as PathField,
+)
 from modflow_devtools.misc import try_literal_eval
+
+_IDENT_RE = re.compile(r"^[A-Za-z_]\w*$")
 
 # Experimental API warning
 warnings.warn(
@@ -112,9 +114,7 @@ Dfns = dict[str, "Dfn"]
 
 class _VersionAnnotation:
     @classmethod
-    def __get_pydantic_core_schema__(
-        cls, source: Any, handler: GetCoreSchemaHandler
-    ) -> Any:
+    def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> Any:
         return core_schema.no_info_plain_validator_function(
             lambda v: Version(str(v)) if not isinstance(v, Version) else v,
             serialization=core_schema.to_string_ser_schema(),
@@ -209,9 +209,7 @@ class Dfn(BaseModel):
                 for field_name, field_data in block_data.items():
                     if isinstance(field_data, dict):
                         if is_v1:
-                            block_fields[field_name] = FieldV1.from_dict(
-                                field_data, strict=strict
-                            )
+                            block_fields[field_name] = FieldV1.from_dict(field_data, strict=strict)
                         else:
                             block_fields[field_name] = FieldBase.from_dict(
                                 field_data, strict=strict
@@ -267,9 +265,7 @@ class MapV1To2(SchemaMap):
             list_field: List = fields_list[0]
             block.pop(list_field.name)
             item = list_field.item
-            columns: dict = dict(
-                item.fields if isinstance(item, Record) else item.arms
-            )
+            columns: dict = dict(item.fields if isinstance(item, Record) else item.arms)
         else:
             columns = dict(block)
 
@@ -290,6 +286,7 @@ class MapV1To2(SchemaMap):
                 continue
 
             from modflow_devtools.dfns.schema.v2 import GRID_DIM_NAMESPACE
+
             old_dims = list(column.shape) if isinstance(column, Array) else []
             new_dims = ["nper"]
             if cellid:
@@ -347,19 +344,17 @@ class MapV1To2(SchemaMap):
             time_series: bool = _to_bool(fd.get("time_series"), False)
             valid = fd.get("valid")
             default = (
-                try_literal_eval(fd.get("default"))
-                if _type != "string"
-                else fd.get("default")
+                try_literal_eval(fd.get("default")) if _type != "string" else fd.get("default")
             )
 
-            common = dict(
-                name=_name,
-                longname=longname,
-                description=description,
-                optional=optional,
-                default=default,
-                developmode=developmode,
-            )
+            common = {
+                "name": _name,
+                "longname": longname,
+                "description": description,
+                "optional": optional,
+                "default": default,
+                "developmode": developmode,
+            }
 
             _COL_FK_RE = re.compile(r"^([A-Za-z_]\w*)\(([A-Za-z_]\w*)\)$")
 
@@ -375,7 +370,9 @@ class MapV1To2(SchemaMap):
                         # v1 discretization-conditional (e.g. "ncol*nrow; ncpl")
                         # → canonical per-layer count; DIS derives ncpl = nrow*ncol.
                         result.append("ncpl")
-                    elif elem in ("any1d", "unknown") or elem.startswith("<") or elem.startswith(">"):
+                    elif (
+                        elem in ("any1d", "unknown") or elem.startswith("<") or elem.startswith(">")
+                    ):
                         # v1 pseudo-elements with no v2 shape equivalent:
                         #   any1d   — inline array of runtime-determined length
                         #             (read to end of record); dtype-agnostic.
@@ -387,10 +384,11 @@ class MapV1To2(SchemaMap):
                         # Resolve the block by searching for the integer field.
                         col_name = m.group(1)
                         block_name = next(
-                            (fi.block for fi in fields.values(multi=True)
-                             if fi.name == col_name
-                             and fi.type == "integer"
-                             and fi.in_record),
+                            (
+                                fi.block
+                                for fi in fields.values(multi=True)
+                                if fi.name == col_name and fi.type == "integer" and fi.in_record
+                            ),
                             None,
                         )
                         if block_name:
@@ -402,9 +400,12 @@ class MapV1To2(SchemaMap):
                         # string array's name so _mark_string_dim_arrays can mark
                         # it dimension="component" and validation resolves it.
                         provider = next(
-                            (fi.name for fi in fields.values(multi=True)
-                             if fi.type == "string"
-                             and (fi.shape or "").strip() in (f"({elem})", elem)),
+                            (
+                                fi.name
+                                for fi in fields.values(multi=True)
+                                if fi.type == "string"
+                                and (fi.shape or "").strip() in (f"({elem})", elem)
+                            ),
                             None,
                         )
                         result.append(provider if provider else elem)
@@ -425,6 +426,7 @@ class MapV1To2(SchemaMap):
                     )
                 if _type == "integer":
                     from modflow_devtools.dfns.schema.v2 import GRID_DIM_NAMESPACE
+
                     v = [int(x) for x in valid] if valid else None
                     if fd.get("block") == "dimensions":
                         if _name in GRID_DIM_NAMESPACE:
@@ -444,9 +446,7 @@ class MapV1To2(SchemaMap):
                         dimension=_dim_scope,
                     )
                 if _type in ("double", "double precision"):
-                    return Double(
-                        **common, netcdf=netcdf, tagged=tagged, time_series=time_series
-                    )
+                    return Double(**common, netcdf=netcdf, tagged=tagged, time_series=time_series)
                 raise TypeError(f"Unsupported scalar type: {_type!r}")
 
             def _row_field() -> "Record | Union":
@@ -461,13 +461,15 @@ class MapV1To2(SchemaMap):
                 ]
 
                 # Single explicit record or keystring
-                if len(item_names) == 1 and item_types and (
-                    (item_types[0] or "").startswith("record")
-                    or (item_types[0] or "").startswith("keystring")
-                ):
-                    mapped = MapV1To2.map_field(
-                        dfn, next(iter(fields.getlist(item_names[0])))
+                if (
+                    len(item_names) == 1
+                    and item_types
+                    and (
+                        (item_types[0] or "").startswith("record")
+                        or (item_types[0] or "").startswith("keystring")
                     )
+                ):
+                    mapped = MapV1To2.map_field(dfn, next(iter(fields.getlist(item_names[0]))))
                     if isinstance(mapped, (Record, Union)):
                         return mapped
                     raise TypeError(
@@ -498,8 +500,7 @@ class MapV1To2(SchemaMap):
                 return Record(
                     name=_name,
                     description=(
-                        (description or "").replace("is the list of", "is the record of")
-                        or None
+                        (description or "").replace("is the list of", "is the record of") or None
                     ),
                     fields=children,
                 )
@@ -659,9 +660,11 @@ class MapV1To2(SchemaMap):
                     new_fields = _mark(f.fields)
                     if local_dims:
                         new_fields = {
-                            fn: (sf.model_copy(update={"dimension": "record"})
-                                 if fn in local_dims and isinstance(sf, Integer)
-                                 else sf)
+                            fn: (
+                                sf.model_copy(update={"dimension": "record"})
+                                if fn in local_dims and isinstance(sf, Integer)
+                                else sf
+                            )
                             for fn, sf in new_fields.items()
                         }
                     f = f.model_copy(update={"fields": new_fields})
@@ -674,9 +677,11 @@ class MapV1To2(SchemaMap):
                         new_item_fields = _mark(item.fields)
                         if local_dims:
                             new_item_fields = {
-                                fn: (sf.model_copy(update={"dimension": "record"})
-                                     if fn in local_dims and isinstance(sf, Integer)
-                                     else sf)
+                                fn: (
+                                    sf.model_copy(update={"dimension": "record"})
+                                    if fn in local_dims and isinstance(sf, Integer)
+                                    else sf
+                                )
                                 for fn, sf in new_item_fields.items()
                             }
                         new_item = item.model_copy(update={"fields": new_item_fields})
@@ -840,27 +845,23 @@ class MapV1To2(SchemaMap):
         )
 
         name = dfn.name
-        blocks: "dict[str, Block] | None" = None
+        blocks: dict[str, Block] | None = None
         if dfn.blocks:
             blocks = {
                 block_name: Block(
                     name=block_name,
-                    fields={
-                        k: v
-                        for k, v in block_fields.items()
-                        if isinstance(v, FieldBase)
-                    },
+                    fields={k: v for k, v in block_fields.items() if isinstance(v, FieldBase)},
                 )
                 for block_name, block_fields in dfn.blocks.items()
                 if isinstance(block_fields, dict)
             }
 
-        common: dict[str, Any] = dict(
-            name=name,
-            blocks=blocks,
-            parent=dfn.parent,
-            schema_version=dfn.schema_version,
-        )
+        common: dict[str, Any] = {
+            "name": name,
+            "blocks": blocks,
+            "parent": dfn.parent,
+            "schema_version": dfn.schema_version,
+        }
         if name == "sim-nam":
             return Simulation(**common)
         if name.endswith("-nam"):
@@ -911,10 +912,7 @@ def load(f, format: str = "dfn", **kwargs) -> Dfn:
         name = kwargs.pop("name")
         fields_parsed, meta = parse_dfn(f, **kwargs)
         blocks = {
-            block_name: {
-                field_dict["name"]: FieldV1.from_dict(field_dict)
-                for field_dict in block
-            }
+            block_name: {field_dict["name"]: FieldV1.from_dict(field_dict) for field_dict in block}
             for block_name, block in groupby(
                 fields_parsed.values(multi=True), lambda fd: fd["block"]
             )
@@ -945,9 +943,7 @@ def load(f, format: str = "dfn", **kwargs) -> Dfn:
 
         if (expected_name := kwargs.pop("name", None)) is not None:
             if dfn_fields["name"] != expected_name:
-                raise ValueError(
-                    f"DFN name mismatch: {expected_name} != {dfn_fields['name']}"
-                )
+                raise ValueError(f"DFN name mismatch: {expected_name} != {dfn_fields['name']}")
 
         blocks = {}
         for section_name, section_data in data.items():
@@ -1052,11 +1048,7 @@ def to_tree(dfns: Dfns) -> Dfn:
 
             def _build_tree(node_name: str) -> Dfn:
                 node = dfns[node_name]
-                children = {
-                    name: dfn
-                    for name, dfn in dfns.items()
-                    if dfn.parent == node_name
-                }
+                children = {name: dfn for name, dfn in dfns.items() if dfn.parent == node_name}
                 if children:
                     node = node.model_copy(
                         update={"children": {name: _build_tree(name) for name in children}}
@@ -1065,9 +1057,7 @@ def to_tree(dfns: Dfns) -> Dfn:
 
             return _build_tree(next(iter(roots.keys())))
         case _:
-            raise ValueError(
-                f"Unsupported schema version: {schema_version}. Expected 1 or 2."
-            )
+            raise ValueError(f"Unsupported schema version: {schema_version}. Expected 1 or 2.")
 
 
 def to_flat(dfn: Dfn) -> Dfns:
