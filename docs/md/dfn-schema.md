@@ -100,6 +100,7 @@ Component definitions consist primarily of a name, zero or more block definition
 - `blocks`: block definitions
 - `parent`: parent component(s)
 - `schema_version`: DFN schema version
+- `derived_dims`: dimensions computed from other dimensions
 
 Components may refer to, i.e. be constrained by, other components. Cross-component constraints include parent-child relations, solution compatibility, and format variants.
 
@@ -165,7 +166,7 @@ A package is any component that is not a simulation or a model.
 
 ###### `multi`
 
-`boolean (default: false)`. Indicates that multiple instances of this component are permitted. Components of which multiple instances are allowed are called "multi-packages".
+`boolean (default: false)`. Indicates that multiple instances of this component may be attached to the same parent component. Components of which multiple instances are allowed are called "multi-packages".
 
 ###### `subtype`
 
@@ -217,9 +218,7 @@ A field's value need not be preceded by its name; see the `tagged` section below
 
 `boolean (default: false)`. Whether the block may appear multiple times in an input file. When true, each occurrence is read independently, and associated with a unique label. The canonical repeating block is the period block, whose label is the stress period number.
 
-#### `optional`
-
-`boolean (default: false)`. Whether the block may be omitted entirely from the input file. An absent optional block is treated as empty.
+**Note:** if a repeating block contains any required fields, it must appear at least once. If a repeating block contains only optional fields, it can appear zero or more times.
 
 ## Fields
 
@@ -303,7 +302,7 @@ Type `string`.
 
 ###### `tagged`
 
-`boolean (default: false)`. Indicates that the field value should be preceded by the field name. Valid only for record subfields.
+`boolean (default: true)`. Indicates that the field value should be preceded by the field name. Valid only for record subfields. All other scalar fields are necessarily tagged.
 
 ###### `valid`
 
@@ -333,7 +332,7 @@ Type `integer`.
 
 ###### `tagged`
 
-`boolean (default: false)`. Indicates that the field value should be preceded by the field name. Valid only for record subfields.
+`boolean (default: true)`. Indicates that the field value should be preceded by the field name. Valid only for record subfields. All other scalar fields are necessarily tagged.
 
 ###### `valid`
 
@@ -367,7 +366,7 @@ Type `double`.
 
 ###### `tagged`
 
-`boolean (default: false)`. Indicates that the field value should be preceded by the field name. Valid only for record subfields.
+`boolean (default: true)`. Indicates that the field value should be preceded by the field name. Valid only for record subfields. All other scalar fields are necessarily tagged.
 
 ###### `time_series`
 
@@ -381,7 +380,7 @@ Type `path`.
 
 ###### `mode`
 
-`"filein" | "fileout"`. Whether the path is to an input or output file.
+`"filein" | "fileout"`. Whether the path is to an input or output file. Required.
 
 ### Composites
 
@@ -466,7 +465,7 @@ Shape expressions for non-string arrays may use one of three structural forms. A
 - **Intra-record sibling reference**: a dim reference that names a sibling `integer` or `dimension: true` `array` in the same enclosing record. Makes the record a variadic tuple whose width varies per row. Valid only when the array is a subfield of a record. See below.
 - **Row-level column lookup** (`block.column(fk_field)`): a cross-list per-row quantity, valid only for array subfields of records. See below.
 
-Any dim reference (either of the first two forms) may carry a **bound annotation** prefix (`<`, `>`, `<=`, or `>=`), e.g. `<time_series_names`. The dim portion validates normally; the bound is advisory and is not enforced by the MF6 parser.
+Any dim reference (either of the first two forms) may carry a **bound annotation** prefix (`<`, `>`, `<=`, or `>=`). The dim portion validates normally; the bound is advisory and is not enforced by the MF6 parser.
 
 A shape expression that does not match one of these forms is a schema validation error. String arrays (`dtype: "string"`) must have empty `shape`.
 
@@ -514,7 +513,8 @@ This notation is consistent with FK path conventions (`block.field` for within-c
 
 Validation rules:
 - `fk_field` must be a sibling field in the same enclosing record
-- `fk_field`'s `fk` attribute block portion must match `block`
+- `fk_field` must have `fk` set, and its `fk` attribute's block portion must match `block`
+- `block`'s list item record must have exactly one `pk: true` field
 - `column` must exist in `block`'s item record and be of type `integer`
 - This form is only valid when the array is a subfield of a record; it is a schema error on a top-level array field
 

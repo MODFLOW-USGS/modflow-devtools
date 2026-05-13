@@ -4,10 +4,8 @@ MODFLOW 6 specifies input components and their variables in configuration files 
 
 `modflow_devtools` provides two modules for working with MODFLOW 6 input specification files:
 
-- **`modflow_devtools.dfn`** — stable module, available in all current releases
-- **`modflow_devtools.dfns`** — experimental new API, subject to change without notice
-
----
+- **`modflow_devtools.dfn`:** stable, soon-to-be deprecated
+- **`modflow_devtools.dfns`:** experimental, subject to change without notice
 
 ## `modflow_devtools.dfn` (stable)
 
@@ -22,30 +20,6 @@ get_dfns("MODFLOW-ORG", "modflow6", "6.6.0", "/tmp/dfns")
 ```
 
 Downloads all `.dfn` files for the specified MODFLOW 6 release into the given output directory (returns `None`).
-
-### Types
-
-The core types are `TypedDict`s:
-
-```python
-from modflow_devtools.dfn import Dfn, Field
-
-# Dfn: top-level component (e.g. "gwf-chd")
-#   name: str
-#   advanced: bool
-#   multi: bool
-#   <block name>: dict[str, Field]  (one key per block, e.g. "options", "period")
-
-# Field: individual input variable within a block
-#   name: str
-#   type: str          (e.g. "keyword", "integer", "double precision", "string", ...)
-#   block: str
-#   shape: str | None  (e.g. "(naux)")
-#   default: Any
-#   children: dict[str, Field] | None
-#   description: str | None
-#   reader: str        (e.g. "urword")
-```
 
 ### Converting to TOML
 

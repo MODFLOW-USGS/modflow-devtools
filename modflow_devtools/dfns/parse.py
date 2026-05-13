@@ -56,10 +56,22 @@ def try_parse_bool(value: Any) -> Any:
     return value
 
 
-def try_parse_parent(meta: list[str]) -> str | None:
+_FLOPY_CLASS_TO_V2_TYPE: dict[str, str] = {
+    "MFSimulation": "simulation",
+    "MFModel": "model",
+    "MFPackage": "package",
+}
+
+
+def try_parse_parent(meta: list[str]) -> "str | list[str] | None":
     """
-    Try to parse a component's parent component name from its metadata.
-    Return `None` if it has no parent specified.
+    Try to parse a component's parent from its metadata.
+
+    Returns a v2 component type label (e.g. "model", "package",
+    ["model", "package"]) when the metadata uses the flopy
+    ``parent_name_type <accessor> <MFClass[/MFClass...]>`` format,
+    a specific component name when a legacy ``parent <name>`` line
+    is present, or ``None`` if no parent is declared.
     """
     line = next(
         iter(m for m in meta if isinstance(m, str) and m.startswith("parent")),
@@ -68,7 +80,18 @@ def try_parse_parent(meta: list[str]) -> str | None:
     if not line:
         return None
     split = line.split()
-    return split[1]
+    if not split:
+        return None
+    # "parent_name_type <accessor> <MFClass[/MFClass...]>" — flopy class names
+    # map to v2 component type labels.
+    if split[0] == "parent_name_type" and len(split) >= 3:
+        classes = split[2].split("/")
+        types = [_FLOPY_CLASS_TO_V2_TYPE[c] for c in classes if c in _FLOPY_CLASS_TO_V2_TYPE]
+        if types:
+            return types[0] if len(types) == 1 else types
+        return None
+    # Legacy: "parent <component_name>"
+    return split[1] if len(split) >= 2 else None
 
 
 def is_advanced_package(meta: list[str]) -> bool:

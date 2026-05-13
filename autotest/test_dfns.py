@@ -95,11 +95,16 @@ def test_convert(function_tmpdir):
     assert gwf_data["parent"] == "sim-nam"
     assert gwf_data["schema_version"] == "2"
 
+    _COMPONENT_TYPES = {"simulation", "model", "package"}
     dfns = load_flat(function_tmpdir)
     roots = []
     for dfn in dfns.values():
-        if dfn.parent:
-            assert dfn.parent in dfns
+        parent = dfn.parent
+        if parent:
+            if isinstance(parent, list):
+                assert all(t in _COMPONENT_TYPES for t in parent)
+            else:
+                assert parent in dfns or parent in _COMPONENT_TYPES
         else:
             roots.append(dfn.name)
     assert len(roots) == 1

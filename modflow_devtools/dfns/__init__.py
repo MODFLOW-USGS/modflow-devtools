@@ -758,7 +758,7 @@ class MapV1To2(SchemaMap):
     @staticmethod
     def _infer_fk_from_shapes(blocks: "dict[str, dict]") -> "dict[str, dict]":
         """
-        Fourth pass: infer fk= and pk= from resolved lookup shape elements.
+        Post-pass 3: infer fk= and pk= from resolved lookup shape elements.
 
         When _parse_shape resolves a v1 shorthand like "col(fk_field)" to the
         canonical form "block.col(fk_field)", the fk_field sibling in the same
@@ -1077,6 +1077,21 @@ def _infer_parent(name: str) -> "str | None":
     return None
 
 
+def _resolve_parent_for_tree(name: str, parent: "str | list[str] | None", dfns: Dfns) -> "str | None":
+    """
+    Resolve a parent value to a specific component name for tree placement.
+
+    When parent is a type label (e.g. "model", ["model", "package"]) or any
+    string not present in the known component dict, falls back to name-based
+    inference so the DFN is still placed in the tree.
+    """
+    if parent is None:
+        return None
+    if isinstance(parent, str) and parent in dfns:
+        return parent
+    return _infer_parent(name)
+
+
 def _apply_parent_inference(dfns: Dfns) -> Dfns:
     """Set parent on any Dfn where it is not already explicit."""
     result = {}
@@ -1109,7 +1124,11 @@ def to_tree(dfns: Dfns) -> Dfn:
 
             def _build_tree(node_name: str) -> Dfn:
                 node = dfns[node_name]
-                children = {name: dfn for name, dfn in dfns.items() if dfn.parent == node_name}
+                children = {
+                    name: dfn
+                    for name, dfn in dfns.items()
+                    if _resolve_parent_for_tree(name, dfn.parent, dfns) == node_name
+                }
                 if children:
                     node = node.model_copy(
                         update={"children": {name: _build_tree(name) for name in children}}
