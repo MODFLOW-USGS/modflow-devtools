@@ -187,9 +187,7 @@ def _infer_parent(name: str) -> str | None:
     return None
 
 
-def _resolve_parent_for_tree(
-    name: str, parent: str | list[str] | None, dfns: Dfns
-) -> str | None:
+def _resolve_parent_for_tree(name: str, parent: str | list[str] | None, dfns: Dfns) -> str | None:
     """
     Resolve a parent value to a specific component name for tree placement.
 
