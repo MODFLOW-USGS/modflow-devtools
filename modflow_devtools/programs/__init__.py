@@ -836,7 +836,7 @@ def download_archive(
         if github_token:
             headers["Authorization"] = f"token {github_token}"
 
-        response = requests.get(url, headers=headers, stream=True, timeout=30)
+        response = requests.get(url, headers=headers, stream=True, timeout=30)  # type: ignore
         response.raise_for_status()
 
         # Write to temporary file first
