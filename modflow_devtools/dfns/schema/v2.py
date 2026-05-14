@@ -756,7 +756,6 @@ class DfnSpec(BaseModel):
         from pathlib import Path as _Path
 
         from modflow_devtools.dfn.mapper import _apply_parent_inference, load_flat
-        from modflow_devtools.dfns.mapper import MapV1To2
         from modflow_devtools.dfns.mapper import map as map_dfn
 
         _path = _Path(path).expanduser().resolve()
@@ -768,7 +767,5 @@ class DfnSpec(BaseModel):
         if first.schema_version == Version("1"):
             dfns = _apply_parent_inference(dfns)
 
-        components: dict[str, Component] = {
-            n: map_dfn(d, "2") for n, d in dfns.items()
-        }
+        components: dict[str, Component] = {n: map_dfn(d, "2") for n, d in dfns.items()}
         return cls(components=components)

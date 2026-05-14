@@ -11,14 +11,15 @@ from modflow_devtools.dfn.mapper import (
     _toml_safe,
     load,
     load_flat,
-    map as map_v1_1,
     to_flat,
     to_tree,
+)
+from modflow_devtools.dfn.mapper import (
+    map as map_v1_1,
 )
 from modflow_devtools.dfn.v1_1 import Dfn, FieldV1, FieldV1_1
 from modflow_devtools.dfns import is_valid
 from modflow_devtools.dfns.fetch import fetch_dfns
-from modflow_devtools.dfns.mapper import MapV1To2
 from modflow_devtools.dfns.mapper import map as map_v2
 from modflow_devtools.dfns.schema.v2 import (
     Array,
@@ -673,9 +674,7 @@ def test_apply_parent_inference():
 def test_apply_parent_inference_does_not_overwrite_explicit():
     """_apply_parent_inference does not overwrite an already-set parent."""
     dfns = {
-        "gwf-dis": Dfn(
-            schema_version=Version("1.1"), name="gwf-dis", parent="custom-parent"
-        ),
+        "gwf-dis": Dfn(schema_version=Version("1.1"), name="gwf-dis", parent="custom-parent"),
     }
     inferred = _apply_parent_inference(dfns)
     assert inferred["gwf-dis"].parent == "custom-parent"

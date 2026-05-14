@@ -12,7 +12,6 @@ from pathlib import Path
 from typing import Any
 
 import tomli
-from boltons.dictutils import OMD
 from packaging.version import Version
 
 from modflow_devtools.dfn.parse import (
@@ -20,11 +19,9 @@ from modflow_devtools.dfn.parse import (
     is_multi_package,
     parse_dfn,
     parse_mf6_subpackages,
-    try_parse_bool,
     try_parse_parent,
 )
 from modflow_devtools.dfn.v1_1 import Dfn, Dfns, FieldV1, FieldV1_1
-
 
 # =============================================================================
 # Mappers
@@ -68,7 +65,7 @@ class MapV1To1_1:
 
 def map(
     dfn: Dfn,
-    schema_version: "str | Version" = "1.1",
+    schema_version: str | Version = "1.1",
 ) -> Dfn:
     """Map a MODFLOW 6 v1 definition to v1 or v1.1 schema."""
     version = Version(str(schema_version))
@@ -127,9 +124,7 @@ def load(f: Any, format: str = "dfn", **kwargs: Any) -> Dfn:
 
         if (expected_name := kwargs.pop("name", None)) is not None:
             if dfn_fields["name"] != expected_name:
-                raise ValueError(
-                    f"DFN name mismatch: {expected_name} != {dfn_fields['name']}"
-                )
+                raise ValueError(f"DFN name mismatch: {expected_name} != {dfn_fields['name']}")
 
         parsed_blocks: dict[str, Any] = {}
         for section_name, section_data in data.items():
@@ -153,7 +148,7 @@ def _load_common(f: Any) -> Any:
     return common
 
 
-def load_flat(path: "str | PathLike") -> Dfns:
+def load_flat(path: str | PathLike) -> Dfns:
     """
     Load a flat MODFLOW 6 specification from definition files in a directory.
 
@@ -193,8 +188,8 @@ def _infer_parent(name: str) -> str | None:
 
 
 def _resolve_parent_for_tree(
-    name: str, parent: "str | list[str] | None", dfns: Dfns
-) -> "str | None":
+    name: str, parent: str | list[str] | None, dfns: Dfns
+) -> str | None:
     """
     Resolve a parent value to a specific component name for tree placement.
 
@@ -270,7 +265,7 @@ def to_flat(dfn: Dfn) -> Dfns:
     return _flatten(dfn)
 
 
-def is_valid(path: "str | PathLike", format: str = "dfn", verbose: bool = False) -> bool:
+def is_valid(path: str | PathLike, format: str = "dfn", verbose: bool = False) -> bool:
     """Validate DFN file(s)."""
     path = Path(path).expanduser().absolute()
     try:

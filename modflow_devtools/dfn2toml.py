@@ -19,7 +19,6 @@ from modflow_devtools.dfn.mapper import (
     to_flat,
     to_tree,
 )
-from modflow_devtools.dfn.v1_1 import Dfn
 from modflow_devtools.misc import drop_none_or_empty
 
 # mypy: ignore-errors

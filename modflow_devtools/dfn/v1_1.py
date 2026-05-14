@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import dataclasses
 from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any, Literal
@@ -84,7 +83,7 @@ class FieldV1(FieldV1_1):
     time_series: bool = False
 
     @classmethod
-    def from_dict(cls, d: dict, strict: bool = False) -> "FieldV1":
+    def from_dict(cls, d: dict, strict: bool = False) -> FieldV1:
         keys = set(cls.__dataclass_fields__.keys())
         if strict:
             if extra_keys := set(d.keys()) - keys:

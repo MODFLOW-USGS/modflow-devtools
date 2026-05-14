@@ -13,15 +13,10 @@ from boltons.dictutils import OMD
 from packaging.version import Version
 
 from modflow_devtools.dfn.parse import (
-    is_advanced_package,
-    is_multi_package,
-    parse_dfn,
-    parse_mf6_subpackages,
     try_parse_bool,
-    try_parse_parent,
 )
 from modflow_devtools.dfn.v1_1 import SCALAR_TYPES as V1_SCALAR_TYPES
-from modflow_devtools.dfn.v1_1 import Dfn, Dfns, FieldV1
+from modflow_devtools.dfn.v1_1 import Dfn, FieldV1
 from modflow_devtools.dfns.schema.v2 import (
     Array,
     Double,
@@ -33,7 +28,6 @@ from modflow_devtools.dfns.schema.v2 import (
     String,
     Union,
 )
-from modflow_devtools.dfns.schema.v2 import Path as PathField
 from modflow_devtools.misc import try_literal_eval
 
 _IDENT_RE = re.compile(r"^[A-Za-z_]\w*$")
@@ -149,9 +143,7 @@ class MapV1To2:
                     if ";" in elem:
                         result.append("ncpl")
                     elif (
-                        elem in ("any1d", "unknown")
-                        or elem.startswith("<")
-                        or elem.startswith(">")
+                        elem in ("any1d", "unknown") or elem.startswith("<") or elem.startswith(">")
                     ):
                         pass
                     elif m := _COL_FK_RE.fullmatch(elem):
@@ -160,9 +152,7 @@ class MapV1To2:
                             (
                                 fi.block
                                 for fi in fields.values(multi=True)
-                                if fi.name == col_name
-                                and fi.type == "integer"
-                                and fi.in_record
+                                if fi.name == col_name and fi.type == "integer" and fi.in_record
                             ),
                             None,
                         )
@@ -684,7 +674,7 @@ class MapV1To2:
 
 def map(
     dfn: Dfn,
-    schema_version: "str | Version" = "2",
+    schema_version: str | Version = "2",
 ) -> Any:
     """Map a MODFLOW 6 definition to v2 schema."""
     version = Version(str(schema_version))

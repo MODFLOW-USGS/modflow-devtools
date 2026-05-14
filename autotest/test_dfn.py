@@ -1,7 +1,6 @@
 from pathlib import Path
 
 import pytest
-from packaging.version import Version
 
 from modflow_devtools.dfn import Dfn, get_dfns
 from modflow_devtools.dfn2toml import convert
@@ -105,6 +104,7 @@ def test_convert_v2(toml_v2_name):
     except ImportError:
         import tomli as tomllib  # type: ignore[no-redef]
     from pydantic import TypeAdapter
+
     from modflow_devtools.dfns.schema.v2 import Component
 
     with (TOML_V2_DIR / f"{toml_v2_name}.toml").open("rb") as f:
