@@ -1,12 +1,25 @@
+import dataclasses
 from pathlib import Path
 
 import pytest
 from packaging.version import Version
 
-from modflow_devtools.dfns import Dfn, _load_common, load, load_flat
-from modflow_devtools.dfns.dfn2toml import convert, is_valid
+from modflow_devtools.dfn.mapper import (
+    _apply_parent_inference,
+    _dfn_to_plain_dict,
+    _load_common,
+    _toml_safe,
+    load,
+    load_flat,
+    map as map_v1_1,
+    to_flat,
+    to_tree,
+)
+from modflow_devtools.dfn.v1_1 import Dfn, FieldV1, FieldV1_1
+from modflow_devtools.dfns import is_valid
 from modflow_devtools.dfns.fetch import fetch_dfns
-from modflow_devtools.dfns.schema.v1 import FieldV1
+from modflow_devtools.dfns.mapper import MapV1To2
+from modflow_devtools.dfns.mapper import map as map_v2
 from modflow_devtools.dfns.schema.v2 import (
     Array,
     Double,
@@ -20,8 +33,6 @@ from modflow_devtools.markers import requires_pkg
 
 PROJ_ROOT = Path(__file__).parents[1]
 DFN_DIR = PROJ_ROOT / "autotest" / "temp" / "dfns"
-TOML_DIR = DFN_DIR / "toml"
-SPEC_DIRS = {1: DFN_DIR, 2: TOML_DIR}
 MF6_OWNER = "MODFLOW-ORG"
 MF6_REPO = "modflow6"
 MF6_REF = "develop"
@@ -37,16 +48,6 @@ def pytest_generate_tests(metafunc):
         ]
         metafunc.parametrize("dfn_name", dfn_names, ids=dfn_names)
 
-    if "toml_name" in metafunc.fixturenames:
-        dfn_paths = [p for p in DFN_DIR.glob("*.dfn") if p.stem not in ["common", "flopy"]]
-        if not TOML_DIR.exists() or not all(
-            (TOML_DIR / f"{dfn.stem}.toml").is_file() for dfn in dfn_paths
-        ):
-            convert(DFN_DIR, TOML_DIR)
-        assert all((TOML_DIR / f"{dfn.stem}.toml").is_file() for dfn in dfn_paths)
-        toml_names = [toml.stem for toml in TOML_DIR.glob("*.toml")]
-        metafunc.parametrize("toml_name", toml_names, ids=toml_names)
-
 
 @requires_pkg("boltons")
 def test_load_v1(dfn_name):
@@ -60,71 +61,10 @@ def test_load_v1(dfn_name):
 
 
 @requires_pkg("boltons")
-def test_load_v2(toml_name):
-    with (TOML_DIR / f"{toml_name}.toml").open(mode="rb") as toml_file:
-        dfn = load(toml_file, name=toml_name, format="toml")
-        assert any(dfn.fields) == (dfn.name not in EMPTY_DFNS)
-
-
-@requires_pkg("boltons")
-@pytest.mark.parametrize("schema_version", list(SPEC_DIRS.keys()))
-def test_load_all(schema_version):
-    dfns = load_flat(path=SPEC_DIRS[schema_version])
+def test_load_all():
+    dfns = load_flat(path=DFN_DIR)
     for dfn in dfns.values():
         assert any(dfn.fields) == (dfn.name not in EMPTY_DFNS)
-
-
-@requires_pkg("boltons", "tomli")
-def test_convert(function_tmpdir):
-    import tomli
-
-    convert(DFN_DIR, function_tmpdir)
-
-    assert (function_tmpdir / "sim-nam.toml").exists()
-    assert (function_tmpdir / "gwf-nam.toml").exists()
-
-    with (function_tmpdir / "sim-nam.toml").open("rb") as f:
-        sim_data = tomli.load(f)
-    assert sim_data["name"] == "sim-nam"
-    assert sim_data["schema_version"] == "2"
-    assert "parent" not in sim_data
-
-    with (function_tmpdir / "gwf-nam.toml").open("rb") as f:
-        gwf_data = tomli.load(f)
-    assert gwf_data["name"] == "gwf-nam"
-    assert gwf_data["parent"] == "sim-nam"
-    assert gwf_data["schema_version"] == "2"
-
-    _COMPONENT_TYPES = {"simulation", "model", "package"}
-    dfns = load_flat(function_tmpdir)
-    roots = []
-    for dfn in dfns.values():
-        parent = dfn.parent
-        if parent:
-            if isinstance(parent, list):
-                assert all(t in _COMPONENT_TYPES for t in parent)
-            else:
-                assert parent in dfns or parent in _COMPONENT_TYPES
-        else:
-            roots.append(dfn.name)
-    assert len(roots) == 1
-    root = dfns[roots[0]]
-    assert root.name == "sim-nam"
-
-    models = root.children or {}
-    for mdl in models:
-        assert models[mdl].name == mdl
-        assert models[mdl].parent == "sim-nam"
-
-    if gwf := models.get("gwf-nam", None):
-        pkgs = gwf.children or {}
-        pkgs = {k: v for k, v in pkgs.items() if k.startswith("gwf-")}
-        assert len(pkgs) > 0
-        if dis := pkgs.get("gwf-dis", None):
-            assert dis.name == "gwf-dis"
-            assert dis.parent == "gwf-nam"
-            assert "options" in (dis.blocks or {})
-            assert "dimensions" in (dis.blocks or {})
 
 
 def test_dfn_from_dict_ignores_extra_keys():
@@ -176,7 +116,7 @@ def test_dfn_from_dict_roundtrip():
         multi=True,
         blocks={"options": {}},
     )
-    d = original.model_dump()
+    d = dataclasses.asdict(original)
     reconstructed = Dfn.from_dict(d)
     assert reconstructed.name == original.name
     assert reconstructed.schema_version == original.schema_version
@@ -209,8 +149,6 @@ def test_fieldv1_from_dict_strict_mode():
 
 
 def test_fieldv1_from_dict_roundtrip():
-    from dataclasses import asdict
-
     original = FieldV1(
         name="maxbound",
         type="integer",
@@ -218,7 +156,7 @@ def test_fieldv1_from_dict_roundtrip():
         description="maximum number of cells",
         tagged=True,
     )
-    d = asdict(original)
+    d = dataclasses.asdict(original)
     reconstructed = FieldV1.from_dict(d)
     assert reconstructed.name == original.name
     assert reconstructed.type == original.type
@@ -395,9 +333,7 @@ def test_validate_nonexistent_file(function_tmpdir):
 
 
 def test_fieldv1_to_fieldv2_conversion():
-    """Test that FieldV1 instances are properly converted to typed v2 instances."""
-    from modflow_devtools.dfns import map
-
+    """Test that FieldV1 instances are properly converted to typed v2 Component fields."""
     dfn_v1 = Dfn(
         schema_version=Version("1"),
         name="test-dfn",
@@ -422,13 +358,15 @@ def test_fieldv1_to_fieldv2_conversion():
         },
     )
 
-    dfn_v2 = map(dfn_v1, schema_version="2")
-    assert dfn_v2.schema_version == Version("2")
-    assert dfn_v2.blocks is not None
-    assert "options" in dfn_v2.blocks
-    assert "save_flows" in dfn_v2.blocks["options"]
+    component = map_v2(dfn_v1, schema_version="2")
+    assert component.schema_version == Version("2")
+    assert component.blocks is not None
+    assert "options" in component.blocks
 
-    save_flows = dfn_v2.blocks["options"]["save_flows"]
+    options = component.blocks["options"].fields
+    assert "save_flows" in options
+
+    save_flows = options["save_flows"]
     assert isinstance(save_flows, Keyword)
     assert isinstance(save_flows, FieldBase)
     assert save_flows.name == "save_flows"
@@ -437,7 +375,7 @@ def test_fieldv1_to_fieldv2_conversion():
     assert not hasattr(save_flows, "in_record")
     assert not hasattr(save_flows, "reader")
 
-    some_float = dfn_v2.blocks["options"]["some_float"]
+    some_float = options["some_float"]
     assert isinstance(some_float, Double)
     assert some_float.name == "some_float"
     assert some_float.type == "double"
@@ -446,8 +384,6 @@ def test_fieldv1_to_fieldv2_conversion():
 
 def test_fieldv1_to_fieldv2_conversion_with_children():
     """Test that FieldV1 with nested children are properly converted to typed v2 instances."""
-    from modflow_devtools.dfns import map
-
     dfn_v1 = Dfn(
         schema_version=Version("1"),
         name="test-dfn",
@@ -472,10 +408,10 @@ def test_fieldv1_to_fieldv2_conversion_with_children():
         },
     )
 
-    dfn_v2 = map(dfn_v1, schema_version="2")
-    assert dfn_v2.blocks is not None
-    for block_fields in dfn_v2.blocks.values():
-        for f in block_fields.values():
+    component = map_v2(dfn_v1, schema_version="2")
+    assert component.blocks is not None
+    for block in component.blocks.values():
+        for f in block.fields.values():
             assert isinstance(f, FieldBase)
             if f.children:
                 for child in f.children.values():
@@ -484,8 +420,6 @@ def test_fieldv1_to_fieldv2_conversion_with_children():
 
 def test_period_block_conversion():
     """Test period block recarray conversion to individual arrays."""
-    from modflow_devtools.dfns import map
-
     dfn_v1 = Dfn(
         schema_version=Version("1"),
         name="test-pkg",
@@ -515,12 +449,12 @@ def test_period_block_conversion():
         },
     )
 
-    dfn_v2 = map(dfn_v1, schema_version="2")
+    component = map_v2(dfn_v1, schema_version="2")
 
-    period_block = dfn_v2.blocks["period"]
-    assert "cellid" not in period_block
-    assert "q" in period_block
-    q = period_block["q"]
+    period_fields = component.blocks["period"].fields
+    assert "cellid" not in period_fields
+    assert "q" in period_fields
+    q = period_fields["q"]
     assert isinstance(q, Array)
     assert "nper" in q.shape
     assert "nodes" in q.shape
@@ -529,8 +463,6 @@ def test_period_block_conversion():
 
 def test_record_type_conversion():
     """Test record type with multiple scalar fields."""
-    from modflow_devtools.dfns import map
-
     dfn_v1 = Dfn(
         schema_version=Version("1"),
         name="test-dfn",
@@ -558,9 +490,9 @@ def test_record_type_conversion():
         },
     )
 
-    dfn_v2 = map(dfn_v1, schema_version="2")
+    component = map_v2(dfn_v1, schema_version="2")
 
-    auxrecord = dfn_v2.blocks["options"]["auxrecord"]
+    auxrecord = component.blocks["options"].fields["auxrecord"]
     assert isinstance(auxrecord, Record)
     assert auxrecord.type == "record"
     assert auxrecord.children is not None
@@ -572,8 +504,6 @@ def test_record_type_conversion():
 
 def test_keystring_type_conversion():
     """Test keystring (union) type conversion."""
-    from modflow_devtools.dfns import map
-
     dfn_v1 = Dfn(
         schema_version=Version("1"),
         name="test-dfn",
@@ -608,10 +538,390 @@ def test_keystring_type_conversion():
         },
     )
 
-    dfn_v2 = map(dfn_v1, schema_version="2")
+    component = map_v2(dfn_v1, schema_version="2")
 
-    obs_rec = dfn_v2.blocks["options"]["obs_filerecord"]
+    obs_rec = component.blocks["options"].fields["obs_filerecord"]
     assert isinstance(obs_rec, Record)
     assert obs_rec.type == "record"
     assert obs_rec.children is not None
     assert all(isinstance(child, FieldBase) for child in obs_rec.children.values())
+
+
+# =============================================================================
+# Group 1: MapV1To1_1
+# =============================================================================
+
+
+def test_mapv1to1_1_field_stripping():
+    """map(dfn, '1.1') strips v1-specific attrs; shared base attrs are preserved."""
+    dfn_v1 = Dfn(
+        schema_version=Version("1"),
+        name="test-dfn",
+        blocks={
+            "options": {
+                "save_flows": FieldV1(
+                    name="save_flows",
+                    type="keyword",
+                    block="options",
+                    description="save calculated flows",
+                    tagged=True,
+                    in_record=False,
+                    reader="urword",
+                ),
+            }
+        },
+    )
+
+    dfn_v1_1 = map_v1_1(dfn_v1, "1.1")
+    assert dfn_v1_1.schema_version == Version("1.1")
+    assert dfn_v1_1.blocks is not None
+
+    f = dfn_v1_1.blocks["options"]["save_flows"]
+    assert isinstance(f, FieldV1_1)
+    assert not isinstance(f, FieldV1)
+    assert f.name == "save_flows"
+    assert f.type == "keyword"
+    assert f.description == "save calculated flows"
+    assert f.tagged is True
+    assert not hasattr(f, "in_record")
+    assert not hasattr(f, "reader")
+
+
+def test_mapv1to1_1_preserves_dfn_metadata():
+    """map(dfn, '1.1') preserves DFN-level metadata (name, parent, advanced, multi)."""
+    dfn_v1 = Dfn(
+        schema_version=Version("1"),
+        name="gwf-chd",
+        parent="gwf-nam",
+        advanced=False,
+        multi=True,
+        blocks={},
+    )
+
+    dfn_v1_1 = map_v1_1(dfn_v1, "1.1")
+    assert dfn_v1_1.name == "gwf-chd"
+    assert dfn_v1_1.parent == "gwf-nam"
+    assert dfn_v1_1.advanced is False
+    assert dfn_v1_1.multi is True
+
+
+def test_block_sort_key_order():
+    """block_sort_key orders blocks in canonical MF6 order."""
+    from modflow_devtools.dfn.v1_1 import block_sort_key
+
+    items = [
+        ("period", {}),
+        ("options", {}),
+        ("packagedata", {}),
+        ("dimensions", {}),
+        ("custom_block", {}),
+    ]
+    sorted_items = sorted(items, key=block_sort_key)
+    assert [k for k, _ in sorted_items] == [
+        "options",
+        "dimensions",
+        "packagedata",
+        "period",
+        "custom_block",
+    ]
+
+
+# =============================================================================
+# Group 2: map() dispatch edge cases
+# =============================================================================
+
+
+def test_map_dispatch_to_v1_raises():
+    """map(dfn, '1') raises NotImplementedError."""
+    dfn = Dfn(schema_version=Version("1"), name="test-dfn")
+    with pytest.raises(NotImplementedError):
+        map_v1_1(dfn, "1")
+
+
+def test_map_dispatch_unsupported_version_raises():
+    """map(dfn, unsupported version) raises ValueError."""
+    dfn = Dfn(schema_version=Version("1"), name="test-dfn")
+    with pytest.raises(ValueError):
+        map_v1_1(dfn, "3")
+
+
+def test_map_dispatch_already_v1_1_returns_same():
+    """map(dfn, '1.1') when dfn is already v1.1 returns the same Dfn unchanged."""
+    dfn = Dfn(schema_version=Version("1.1"), name="test-dfn")
+    result = map_v1_1(dfn, "1.1")
+    assert result is dfn
+
+
+# =============================================================================
+# Group 3: to_tree / to_flat / _apply_parent_inference
+# =============================================================================
+
+
+def test_apply_parent_inference():
+    """_apply_parent_inference infers parents from component names."""
+    dfns = {
+        "sim-nam": Dfn(schema_version=Version("1.1"), name="sim-nam"),
+        "gwf-nam": Dfn(schema_version=Version("1.1"), name="gwf-nam"),
+        "gwf-dis": Dfn(schema_version=Version("1.1"), name="gwf-dis"),
+    }
+    inferred = _apply_parent_inference(dfns)
+    assert inferred["sim-nam"].parent is None
+    assert inferred["gwf-nam"].parent == "sim-nam"
+    assert inferred["gwf-dis"].parent == "gwf-nam"
+
+
+def test_apply_parent_inference_does_not_overwrite_explicit():
+    """_apply_parent_inference does not overwrite an already-set parent."""
+    dfns = {
+        "gwf-dis": Dfn(
+            schema_version=Version("1.1"), name="gwf-dis", parent="custom-parent"
+        ),
+    }
+    inferred = _apply_parent_inference(dfns)
+    assert inferred["gwf-dis"].parent == "custom-parent"
+
+
+def test_to_tree_builds_hierarchy():
+    """to_tree() builds children hierarchy from a flat Dfns dict."""
+    dfns = {
+        "sim-nam": Dfn(schema_version=Version("1.1"), name="sim-nam"),
+        "gwf-nam": Dfn(schema_version=Version("1.1"), name="gwf-nam", parent="sim-nam"),
+        "gwf-dis": Dfn(schema_version=Version("1.1"), name="gwf-dis", parent="gwf-nam"),
+    }
+    root = to_tree(dfns)
+    assert root.name == "sim-nam"
+    assert root.children is not None
+    assert "gwf-nam" in root.children
+    gwf_nam = root.children["gwf-nam"]
+    assert gwf_nam.children is not None
+    assert "gwf-dis" in gwf_nam.children
+
+
+def test_to_flat_strips_children():
+    """to_flat() recovers the flat spec; no node has children set."""
+    dfns = {
+        "sim-nam": Dfn(schema_version=Version("1.1"), name="sim-nam"),
+        "gwf-nam": Dfn(schema_version=Version("1.1"), name="gwf-nam", parent="sim-nam"),
+        "gwf-dis": Dfn(schema_version=Version("1.1"), name="gwf-dis", parent="gwf-nam"),
+    }
+    root = to_tree(dfns)
+    flat = to_flat(root)
+    assert set(flat.keys()) == {"sim-nam", "gwf-nam", "gwf-dis"}
+    for dfn in flat.values():
+        assert dfn.children is None
+
+
+def test_to_tree_raises_without_unique_root():
+    """to_tree() raises ValueError when there is no single root component."""
+    dfns = {
+        "gwf-nam": Dfn(schema_version=Version("1.1"), name="gwf-nam", parent="sim-nam"),
+        "gwf-dis": Dfn(schema_version=Version("1.1"), name="gwf-dis", parent="gwf-nam"),
+    }
+    with pytest.raises(ValueError, match="root"):
+        to_tree(dfns)
+
+
+def test_to_tree_raises_for_v1_schema():
+    """to_tree() raises NotImplementedError for v1 schema."""
+    dfns = {
+        "sim-nam": Dfn(schema_version=Version("1"), name="sim-nam"),
+    }
+    with pytest.raises(NotImplementedError):
+        to_tree(dfns)
+
+
+# =============================================================================
+# Group 4: to_component() branches
+# =============================================================================
+
+
+def test_to_component_simulation():
+    """sim-nam maps to Simulation."""
+    from modflow_devtools.dfns.schema.v2 import Simulation
+
+    dfn = Dfn(schema_version=Version("2"), name="sim-nam")
+    result = map_v2(dfn, "2")
+    assert isinstance(result, Simulation)
+
+
+def test_to_component_model():
+    """*-nam (non-sim) maps to Model."""
+    from modflow_devtools.dfns.schema.v2 import Model
+
+    dfn = Dfn(schema_version=Version("2"), name="gwf-nam")
+    result = map_v2(dfn, "2")
+    assert isinstance(result, Model)
+
+
+def test_to_component_solution_package():
+    """sln-* maps to Package(subtype='solution')."""
+    from modflow_devtools.dfns.schema.v2 import Package
+
+    dfn = Dfn(schema_version=Version("2"), name="sln-ims")
+    result = map_v2(dfn, "2")
+    assert isinstance(result, Package)
+    assert result.subtype == "solution"
+
+
+def test_to_component_exchange_package():
+    """exg-* maps to Package(subtype='exchange')."""
+    from modflow_devtools.dfns.schema.v2 import Package
+
+    dfn = Dfn(schema_version=Version("2"), name="exg-gwfgwf")
+    result = map_v2(dfn, "2")
+    assert isinstance(result, Package)
+    assert result.subtype == "exchange"
+
+
+def test_to_component_utility_package():
+    """utl-* maps to Package(subtype='utility')."""
+    from modflow_devtools.dfns.schema.v2 import Package
+
+    dfn = Dfn(schema_version=Version("2"), name="utl-obs")
+    result = map_v2(dfn, "2")
+    assert isinstance(result, Package)
+    assert result.subtype == "utility"
+
+
+def test_to_component_advanced_package():
+    """advanced=True maps to Package(subtype='advanced')."""
+    from modflow_devtools.dfns.schema.v2 import Package
+
+    dfn = Dfn(schema_version=Version("2"), name="gwf-sfr", advanced=True)
+    result = map_v2(dfn, "2")
+    assert isinstance(result, Package)
+    assert result.subtype == "advanced"
+
+
+def test_to_component_variant_of_g():
+    """Names ending in 'g' infer variant_of to the name without the suffix."""
+    from modflow_devtools.dfns.schema.v2 import Package
+
+    dfn = Dfn(schema_version=Version("2"), name="gwf-welg")
+    result = map_v2(dfn, "2")
+    assert isinstance(result, Package)
+    assert result.variant_of == "gwf-wel"
+
+
+def test_to_component_variant_of_a():
+    """Names ending in 'a' infer variant_of to the name without the suffix."""
+    from modflow_devtools.dfns.schema.v2 import Package
+
+    dfn = Dfn(schema_version=Version("2"), name="gwf-rcha")
+    result = map_v2(dfn, "2")
+    assert isinstance(result, Package)
+    assert result.variant_of == "gwf-rch"
+
+
+# =============================================================================
+# Group 5: MapV1To2.map() fast-path
+# =============================================================================
+
+
+def test_mapv1to2_fastpath_skips_map_blocks():
+    """map(dfn, '2') with schema_version=2 takes the fast path (no map_blocks call).
+
+    If map_blocks were called, it would fail: FieldBase has no ``in_record`` attr,
+    and asdict() on a Pydantic model raises TypeError.
+    """
+    dfn = Dfn(
+        schema_version=Version("2"),
+        name="gwf-chd",
+        blocks={
+            "options": {
+                "save_flows": Keyword(name="save_flows", description="save flows"),
+            }
+        },
+    )
+    result = map_v2(dfn, "2")
+    assert result.name == "gwf-chd"
+    assert result.blocks is not None
+    assert "save_flows" in result.blocks["options"].fields
+
+
+# =============================================================================
+# Group 6: _dfn_to_plain_dict / _toml_safe
+# =============================================================================
+
+
+def test_dfn_to_plain_dict_version_coerced_and_none_excluded():
+    """Version is coerced to str; None fields are excluded from output."""
+    dfn = Dfn(
+        schema_version=Version("1.1"),
+        name="test-dfn",
+        parent=None,
+        blocks=None,
+    )
+    d = _dfn_to_plain_dict(dfn)
+    assert d["schema_version"] == "1.1"
+    assert d["name"] == "test-dfn"
+    assert "parent" not in d
+    assert "blocks" not in d
+
+
+def test_dfn_to_plain_dict_with_fieldbase_blocks():
+    """FieldBase blocks are serialized via model_dump."""
+    dfn = Dfn(
+        schema_version=Version("2"),
+        name="test-dfn",
+        blocks={
+            "options": {
+                "nper": Integer(name="nper", description="number of periods"),
+            }
+        },
+    )
+    d = _dfn_to_plain_dict(dfn)
+    block = d["blocks"]["options"]
+    assert "nper" in block
+    assert block["nper"]["type"] == "integer"
+    assert block["nper"]["name"] == "nper"
+
+
+def test_dfn_to_plain_dict_with_fieldv1_blocks():
+    """FieldV1 blocks are serialized via dataclasses.asdict."""
+    dfn = Dfn(
+        schema_version=Version("1"),
+        name="test-dfn",
+        blocks={
+            "options": {
+                "save_flows": FieldV1(name="save_flows", type="keyword", block="options"),
+            }
+        },
+    )
+    d = _dfn_to_plain_dict(dfn)
+    block = d["blocks"]["options"]
+    assert "save_flows" in block
+    assert block["save_flows"]["name"] == "save_flows"
+    assert block["save_flows"]["type"] == "keyword"
+
+
+def test_toml_safe_primitives_pass_through():
+    """_toml_safe passes primitive types through unchanged."""
+    assert _toml_safe("hello") == "hello"
+    assert _toml_safe(42) == 42
+    assert _toml_safe(3.14) == 3.14
+    assert _toml_safe(True) is True
+    assert _toml_safe(None) is None
+
+
+def test_toml_safe_non_primitive_coerced_to_str():
+    """_toml_safe coerces non-TOML-native types (e.g. Version) to str."""
+    assert _toml_safe(Version("1.1")) == "1.1"
+
+
+def test_toml_safe_fieldbase_via_model_dump():
+    """_toml_safe converts FieldBase instances via model_dump recursively."""
+    kw = Keyword(name="save_flows", description="save flows")
+    result = _toml_safe(kw)
+    assert isinstance(result, dict)
+    assert result["name"] == "save_flows"
+    assert result["type"] == "keyword"
+
+
+def test_toml_safe_nested():
+    """_toml_safe recurses into dicts and lists."""
+    obj = {"a": [Version("2"), "plain"], "b": {"c": 99}}
+    result = _toml_safe(obj)
+    assert result["a"][0] == "2"
+    assert result["a"][1] == "plain"
+    assert result["b"]["c"] == 99

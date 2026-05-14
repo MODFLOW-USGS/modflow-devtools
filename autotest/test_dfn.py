@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pytest
+from packaging.version import Version
 
 from modflow_devtools.dfn import Dfn, get_dfns
 from modflow_devtools.dfn2toml import convert
@@ -9,6 +10,8 @@ from modflow_devtools.markers import requires_pkg
 PROJ_ROOT = Path(__file__).parents[1]
 DFN_DIR = PROJ_ROOT / "autotest" / "temp" / "dfn"
 TOML_DIR = DFN_DIR / "toml"
+TOML_V1_1_DIR = DFN_DIR / "toml-v1_1"
+TOML_V2_DIR = DFN_DIR / "toml-v2"
 VERSIONS = {1: DFN_DIR, 2: TOML_DIR}
 MF6_OWNER = "MODFLOW-ORG"
 MF6_REPO = "modflow6"
@@ -36,6 +39,26 @@ def pytest_generate_tests(metafunc):
         toml_names = [toml.stem for toml in TOML_DIR.glob("*.toml")]
         metafunc.parametrize("toml_name", toml_names, ids=toml_names)
 
+    if "toml_v1_1_name" in metafunc.fixturenames:
+        dfn_paths = [p for p in DFN_DIR.glob("*.dfn") if p.stem not in ["common", "flopy"]]
+        if not TOML_V1_1_DIR.exists() or not all(
+            (TOML_V1_1_DIR / f"{dfn.stem}.toml").is_file() for dfn in dfn_paths
+        ):
+            convert(DFN_DIR, TOML_V1_1_DIR, schema="1.1")
+        assert all((TOML_V1_1_DIR / f"{dfn.stem}.toml").is_file() for dfn in dfn_paths)
+        toml_names = [toml.stem for toml in TOML_V1_1_DIR.glob("*.toml")]
+        metafunc.parametrize("toml_v1_1_name", toml_names, ids=toml_names)
+
+    if "toml_v2_name" in metafunc.fixturenames:
+        dfn_paths = [p for p in DFN_DIR.glob("*.dfn") if p.stem not in ["common", "flopy"]]
+        if not TOML_V2_DIR.exists() or not all(
+            (TOML_V2_DIR / f"{dfn.stem}.toml").is_file() for dfn in dfn_paths
+        ):
+            convert(DFN_DIR, TOML_V2_DIR, schema="2")
+        assert all((TOML_V2_DIR / f"{dfn.stem}.toml").is_file() for dfn in dfn_paths)
+        toml_names = [toml.stem for toml in TOML_V2_DIR.glob("*.toml")]
+        metafunc.parametrize("toml_v2_name", toml_names, ids=toml_names)
+
 
 @requires_pkg("boltons")
 def test_load_v1(dfn_name):
@@ -60,3 +83,30 @@ def test_load_v2(toml_name):
 def test_load_all(version):
     dfns = Dfn.load_all(VERSIONS[version], version=version)
     assert any(dfns)
+
+
+@requires_pkg("boltons")
+def test_convert_v1_1(toml_v1_1_name):
+    try:
+        import tomllib
+    except ImportError:
+        import tomli as tomllib  # type: ignore[no-redef]
+
+    with (TOML_V1_1_DIR / f"{toml_v1_1_name}.toml").open("rb") as f:
+        data = tomllib.load(f)
+    assert data["name"] == toml_v1_1_name
+    assert data["schema_version"] == "1.1"
+
+
+@requires_pkg("boltons")
+def test_convert_v2(toml_v2_name):
+    try:
+        import tomllib
+    except ImportError:
+        import tomli as tomllib  # type: ignore[no-redef]
+    from pydantic import TypeAdapter
+    from modflow_devtools.dfns.schema.v2 import Component
+
+    with (TOML_V2_DIR / f"{toml_v2_name}.toml").open("rb") as f:
+        data = tomllib.load(f)
+    assert TypeAdapter(Component).validate_python(data).name == toml_v2_name

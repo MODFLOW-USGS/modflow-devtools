@@ -752,21 +752,12 @@ class DfnSpec(BaseModel):
         path: "str | PathLike",
         schema_version: "str | Version | None" = None,
     ) -> "DfnSpec":
-        """
-        Load a DfnSpec from a directory of DFN or TOML files.
-
-        Component types are inferred from component names using the MF6
-        naming conventions. This is a transitional implementation; when the
-        v1→v2 mapper is complete it will be replaced by a proper mapper call.
-        """
+        """Load a DfnSpec from a directory of DFN or TOML files."""
         from pathlib import Path as _Path
 
-        from modflow_devtools.dfns import (
-            MapV1To2,
-            _apply_parent_inference,
-            load_flat,
-        )
-        from modflow_devtools.dfns import map as map_dfn
+        from modflow_devtools.dfn.mapper import _apply_parent_inference, load_flat
+        from modflow_devtools.dfns.mapper import MapV1To2
+        from modflow_devtools.dfns.mapper import map as map_dfn
 
         _path = _Path(path).expanduser().resolve()
         dfns = load_flat(_path)
@@ -776,9 +767,8 @@ class DfnSpec(BaseModel):
         first = next(iter(dfns.values()))
         if first.schema_version == Version("1"):
             dfns = _apply_parent_inference(dfns)
-            dfns = {n: map_dfn(d, "2") for n, d in dfns.items()}
 
         components: dict[str, Component] = {
-            name: MapV1To2.to_component(dfn) for name, dfn in dfns.items()
+            n: map_dfn(d, "2") for n, d in dfns.items()
         }
         return cls(components=components)
