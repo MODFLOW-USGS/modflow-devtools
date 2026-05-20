@@ -17,13 +17,11 @@
       - [Type-specific attributes](#type-specific-attributes-1)
         - [`multi`](#multi)
         - [`subtype`](#subtype)
-        - [`variant_of`](#variant_of)
 - [Blocks](#blocks-1)
   - [Attributes](#attributes)
     - [`name`](#name-1)
     - [`fields`](#fields)
     - [`repeats`](#repeats)
-    - [`optional`](#optional)
 - [Fields](#fields-1)
   - [Shared attributes](#shared-attributes-1)
     - [`name`](#name-2)
@@ -34,11 +32,11 @@
     - [`default`](#default)
     - [`developmode`](#developmode)
     - [`netcdf`](#netcdf)
+    - [`tagged`](#tagged)
   - [Scalars](#scalars)
     - [Keyword](#keyword)
     - [String](#string)
       - [Type-specific attributes](#type-specific-attributes-2)
-        - [`tagged`](#tagged)
         - [`valid`](#valid)
         - [`case_sensitive`](#case_sensitive)
         - [`pk`](#pk)
@@ -46,7 +44,6 @@
         - [`fk_ref`](#fk_ref)
     - [Integer](#integer)
       - [Type-specific attributes](#type-specific-attributes-3)
-        - [`tagged`](#tagged-1)
         - [`valid`](#valid-1)
         - [`dimension`](#dimension)
         - [`time_series`](#time_series)
@@ -55,7 +52,6 @@
         - [`fk_ref`](#fk_ref-1)
     - [Double](#double)
       - [Type-specific attributes](#type-specific-attributes-4)
-        - [`tagged`](#tagged-2)
         - [`time_series`](#time_series-1)
     - [Path](#path)
       - [Type-specific attributes](#type-specific-attributes-5)
@@ -136,7 +132,7 @@ Parent relationships are defined bottom-up with attribute `parent`:
 
 #### `schema_version`
 
-`string | null (default: null)`. The version of the DFN schema. Optional but recommended.
+`string | null (default: null)`. The version of the DFN schema. Optional but recommended. When multiple components are loaded together into a `DfnSpec`, all non-null `schema_version` values must agree; mixed versions are a validation error.
 
 ### Component types
 
@@ -177,15 +173,9 @@ Optional discriminator indicating the package's functional role. Several package
   1. Solves a continuity equation. Each feature (well, reach, lake cell, UZF cell) internally balances inflows, outflows, and change in storage. Traditional stress packages impose static conditions and do not have an internal water budget. **Note:** advanced packages can act as receivers in the Water Mover (MVR/MVE) package because they have an internal continuity equation to receive diverted water into. Traditional stress packages cannot.
   2. Has dynamic state variables. Advanced packages compute a dependent variable (e.g., lake stage, well head, reach stage) that is part of the solution. Traditional stress packages use fixed/user-specified values.
   3. Stress periods have feature replacement rather than block replacement semantics: when a new period block configuration is provided, traditional stress packages replace the entire previous configuration; advanced packages perform partial updates, modifying only features explicitly appearing in the new period block. **Note:** both simple and advanced packages fill-forward across omitted stress periods; the distinction is only in what happens when a new period block configuration is specified.
-- `"utility"`: an auxiliary package that may be attached to models or packages, such as time series, time-array series, or observations. Utility packages (`utl-*`) are distinguished from primary model input packages by providing configurational or cross-cutting concerns rather than representing a first-class hydrologic process. They may support `multi` and `variant_of`; they never have `subtype` `"solution"`, `"exchange"`, `"stress"`, or `"advanced"`.
+- `"utility"`: an auxiliary package that may be attached to models or packages, such as time series, time-array series, or observations. Utility packages (`utl-*`) are distinguished from primary model input packages by providing configurational or cross-cutting concerns rather than representing a first-class hydrologic process. They may support `multi`.
 
 `subtype: null` (the default) covers packages that don't fall into any named category, such as output control packages.
-
-###### `variant_of`
-
-`string | null (default: null)`. Some modules may be represented by several different components: e.g., typical stress packages define period data sparsely as a list, while layer- and grid-array variants allow providing period data as arrays.
-
-A package may signal that it has equivalent functional semantics as another component with the `variant_of` attribute. This attribute is only meaningful on packages (including utility packages); variants of models or simulations are not supported.
 
 ## Blocks
 
@@ -214,13 +204,20 @@ A field's value need not be preceded by its name; see the `tagged` section below
 
 #### `repeats`
 
-`boolean (default: false)`. Whether the block may appear multiple times in an input file. When true, each occurrence is read independently, and associated with a unique label. The canonical repeating block is the period block, whose label is the stress period number.
+`boolean (default: false)`. Whether the block may appear multiple times in an input file. When true, each occurrence is read independently and associated with a unique label. The canonical repeating block is the period block, whose label is the stress period number.
 
-**Note:** if a repeating block contains any required fields, it must appear at least once. If a repeating block contains only optional fields, it can appear zero or more times.
+A block has no explicit `optional` attribute. Its optionality is derived from its fields: a block is optional if and only if all of its fields are optional (vacuously true for an empty block). This combines with `repeats` to give four configurations:
+
+| `repeats` | derived optional | Meaning |
+|---|---|---|
+| `false` | `false` | must appear exactly once |
+| `false` | `true` | may appear at most once |
+| `true` | `false` | must appear at least once |
+| `true` | `true` | may appear zero or more times |
 
 ## Fields
 
-A field is a [tagged union](https://en.wikipedia.org/wiki/Tagged_union) of concrete data types, discriminated by a `type` attribute. A field consists of a set of attributes, some shared, some type-specific.
+A field is a [union](https://en.wikipedia.org/wiki/Tagged_union) of concrete data types, discriminated by a `type` attribute. A field consists of a set of attributes, some shared, some type-specific.
 
 Field definitions are not entirely self-contained. Some fields may refer to other fields, in the same component or in another. There are two cases of this:
 
@@ -241,6 +238,7 @@ There is a core set of attributes shared by all field types:
 - `default`
 - `developmode`
 - `netcdf`
+- `tagged`
 
 #### `name`
 
@@ -284,6 +282,10 @@ The field's default value. Only relevant for optional fields. TODO: determine wh
 
 `boolean (default: false)`. Marks a field that can appear in NetCDF input files.
 
+#### `tagged`
+
+`boolean (default: true)`. Indicates that the field value should be preceded by the field name.
+
 ### Scalars
 
 Scalar fields define a single value.
@@ -297,10 +299,6 @@ Type `keyword`. Represents a boolean choice. In input files, the presence of a k
 Type `string`.
 
 ##### Type-specific attributes
-
-###### `tagged`
-
-`boolean (default: true)`. Indicates that the field value should be preceded by the field name. Valid only for record subfields. All other scalar fields are necessarily tagged.
 
 ###### `valid`
 
@@ -330,7 +328,7 @@ Type `integer`.
 
 ###### `tagged`
 
-`boolean (default: true)`. Indicates that the field value should be preceded by the field name. Valid only for record subfields. All other scalar fields are necessarily tagged.
+`boolean (default: true)`. Indicates that the field value should be preceded by the field name.
 
 ###### `valid`
 
@@ -364,7 +362,7 @@ Type `double`.
 
 ###### `tagged`
 
-`boolean (default: true)`. Indicates that the field value should be preceded by the field name. Valid only for record subfields. All other scalar fields are necessarily tagged.
+`boolean (default: true)`. Indicates that the field value should be preceded by the field name.
 
 ###### `time_series`
 
@@ -392,6 +390,8 @@ Type `array`.
 
 Arrays are not proper composites. An array does not have an item subfield as does a list. Instead, it has a `dtype` attribute identifying its scalar element type. An array may not contain composite elements; `dtype` must be a scalar type.
 
+An array is **self-sizing** when its `shape` is empty (`[]`). A self-sizing array is read inline by the parser: it consumes tokens until the end of the current line, dynamically determining its own length. Its element count may serve as a dimension for other arrays (see `dimension` below). The only invalid position for a self-sizing array is as a non-rightmost subfield of a record, where subsequent fields on the same line would be unreadable. Arrays with a declared shape are parsed to exactly that many elements.
+
 ##### Type-specific attributes
 
 ###### `dtype`
@@ -400,9 +400,13 @@ Arrays are not proper composites. An array does not have an item subfield as doe
 
 ###### `shape`
 
-`[string]`. The array's shape. Each element is a shape expression — either a global dimension name (explicit or derived; see [Array dimensions](#array-dimensions)) or a row-level column lookup (see [Row-level column lookups](#row-level-column-lookups)). The latter form is only valid when the array is a subfield of a record.
+`[string] (default: [])`. The array's shape, as a list of shape expressions. An empty list means the array is **self-sizing** (see above). There is one constraint on self-sizing arrays: they may not appear as a non-rightmost subfield of a record, because subsequent fields on the same line would be unreadable. In all other positions — top-level in a block, or rightmost in a record — a self-sizing array is valid. Parsing rules by position:
 
-For `dtype: "string"` arrays, `shape` must be empty (`[]`). String arrays are read inline and self-sizing; no shape expression is needed or meaningful. Shape expressions on string arrays are validation errors.
+- **Top-level** (a direct field of a block, not inside a record): read as inline tokens on the block line. `shape` may be empty (self-sizing) or declared.
+- **Inline, not rightmost** (a subfield of a record with at least one subsequent field): `shape` must be declared and non-empty; the size must be determinable from already-parsed context (a global dim or a preceding sibling field).
+- **Inline, rightmost** (the last subfield of a record): `shape` may be empty (self-sizing) or declared.
+
+Each declared shape expression is either a global dimension name (explicit or derived; see [Array dimensions](#array-dimensions)) or a row-level column lookup (see [Row-level column lookups](#row-level-column-lookups)). The latter form is only valid when the array is a subfield of a record. Any shape expression may additionally carry an advisory **bound annotation** prefix (`<`, `>`, `<=`, or `>=`); the bound is not enforced by the MF6 parser.
 
 ###### `time_series`
 
@@ -414,7 +418,9 @@ For `dtype: "string"` arrays, `shape` must be empty (`[]`). String arrays are re
 
 ###### `dimension`
 
-`"component" | "model" | "simulation" | null (default: null)`. Valid only when `dtype` is `"string"`. Marks this array as a named dimension source at the given scope: the array's name may appear in other arrays' `shape` expressions to mean "one value per element of this string array." Because string arrays are always read inline (not via READARRAY), the MF6 parser counts tokens on the fly; no numeric value needs to be declared in advance. `shape` must be empty for any array with `dimension` set. Not meaningful on non-string arrays; `"record"` scope is not valid for arrays.
+`"component" | "model" | "simulation" | null (default: null)`. Marks this self-sizing array as a dimension source at the given scope: the array's name may appear in other arrays' `shape` expressions to mean "one value per element of this array." Valid only on self-sizing arrays (`shape` must be empty); a schema error on arrays with a declared shape.
+
+Because a self-sizing array is read inline and dynamically sized, the parser knows its element count immediately after reading the line — no separate integer field is needed to declare the size in advance. That count is what other arrays reference when they name this array in their `shape`. The dtype of the dimension-source array is not constrained: a string array whose elements are named identifiers (e.g. auxiliary variable names) and a numeric array whose elements happen to fix a count both provide the same thing to the shape system — a dynamic integer size. `"record"` scope is not valid for arrays.
 
 #### Record
 
@@ -574,7 +580,7 @@ connectiondata:
 
 Validation rules:
 - Valid only when the array is a subfield of a record (not a top-level block field).
-- The sibling field must be an `integer` or any `array`. No `dimension: true` annotation is required — intra-record sibling resolution is purely structural; `dimension: true` is only needed to register a field in the global dim scope.
+- The sibling field must be an `integer` with `dimension: "record"`. The `"record"` scope annotation makes the role explicit and prevents accidental resolution of unrelated integer fields.
 - Resolution order: the scope chain is tried first; sibling resolution is only the fallback when the identifier does not resolve globally.
 
 #### Bound-annotated shape expressions
@@ -592,7 +598,7 @@ sfacval:
 
 Dim references (plain identifiers) resolve in this order:
 
-1. Local explicit dims: `integer` fields with `dimension` set and `array` fields with `dtype: "string"` and `dimension` set, in this component
+1. Local explicit dims: `integer` fields with `dimension` set and self-sizing `array` fields (i.e. `shape: []`) with `dimension` set, in this component
 2. Local derived dims: entries in this component's `derived_dims`, resolved in dependency order
 3. Inherited dims: explicit dims from other components in the spec (filtered by scope — `"model"` dims available to packages in the same model, `"simulation"` dims available to all)
 4. Intra-record siblings with `dimension: "record"`: a sibling `integer` in the same enclosing record that has been explicitly marked as a per-row inline count — fallback when steps 1–3 all fail and the array is inside a record.
@@ -601,14 +607,14 @@ Row-level column lookups and bound annotations (`<dim` etc.) are not resolved vi
 
 #### Explicit dimension scope
 
-The `dimension` attribute is categorical, not binary:
+The `dimension` attribute is categorical, not binary. Valid values differ by field type:
 
-```
-dimension: "record" | "component" | "model" | "simulation" | true | false | null
-```
+- For `integer`: `"record" | "component" | "model" | "simulation" | true | false | null`
+- For `array` (self-sizing only, i.e. `shape: []`): `"component" | "model" | "simulation" | null`
 
+Meanings:
 - `null` (default): not a dimension source.
-- `"record"`: intra-record scope. The field is an inline count on the same record row. Valid only on `integer`. Makes the sibling-resolution fallback (scope level 4) explicit and annotated.
+- `"record"`: intra-record scope. The integer field is an inline count on the same record row. Valid only on `integer`. Makes the sibling-resolution fallback (scope level 4) explicit and annotated.
 - `"component"`: available within this component.
 - `"model"`: exported to model scope; available to all packages whose parent is the same model. Example: `nrow`, `ncol`, `nlay` in `gwf-dis` are model-scoped — accessible to `gwf-chd`, `gwf-wel`, and all other packages in the same GWF model.
 - `"simulation"`: exported to simulation scope; available to all components. Example: `nper` in `sim-tdis`.

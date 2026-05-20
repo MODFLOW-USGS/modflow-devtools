@@ -63,7 +63,7 @@ _FLOPY_CLASS_TO_V2_TYPE: dict[str, str] = {
 }
 
 
-def try_parse_parent(meta: list[str]) -> "str | list[str] | None":
+def try_get_parent(meta: list[str]) -> "str | list[str] | None":
     """
     Try to parse a component's parent from its metadata.
 
@@ -104,7 +104,7 @@ def is_multi_package(meta: list[str]) -> bool:
     return any("multi-package" in m for m in meta)
 
 
-def parse_mf6_subpackages(meta: list[str]) -> list[str]:
+def get_subpackages(meta: list[str]) -> list[str]:
     """
     Return MF6 subpackage abbreviations declared via '# mf6 subpackage <abbr>'.
 

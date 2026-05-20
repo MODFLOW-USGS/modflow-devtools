@@ -17,7 +17,7 @@ import sys
 
 from . import (
     _DEFAULT_CACHE,
-    ModelSourceConfig,
+    ModelSources,
     _try_best_effort_sync,
 )
 
@@ -47,7 +47,7 @@ def _format_grid(items, prefix=""):
 
 def cmd_sync(args):
     """Sync command handler."""
-    config = ModelSourceConfig.load()
+    config = ModelSources.load()
 
     # If a specific source is provided, sync just that source
     if args.source:
@@ -65,9 +65,9 @@ def cmd_sync(args):
         if source_obj is None:
             # If --repo is provided, create an ad-hoc source
             if args.repo:
-                from . import ModelSourceRepo
+                from . import ModelSource
 
-                source_obj = ModelSourceRepo(
+                source_obj = ModelSource(
                     repo=args.repo,
                     name=args.source,
                     refs=[args.ref] if args.ref else [],
@@ -111,7 +111,7 @@ def cmd_info(args):
     if os.environ.get("MODFLOW_DEVTOOLS_AUTO_SYNC", "").lower() in ("1", "true", "yes"):
         _try_best_effort_sync()
 
-    config = ModelSourceConfig.load()
+    config = ModelSources.load()
     status = config.status
 
     if not status:

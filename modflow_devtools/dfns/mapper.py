@@ -1,102 +1,187 @@
-"""
-v2 schema mapping for MODFLOW 6 DFNs.
-"""
-
 from __future__ import annotations
 
-import dataclasses
 import re
-from dataclasses import asdict
-from typing import Any, Literal, cast
+from typing import Any, Literal
 
-from boltons.dictutils import OMD
-from packaging.version import Version
-
-from modflow_devtools.dfn.parse import (
-    try_parse_bool,
-)
-from modflow_devtools.dfn.v1_1 import SCALAR_TYPES as V1_SCALAR_TYPES
-from modflow_devtools.dfn.v1_1 import Dfn, FieldV1
-from modflow_devtools.dfns.schema.v2 import (
-    Array,
-    Double,
-    FieldBase,
-    Integer,
-    Keyword,
-    List,
-    Record,
-    String,
-    Union,
-)
+from modflow_devtools.dfn import schema as v1
+from modflow_devtools.dfn.parser import try_parse_bool
+from modflow_devtools.dfns import schema as v2
 from modflow_devtools.misc import try_literal_eval
 
 _IDENT_RE = re.compile(r"^[A-Za-z_]\w*$")
+_LOOKUP_RE = re.compile(r"^(\w+)\.(\w+)\((\w+)\)$")
+_DIMS: frozenset[str] = frozenset(
+    {"nodes", "nlay", "nrow", "ncol", "ncpl", "nja", "ncelldim", "nvert"}
+)
 
 
-# =============================================================================
-# Mapper
-# =============================================================================
+def _resolve_dimensions(blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
+    dims_referenced: set[str] = set()  # dims used in shape expressions
+    dims_from_array: set[str] = set()  # self-sizing array dimensions
+    dims_explicit: set[str] = set(_DIMS)  # integer dimension fields
 
+    # shape expressions may reference dimensions from several providers:
+    # - explicitly defined integer dimension fields
+    # - dynamic dimensions: size of 1D arrays
 
-class MapV1To2:
-    """Map a v1 Dfn (FieldV1 blocks) to a v2 Component."""
+    def _scan_fields(fields: dict[str, v2.Field]) -> None:
+        for field in fields.values():
+            if isinstance(field, v2.Array):
+                for dim in field.shape:
+                    if _IDENT_RE.fullmatch(dim):
+                        dims_referenced.add(dim)
+                else:
+                    # no shape expr, self-sizing
+                    dims_from_array.add(field.name)
+            scope = getattr(field, "dimension", None)
+            if scope in ("component", "model", "simulation"):
+                dims_explicit.add(field.name)
+            if isinstance(field, v2.Record):
+                _scan_fields(field.fields)
+            elif isinstance(field, v2.Union):
+                _scan_fields(field.arms)
+            elif isinstance(field, v2.List):
+                item = field.item
+                _scan_fields(item.fields if isinstance(item, v2.Record) else item.arms)
 
-    @staticmethod
-    def map_period_block(dfn: Dfn, block: dict) -> dict:
-        """Convert a period block recarray to individual arrays, one per column."""
-        block = dict(block)
-        fields_list = list(block.values())
+    for block in blocks.values():
+        _scan_fields(block.fields)
 
-        if fields_list and isinstance(fields_list[0], List):
-            assert len(fields_list) == 1
-            list_field: List = fields_list[0]
-            block.pop(list_field.name)
-            item = list_field.item
-            columns: dict = dict(item.fields if isinstance(item, Record) else item.arms)
-        else:
-            columns = dict(block)
+    if not dims_referenced:
+        return blocks
 
-        cellid = columns.pop("cellid", None)
+    dims_provided: set[str] = dims_from_array & dims_explicit
 
-        _SCALAR_DTYPES = {"keyword", "integer", "double", "double precision", "string"}
+    def _get_dims(record: v2.Record) -> set[str]:
+        found: set[str] = set()
+        for field in record.fields.values():
+            if isinstance(field, v2.Array):
+                for dim in field.shape:
+                    if _IDENT_RE.fullmatch(dim) and dim not in dims_provided:
+                        # the shape expression of an array inside a record
+                        # may reference a sibling integer subfield even if
+                        # the integer is not marked as a dimension.
+                        if (sibling := record.fields.get(dim, None)) is not None and isinstance(
+                            sibling, v2.Integer
+                        ):
+                            found.add(dim)
+        return found
 
-        for col_name, column in columns.items():
-            if isinstance(column, Array):
-                dtype = column.dtype
-            elif getattr(column, "type", None) in _SCALAR_DTYPES:
-                dtype = column.type
-                if dtype == "double precision":
-                    dtype = "double"
-            else:
-                block[col_name] = column
-                continue
+    def _resolve_fields(fields: dict[str, v2.Field]) -> dict[str, v2.Field]:
+        result = {}
+        for name, field in fields.items():
+            if isinstance(field, v2.Array) and name in dims_provided:
+                field.dimension = "component"
+            elif isinstance(field, v2.Record):
+                local_dims = _get_dims(field)
+                subfields = _resolve_fields(field.fields)
+                if local_dims:
+                    for subfield_name, subfield in subfields.items():
+                        if subfield_name in local_dims and isinstance(subfield, v2.Integer):
+                            subfield.dimension = "record"
+                field.fields = subfields
+            elif isinstance(field, v2.Union):
+                field.arms = _resolve_fields(field.arms)
+            elif isinstance(field, v2.List):
+                if isinstance(field.item, v2.Record):
+                    local_dims = _get_dims(field.item)
+                    subfields = _resolve_fields(field.item.fields)
+                    if local_dims:
+                        for subfield_name, subfield in subfields.items():
+                            if subfield_name in local_dims and isinstance(subfield, v2.Integer):
+                                subfield.dimension = "record"
+                    field.item.fields = subfields
+                else:
+                    field.item.arms = _resolve_fields(field.item.arms)
+            result[name] = field
+        return result
 
-            from modflow_devtools.dfns.schema.v2 import GRID_DIM_NAMESPACE
-
-            old_dims = list(column.shape) if isinstance(column, Array) else []
-            new_dims = ["nper"]
-            if cellid:
-                new_dims.append("nodes")
-            new_dims.extend(d for d in old_dims if d in GRID_DIM_NAMESPACE)
-
-            block[col_name] = Array(
-                name=column.name,
-                longname=getattr(column, "longname", None),
-                description=getattr(column, "description", None),
-                optional=column.optional,
-                default=getattr(column, "default", None),
-                developmode=column.developmode,
-                netcdf=getattr(column, "netcdf", False),
-                dtype=dtype,
-                shape=new_dims,
-            )
-
+    def _resolve_block(block: v2.Block) -> v2.Block:
+        block.fields = _resolve_fields(block.fields)
         return block
 
-    @staticmethod
-    def map_field(dfn: Dfn, v1_field: FieldV1) -> FieldBase:
-        """Convert a v1 field to the appropriate v2 concrete type."""
-        fields = cast(OMD, dfn.fields)
+    return {block_name: _resolve_block(block) for block_name, block in blocks.items()}
+
+
+def _resolve_relations(blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
+    pk_set: set[tuple[str, str]] = set()
+    fk_map: dict[tuple[str, str], str] = {}
+
+    def _scan_fields(block_name: str, fields: dict[str, v2.Field]) -> None:
+
+        def _scan_record(record: v2.Record) -> None:
+            for field in record.fields.values():
+                if isinstance(field, v2.Array):
+                    for dim in field.shape:
+                        if m := _LOOKUP_RE.fullmatch(dim):
+                            pk_block, _, fk_fname = m.groups()
+                            sibling = record.fields.get(fk_fname)
+                            if sibling is not None and getattr(sibling, "fk", None) is None:
+                                fk_map[(block_name, fk_fname)] = f"{pk_block}.{fk_fname}"
+                                pk_set.add((pk_block, fk_fname))
+
+        for field in fields.values():
+            if isinstance(field, v2.Record):
+                _scan_record(field)
+            elif isinstance(field, v2.Union):
+                _scan_fields(block_name, field.arms)
+            elif isinstance(field, v2.List):
+                item = field.item
+                if isinstance(item, v2.Record):
+                    _scan_record(item)
+                elif isinstance(item, v2.Union):
+                    _scan_fields(block_name, item.arms)
+
+    for block_name, block in blocks.items():
+        _scan_fields(block_name, block.fields)
+
+    if not fk_map and not pk_set:
+        return blocks
+
+    def _resolve_fields(block_name: str, fields: dict[str, v2.Field]) -> dict[str, v2.Field]:
+
+        def _resolve_record(record: v2.Record) -> v2.Record:
+            updates: dict = {}
+            for fname, sf in record.fields.items():
+                updated = sf
+                if (block_name, fname) in fk_map and getattr(sf, "fk", None) is None:
+                    updated = updated.model_copy(update={"fk": fk_map[(block_name, fname)]})
+                if (block_name, fname) in pk_set and not getattr(sf, "pk", False):
+                    updated = updated.model_copy(update={"pk": True})
+                if updated is not sf:
+                    updates[fname] = updated
+            if not updates:
+                return record
+            return record.model_copy(
+                update={"fields": {fn: updates.get(fn, sf) for fn, sf in record.fields.items()}}
+            )
+
+        result = {}
+        for name, f in fields.items():
+            if isinstance(f, v2.Record):
+                f = _resolve_record(f)
+            elif isinstance(f, v2.Union):
+                f.arms = _resolve_fields(block_name, f.arms)
+            elif isinstance(f, v2.List):
+                if isinstance(f.item, v2.Record):
+                    f.item = _resolve_record(f.item)
+                else:
+                    f.item.arms = _resolve_fields(block_name, f.item.arms)
+            result[name] = f
+        return result
+
+    return {block_name: _resolve_fields(block, block_name) for block_name, block in blocks.items()}
+
+
+def map(dfn: v1.Dfn) -> v2.Component:
+    """Map a component definition from the v1 schema to v2."""
+
+    if dfn["schema_version"] != "1":
+        raise ValueError(f"Expected schema version 1, got {dfn['schema_version']!r}")
+
+    fields = v1.get_fields(dfn)
+
+    def _map_field(field: v1.Field) -> v2.Field:
 
         def _to_bool(v: Any, default: bool = False) -> bool:
             if isinstance(v, bool):
@@ -109,8 +194,8 @@ class MapV1To2:
                     return False
             return default
 
-        def _map_field(f: FieldV1) -> FieldBase:
-            fd = asdict(f)
+        def __map_field(f: v1.Field) -> v2.Field:
+            fd = dict(f)
             fd = {k: try_parse_bool(v) for k, v in fd.items()}
 
             _name: str = fd["name"]
@@ -150,9 +235,11 @@ class MapV1To2:
                         col_name = m.group(1)
                         block_name = next(
                             (
-                                fi.block
+                                fi["block"]
                                 for fi in fields.values(multi=True)
-                                if fi.name == col_name and fi.type == "integer" and fi.in_record
+                                if fi["name"] == col_name
+                                and fi["type"] == "integer"
+                                and fi["in_record"]
                             ),
                             None,
                         )
@@ -161,20 +248,20 @@ class MapV1To2:
                     else:
                         provider = next(
                             (
-                                fi.name
+                                fi["name"]
                                 for fi in fields.values(multi=True)
-                                if fi.type == "string"
-                                and (fi.shape or "").strip() in (f"({elem})", elem)
+                                if fi["type"] == "string"
+                                and (fi["shape"] or "").strip() in (f"({elem})", elem)
                             ),
                             None,
                         )
                         result.append(provider if provider else elem)
                 return result
 
-            def _to_scalar() -> FieldBase:
+            def _to_scalar() -> v2.Scalar:
                 assert _type is not None
                 if _type == "keyword":
-                    return Keyword(
+                    return v2.Keyword(
                         name=_name,
                         longname=longname,
                         description=description,
@@ -184,7 +271,7 @@ class MapV1To2:
                         netcdf=netcdf,
                     )
                 if _type == "string":
-                    return String(
+                    return v2.String(
                         name=_name,
                         longname=longname,
                         description=description,
@@ -198,21 +285,19 @@ class MapV1To2:
                         time_series=time_series,
                     )
                 if _type == "integer":
-                    from modflow_devtools.dfns.schema.v2 import GRID_DIM_NAMESPACE
-
                     v = [int(x) for x in valid] if valid else None
                     if fd.get("block") == "dimensions":
-                        if _name in GRID_DIM_NAMESPACE:
+                        if _name in _DIMS:
                             _dim_scope: (
                                 Literal["record", "component", "model", "simulation"] | None
                             ) = "model"
-                        elif dfn.name == "sim-tdis" and _name == "nper":
+                        elif dfn["name"] == "sim-tdis" and _name == "nper":
                             _dim_scope = "simulation"
                         else:
                             _dim_scope = "component"
                     else:
                         _dim_scope = None
-                    return Integer(
+                    return v2.Integer(
                         name=_name,
                         longname=longname,
                         description=description,
@@ -226,7 +311,7 @@ class MapV1To2:
                         dimension=_dim_scope,
                     )
                 if _type in ("double", "double precision"):
-                    return Double(
+                    return v2.Double(
                         name=_name,
                         longname=longname,
                         description=description,
@@ -239,15 +324,15 @@ class MapV1To2:
                     )
                 raise TypeError(f"Unsupported scalar type: {_type!r}")
 
-            def _row_field() -> Record | Union:
+            def _row_field() -> v2.Record | v2.Union:
                 item_names = (_type or "").split()[1:]
                 if not item_names:
                     raise ValueError(f"Missing list item definition: {_type!r}")
 
                 item_types = [
-                    fi.type
+                    fi["type"]
                     for fi in fields.values(multi=True)
-                    if fi.name in item_names and fi.in_record
+                    if fi["name"] in item_names and fi["in_record"]
                 ]
 
                 if (
@@ -258,16 +343,16 @@ class MapV1To2:
                         or (item_types[0] or "").startswith("keystring")
                     )
                 ):
-                    mapped = MapV1To2.map_field(dfn, next(iter(fields.getlist(item_names[0]))))
-                    if isinstance(mapped, (Record, Union)):
+                    mapped = __map_field(next(iter(fields.getlist(item_names[0]))))
+                    if isinstance(mapped, (v2.Record, v2.Union)):
                         return mapped
                     raise TypeError(
                         f"Expected Record or Union for list item, got {type(mapped).__name__}"
                     )
 
-                if all(t in V1_SCALAR_TYPES for t in item_types):
+                if all(t in v1.SCALAR_TYPES for t in item_types):
                     rec_fields = _record_fields()
-                    return Record(
+                    return v2.Record(
                         name=_name,
                         description=(
                             (description or "").replace("is the list of", "is the record of")
@@ -277,14 +362,14 @@ class MapV1To2:
                     )
 
                 children = {
-                    fi.name: MapV1To2.map_field(dfn, fi)
+                    fi["name"]: __map_field(fi)
                     for fi in fields.values(multi=True)
-                    if fi.name in item_names and fi.in_record
+                    if fi["name"] in item_names and fi["in_record"]
                 }
                 first = next(iter(children.values()))
-                if len(children) == 1 and isinstance(first, Union):
+                if len(children) == 1 and isinstance(first, v2.Union):
                     return first
-                return Record(
+                return v2.Record(
                     name=_name,
                     description=(
                         (description or "").replace("is the list of", "is the record of") or None
@@ -295,9 +380,9 @@ class MapV1To2:
             def _union_fields() -> dict:
                 names = (_type or "").split()[1:]
                 return {
-                    fi.name: MapV1To2.map_field(dfn, fi)
+                    fi["name"]: __map_field(fi)
                     for fi in fields.values(multi=True)
-                    if fi.name in names and fi.in_record
+                    if fi["name"] in names and fi["in_record"]
                 }
 
             def _record_fields() -> dict:
@@ -307,12 +392,12 @@ class MapV1To2:
                     matches = [
                         fi
                         for fi in fields.values(multi=True)
-                        if fi.name == rname
-                        and fi.in_record
-                        and not (fi.type or "").startswith("record")
+                        if fi["name"] == rname
+                        and fi["in_record"]
+                        and not (fi["type"] or "").startswith("record")
                     ]
                     if matches:
-                        result[rname] = _map_field(matches[0])
+                        result[rname] = __map_field(matches[0])
                 return result
 
             if _type is None:
@@ -320,7 +405,7 @@ class MapV1To2:
 
             if _type.startswith("recarray"):
                 item = _row_field()
-                return List(
+                return v2.List(
                     name=_name,
                     longname=longname,
                     description=description,
@@ -333,7 +418,7 @@ class MapV1To2:
 
             if _type.startswith("keystring"):
                 arms = _union_fields()
-                return Union(
+                return v2.Union(
                     name=_name,
                     longname=longname,
                     description=description,
@@ -345,7 +430,7 @@ class MapV1To2:
 
             if _type.startswith("record"):
                 rec_fields = _record_fields()
-                return Record(
+                return v2.Record(
                     name=_name,
                     longname=longname,
                     description=description,
@@ -366,7 +451,20 @@ class MapV1To2:
                 dtype = dtype_map.get(_type)
                 if dtype is not None:
                     if dtype == "string":
-                        return Array(
+                        # If the v1 shape is a single count identifier that isn't
+                        # an explicit integer field (e.g. naux for auxiliary), the
+                        # array defines that dimension by its length.
+                        _str_dim: Literal["component", "model", "simulation"] | None = None
+                        _parsed_str = _parse_shape(shape_str)
+                        if len(_parsed_str) == 1:
+                            _count_name = _parsed_str[0]
+                            _is_explicit_int = any(
+                                fi["name"] == _count_name and fi["type"] == "integer"
+                                for fi in fields.values(multi=True)
+                            )
+                            if not _is_explicit_int:
+                                _str_dim = "component"
+                        return v2.Array(
                             name=_name,
                             longname=longname,
                             description=description,
@@ -377,9 +475,10 @@ class MapV1To2:
                             time_series=time_series,
                             dtype="string",
                             shape=[],
+                            dimension=_str_dim,
                         )
                     parsed_shape = _parse_shape(shape_str)
-                    return Array(
+                    return v2.Array(
                         name=_name,
                         longname=longname,
                         description=description,
@@ -394,290 +493,46 @@ class MapV1To2:
 
             return _to_scalar()
 
-        return _map_field(v1_field)
+        return __map_field(field)
 
-    @staticmethod
-    def _mark_dimension_fields(blocks: dict[str, dict]) -> dict[str, dict]:
-        """
-        Post-pass: annotate every field that provides a dimension count.
+    name = dfn["name"]
+    blocks: dict[str, v2.Block] = {}
 
-        String-array dim providers (e.g. ``auxiliary``): marked
-        ``dimension="component"``.  Record-local dim integers: marked
-        ``dimension="record"``.
-        """
-        from modflow_devtools.dfns.schema.v2 import GRID_DIM_NAMESPACE
+    for field in fields.values(multi=True):
+        if field["in_record"]:  # type: ignore[attr-defined]
+            continue  # record subfields are handled recursively
+        v2_field = _map_field(field)
+        blocks.setdefault(field["block"], v2.Block(name=field["block"], fields={})).fields[
+            field["name"]
+        ] = v2_field
+        blocks[field["block"]].repeats = field.get("block_variable", False)
 
-        shape_refs: set[str] = set()
-        string_array_names: set[str] = set()
-        explicit_globals: set[str] = set(GRID_DIM_NAMESPACE)
+    blocks = _resolve_dimensions(blocks)
+    blocks = _resolve_relations(blocks)
 
-        def _scan(fields: dict) -> None:
-            for f in fields.values():
-                if isinstance(f, Array):
-                    if f.dtype != "string":
-                        for elem in f.shape:
-                            if _IDENT_RE.fullmatch(elem):
-                                shape_refs.add(elem)
-                    else:
-                        string_array_names.add(f.name)
-                scope = getattr(f, "dimension", None)
-                if scope in ("component", "model", "simulation"):
-                    explicit_globals.add(f.name)
-                if isinstance(f, Record):
-                    _scan(f.fields)
-                elif isinstance(f, Union):
-                    _scan(f.arms)
-                elif isinstance(f, List):
-                    item = f.item
-                    _scan(item.fields if isinstance(item, Record) else item.arms)
+    d: dict[str, Any] = {
+        "schema_version": "2",
+        "name": name,
+        "parent": dfn["parent"],
+        "blocks": blocks or None,
+    }
+    if name == "sim-nam":
+        return v2.Simulation(**d)
+    if name.endswith("-nam"):
+        return v2.Model(**d)
 
-        for block_fields in blocks.values():
-            _scan(block_fields)
-
-        if not shape_refs:
-            return blocks
-
-        string_provider_names: set[str] = string_array_names & shape_refs
-        global_dims: set[str] = explicit_globals | string_provider_names
-
-        def _record_local_dims(rec: Record) -> set[str]:
-            to_mark: set[str] = set()
-            for sf in rec.fields.values():
-                if isinstance(sf, Array) and sf.dtype != "string":
-                    for elem in sf.shape:
-                        if _IDENT_RE.fullmatch(elem) and elem not in global_dims:
-                            sibling = rec.fields.get(elem)
-                            if isinstance(sibling, Integer) and sibling.dimension is None:
-                                to_mark.add(elem)
-            return to_mark
-
-        def _mark(fields: dict) -> dict:
-            result = {}
-            for name, f in fields.items():
-                if isinstance(f, Array) and f.dtype == "string" and name in string_provider_names:
-                    f = f.model_copy(update={"dimension": "component"})
-                elif isinstance(f, Record):
-                    local_dims = _record_local_dims(f)
-                    new_fields = _mark(f.fields)
-                    if local_dims:
-                        new_fields = {
-                            fn: (
-                                sf.model_copy(update={"dimension": "record"})
-                                if fn in local_dims and isinstance(sf, Integer)
-                                else sf
-                            )
-                            for fn, sf in new_fields.items()
-                        }
-                    f = f.model_copy(update={"fields": new_fields})
-                elif isinstance(f, Union):
-                    f = f.model_copy(update={"arms": _mark(f.arms)})
-                elif isinstance(f, List):
-                    item = f.item
-                    new_item: Record | Union
-                    if isinstance(item, Record):
-                        local_dims = _record_local_dims(item)
-                        new_item_fields = _mark(item.fields)
-                        if local_dims:
-                            new_item_fields = {
-                                fn: (
-                                    sf.model_copy(update={"dimension": "record"})
-                                    if fn in local_dims and isinstance(sf, Integer)
-                                    else sf
-                                )
-                                for fn, sf in new_item_fields.items()
-                            }
-                        new_item = item.model_copy(update={"fields": new_item_fields})
-                    else:
-                        new_item = item.model_copy(update={"arms": _mark(item.arms)})
-                    f = f.model_copy(update={"item": new_item})
-                result[name] = f
-            return result
-
-        return {bn: _mark(bf) for bn, bf in blocks.items()}
-
-    @staticmethod
-    def _infer_fk_from_shapes(blocks: dict[str, dict]) -> dict[str, dict]:
-        """Post-pass: infer fk= and pk= from resolved lookup shape elements."""
-        _lookup_re = re.compile(r"^(\w+)\.(\w+)\((\w+)\)$")
-
-        fk_map: dict[tuple[str, str], str] = {}
-        pk_set: set[tuple[str, str]] = set()
-
-        def _scan_record(rec: Record, block_name: str) -> None:
-            for sf in rec.fields.values():
-                if isinstance(sf, Array):
-                    for elem in sf.shape:
-                        m = _lookup_re.fullmatch(elem)
-                        if m:
-                            pk_block, _col, fk_fname = m.groups()
-                            sibling = rec.fields.get(fk_fname)
-                            if sibling is not None and getattr(sibling, "fk", None) is None:
-                                fk_map[(block_name, fk_fname)] = f"{pk_block}.{fk_fname}"
-                                pk_set.add((pk_block, fk_fname))
-
-        def _scan(fields: dict, block_name: str) -> None:
-            for f in fields.values():
-                if isinstance(f, Record):
-                    _scan_record(f, block_name)
-                elif isinstance(f, Union):
-                    _scan(f.arms, block_name)
-                elif isinstance(f, List):
-                    item = f.item
-                    if isinstance(item, Record):
-                        _scan_record(item, block_name)
-                    elif isinstance(item, Union):
-                        _scan(item.arms, block_name)
-
-        for block_name, block_fields in blocks.items():
-            _scan(block_fields, block_name)
-
-        if not fk_map and not pk_set:
-            return blocks
-
-        def _apply_record(rec: Record, block_name: str) -> Record:
-            updates: dict = {}
-            for fname, sf in rec.fields.items():
-                updated = sf
-                if (block_name, fname) in fk_map and getattr(sf, "fk", None) is None:
-                    updated = updated.model_copy(update={"fk": fk_map[(block_name, fname)]})
-                if (block_name, fname) in pk_set and not getattr(sf, "pk", False):
-                    updated = updated.model_copy(update={"pk": True})
-                if updated is not sf:
-                    updates[fname] = updated
-            if not updates:
-                return rec
-            return rec.model_copy(
-                update={"fields": {fn: updates.get(fn, sf) for fn, sf in rec.fields.items()}}
-            )
-
-        def _apply(fields: dict, block_name: str) -> dict:
-            result = {}
-            for name, f in fields.items():
-                if isinstance(f, Record):
-                    f = _apply_record(f, block_name)
-                elif isinstance(f, Union):
-                    f = f.model_copy(update={"arms": _apply(f.arms, block_name)})
-                elif isinstance(f, List):
-                    item = f.item
-                    new_item: Record | Union
-                    if isinstance(item, Record):
-                        new_item = _apply_record(item, block_name)
-                    else:
-                        new_item = item.model_copy(update={"arms": _apply(item.arms, block_name)})
-                    f = f.model_copy(update={"item": new_item})
-                result[name] = f
-            return result
-
-        return {bn: _apply(bf, bn) for bn, bf in blocks.items()}
-
-    @staticmethod
-    def map_blocks(dfn: Dfn) -> dict[str, dict]:
-        """
-        Convert all v1 fields in a Dfn to v2 types and return a block dict.
-
-        Three phases:
-        1. Field conversion (map_field per top-level field).
-        2. Dimension annotation (_mark_dimension_fields).
-        3. FK/PK inference (_infer_fk_from_shapes).
-        """
-        all_v1 = cast(OMD, dfn.fields)
-        grouped: dict[str, dict] = {}
-        for v1_field in all_v1.values(multi=True):
-            if v1_field.in_record:  # type: ignore[attr-defined]
-                continue
-            block_name = v1_field.block
-            mapped = MapV1To2.map_field(dfn, v1_field)
-            grouped.setdefault(block_name, {})[v1_field.name] = mapped
-
-        blocks: dict[str, dict] = {}
-        if period := grouped.pop("period", None):
-            blocks["period"] = MapV1To2.map_period_block(dfn, period)
-        for block_name, block_data in grouped.items():
-            blocks[block_name] = block_data
-
-        blocks = MapV1To2._mark_dimension_fields(blocks)
-        return MapV1To2._infer_fk_from_shapes(blocks)
-
-    @staticmethod
-    def to_component(dfn: Dfn) -> Any:
-        """
-        Convert a Dfn to the appropriate Component (Simulation, Model, or Package).
-
-        For v1-mapped Dfns, variant_of is inferred from the component name: names
-        ending in "g" (grid variant) or "a" (array variant) are treated as variants
-        of the same name without the suffix (e.g. "gwf-welg" → "gwf-wel").
-        """
-        from modflow_devtools.dfns.schema.v2 import (
-            Block,
-            Model,
-            Package,
-            Simulation,
-        )
-
-        name = dfn.name
-        blocks: dict[str, Block] | None = None
-        if dfn.blocks:
-            blocks = {
-                block_name: Block(
-                    name=block_name,
-                    fields={k: v for k, v in block_fields.items() if isinstance(v, FieldBase)},  # type: ignore[misc]
-                )
-                for block_name, block_fields in dfn.blocks.items()
-                if isinstance(block_fields, dict)
-            }
-
-        def _infer_variant_of(n: str) -> str | None:
-            if n.endswith(("g", "a")):
-                return n[:-1]
-            return None
-
-        common: dict[str, Any] = {
-            "name": name,
-            "blocks": blocks,
-            "parent": dfn.parent,
-            "schema_version": dfn.schema_version,
-        }
-        if name == "sim-nam":
-            return Simulation(**common)
-        if name.endswith("-nam"):
-            return Model(**common)
-        if name.startswith("sln-"):
-            return Package(**common, subtype="solution", multi=dfn.multi)
-        if name.startswith("exg-"):
-            return Package(**common, subtype="exchange", multi=dfn.multi)
-        if name.startswith("utl-"):
-            return Package(
-                **common,
-                subtype="utility",
-                multi=dfn.multi,
-                variant_of=_infer_variant_of(name),
-            )
-        has_period = bool(blocks and any("period" in k for k in blocks))
-        subtype: Literal["solution", "exchange", "stress", "advanced", "utility"] | None = (
-            "advanced" if dfn.advanced else "stress" if has_period else None
-        )
-        return Package(
-            **common,
-            subtype=subtype,
-            multi=dfn.multi,
-            variant_of=_infer_variant_of(name),
-        )
-
-    def map(self, dfn: Dfn) -> Any:
-        """Map a v1 (or v2) Dfn to a v2 Component."""
-        if dfn.schema_version == Version("2"):
-            return MapV1To2.to_component(dfn)
-        mapped_blocks = MapV1To2.map_blocks(dfn)
-        temp = dataclasses.replace(dfn, schema_version=Version("2"), blocks=mapped_blocks)
-        return MapV1To2.to_component(temp)
-
-
-def map(
-    dfn: Dfn,
-    schema_version: str | Version = "2",
-) -> Any:
-    """Map a MODFLOW 6 definition to v2 schema."""
-    version = Version(str(schema_version))
-    if version == Version("2"):
-        return MapV1To2().map(dfn)
-    raise ValueError(f"Unsupported schema version: {schema_version!r}. Expected '2'.")
+    subtype: Literal["solution", "exchange", "stress", "advanced", "utility"] | None = None
+    if name.startswith("sln-"):
+        subtype = "solution"
+    elif name.startswith("exg-"):
+        subtype = "exchange"
+    elif name.startswith("utl-"):
+        subtype = "utility"
+    else:
+        is_stress_pkg = bool(any(blocks) and any("period" in k for k in blocks))
+        subtype = "advanced" if dfn["advanced"] else "stress" if is_stress_pkg else None
+    return v2.Package(
+        **d,
+        subtype=subtype,
+        multi=dfn["multi"],
+    )

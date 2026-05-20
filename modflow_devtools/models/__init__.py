@@ -442,8 +442,8 @@ class DiscoveredModelRegistry:
     url: str
 
 
-class ModelSourceRepo(BaseModel):
-    """A single source model repository in the bootstrap file."""
+class ModelSource(BaseModel):
+    """Model source repository configuration."""
 
     @dataclass
     class SyncResult:
@@ -462,17 +462,13 @@ class ModelSourceRepo(BaseModel):
         cached_refs: list[str]
         missing_refs: list[str]
 
-    repo: str = Field(..., description="Repository in format 'owner/name'")
     name: str = Field(
         ..., description="Name for model addressing (injected from key if not explicit)"
     )
+    repo: str = Field(..., description="Repository in format 'owner/name'")
     refs: list[str] = Field(
         default_factory=list,
         description="Default refs to sync (branches, tags, or commit hashes)",
-    )
-    registry_path: str = Field(
-        default=".registry",
-        description="Path to registry directory in repository",
     )
 
     @field_validator("repo")
@@ -599,9 +595,9 @@ class ModelSourceRepo(BaseModel):
         if not refs:
             if verbose:
                 print(f"No refs configured for source '{source_name}', aborting")
-            return ModelSourceRepo.SyncResult()
+            return ModelSource.SyncResult()
 
-        result = ModelSourceRepo.SyncResult()
+        result = ModelSource.SyncResult()
 
         for ref in refs:
             if not force and _DEFAULT_CACHE.has(source_name, ref):
@@ -662,92 +658,41 @@ class ModelSourceRepo(BaseModel):
         return [ref for source, ref in cached if source == self.name]
 
 
-class ModelSourceConfig(BaseModel):
-    """Model source configuration file structure."""
+class ModelSources(BaseModel):
+    """Configuration for multiple model source repositories."""
 
-    sources: dict[str, ModelSourceRepo] = Field(
-        ..., description="Map of source names to source metadata"
+    sources: dict[str, ModelSource] = Field(
+        default_factory=dict, description="Model source repositories"
     )
 
     @classmethod
     def load(
         cls,
-        bootstrap_path: str | PathLike | None = None,
-        user_config_path: str | PathLike | None = None,
-    ) -> "ModelSourceConfig":
-        """
-        Load model source configuration.
+        path: str | PathLike | None = None,
+    ) -> "ModelSources":
+        """Load model source configurations from a TOML file."""
+        path = Path(path)
+        if not path.exists():
+            return cls()
 
-        Parameters
-        ----------
-        bootstrap_path : str | PathLike | None
-            Path to bootstrap config file. If None, uses bundled default.
-            If provided, ONLY this file is loaded (no user config overlay unless specified).
-        user_config_path : str | PathLike | None
-            Path to user config file to overlay on top of bootstrap.
-            If None and bootstrap_path is None, attempts to load from default user config location.
+        with path.open("rb") as f:
+            data = tomli.load(f)
 
-        Returns
-        -------
-        ModelSourceConfig
-            Loaded and merged configuration
-        """
-        # Load base config
-        if bootstrap_path is not None:
-            # Explicit bootstrap path - only load this file
-            with Path(bootstrap_path).open("rb") as f:
-                cfg = tomli.load(f)
-        else:
-            # Use bundled default
-            with _DEFAULT_CONFIG_PATH.open("rb") as f:
-                cfg = tomli.load(f)
+        sources = {}
+        for name, config in data.get("sources", {}).items():
+            sources[name] = ModelSource(**config)
 
-            # If no explicit bootstrap path, try to load user config overlay
-            if user_config_path is None:
-                user_config_path = get_user_config_path()
-
-        # Overlay user config if specified or found
-        if user_config_path is not None:
-            user_path = Path(user_config_path)
-            if user_path.exists():
-                with user_path.open("rb") as f:
-                    user_cfg = tomli.load(f)
-                    # Merge user config sources into base config
-                    if "sources" in user_cfg:
-                        if "sources" not in cfg:
-                            cfg["sources"] = {}
-                        cfg["sources"] = cfg["sources"] | user_cfg["sources"]
-
-        # inject source names if not explicitly provided
-        for name, src in cfg.get("sources", {}).items():
-            if "name" not in src:
-                src["name"] = name
-
-        return cls(**cfg)
+        return cls(sources=sources)
 
     @classmethod
-    def merge(cls, base: "ModelSourceConfig", overlay: "ModelSourceConfig") -> "ModelSourceConfig":
-        """
-        Merge two configurations, with overlay taking precedence.
-
-        Parameters
-        ----------
-        base : ModelSourceConfig
-            Base configuration
-        overlay : ModelSourceConfig
-            Configuration to overlay on top of base
-
-        Returns
-        -------
-        ModelSourceConfig
-            Merged configuration
-        """
-        merged_sources = base.sources.copy()
-        merged_sources.update(overlay.sources)
-        return cls(sources=merged_sources)
+    def merge(cls, base: "ModelSources", overlay: "ModelSources") -> "ModelSources":
+        """Merge two source configurations. Overlay takes precedence."""
+        merged = dict(base.sources)
+        merged.update(overlay.sources)
+        return cls(sources=merged)
 
     @property
-    def status(self) -> dict[str, ModelSourceRepo.SyncStatus]:
+    def status(self) -> dict[str, ModelSource.SyncStatus]:
         """
         Sync status for all configured model source repositories.
 
@@ -772,7 +717,7 @@ class ModelSourceConfig(BaseModel):
                 else:
                     missing.append(ref)
 
-            status[name] = ModelSourceRepo.SyncStatus(
+            status[name] = ModelSource.SyncStatus(
                 repo=source.repo,
                 configured_refs=refs,
                 cached_refs=cached,
@@ -783,10 +728,10 @@ class ModelSourceConfig(BaseModel):
 
     def sync(
         self,
-        source: str | ModelSourceRepo | None = None,
+        source: str | ModelSource | None = None,
         force: bool = False,
         verbose: bool = False,
-    ) -> dict[str, ModelSourceRepo.SyncResult]:
+    ) -> dict[str, ModelSource.SyncResult]:
         """
         Synchronize registry files from model source(s).
 
@@ -808,7 +753,7 @@ class ModelSourceConfig(BaseModel):
         """
 
         if source:
-            if isinstance(source, ModelSourceRepo):
+            if isinstance(source, ModelSource):
                 if source.name not in self.sources:
                     raise ValueError(f"Source '{source.name}' not found in bootstrap")
                 sources = [source]
@@ -1304,7 +1249,7 @@ def _try_best_effort_sync():
 
     try:
         # Try to sync default refs (don't be verbose, don't fail on errors)
-        config = ModelSourceConfig.load()
+        config = ModelSources.load()
         config.sync(verbose=False)
     except Exception:
         # Silently fail - user will get clear error when trying to use registry

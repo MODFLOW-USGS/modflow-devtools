@@ -43,7 +43,7 @@ The tool may also be used on individual files. To validate legacy format files, 
 
 > **Note**: This module is experimental. The API may change without following normal deprecation procedures.
 
-The `modflow_devtools.dfns` module provides a richer API for working with MODFLOW 6 input specifications, including structured Python objects, a registry system for remote discovery and caching, and serialization to a single TOML document.
+The `modflow_devtools.dfns` module provides a richer API for working with MODFLOW 6 input specifications, including structured Python objects, a registry system for remote discovery and caching, and serialization to TOML.
 
 ### Formats
 
@@ -62,7 +62,7 @@ Both formats are supported by `modflow_devtools.dfns`. The v2 schema (TOML) is t
 Represents a single MODFLOW 6 input component (e.g. `gwf-chd`, `sim-nam`). A dataclass with attributes including `name`, `schema_version`, `blocks`, `parent`, `advanced`, `multi`, `subcomponents`, and optionally `children` (when part of a tree).
 
 ```python
-from modflow_devtools.dfns import load
+from modflow_devtools.dfns import DfnSpec
 
 # Load a single component from a TOML file
 with open("gwf-chd.toml", "rb") as f:
@@ -103,11 +103,11 @@ toml_str = spec.dumps()
 
 ### Registry
 
-The registry system handles discovering, caching, and accessing DFN files from remote sources (primarily the MODFLOW 6 GitHub repository).
+The registry system handles discovering, caching, and accessing DFN files from MODFLOW 6 releases. Only released versions are supported by `RemoteDfnRegistry`; for working with unreleased or local DFN files, use `LocalDfnRegistry`.
 
 #### `LocalDfnRegistry`
 
-For working with DFN files on the local filesystem:
+For working with DFN files on the local filesystem. This is the right choice when working with a local MODFLOW 6 checkout, a CI environment with DFN files checked out, or any directory of DFN files not associated with a published release.
 
 ```python
 from modflow_devtools.dfns import LocalDfnRegistry
@@ -119,13 +119,13 @@ spec = registry.spec
 
 #### `RemoteDfnRegistry`
 
-For fetching and caching DFN files from a remote source. Uses [Pooch](https://www.fatiando.org/pooch/) for caching and hash verification.
+For fetching and caching DFN files from a MODFLOW 6 release. On first access for a given version, downloads the `mf{version}_dfns.zip` release asset from GitHub, extracts it to a local cache directory, and uses it for all subsequent access. Only accepts released version strings (e.g. `"6.6.0"`), not branch names or arbitrary git refs.
 
 ```python
 from modflow_devtools.dfns import RemoteDfnRegistry
 
 registry = RemoteDfnRegistry(source="modflow6", ref="6.6.0")
-registry.sync()  # downloads and caches the registry + DFN files
+registry.sync()  # downloads and caches DFN files for 6.6.0
 
 dfn = registry.get_dfn("gwf-chd")
 spec = registry.spec
@@ -134,12 +134,22 @@ spec = registry.spec
 #### Convenience functions
 
 ```python
-from modflow_devtools.dfns import get_dfn, get_dfn_path, get_registry, list_components, sync_dfns
+from modflow_devtools.dfns import (
+    get_dfn,
+    get_dfn_path,
+    get_registry,
+    list_components,
+    list_releases,
+    sync_dfns,
+)
 
-# Sync all configured refs
+# List available releases
+releases = list_releases()  # e.g. ["6.6.0", "6.5.0", "6.4.4"]
+
+# Sync all available releases
 sync_dfns()
 
-# Sync a specific ref
+# Sync a specific release
 sync_dfns(ref="6.6.0")
 
 # Get a component (auto-syncs if MODFLOW_DEVTOOLS_AUTO_SYNC=1)
@@ -148,13 +158,13 @@ dfn = get_dfn("gwf-chd", ref="6.6.0")
 # Get the local cached path to a component file
 path = get_dfn_path("gwf-wel", ref="6.6.0")
 
-# List all components for a ref
+# List all components for a release
 components = list_components(ref="6.6.0")
 
-# Get a registry object
+# Get a registry object for a release
 registry = get_registry(ref="6.6.0")
 
-# Use a local path instead of remote
+# Use a local path instead of a remote release
 registry = get_registry(path="/path/to/dfns")
 dfn = get_dfn("gwf-chd", path="/path/to/dfns")
 ```
@@ -162,10 +172,13 @@ dfn = get_dfn("gwf-chd", path="/path/to/dfns")
 #### CLI
 
 ```shell
-# Sync all configured refs
+# List available releases
+python -m modflow_devtools.dfns releases
+
+# Sync all available releases
 python -m modflow_devtools.dfns sync
 
-# Sync a specific ref
+# Sync a specific release
 python -m modflow_devtools.dfns sync --ref 6.6.0
 
 # Force re-download
@@ -174,7 +187,7 @@ python -m modflow_devtools.dfns sync --force
 # Show sync status and cache info
 python -m modflow_devtools.dfns info
 
-# List available components for a ref
+# List available components for a release
 python -m modflow_devtools.dfns list --ref 6.6.0
 
 # Clear cache
@@ -190,24 +203,23 @@ Auto-sync is opt-in (off by default). Enable it by setting the environment varia
 MODFLOW_DEVTOOLS_AUTO_SYNC=1
 ```
 
-When enabled, `get_registry()` will automatically sync if no cached registry exists for the requested ref.
+When enabled, `get_registry()` will automatically sync if no cached files exist for the requested release.
 
 #### Cache location
 
-Cached registries and DFN files are stored under:
+Downloaded DFN files are cached under:
 
 ```
-~/.cache/modflow-devtools/dfn/
-├── registries/
-│   └── modflow6/
-│       └── 6.6.0/
-│           └── dfns.toml
-└── files/
-    └── modflow6/
-        └── 6.6.0/
-            ├── sim-nam.toml
-            ├── gwf-chd.toml
-            └── ...
+~/.cache/modflow-devtools/dfns/
+└── modflow6/
+    ├── 6.6.0/
+    │   ├── sim-nam.toml
+    │   ├── gwf-chd.toml
+    │   └── ...
+    └── 6.5.0/
+        ├── sim-nam.dfn
+        ├── gwf-chd.dfn
+        └── ...
 ```
 
 ### Schema versioning and mapping

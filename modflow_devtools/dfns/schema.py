@@ -2,51 +2,48 @@ import ast
 import re
 from collections.abc import Mapping
 from os import PathLike
+from pathlib import Path
 from typing import Annotated, Any, Literal
 
-from packaging.version import Version
+import tomli
 from pydantic import (
     BaseModel,
-    ConfigDict,
-    GetCoreSchemaHandler,
+    computed_field,
     field_validator,
     model_validator,
 )
 from pydantic import (
     Field as PydanticField,
 )
-from pydantic_core import core_schema
 
 
 class FieldBase(BaseModel):
-    model_config = ConfigDict(frozen=True)
-
     @classmethod
     def from_dict(cls, d: dict, strict: bool = False) -> "FieldBase":
-        type_ = d.get("type")
+        type_name = d.get("type")
         type_map: dict[str | None, type[FieldBase]] = {
             "keyword": Keyword,
             "string": String,
             "integer": Integer,
             "double": Double,
-            "path": Path,
+            "path": File,
             "array": Array,
             "record": Record,
             "union": Union,
             "list": List,
         }
-        target = type_map.get(type_)
-        if target is None:
-            raise ValueError(f"Unknown or missing field type: {type_!r}")
+        type_ = type_map.get(type_name)
+        if type_ is None:
+            raise ValueError(f"Unknown or missing field type: {type_name!r}")
         if strict:
-            extra = set(d.keys()) - set(target.model_fields.keys())
+            extra = set(d.keys()) - set(type_.model_fields.keys())
             if extra:
                 raise ValueError(f"Unrecognized keys in field data: {extra}")
-        return target.model_validate(d)
+        return type_.model_validate(d)
 
 
 class Keyword(FieldBase):
-    type: Literal["keyword"] = "keyword"
+    type: Literal["keyword"] = PydanticField(default="keyword", frozen=True)
     name: str
     longname: str | None = None
     description: str | None = None
@@ -57,7 +54,7 @@ class Keyword(FieldBase):
 
 
 class String(FieldBase):
-    type: Literal["string"] = "string"
+    type: Literal["string"] = PydanticField(default="string", frozen=True)
     name: str
     longname: str | None = None
     description: str | None = None
@@ -75,7 +72,7 @@ class String(FieldBase):
 
 
 class Integer(FieldBase):
-    type: Literal["integer"] = "integer"
+    type: Literal["integer"] = PydanticField(default="integer", frozen=True)
     name: str
     longname: str | None = None
     description: str | None = None
@@ -102,7 +99,7 @@ class Integer(FieldBase):
 
 
 class Double(FieldBase):
-    type: Literal["double"] = "double"
+    type: Literal["double"] = PydanticField(default="double", frozen=True)
     name: str
     longname: str | None = None
     description: str | None = None
@@ -114,8 +111,8 @@ class Double(FieldBase):
     time_series: bool = False
 
 
-class Path(FieldBase):
-    type: Literal["path"] = "path"
+class File(FieldBase):
+    type: Literal["file"] = PydanticField(default="file", frozen=True)
     name: str
     longname: str | None = None
     description: str | None = None
@@ -126,13 +123,13 @@ class Path(FieldBase):
 
 
 Scalar = Annotated[
-    Keyword | String | Integer | Double | Path,
+    Keyword | String | Integer | Double | File,
     PydanticField(discriminator="type"),
 ]
 
 
 class Array(FieldBase):
-    type: Literal["array"] = "array"
+    type: Literal["array"] = PydanticField(default="array", frozen=True)
     name: str
     longname: str | None = None
     description: str | None = None
@@ -144,7 +141,7 @@ class Array(FieldBase):
     shape: list[str] = []
     time_series: bool = False
     repeat: str | None = None
-    dimension: Literal["record", "component", "model", "simulation"] | None = None
+    dimension: Literal["component", "model", "simulation"] | None = None
 
     @field_validator("dimension", mode="before")
     @classmethod
@@ -157,13 +154,17 @@ class Array(FieldBase):
 
     @model_validator(mode="after")
     def _validate_dimension(self) -> "Array":
-        if self.dimension is not None and self.dtype != "string":
-            raise ValueError(f"Array {self.name!r}: dimension may only be set when dtype='string'")
+        if self.dimension is not None and self.shape:
+            raise ValueError(
+                f"Array {self.name!r}: the 'dimension' attribute may only "
+                "be set on self-sizing arrays (i.e., arrays whose 'shape' "
+                "is empty)"
+            )
         return self
 
 
 class Record(FieldBase):
-    type: Literal["record"] = "record"
+    type: Literal["record"] = PydanticField(default="record", frozen=True)
     name: str
     longname: str | None = None
     description: str | None = None
@@ -178,7 +179,7 @@ class Record(FieldBase):
 
 
 class Union(FieldBase):
-    type: Literal["union"] = "union"
+    type: Literal["union"] = PydanticField(default="union", frozen=True)
     name: str
     longname: str | None = None
     description: str | None = None
@@ -193,7 +194,7 @@ class Union(FieldBase):
 
 
 class List(FieldBase):
-    type: Literal["list"] = "list"
+    type: Literal["list"] = PydanticField(default="list", frozen=True)
     name: str
     longname: str | None = None
     description: str | None = None
@@ -209,44 +210,33 @@ class List(FieldBase):
 
 
 Field = Annotated[
-    Keyword | String | Integer | Double | Path | Array | Record | Union | List,
+    Keyword | String | Integer | Double | File | Array | Record | Union | List,
     PydanticField(discriminator="type"),
 ]
 
-# Backward-compat alias: all concrete v2 field types are FieldBase subclasses,
-# so isinstance(field, FieldV2) remains True for any v2 field instance.
-FieldV2 = FieldBase
 
 Record.model_rebuild()
 Union.model_rebuild()
 List.model_rebuild()
 
 
-# Fallback set of well-known grid dim names used by grid_dims_for and the v1
-# mapper (map_period_block).  Once all dims in the v1 corpus carry explicit
-# "model" scope, this constant becomes unnecessary and will be removed.
-GRID_DIM_NAMESPACE: frozenset[str] = frozenset(
-    {"nodes", "nlay", "nrow", "ncol", "ncpl", "nja", "ncelldim", "nvert"}
-)
+DIMENSION_SCOPES = ("component", "model", "simulation")
 
 
 def _collect_explicit_dims(component: "ComponentBase") -> set[str]:
     """
     Gather all explicitly declared dimension names from a component.
 
-    Collects Integer fields with ``dimension=True`` and string Array fields
-    with ``dimension=True``, recursing into Records, Union arms, and List
-    item records at any nesting depth.
+    Collects integer or array fields with a ``dimension`` attribute,
+    recursing into Records, Union arms, and List items as necessary.
     """
     dims: set[str] = set()
 
-    _GLOBAL_SCOPES = ("component", "model", "simulation")
-
     def _scan(fields: "dict[str, Any]") -> None:
         for f in fields.values():
-            if isinstance(f, Integer) and f.dimension in _GLOBAL_SCOPES:
+            if isinstance(f, Integer) and f.dimension in DIMENSION_SCOPES:
                 dims.add(f.name)
-            elif isinstance(f, Array) and f.dtype == "string" and f.dimension in _GLOBAL_SCOPES:
+            elif isinstance(f, Array) and f.dimension in DIMENSION_SCOPES:
                 dims.add(f.name)
             elif isinstance(f, Record):
                 _scan(f.fields)
@@ -391,43 +381,23 @@ def _resolve_derived_dims(component: "ComponentBase", known_dims: set[str]) -> l
 
 
 class Block(BaseModel):
-    model_config = ConfigDict(frozen=True)
     name: str
     fields: dict[str, Field]
     repeats: bool = False
-    optional: bool = False
 
-    @field_validator("fields", mode="before")
-    @classmethod
-    def _coerce_field_instances(cls, v: Any) -> Any:
-        if isinstance(v, dict):
-            return {
-                k: (val.model_dump() if isinstance(val, FieldBase) else val) for k, val in v.items()
-            }
-        return v
+    @property
+    def optional(self) -> bool:
+        return all(f.optional for f in self.fields.values())
 
 
 Blocks = Mapping[str, Block]
 
 
-class _VersionPydanticAnnotation:
-    @classmethod
-    def __get_pydantic_core_schema__(cls, source, handler: GetCoreSchemaHandler):
-        return core_schema.no_info_plain_validator_function(
-            lambda v: Version(str(v)) if not isinstance(v, Version) else v,
-            serialization=core_schema.to_string_ser_schema(),
-        )
-
-
-VersionField = Annotated[Version, _VersionPydanticAnnotation]
-
-
 class ComponentBase(BaseModel):
-    model_config = ConfigDict(frozen=True)
     name: str
     blocks: dict[str, Block] | None = None
     parent: str | list[str] | None = None
-    schema_version: VersionField | None = None
+    schema_version: str | None = None
     derived_dims: dict[str, str] | None = None
 
 
@@ -442,9 +412,8 @@ class Model(ComponentBase):
 
 class Package(ComponentBase):
     type: Literal["package"] = "package"
-    multi: bool = False
+    multi: bool = False  # whether multiple instances per parent are allowed
     subtype: Literal["solution", "exchange", "stress", "advanced", "utility"] | None = None
-    variant_of: str | None = None
 
 
 Component = Annotated[
@@ -452,12 +421,13 @@ Component = Annotated[
     PydanticField(discriminator="type"),
 ]
 
-# Shape element patterns
 _DIM_RE = re.compile(r"^[A-Za-z_]\w*$")
 _LOOKUP_RE = re.compile(r"^(\w+)\.(\w+)\((\w+)\)$")
+_BOUND_RE = re.compile(r"^[<>]=?")
+_ARITH_RE = re.compile(r"^([A-Za-z_]\w*)\s*[+-]\s*\d+$")
 
 
-def _known_dims_for(spec: "DfnSpec", component_name: str) -> set[str]:
+def _known_dims_for(spec: "Dfns", component_name: str) -> set[str]:
     """
     Return the full set of dim names valid for shape references in a component.
     Scope chain (levels 1-3; level 4 is intra-record sibling, checked per-field):
@@ -502,15 +472,33 @@ def _validate_shape_element(
 
     Raises ValueError on any violation.
     """
+    # Advisory bound annotation prefix (<, >, <=, >=): strip it and validate the core identifier.
+    if bound_m := _BOUND_RE.match(element):
+        core = element[bound_m.end() :]
+        if not _DIM_RE.fullmatch(core):
+            raise ValueError(
+                f"Array {array_field.name!r} has invalid shape element {element!r}: "
+                f"must be a plain identifier after the bound operator"
+            )
+        if core in known_dims:
+            return
+        if enclosing_record is not None:
+            sibling = enclosing_record.fields.get(core)
+            if isinstance(sibling, Integer) and sibling.dimension == "record":
+                return
+        raise ValueError(
+            f"Array {array_field.name!r} shape element {element!r}: "
+            f"{core!r} does not resolve to a known dim (explicit, derived, or grid)"
+        )
+
     if _DIM_RE.fullmatch(element):
         if element in known_dims:
             return
-        # Per-row varying shape: a sibling field in the same enclosing record
-        # supplies the inline count for this row. Valid when the sibling has
-        # dimension="record" (or, for string Arrays, is a record-scoped dim).
+        # Per-row varying shape: a sibling Integer with dimension="record" supplies
+        # an inline count on the same line.
         if enclosing_record is not None:
             sibling = enclosing_record.fields.get(element)
-            if isinstance(sibling, (Integer, Array)) and sibling.dimension == "record":
+            if isinstance(sibling, Integer) and sibling.dimension == "record":
                 return
         raise ValueError(
             f"Array {array_field.name!r} shape element {element!r} "
@@ -574,14 +562,29 @@ def _validate_shape_element(
             )
         return
 
+    if m := _ARITH_RE.fullmatch(element):
+        # Arithmetic offset: `dim [+-] integer` — validate the dim part only.
+        dim_name = m.group(1)
+        if dim_name in known_dims:
+            return
+        if enclosing_record is not None:
+            sibling = enclosing_record.fields.get(dim_name)
+            if isinstance(sibling, Integer) and sibling.dimension == "record":
+                return
+        raise ValueError(
+            f"Array {array_field.name!r} shape element {element!r}: "
+            f"{dim_name!r} does not resolve to a known dim "
+            f"(explicit, derived, or grid)"
+        )
+
     raise ValueError(
         f"Array {array_field.name!r} has invalid shape element {element!r}: "
-        f"must be a dim reference (^[A-Za-z_]\\w*$) or a row-level "
-        f"lookup (block.column(fk_field))"
+        f"must be a dim reference (^[A-Za-z_]\\w*$), an arithmetic offset "
+        f"(dim [+-] integer), or a row-level lookup (block.column(fk_field))"
     )
 
 
-def _validate_fk_fields(component: "ComponentBase", spec: "DfnSpec") -> None:
+def _validate_fk_fields(component: "ComponentBase", spec: "Dfns") -> None:
     """
     For every Integer/String field with fk or fk_ref set, validate structural
     consistency:
@@ -636,7 +639,7 @@ def _validate_fk_fields(component: "ComponentBase", spec: "DfnSpec") -> None:
 def _validate_array_shapes(
     component: "ComponentBase",
     component_name: str,
-    spec: "DfnSpec",
+    spec: "Dfns",
 ) -> None:
     """
     Validate all Array.shape elements in a component.
@@ -652,8 +655,18 @@ def _validate_array_shapes(
     known_dims = _known_dims_for(spec, component_name)
 
     def _check_array(arr: "Array", enclosing: "Record | None") -> None:
-        if arr.dtype == "string":
-            return  # inline string arrays are self-sizing; no declared dim needed
+        if not arr.shape:
+            # Self-sizing (shape=[]) is valid at the top level and as the rightmost
+            # subfield of a record. The only invalid case is non-rightmost in a record:
+            # subsequent fields on the same line would be unreadable.
+            if enclosing is not None:
+                fields_list = list(enclosing.fields.keys())
+                if not fields_list or fields_list[-1] != arr.name:
+                    raise ValueError(
+                        f"Array {arr.name!r}: only the rightmost field in a record may "
+                        f"have an undeclared shape (self-sizing)"
+                    )
+            return  # self-sizing: nothing to validate
         for elem in arr.shape:
             _validate_shape_element(elem, arr, component, enclosing, known_dims)
 
@@ -675,31 +688,29 @@ def _validate_array_shapes(
                             _check_array(subfield, item)
 
 
-class DfnSpec(BaseModel):
-    model_config = ConfigDict(frozen=True)
-    components: dict[str, Component]
+class Dfns(BaseModel):
+    """A set of component definitions."""
 
-    # ── Properties ───────────────────────────────────────────────────────────
+    components: dict[str, Component] = PydanticField(default_factory=dict)
 
+    @computed_field
     @property
-    def schema_version(self) -> Version:
+    def schema_version(self) -> str:
         for c in self.components.values():
             if c.schema_version is not None:
                 return c.schema_version
-        return Version("2")
+        return "2"
 
     @property
     def root(self) -> "Simulation | None":
-        """Return the single Simulation component, or None if not present."""
+        """The root (simulation) component, or None if not present."""
         for c in self.components.values():
             if isinstance(c, Simulation):
                 return c
         return None
 
-    # ── Query helpers ─────────────────────────────────────────────────────────
-
     def children_of(self, name: str) -> "dict[str, Component]":
-        """Return all components whose parent matches `name`."""
+        """Return all components whose parent matches ``name``."""
         return {n: c for n, c in self.components.items() if c.parent == name}
 
     def explicit_dims_for(self, component_name: str) -> set[str]:
@@ -709,25 +720,28 @@ class DfnSpec(BaseModel):
     def grid_dims_for(self, component_name: str) -> set[str]:
         """
         Return dim names inherited by ``component_name`` from the rest of the spec.
-
-        For v1-mapped specs (no explicit parent chain), this is a permissive
-        superset: it scans every other component for explicit dims (any scope
-        except "record") and derived dim names, then unions in
-        ``GRID_DIM_NAMESPACE`` as a fallback for dims not yet explicitly scoped
-        in the corpus.  Native v2 specs with ``parent`` populated will
-        eventually use exact parent-chain resolution instead.
         """
-        dims: set[str] = set(GRID_DIM_NAMESPACE)
+        dims: set[str] = set()
         for name, c in self.components.items():
             if name != component_name:
                 dims |= _collect_explicit_dims(c)
                 dims |= set((c.derived_dims or {}).keys())
         return dims
 
-    # ── Validation ────────────────────────────────────────────────────────────
+    @model_validator(mode="after")
+    def _validate_schema_version_consistency(self) -> "Dfns":
+        versions = {
+            c.schema_version for c in self.components.values() if c.schema_version is not None
+        }
+        if len(versions) > 1:
+            raise ValueError(
+                f"All components must share the same schema_version; "
+                f"found: {sorted(str(v) for v in versions)}"
+            )
+        return self
 
     @model_validator(mode="after")
-    def _validate_dims_and_shapes(self) -> "DfnSpec":
+    def _validate_dims_and_shapes(self) -> "Dfns":
         """
         At construction time, for every component:
           1. Validate derived_dims expressions (topological sort, operand scope).
@@ -744,28 +758,25 @@ class DfnSpec(BaseModel):
             _validate_array_shapes(component, name, self)
         return self
 
-    # ── Loading ───────────────────────────────────────────────────────────────
-
     @classmethod
-    def load(
-        cls,
-        path: "str | PathLike",
-        schema_version: "str | Version | None" = None,
-    ) -> "DfnSpec":
-        """Load a DfnSpec from a directory of DFN or TOML files."""
-        from pathlib import Path as _Path
+    def load(cls, path: str | PathLike) -> "Dfns":
+        """Load a directory of definition files."""
+        from modflow_devtools.dfn import schema as v1
+        from modflow_devtools.dfns.mapper import map as map_v2
 
-        from modflow_devtools.dfn.mapper import _apply_parent_inference, load_flat
-        from modflow_devtools.dfns.mapper import map as map_dfn
+        dfns: dict = {}
+        path = Path(path).expanduser().resolve()
 
-        _path = _Path(path).expanduser().resolve()
-        dfns = load_flat(_path)
-        if not dfns:
-            raise ValueError(f"No DFN files found in {_path}")
+        dfn_paths = {p.stem: p for p in path.glob("*.dfn") if p.name not in v1.EXCLUDE_DFNS}
+        toml_paths = {p.stem: p for p in path.glob("*.toml") if p.name not in v1.EXCLUDE_DFNS}
 
-        first = next(iter(dfns.values()))
-        if first.schema_version == Version("1"):
-            dfns = _apply_parent_inference(dfns)
+        if dfn_paths:
+            dfns = v1.resolve_parents(v1.load_all(path))
+            dfns = {n: map_v2(d) for n, d in dfns.items()}
+        if toml_paths:
+            for toml_path in toml_paths.values():
+                with toml_path.open("rb") as f:
+                    dfn = tomli.load(f)
+                    dfns[dfn["name"]] = dfn
 
-        components: dict[str, Component] = {n: map_dfn(d, "2") for n, d in dfns.items()}
-        return cls(components=components)
+        return cls(components=dfns)
