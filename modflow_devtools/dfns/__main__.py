@@ -7,13 +7,11 @@ Usage:
     python -m modflow_devtools.dfns clean
 """
 
-from __future__ import annotations
-
 import argparse
 import shutil
 import sys
 
-from modflow_devtools.dfns.registry import RemoteDfnRegistry, is_cached
+from modflow_devtools.dfns.registry import RemoteDfnRegistry
 
 
 def cmd_sync(args: argparse.Namespace) -> int:
@@ -30,7 +28,7 @@ def cmd_sync(args: argparse.Namespace) -> int:
             )
             print(f"  {registry.release_id}: {n_files} files")
             print(f"Synced {registry.release_id}")
-            return 0
+        return 0
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
         return 1
@@ -42,10 +40,13 @@ def cmd_info(args: argparse.Namespace) -> int:
 
     try:
         for registry in registries.values():
-            if is_cached(registry.release_id):
-                print(f"Cached: {registry.release_id}")
+            cached = registry.cached_tag()
+            if cached:
+                _, tag = registry.release_id.split("@")
+                suffix = f" ({cached})" if tag == "latest" else ""
+                print(f"Cached: {registry.release_id}{suffix}")
             else:
-                print(f"Uncached: {registry.release_id}")
+                print(f"Not cached: {registry.release_id}")
         return 0
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)

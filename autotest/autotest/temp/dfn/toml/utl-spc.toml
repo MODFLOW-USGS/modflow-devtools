@@ -1,0 +1,78 @@
+name = "utl-spc"
+schema_version = "2"
+multi = true
+subtype = "utility"
+
+[blocks.options]
+name = "options"
+
+[blocks.options.fields.print_input]
+name = "print_input"
+longname = "print input to listing file"
+description = "keyword to indicate that the list of spc information will be written to the listing file immediately after it is read."
+optional = true
+
+[blocks.options.fields.ts_filerecord]
+name = "ts_filerecord"
+optional = true
+
+[blocks.options.fields.ts_filerecord.fields.ts6]
+name = "ts6"
+longname = "head keyword"
+description = "keyword to specify that record corresponds to a time-series file."
+
+[blocks.options.fields.ts_filerecord.fields.filein]
+name = "filein"
+longname = "file keyword"
+description = "keyword to specify that an input filename is expected next."
+
+[blocks.options.fields.ts_filerecord.fields.ts6_filename]
+name = "ts6_filename"
+longname = "file name of time series information"
+description = "defines a time-series file defining time series that can be used to assign time-varying values. see the 'time-variable input' section for instructions on using the time-series capability."
+tagged = false
+case_sensitive = true
+
+[blocks.dimensions]
+name = "dimensions"
+
+[blocks.dimensions.fields.maxbound]
+name = "maxbound"
+longname = "maximum number of ssm entries"
+description = "integer value specifying the maximum number of spc cells that will be specified for use during any stress period."
+tagged = false
+
+[blocks.period]
+name = "period"
+
+[blocks.period.fields.perioddata]
+name = "perioddata"
+
+[blocks.period.fields.perioddata.item]
+name = "perioddata"
+
+[blocks.period.fields.perioddata.item.fields.bndno]
+name = "bndno"
+longname = "bound number for this entry"
+description = "integer value that defines the boundary package feature number associated with the specified period data on the line. bndno must be greater than zero and less than or equal to maxbound."
+tagged = false
+
+[blocks.period.fields.perioddata.item.fields.spcsetting]
+name = "spcsetting"
+description = "line of information that is parsed into a keyword and values.  keyword values that can be used to start the spcsetting string include: concentration and temperature."
+
+[blocks.period.fields.perioddata.item.fields.spcsetting.arms.concentration]
+name = "concentration"
+longname = "boundary concentration"
+description = "is the boundary concentration. if the options block includes a timeseriesfile entry (see the 'time-variable input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value. by default, the concentration for each boundary feature is zero."
+time_series = true
+
+[blocks.period.fields.perioddata.item.fields.spcsetting.arms.temperature]
+name = "temperature"
+longname = "boundary temperature"
+description = "is the user-supplied boundary temperature. if the options block includes a timeseriesfile entry (see the 'time-variable input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value. by default, the temperature for each boundary feature is zero."
+time_series = true
+
+[dims.maxbound]
+field = "maxbound"
+scope = "component"

@@ -1,7 +1,7 @@
-from __future__ import annotations
-
+import json
 import os
 import tempfile
+import urllib.request
 from os import PathLike
 from pathlib import Path
 from platform import system
@@ -68,6 +68,20 @@ class RemoteDfnRegistry(DfnRegistry):
         description="DFN source repository release ID (owner/name@tag)",
     )
 
+    _latest: str | None = PrivateAttr(default=None, init=False)
+
+    def latest_tag(self) -> str:
+        repo, tag = self.release_id.split("@")
+        if tag != "latest":
+            return tag
+        if self._latest is None:
+            owner, name = repo.split("/")
+            with urllib.request.urlopen(
+                f"https://api.github.com/repos/{owner}/{name}/releases/latest"
+            ) as resp:
+                self._latest = json.loads(resp.read())["tag_name"]
+        return self._latest
+
     @staticmethod
     def base_cache_path() -> Path:
         """
@@ -96,7 +110,7 @@ class RemoteDfnRegistry(DfnRegistry):
         return base / "modflow-devtools" / "dfns.toml"
 
     @classmethod
-    def from_ids(cls, *ids: str) -> dict[str, RemoteDfnRegistry]:
+    def from_ids(cls, *ids: str) -> "dict[str, RemoteDfnRegistry]":
         """Create registries from one or more DFN source repository release IDs."""
         registries = {}
 
@@ -113,7 +127,7 @@ class RemoteDfnRegistry(DfnRegistry):
         return registries
 
     @classmethod
-    def load(cls, path: str | PathLike) -> dict[str, RemoteDfnRegistry]:
+    def load(cls, path: str | PathLike) -> "dict[str, RemoteDfnRegistry]":
         """Load registries from a TOML file of DFN source repository release IDs."""
         path = Path(path)
         if not path.exists():
@@ -130,7 +144,7 @@ class RemoteDfnRegistry(DfnRegistry):
         return registries
 
     @classmethod
-    def load_default(cls) -> dict[str, RemoteDfnRegistry]:
+    def load_default(cls) -> "dict[str, RemoteDfnRegistry]":
         """
         Load registries from remote DFN source repository configuration bundled
         with the package, and from a user overlay configuration file if present.
@@ -144,8 +158,8 @@ class RemoteDfnRegistry(DfnRegistry):
 
     @property
     def cache_path(self) -> Path:
-        repo, tag = self.release_id.split("@")
-        return RemoteDfnRegistry.base_cache_path() / repo / tag
+        repo, _ = self.release_id.split("@")
+        return RemoteDfnRegistry.base_cache_path() / repo / self.latest_tag()
 
     @property
     def spec(self) -> Dfns:
@@ -162,8 +176,8 @@ class RemoteDfnRegistry(DfnRegistry):
             return
 
         asset_name = "dfns.zip"
-        repo, tag = self.release_id.split("@")
-        url = f"https://github.com/{repo}/releases/download/{tag}/{asset_name}"
+        repo, _ = self.release_id.split("@")
+        url = f"https://github.com/{repo}/releases/download/{self.latest_tag()}/{asset_name}"
 
         self.cache_path.mkdir(parents=True, exist_ok=True)
 
@@ -175,6 +189,25 @@ class RemoteDfnRegistry(DfnRegistry):
                 fname=asset_name,
                 processor=pooch.Unzip(extract_dir=str(self.cache_path)),
             )
+
+    def cached_tag(self) -> str | None:
+        """
+        Return the cached tag for this release without making a network request.
+
+        For exact tags, checks the specific cache directory. For ``@latest``,
+        scans the repo's cache directory and returns the most recently modified
+        cached tag, or None if nothing is cached.
+        """
+        repo, tag = self.release_id.split("@")
+        if tag != "latest":
+            return tag if self.cache_path.exists() and any(self.cache_path.iterdir()) else None
+        repo_cache = RemoteDfnRegistry.base_cache_path() / repo
+        if not repo_cache.is_dir():
+            return None
+        tags = [p for p in repo_cache.iterdir() if p.is_dir() and any(p.iterdir())]
+        if not tags:
+            return None
+        return max(tags, key=lambda p: p.stat().st_mtime).name
 
     def get_path(self, component: str) -> Path:
         if not self.cache_path.exists() or not any(self.cache_path.iterdir()):
@@ -190,6 +223,6 @@ def is_cached(release_id: str) -> bool:
     """
     Check whether a remote DFN source repository's release is in the cache.
     """
-    repo, tag = release_id.split("@")
-    cache_dir = RemoteDfnRegistry.base_cache_path() / repo / tag
+    registry = RemoteDfnRegistry(release_id=release_id)
+    cache_dir = registry.cache_path
     return any(cache_dir.iterdir()) if cache_dir.is_dir() else False

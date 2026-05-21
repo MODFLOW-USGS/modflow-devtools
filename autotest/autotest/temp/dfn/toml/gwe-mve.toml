@@ -1,0 +1,69 @@
+name = "gwe-mve"
+parent = [
+    "model",
+    "package",
+]
+schema_version = "2"
+
+[blocks.options]
+name = "options"
+
+[blocks.options.fields.print_input]
+name = "print_input"
+longname = "print input to listing file"
+description = "keyword to indicate that the list of mover information will be written to the listing file immediately after it is read."
+optional = true
+
+[blocks.options.fields.print_flows]
+name = "print_flows"
+longname = "print calculated flows to listing file"
+description = "keyword to indicate that the list of lake flow rates will be printed to the listing file for every stress period time step in which 'budget print' is specified in output control.  if there is no output control option and 'print_flows' is specified, then flow rates are printed for the last time step of each stress period."
+optional = true
+
+[blocks.options.fields.save_flows]
+name = "save_flows"
+longname = "save lake flows to budget file"
+description = "keyword to indicate that lake flow terms will be written to the file specified with 'budget fileout' in output control."
+optional = true
+
+[blocks.options.fields.budget_filerecord]
+name = "budget_filerecord"
+optional = true
+
+[blocks.options.fields.budget_filerecord.fields.budget]
+name = "budget"
+longname = "budget keyword"
+description = "keyword to specify that record corresponds to the budget."
+
+[blocks.options.fields.budget_filerecord.fields.fileout]
+name = "fileout"
+longname = "file keyword"
+description = "keyword to specify that an output filename is expected next."
+
+[blocks.options.fields.budget_filerecord.fields.budgetfile]
+name = "budgetfile"
+longname = "file keyword"
+description = "name of the binary output file to write budget information."
+tagged = false
+case_sensitive = true
+
+[blocks.options.fields.budgetcsv_filerecord]
+name = "budgetcsv_filerecord"
+optional = true
+
+[blocks.options.fields.budgetcsv_filerecord.fields.budgetcsv]
+name = "budgetcsv"
+longname = "budget keyword"
+description = "keyword to specify that record corresponds to the budget csv."
+
+[blocks.options.fields.budgetcsv_filerecord.fields.fileout]
+name = "fileout"
+longname = "file keyword"
+description = "keyword to specify that an output filename is expected next."
+
+[blocks.options.fields.budgetcsv_filerecord.fields.budgetcsvfile]
+name = "budgetcsvfile"
+longname = "file keyword"
+description = "name of the comma-separated value (csv) output file to write budget summary information.  a budget summary record will be written to this file for each time step of the simulation."
+tagged = false
+case_sensitive = true

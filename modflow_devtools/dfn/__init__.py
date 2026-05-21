@@ -1,6 +1,7 @@
 import shutil
 import tempfile
 from os import PathLike
+from pathlib import Path
 
 from modflow_devtools.dfn.schema import (
     Dfn,
@@ -37,7 +38,7 @@ def fetch_dfns(owner: str, repo: str, ref: str, outdir: str | PathLike, verbose:
     if verbose:
         print(f"Downloading MODFLOW 6 repository from {url}")
     with tempfile.TemporaryDirectory() as tmp:
-        dl_path = download_and_unzip(url, tmp, verbose=verbose)
+        dl_path = download_and_unzip(url, Path(tmp), verbose=verbose)
         contents = list(dl_path.glob("modflow6-*"))
         proj_path = next(iter(contents), None)
         if not proj_path:

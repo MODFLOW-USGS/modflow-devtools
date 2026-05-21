@@ -1,97 +1,91 @@
-def test_toml_safe_primitives_pass_through():
-    """_toml_safe passes primitive types through unchanged."""
-    assert _toml_safe("hello") == "hello"
-    assert _toml_safe(42) == 42
-    assert _toml_safe(3.14) == 3.14
-    assert _toml_safe(True) is True
-    assert _toml_safe(None) is None
+from modflow_devtools.dfn.mapper import map as map_v1_1
+from modflow_devtools.dfn.mapper import map_field
+from modflow_devtools.dfn.schema import Dfn, Field
 
 
-def test_toml_safe_non_primitive_coerced_to_str():
-    """_toml_safe coerces non-TOML-native types (e.g. Version) to str."""
-    assert _toml_safe(Version("1.1")) == "1.1"
+def _field(**kwargs) -> Field:
+    """Build a complete v1 Field dict for testing."""
+    base: dict = {
+        "name": "test_field",
+        "type": "keyword",
+        "block": "options",
+        "default": None,
+        "longname": None,
+        "description": None,
+        "optional": False,
+        "developmode": False,
+        "shape": None,
+        "valid": None,
+        "netcdf": False,
+        "tagged": False,
+    }
+    base.update(kwargs)
+    return Field(**base)
 
 
-def test_toml_safe_fieldbase_via_model_dump():
-    """_toml_safe converts FieldBase instances via model_dump recursively."""
-    kw = Keyword(name="save_flows", description="save flows")
-    result = _toml_safe(kw)
-    assert isinstance(result, dict)
+def _dfn(**kwargs) -> Dfn:
+    """Build a minimal v1 Dfn dict for testing."""
+    base: dict = {
+        "schema_version": "1",
+        "name": "test-dfn",
+        "parent": None,
+        "blocks": None,
+        "advanced": False,
+        "multi": False,
+    }
+    base.update(kwargs)
+    return Dfn(**base)
+
+
+def test_map_field_preserves_base_attrs():
+    field = _field(
+        name="save_flows",
+        type="keyword",
+        description="save calculated flows",
+        optional=True,
+        tagged=True,
+        longname="save flows flag",
+    )
+    result = map_field(field)
     assert result["name"] == "save_flows"
     assert result["type"] == "keyword"
+    assert result["description"] == "save calculated flows"
+    assert result["optional"] is True
+    assert result["tagged"] is True
+    assert result["longname"] == "save flows flag"
 
 
-def test_toml_safe_nested():
-    """_toml_safe recurses into dicts and lists."""
-    obj = {"a": [Version("2"), "plain"], "b": {"c": 99}}
-    result = _toml_safe(obj)
-    assert result["a"][0] == "2"
-    assert result["a"][1] == "plain"
-    assert result["b"]["c"] == 99
+def test_map_field_strips_v1_specific_attrs():
+    field = _field(in_record=True, reader="urword")
+    result = map_field(field)
+    assert "in_record" not in result
+    assert "reader" not in result
 
 
-def test_mapper_load_v1(dfn_name):
-    with (
-        (DFN_DIR / "common.dfn").open() as common_file,
-        (DFN_DIR / f"{dfn_name}.dfn").open() as dfn_file,
-    ):
-        common = _load_common(common_file)
-        dfn = load(dfn_file, name=dfn_name, format="dfn", common=common)
-        assert any(dfn.fields) == (dfn.name not in EMPTY_DFNS)
+def test_map_sets_schema_version():
+    dfn = _dfn()
+    result = map_v1_1(dfn)
+    assert result["schema_version"] == "1.1"
 
 
-def test_mapper_load_flat():
-    dfns = load_flat(path=DFN_DIR)
-    for dfn in dfns.values():
-        assert any(dfn.fields) == (dfn.name not in EMPTY_DFNS)
+def test_map_preserves_metadata():
+    dfn = _dfn(name="gwf-chd", parent="gwf-nam")
+    result = map_v1_1(dfn)
+    assert result["name"] == "gwf-chd"
+    assert result["schema_version"] == "1.1"
 
 
-def test_dfn_to_plain_dict_version_coerced_and_none_excluded():
-    """Version is coerced to str; None fields are excluded from output."""
-    dfn = DfnSpec(
-        schema_version=Version("1.1"),
-        name="test-dfn",
-        parent=None,
-        blocks=None,
-    )
-    d = _dfn_to_plain_dict(dfn)
-    assert d["schema_version"] == "1.1"
-    assert d["name"] == "test-dfn"
-    assert "parent" not in d
-    assert "blocks" not in d
+def test_map_empty_blocks():
+    dfn = _dfn(blocks=None)
+    result = map_v1_1(dfn)
+    assert result["blocks"] is None
 
 
-def test_dfn_to_plain_dict_with_fieldbase_blocks():
-    """FieldBase blocks are serialized via model_dump."""
-    dfn = DfnSpec(
-        schema_version=Version("2"),
-        name="test-dfn",
-        blocks={
-            "options": {
-                "nper": Integer(name="nper", description="number of periods"),
-            }
-        },
-    )
-    d = _dfn_to_plain_dict(dfn)
-    block = d["blocks"]["options"]
-    assert "nper" in block
-    assert block["nper"]["type"] == "integer"
-    assert block["nper"]["name"] == "nper"
-
-
-def test_dfn_to_plain_dict_with_fieldv1_blocks():
-    """FieldV1 blocks are serialized via dataclasses.asdict."""
-    dfn = DfnSpec(
-        schema_version=Version("1"),
-        name="test-dfn",
-        blocks={
-            "options": {
-                "save_flows": FieldV1(name="save_flows", type="keyword", block="options"),
-            }
-        },
-    )
-    d = _dfn_to_plain_dict(dfn)
-    block = d["blocks"]["options"]
-    assert "save_flows" in block
-    assert block["save_flows"]["name"] == "save_flows"
-    assert block["save_flows"]["type"] == "keyword"
+def test_map_maps_block_fields():
+    field = _field(name="maxbound", type="integer", block="dimensions")
+    dfn = _dfn(blocks={"dimensions": {"maxbound": field}})
+    result = map_v1_1(dfn)
+    assert result["blocks"] is not None
+    assert "maxbound" in result["blocks"]["dimensions"]
+    assert result["blocks"]["dimensions"]["maxbound"]["name"] == "maxbound"
+    assert "in_record" not in result["blocks"]["dimensions"]["maxbound"]

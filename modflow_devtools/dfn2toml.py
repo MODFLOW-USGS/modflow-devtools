@@ -85,10 +85,10 @@ def migrate(inpath: str | PathLike, outdir: str | PathLike, schema_version: str 
         if schema_version == "1":
             pass  # nothing to do
         elif schema_version == "1.1":
-            dfns = {name: map_v1_1(dfn, "1.1") for name, dfn in dfns.items()}
             dfns = v1.to_flat(v1.to_tree(dfns))
+            dfns = {name: map_v1_1(dfn) for name, dfn in dfns.items()}
         elif schema_version == "2":
-            dfns = {name: map_v2(dfn, "2") for name, dfn in dfns.items()}
+            dfns = {name: map_v2(dfn) for name, dfn in dfns.items()}
         else:
             raise ValueError(
                 f"Got schema version {schema_version}, supported versions are: 1, 1.1, 2"

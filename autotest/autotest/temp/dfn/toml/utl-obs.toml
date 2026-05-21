@@ -1,0 +1,57 @@
+name = "utl-obs"
+parent = [
+    "model",
+    "package",
+]
+schema_version = "2"
+multi = true
+subtype = "utility"
+
+[blocks.options]
+name = "options"
+
+[blocks.options.fields.digits]
+name = "digits"
+description = "keyword and an integer digits specifier used for conversion of simulated values to text on output. if not specified, the default is the maximum number of digits stored in the program (as written with the g0 fortran specifier). when simulated values are written to a comma-separated value text file specified in a continuous block below, the digits specifier controls the number of significant digits with which simulated values are written to the output file. the digits specifier has no effect on the number of significant digits with which the simulation time is written for continuous observations.  if digits is specified as zero, then observations are written with the default setting, which is the maximum number of digits."
+optional = true
+tagged = false
+
+[blocks.options.fields.print_input]
+name = "print_input"
+longname = "print input to listing file"
+description = "keyword to indicate that the list of observation information will be written to the listing file immediately after it is read."
+optional = true
+
+[blocks.continuous]
+name = "continuous"
+
+[blocks.continuous.fields.continuous]
+name = "continuous"
+
+[blocks.continuous.fields.continuous.item]
+name = "continuous"
+
+[blocks.continuous.fields.continuous.item.fields.obsname]
+name = "obsname"
+longname = "observation name"
+description = "string of 1 to 40 nonblank characters used to identify the observation. the identifier need not be unique; however, identification and post-processing of observations in the output files are facilitated if each observation is given a unique name."
+tagged = false
+
+[blocks.continuous.fields.continuous.item.fields.obstype]
+name = "obstype"
+longname = "observation type"
+description = "a string of characters used to identify the observation type."
+tagged = false
+
+[blocks.continuous.fields.continuous.item.fields.id]
+name = "id"
+longname = "time"
+description = "text identifying cell where observation is located. for packages other than npf, if boundary names are defined in the corresponding package input file, id can be a boundary name. otherwise id is a cellid. if the model discretization is type dis, cellid is three integers (layer, row, column). if the discretization is disv, cellid is two integers (layer, cell number). if the discretization is disu, cellid is one integer (node number)."
+tagged = false
+
+[blocks.continuous.fields.continuous.item.fields.id2]
+name = "id2"
+longname = "time"
+description = "text identifying cell adjacent to cell identified by id. the form of id2 is as described for id. id2 is used for intercell-flow observations of a gwf model, for three observation types of the lak package, for two observation types of the maw package, and one observation type of the uzf package."
+optional = true
+tagged = false

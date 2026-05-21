@@ -1,0 +1,63 @@
+name = "utl-ats"
+parent = "package"
+schema_version = "2"
+subtype = "utility"
+
+[blocks.dimensions]
+name = "dimensions"
+
+[blocks.dimensions.fields.maxats]
+name = "maxats"
+longname = "number of ats periods"
+description = "is the number of records in the subsequent perioddata block that will be used for adaptive time stepping."
+tagged = false
+
+[blocks.perioddata]
+name = "perioddata"
+
+[blocks.perioddata.fields.perioddata]
+name = "perioddata"
+longname = "stress period ats time information"
+
+[blocks.perioddata.fields.perioddata.item]
+name = "perioddata"
+
+[blocks.perioddata.fields.perioddata.item.fields.iperats]
+name = "iperats"
+longname = "stress period indicator"
+description = "is the period number to apply the adaptive time stepping.  adaptive time stepping is only activated for those periods with a corresponding iperats entry in the perioddata block.  the remaining ats values on this line will apply to period iperats.  iperats must be greater than zero.  a warning is printed if iperats is greater than nper."
+tagged = false
+
+[blocks.perioddata.fields.perioddata.item.fields.dt0]
+name = "dt0"
+longname = "initial time step length"
+description = "is the initial time step length for period iperats.  if dt0 is zero, then the final step from the previous stress period will be used as the initial time step.  the program will terminate with an error message if dt0 is negative."
+tagged = false
+
+[blocks.perioddata.fields.perioddata.item.fields.dtmin]
+name = "dtmin"
+longname = "minimum time step length"
+description = "is the minimum time step length for this period.  this value must be greater than zero and less than dtmax.  dtmin must be a small value in order to ensure that simulation times end at the end of stress periods and the end of the simulation.  a small value, such as 1.e-5, is recommended."
+tagged = false
+
+[blocks.perioddata.fields.perioddata.item.fields.dtmax]
+name = "dtmax"
+longname = "maximum time step length"
+description = "is the maximum time step length for this period.  this value must be greater than dtmin."
+tagged = false
+
+[blocks.perioddata.fields.perioddata.item.fields.dtadj]
+name = "dtadj"
+longname = "time step multiplier factor"
+description = "is the time step multiplier factor for this period.  if the number of outer solver iterations are less than the product of the maximum number of outer iterations (outer_maximum) and ats_outer_maximum_fraction (an optional variable in the ims input file with a default value of 1/3), then the time step length is multiplied by dtadj.  if the number of outer solver iterations are greater than the product of the maximum number of outer iterations and 1.0 minus ats_outer_maximum_fraction, then the time step length is divided by dtadj.  dtadj must be zero, one, or greater than one.  if dtadj is zero or one, then it has no effect on the simulation.  a value between 2.0 and 5.0 can be used as an initial estimate."
+tagged = false
+
+[blocks.perioddata.fields.perioddata.item.fields.dtfailadj]
+name = "dtfailadj"
+longname = "divisor for failed time steps"
+description = "is the divisor of the time step length when a time step fails to converge.  if there is solver failure, then the time step will be tried again with a shorter time step length calculated as the previous time step length divided by dtfailadj.  dtfailadj must be zero, one, or greater than one.  if dtfailadj is zero or one, then time steps will not be retried with shorter lengths.  in this case, the program will terminate with an error, or it will continue of the continue option is set in the simulation name file.  initial tests with this variable should be set to 5.0 or larger to determine if convergence can be achieved."
+tagged = false
+
+[dims.maxats]
+field = "maxats"
+scope = "component"

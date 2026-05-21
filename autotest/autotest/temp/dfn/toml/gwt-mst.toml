@@ -1,0 +1,159 @@
+name = "gwt-mst"
+schema_version = "2"
+
+[blocks.options]
+name = "options"
+
+[blocks.options.fields.save_flows]
+name = "save_flows"
+longname = "save calculated flows to budget file"
+description = "keyword to indicate that mst flow terms will be written to the file specified with 'budget fileout' in output control."
+optional = true
+
+[blocks.options.fields.first_order_decay]
+name = "first_order_decay"
+longname = "activate first-order decay"
+description = "is a text keyword to indicate that first-order decay will occur.  use of this keyword requires that decay and decay_sorbed (if sorption is active) are specified in the griddata block."
+optional = true
+
+[blocks.options.fields.zero_order_decay]
+name = "zero_order_decay"
+longname = "activate zero-order decay"
+description = "is a text keyword to indicate that zero-order decay will occur.  use of this keyword requires that decay and decay_sorbed (if sorption is active) are specified in the griddata block."
+optional = true
+
+[blocks.options.fields.sorption]
+name = "sorption"
+longname = "activate sorption"
+description = "is a text keyword to indicate that sorption will be activated.  valid sorption options include linear, freundlich, and langmuir.  use of this keyword requires that bulk_density and distcoef are specified in the griddata block.  if sorption is specified as freundlich or langmuir then sp2 is also required in the griddata block."
+optional = true
+tagged = false
+valid = [
+    "l",
+    "i",
+    "n",
+    "e",
+    "a",
+    "r",
+    " ",
+    "f",
+    "r",
+    "e",
+    "u",
+    "n",
+    "d",
+    "l",
+    "i",
+    "c",
+    "h",
+    " ",
+    "l",
+    "a",
+    "n",
+    "g",
+    "m",
+    "u",
+    "i",
+    "r",
+]
+
+[blocks.options.fields.sorbate_filerecord]
+name = "sorbate_filerecord"
+optional = true
+
+[blocks.options.fields.sorbate_filerecord.fields.sorbate]
+name = "sorbate"
+longname = "sorbate keyword"
+description = "keyword to specify that record corresponds to sorbate concentration."
+
+[blocks.options.fields.sorbate_filerecord.fields.fileout]
+name = "fileout"
+longname = "file keyword"
+description = "keyword to specify that an output filename is expected next."
+
+[blocks.options.fields.sorbate_filerecord.fields.sorbatefile]
+name = "sorbatefile"
+longname = "file keyword"
+description = "name of the output file to write sorbate concentration information.  sorbate concentrations will be written whenever aqueous concentrations are saved, as determined by settings in the output control option."
+tagged = false
+case_sensitive = true
+
+[blocks.options.fields.export_array_ascii]
+name = "export_array_ascii"
+longname = "export array variables to layered ascii files."
+description = "keyword that specifies input griddata arrays should be written to layered ascii output files."
+optional = true
+
+[blocks.options.fields.export_array_netcdf]
+name = "export_array_netcdf"
+longname = "export array variables to netcdf output files."
+description = "keyword that specifies input gridded arrays should be written to the model output netcdf file with attributes that support using the generated file as a modflow 6 simulation input.  this option only has an effect when an output model netcdf file is configured and the simulation is run in validate mode, otherwise it is ignored."
+optional = true
+
+[blocks.griddata]
+name = "griddata"
+
+[blocks.griddata.fields.porosity]
+name = "porosity"
+longname = "porosity"
+description = "is the mobile domain porosity, defined as the mobile domain pore volume per mobile domain volume.  additional information on porosity within the context of mobile and immobile domain transport simulations is included in the modflow 6 supplemental technical information document."
+netcdf = true
+dtype = "double"
+shape = [
+    "nodes",
+]
+
+[blocks.griddata.fields.decay]
+name = "decay"
+longname = "aqueous phase decay rate coefficient"
+description = "is the rate coefficient for first or zero-order decay for the aqueous phase of the mobile domain.  a negative value indicates solute production.  the dimensions of decay for first-order decay is one over time.  the dimensions of decay for zero-order decay is mass per length cubed per time.  decay will have no effect on simulation results unless either first- or zero-order decay is specified in the options block."
+optional = true
+netcdf = true
+dtype = "double"
+shape = [
+    "nodes",
+]
+
+[blocks.griddata.fields.decay_sorbed]
+name = "decay_sorbed"
+longname = "sorbed phase decay rate coefficient"
+description = "is the rate coefficient for first or zero-order decay for the sorbed phase of the mobile domain.  a negative value indicates solute production.  the dimensions of decay_sorbed for first-order decay is one over time.  the dimensions of decay_sorbed for zero-order decay is mass of solute per mass of aquifer per time.  if decay_sorbed is not specified and both decay and sorption are active, then the program will terminate with an error.  decay_sorbed will have no effect on simulation results unless the sorption keyword and either first- or zero-order decay are specified in the options block."
+optional = true
+netcdf = true
+dtype = "double"
+shape = [
+    "nodes",
+]
+
+[blocks.griddata.fields.bulk_density]
+name = "bulk_density"
+longname = "bulk density"
+description = "is the bulk density of the aquifer in mass per length cubed.  bulk_density is not required unless the sorption keyword is specified.  bulk density is defined as the mobile domain solid mass per mobile domain volume.  additional information on bulk density is included in the modflow 6 supplemental technical information document."
+optional = true
+netcdf = true
+dtype = "double"
+shape = [
+    "nodes",
+]
+
+[blocks.griddata.fields.distcoef]
+name = "distcoef"
+longname = "distribution coefficient"
+description = "is the distribution coefficient for the equilibrium-controlled linear sorption isotherm in dimensions of length cubed per mass.  if the freunchlich isotherm is specified, then discoef is the freundlich constant.  if the langmuir isotherm is specified, then distcoef is the langmuir constant.  distcoef is not required unless the sorption keyword is specified."
+optional = true
+netcdf = true
+dtype = "double"
+shape = [
+    "nodes",
+]
+
+[blocks.griddata.fields.sp2]
+name = "sp2"
+longname = "second sorption parameter"
+description = "is the exponent for the freundlich isotherm and the sorption capacity for the langmuir isotherm.  sp2 is not required unless the sorption keyword is specified in the options block.  if the sorption keyword is not specified in the options block, sp2 will have no effect on simulation results."
+optional = true
+netcdf = true
+dtype = "double"
+shape = [
+    "nodes",
+]

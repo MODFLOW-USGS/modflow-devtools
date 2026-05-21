@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import (
     Any,
     Literal,
+    NotRequired,
     TypedDict,
 )
 from warnings import warn
@@ -129,30 +130,28 @@ class Field(TypedDict):
 
     name: str
     type: FieldType
-    block: str | None = None
-    default: Any | None = None
-    longname: str | None = None
-    description: str | None = None
-    optional: bool = False
-    developmode: bool = False
-    shape: str | None = None
-    valid: tuple[str, ...] | None = None
-    netcdf: bool = False
-    tagged: bool = False
-    reader: Reader = "urword"
-    in_record: bool = False
-    layered: bool | None = None
-    preserve_case: bool = False
-    numeric_index: bool = False
-    deprecated: bool = False
-    removed: bool = False
-    mf6internal: str | None = None
-    block_variable: bool = False
-    just_data: bool = False
-    time_series: bool = False
-
-    # for composite fields
-    children: Mapping[str, "Field"] = None
+    block: NotRequired[str | None]
+    default: NotRequired[Any | None]
+    longname: NotRequired[str | None]
+    description: NotRequired[str | None]
+    optional: NotRequired[bool]
+    developmode: NotRequired[bool]
+    shape: NotRequired[str | None]
+    valid: NotRequired[tuple[str, ...] | None]
+    netcdf: NotRequired[bool]
+    tagged: NotRequired[bool]
+    reader: NotRequired[Reader]
+    in_record: NotRequired[bool]
+    layered: NotRequired[bool | None]
+    preserve_case: NotRequired[bool]
+    numeric_index: NotRequired[bool]
+    deprecated: NotRequired[bool]
+    removed: NotRequired[bool]
+    mf6internal: NotRequired[str | None]
+    block_variable: NotRequired[bool]
+    just_data: NotRequired[bool]
+    time_series: NotRequired[bool]
+    children: NotRequired[Mapping[str, "Field"] | None]
 
 
 Fields = Mapping[str, "Field"]
@@ -241,18 +240,18 @@ class Dfn(TypedDict):
 
     schema_version: str
     name: str
-    ftype: str | None = None
-    parent: str | list[str] | None = None
-    blocks: Blocks | None = None
-    children: Dfns | None = None
-    advanced: bool = False
-    multi: bool = False
-    ref: Ref | None = None
-    sln: Sln | None = None
-    fkeys: Dfns | None = None  # deprecated
-    subcomponents: list[str] | None = None
+    ftype: NotRequired[str | None]
+    parent: NotRequired[str | list[str] | None]
+    blocks: NotRequired[Blocks | None]
+    children: NotRequired[Dfns | None]
+    advanced: NotRequired[bool]
+    multi: NotRequired[bool]
+    ref: NotRequired[Ref | None]
+    sln: NotRequired[Sln | None]
+    fkeys: NotRequired[Dfns | None]  # deprecated
+    subcomponents: NotRequired[list[str] | None]
 
-    @staticmethod
+    @staticmethod  # type: ignore[misc]
     def _load_v1_flat(f, common: dict | None = None) -> tuple[Mapping, list[str]]:
         field = {}
         flat = []
@@ -326,7 +325,7 @@ class Dfn(TypedDict):
         # the point of the OMD is to losslessly handle duplicate variable names
         return OMD(flat), meta
 
-    @classmethod
+    @classmethod  # type: ignore[misc]
     def _load_v1(cls, f, name, **kwargs) -> "Dfn":
         """
         Temporary load routine for the v1 DFN format.
@@ -601,7 +600,7 @@ class Dfn(TypedDict):
                     result.append(abbr)
             return result if result else None
 
-        return cls(
+        return cls(  # type: ignore[misc]
             name=name,
             fkeys=fkeys,
             advanced=_advanced(),
@@ -612,14 +611,14 @@ class Dfn(TypedDict):
             **blocks,
         )
 
-    @classmethod
+    @classmethod  # type: ignore[misc]
     def _load_v2(cls, f, name) -> "Dfn":
         data = tomli.load(f)
         if name and name != data.get("name", None):
             raise ValueError(f"Name mismatch, expected {name}")
         return cls(**data)
 
-    @classmethod
+    @classmethod  # type: ignore[misc]
     def load(
         cls,
         f,
@@ -638,7 +637,7 @@ class Dfn(TypedDict):
         else:
             raise ValueError(f"Unsupported version, expected one of {version.__args__}")
 
-    @staticmethod
+    @staticmethod  # type: ignore[misc]
     def load_all(dfndir: PathLike, version: FormatVersion | None = None) -> Dfns:
         """Load all component definitions from the given directory."""
 
@@ -709,7 +708,7 @@ def load(f: Any, format: str = "dfn", **kwargs: Any) -> Dfn:
     fields, meta = parser.parse_dfn(f, **kwargs)
     parent = parser.try_get_parent(meta)
     blocks = {
-        block_name: {field["name"]: Field(field) for field in block}
+        block_name: {field["name"]: Field(field) for field in block}  # type: ignore[misc]
         for block_name, block in groupby(fields.values(multi=True), lambda fd: fd["block"])
     }
     multi = parser.is_multi_package(meta)
@@ -782,7 +781,10 @@ def resolve_parents(dfns: Dfns) -> Dfns:
 def to_tree(dfns: Dfns) -> Dfn:
     """Condense flat definitions to a hierarchical definition."""
 
-    if (first_dfn := next(iter(dfns.values()), None))["schema_version"] != "1":
+    first_dfn = next(iter(dfns.values()), None)
+    if first_dfn is None:
+        raise ValueError("No definitions found")
+    if first_dfn["schema_version"] != "1":
         raise ValueError(f"Expected schema version 1, got {first_dfn['schema_version']!r}")
 
     dfns = resolve_parents(dfns)

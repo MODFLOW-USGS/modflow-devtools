@@ -1,6 +1,5 @@
-from __future__ import annotations
-
 import re
+from collections.abc import Mapping
 from typing import Any, Literal
 
 from modflow_devtools.dfn import schema as v1
@@ -10,104 +9,92 @@ from modflow_devtools.misc import try_literal_eval
 
 _IDENT_RE = re.compile(r"^[A-Za-z_]\w*$")
 _LOOKUP_RE = re.compile(r"^(\w+)\.(\w+)\((\w+)\)$")
-_DIMS: frozenset[str] = frozenset(
-    {"nodes", "nlay", "nrow", "ncol", "ncpl", "nja", "ncelldim", "nvert"}
-)
+_SIM_PREFIXES: frozenset[str] = frozenset({"sim", "sln", "exg", "utl"})
 
 
-def _resolve_dimensions(blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
-    dims_referenced: set[str] = set()  # dims used in shape expressions
-    dims_from_array: set[str] = set()  # self-sizing array dimensions
-    dims_explicit: set[str] = set(_DIMS)  # integer dimension fields
+def _model_type_of(name: str) -> str | None:
+    """Extract model type from a component name, e.g. 'gwf' from 'gwf-npf'."""
+    prefix = name.split("-")[0] if "-" in name else name
+    return None if prefix in _SIM_PREFIXES else prefix
 
-    # shape expressions may reference dimensions from several providers:
-    # - explicitly defined integer dimension fields
-    # - dynamic dimensions: size of 1D arrays
 
-    def _scan_fields(fields: dict[str, v2.Field]) -> None:
-        for field in fields.values():
+def _build_explicit_dims(dfn_name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.DimDef]:
+    """Build the dims section from a component's dimensions block."""
+    dims: dict[str, v2.DimDef] = {}
+    dim_block = blocks.get("dimensions")
+    if not dim_block:
+        return dims
+
+    model_type = _model_type_of(dfn_name)
+    if dfn_name == "sim-tdis":
+        default_scope = "simulation"
+    elif model_type:
+        default_scope = model_type
+    else:
+        default_scope = "component"
+
+    for fname, field in dim_block.fields.items():
+        if isinstance(field, v2.Integer):
+            dims[fname] = v2.DimDef(field=fname, scope=default_scope)
+
+    # Add derived dims for standard MF6 grid discretization types.
+    if model_type:
+        has = set(dims.keys())
+        if {"nlay", "nrow", "ncol"} <= has:
+            dims["nodes"] = v2.DimDef(expr="nlay * nrow * ncol", scope=model_type)
+            dims["ncelldim"] = v2.DimDef(expr="3", scope=model_type)
+        elif {"nlay", "ncpl"} <= has:
+            dims["nodes"] = v2.DimDef(expr="nlay * ncpl", scope=model_type)
+            dims["ncelldim"] = v2.DimDef(expr="2", scope=model_type)
+        elif "nodes" in has:
+            dims["ncelldim"] = v2.DimDef(expr="1", scope=model_type)
+
+    return dims
+
+
+def _resolve_dimensions(
+    blocks: dict[str, v2.Block],
+) -> tuple[dict[str, v2.Block], dict[str, v2.DimDef]]:
+    """
+    Detect self-sizing arrays whose name is referenced in another array's shape
+    expression — those define a component-scoped dimension.
+
+    Any array type qualifies (not just string). Returns the unchanged blocks
+    alongside a dict of component-scoped DimDef entries.
+    """
+    self_sizing: set[str] = set()
+    shape_refs: set[str] = set()
+
+    def _scan(fields: Mapping[str, v2.Field]) -> None:
+        for name, field in fields.items():
             if isinstance(field, v2.Array):
-                for dim in field.shape:
-                    if _IDENT_RE.fullmatch(dim):
-                        dims_referenced.add(dim)
+                if not field.shape:
+                    self_sizing.add(name)
                 else:
-                    # no shape expr, self-sizing
-                    dims_from_array.add(field.name)
-            scope = getattr(field, "dimension", None)
-            if scope in ("component", "model", "simulation"):
-                dims_explicit.add(field.name)
+                    for elem in field.shape:
+                        if _IDENT_RE.fullmatch(elem):
+                            shape_refs.add(elem)
             if isinstance(field, v2.Record):
-                _scan_fields(field.fields)
+                _scan(field.fields)
             elif isinstance(field, v2.Union):
-                _scan_fields(field.arms)
+                _scan(field.arms)
             elif isinstance(field, v2.List):
                 item = field.item
-                _scan_fields(item.fields if isinstance(item, v2.Record) else item.arms)
+                _scan(item.fields if isinstance(item, v2.Record) else item.arms)
 
     for block in blocks.values():
-        _scan_fields(block.fields)
+        _scan(block.fields)
 
-    if not dims_referenced:
-        return blocks
-
-    dims_provided: set[str] = dims_from_array & dims_explicit
-
-    def _get_dims(record: v2.Record) -> set[str]:
-        found: set[str] = set()
-        for field in record.fields.values():
-            if isinstance(field, v2.Array):
-                for dim in field.shape:
-                    if _IDENT_RE.fullmatch(dim) and dim not in dims_provided:
-                        # the shape expression of an array inside a record
-                        # may reference a sibling integer subfield even if
-                        # the integer is not marked as a dimension.
-                        if (sibling := record.fields.get(dim, None)) is not None and isinstance(
-                            sibling, v2.Integer
-                        ):
-                            found.add(dim)
-        return found
-
-    def _resolve_fields(fields: dict[str, v2.Field]) -> dict[str, v2.Field]:
-        result = {}
-        for name, field in fields.items():
-            if isinstance(field, v2.Array) and name in dims_provided:
-                field.dimension = "component"
-            elif isinstance(field, v2.Record):
-                local_dims = _get_dims(field)
-                subfields = _resolve_fields(field.fields)
-                if local_dims:
-                    for subfield_name, subfield in subfields.items():
-                        if subfield_name in local_dims and isinstance(subfield, v2.Integer):
-                            subfield.dimension = "record"
-                field.fields = subfields
-            elif isinstance(field, v2.Union):
-                field.arms = _resolve_fields(field.arms)
-            elif isinstance(field, v2.List):
-                if isinstance(field.item, v2.Record):
-                    local_dims = _get_dims(field.item)
-                    subfields = _resolve_fields(field.item.fields)
-                    if local_dims:
-                        for subfield_name, subfield in subfields.items():
-                            if subfield_name in local_dims and isinstance(subfield, v2.Integer):
-                                subfield.dimension = "record"
-                    field.item.fields = subfields
-                else:
-                    field.item.arms = _resolve_fields(field.item.arms)
-            result[name] = field
-        return result
-
-    def _resolve_block(block: v2.Block) -> v2.Block:
-        block.fields = _resolve_fields(block.fields)
-        return block
-
-    return {block_name: _resolve_block(block) for block_name, block in blocks.items()}
+    array_dim_names = self_sizing & shape_refs
+    array_dims = {n: v2.DimDef(field=n, scope="component") for n in array_dim_names}
+    return blocks, array_dims
 
 
 def _resolve_relations(blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
     pk_set: set[tuple[str, str]] = set()
     fk_map: dict[tuple[str, str], str] = {}
 
-    def _scan_fields(block_name: str, fields: dict[str, v2.Field]) -> None:
+    def _scan_fields(block_name: str, fields: Mapping[str, v2.Field]) -> None:
 
         def _scan_record(record: v2.Record) -> None:
             for field in record.fields.values():
@@ -138,7 +125,7 @@ def _resolve_relations(blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
     if not fk_map and not pk_set:
         return blocks
 
-    def _resolve_fields(block_name: str, fields: dict[str, v2.Field]) -> dict[str, v2.Field]:
+    def _resolve_fields(block_name: str, fields: Mapping[str, v2.Field]) -> dict[str, v2.Field]:
 
         def _resolve_record(record: v2.Record) -> v2.Record:
             updates: dict = {}
@@ -161,16 +148,19 @@ def _resolve_relations(blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
             if isinstance(f, v2.Record):
                 f = _resolve_record(f)
             elif isinstance(f, v2.Union):
-                f.arms = _resolve_fields(block_name, f.arms)
+                f.arms = _resolve_fields(block_name, f.arms)  # type: ignore[assignment]
             elif isinstance(f, v2.List):
                 if isinstance(f.item, v2.Record):
                     f.item = _resolve_record(f.item)
                 else:
-                    f.item.arms = _resolve_fields(block_name, f.item.arms)
+                    f.item.arms = _resolve_fields(block_name, f.item.arms)  # type: ignore[assignment]
             result[name] = f
         return result
 
-    return {block_name: _resolve_fields(block, block_name) for block_name, block in blocks.items()}
+    return {
+        block_name: block.model_copy(update={"fields": _resolve_fields(block_name, block.fields)})
+        for block_name, block in blocks.items()
+    }
 
 
 def map(dfn: v1.Dfn) -> v2.Component:
@@ -195,8 +185,7 @@ def map(dfn: v1.Dfn) -> v2.Component:
             return default
 
         def __map_field(f: v1.Field) -> v2.Field:
-            fd = dict(f)
-            fd = {k: try_parse_bool(v) for k, v in fd.items()}
+            fd: dict[str, Any] = {k: try_parse_bool(v) for k, v in dict(f).items()}
 
             _name: str = fd["name"]
             _type: str | None = fd.get("type")
@@ -239,7 +228,7 @@ def map(dfn: v1.Dfn) -> v2.Component:
                                 for fi in fields.values(multi=True)
                                 if fi["name"] == col_name
                                 and fi["type"] == "integer"
-                                and fi["in_record"]
+                                and fi.get("in_record", False)
                             ),
                             None,
                         )
@@ -251,7 +240,7 @@ def map(dfn: v1.Dfn) -> v2.Component:
                                 fi["name"]
                                 for fi in fields.values(multi=True)
                                 if fi["type"] == "string"
-                                and (fi["shape"] or "").strip() in (f"({elem})", elem)
+                                and (fi.get("shape") or "").strip() in (f"({elem})", elem)
                             ),
                             None,
                         )
@@ -286,17 +275,6 @@ def map(dfn: v1.Dfn) -> v2.Component:
                     )
                 if _type == "integer":
                     v = [int(x) for x in valid] if valid else None
-                    if fd.get("block") == "dimensions":
-                        if _name in _DIMS:
-                            _dim_scope: (
-                                Literal["record", "component", "model", "simulation"] | None
-                            ) = "model"
-                        elif dfn["name"] == "sim-tdis" and _name == "nper":
-                            _dim_scope = "simulation"
-                        else:
-                            _dim_scope = "component"
-                    else:
-                        _dim_scope = None
                     return v2.Integer(
                         name=_name,
                         longname=longname,
@@ -308,7 +286,6 @@ def map(dfn: v1.Dfn) -> v2.Component:
                         tagged=tagged,
                         valid=v,
                         time_series=time_series,
-                        dimension=_dim_scope,
                     )
                 if _type in ("double", "double precision"):
                     return v2.Double(
@@ -332,7 +309,7 @@ def map(dfn: v1.Dfn) -> v2.Component:
                 item_types = [
                     fi["type"]
                     for fi in fields.values(multi=True)
-                    if fi["name"] in item_names and fi["in_record"]
+                    if fi["name"] in item_names and fi.get("in_record", False)
                 ]
 
                 if (
@@ -364,7 +341,7 @@ def map(dfn: v1.Dfn) -> v2.Component:
                 children = {
                     fi["name"]: __map_field(fi)
                     for fi in fields.values(multi=True)
-                    if fi["name"] in item_names and fi["in_record"]
+                    if fi["name"] in item_names and fi.get("in_record", False)
                 }
                 first = next(iter(children.values()))
                 if len(children) == 1 and isinstance(first, v2.Union):
@@ -382,7 +359,7 @@ def map(dfn: v1.Dfn) -> v2.Component:
                 return {
                     fi["name"]: __map_field(fi)
                     for fi in fields.values(multi=True)
-                    if fi["name"] in names and fi["in_record"]
+                    if fi["name"] in names and fi.get("in_record", False)
                 }
 
             def _record_fields() -> dict:
@@ -393,7 +370,7 @@ def map(dfn: v1.Dfn) -> v2.Component:
                         fi
                         for fi in fields.values(multi=True)
                         if fi["name"] == rname
-                        and fi["in_record"]
+                        and fi.get("in_record", False)
                         and not (fi["type"] or "").startswith("record")
                     ]
                     if matches:
@@ -451,19 +428,10 @@ def map(dfn: v1.Dfn) -> v2.Component:
                 dtype = dtype_map.get(_type)
                 if dtype is not None:
                     if dtype == "string":
-                        # If the v1 shape is a single count identifier that isn't
-                        # an explicit integer field (e.g. naux for auxiliary), the
-                        # array defines that dimension by its length.
-                        _str_dim: Literal["component", "model", "simulation"] | None = None
-                        _parsed_str = _parse_shape(shape_str)
-                        if len(_parsed_str) == 1:
-                            _count_name = _parsed_str[0]
-                            _is_explicit_int = any(
-                                fi["name"] == _count_name and fi["type"] == "integer"
-                                for fi in fields.values(multi=True)
-                            )
-                            if not _is_explicit_int:
-                                _str_dim = "component"
+                        # String arrays in v1 are always self-sizing; whether the
+                        # array defines a component dimension is detected generically
+                        # by _resolve_dimensions (any self-sizing array referenced
+                        # by name in a sibling shape expression is a dim source).
                         return v2.Array(
                             name=_name,
                             longname=longname,
@@ -475,7 +443,6 @@ def map(dfn: v1.Dfn) -> v2.Component:
                             time_series=time_series,
                             dtype="string",
                             shape=[],
-                            dimension=_str_dim,
                         )
                     parsed_shape = _parse_shape(shape_str)
                     return v2.Array(
@@ -499,7 +466,7 @@ def map(dfn: v1.Dfn) -> v2.Component:
     blocks: dict[str, v2.Block] = {}
 
     for field in fields.values(multi=True):
-        if field["in_record"]:  # type: ignore[attr-defined]
+        if field.get("in_record", False):
             continue  # record subfields are handled recursively
         v2_field = _map_field(field)
         blocks.setdefault(field["block"], v2.Block(name=field["block"], fields={})).fields[
@@ -507,14 +474,17 @@ def map(dfn: v1.Dfn) -> v2.Component:
         ] = v2_field
         blocks[field["block"]].repeats = field.get("block_variable", False)
 
-    blocks = _resolve_dimensions(blocks)
+    blocks, array_dims = _resolve_dimensions(blocks)
     blocks = _resolve_relations(blocks)
+    explicit_dims = _build_explicit_dims(name, blocks)
+    dims = {**explicit_dims, **array_dims} or None
 
     d: dict[str, Any] = {
         "schema_version": "2",
         "name": name,
         "parent": dfn["parent"],
         "blocks": blocks or None,
+        "dims": dims,
     }
     if name == "sim-nam":
         return v2.Simulation(**d)

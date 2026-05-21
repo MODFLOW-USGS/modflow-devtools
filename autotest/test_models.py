@@ -17,8 +17,8 @@ from modflow_devtools.models import (
     DiscoveredModelRegistry,
     ModelRegistry,
     ModelRegistryDiscoveryError,
-    ModelSource,
-    ModelSources,
+    ModelSourceConfig,
+    ModelSourceRepo,
     get_user_config_path,
 )
 
@@ -33,19 +33,19 @@ class TestBootstrap:
 
     def test_load_bootstrap(self):
         """Test loading the bootstrap file."""
-        bootstrap = ModelSources.load()
-        assert isinstance(bootstrap, ModelSources)
+        bootstrap = ModelSourceConfig.load()
+        assert isinstance(bootstrap, ModelSourceConfig)
         assert len(bootstrap.sources) > 0
 
     def test_bootstrap_has_testmodels(self):
         """Test that testmodels is configured."""
-        bootstrap = ModelSources.load()
+        bootstrap = ModelSourceConfig.load()
         assert TEST_MODELS_SOURCE in bootstrap.sources
 
     def test_bootstrap_testmodels_config(self):
         """Test testmodels configuration in bundled config (without user overlay)."""
         bundled_path = Path(__file__).parent.parent / "modflow_devtools" / "models" / "models.toml"
-        bootstrap = ModelSources.load(bootstrap_path=bundled_path)
+        bootstrap = ModelSourceConfig.load(bootstrap_path=bundled_path)
         testmodels = bootstrap.sources[TEST_MODELS_SOURCE]
 
         assert "MODFLOW-ORG/modflow6-testmodels" in testmodels.repo
@@ -53,7 +53,7 @@ class TestBootstrap:
 
     def test_bootstrap_source_has_name(self):
         """Test that bootstrap sources have name injected."""
-        bootstrap = ModelSources.load()
+        bootstrap = ModelSourceConfig.load()
         for key, source in bootstrap.sources.items():
             assert source.name is not None
             # If no explicit name override, name should equal key
@@ -72,23 +72,25 @@ class TestBootstrap:
     def test_merge_bootstrap(self):
         """Test merging bundled and user bootstrap configs."""
         # Create bundled config
-        bundled = ModelSources(
+        bundled = ModelSourceConfig(
             sources={
-                "source1": ModelSource(repo="org/repo1", name="source1", refs=["main"]),
-                "source2": ModelSource(repo="org/repo2", name="source2", refs=["develop"]),
+                "source1": ModelSourceRepo(repo="org/repo1", name="source1", refs=["main"]),
+                "source2": ModelSourceRepo(repo="org/repo2", name="source2", refs=["develop"]),
             }
         )
 
         # Create user config that overrides source1 and adds source3
-        user = ModelSources(
+        user = ModelSourceConfig(
             sources={
-                "source1": ModelSource(repo="user/custom-repo1", name="source1", refs=["feature"]),
-                "source3": ModelSource(repo="user/repo3", name="source3", refs=["master"]),
+                "source1": ModelSourceRepo(
+                    repo="user/custom-repo1", name="source1", refs=["feature"]
+                ),
+                "source3": ModelSourceRepo(repo="user/repo3", name="source3", refs=["master"]),
             }
         )
 
         # Merge
-        merged = ModelSources.merge(bundled, user)
+        merged = ModelSourceConfig.merge(bundled, user)
 
         # Check that user source1 overrode bundled source1
         assert merged.sources["source1"].repo == "user/custom-repo1"
@@ -119,7 +121,7 @@ refs = ["custom-branch"]
         )
 
         # Load bootstrap with user config path specified
-        bootstrap = ModelSources.load(user_config_path=user_config)
+        bootstrap = ModelSourceConfig.load(user_config_path=user_config)
 
         # Check that user config was merged
         assert "custom-models" in bootstrap.sources
@@ -152,7 +154,7 @@ refs = ["develop"]
         )
 
         # Load with explicit path only (no user_config_path)
-        bootstrap = ModelSources.load(explicit_config)
+        bootstrap = ModelSourceConfig.load(explicit_config)
 
         # Should only have explicit source, not user source
         assert "explicit-source" in bootstrap.sources
@@ -181,7 +183,9 @@ refs = ["develop"]
         )
 
         # Load with both explicit paths
-        bootstrap = ModelSources.load(bootstrap_path=explicit_config, user_config_path=user_config)
+        bootstrap = ModelSourceConfig.load(
+            bootstrap_path=explicit_config, user_config_path=user_config
+        )
 
         # Should have both sources
         assert "explicit-source" in bootstrap.sources
@@ -195,7 +199,7 @@ class TestBootstrapSourceMethods:
 
     def test_source_has_sync_method(self):
         """Test that ModelSourceRepo has sync method."""
-        bootstrap = ModelSources.load()
+        bootstrap = ModelSourceConfig.load()
         source = bootstrap.sources[TEST_MODELS_SOURCE]
         assert hasattr(source, "sync")
         assert callable(source.sync)
@@ -232,7 +236,7 @@ class TestDiscovery:
     def test_discover_registry(self):
         """Test discovering registry for test repo."""
         # Use test repo/ref from environment
-        source = ModelSource(
+        source = ModelSourceRepo(
             repo=TEST_MODELS_REPO,
             name=TEST_MODELS_SOURCE_NAME,
             refs=[TEST_MODELS_REF],
@@ -249,7 +253,7 @@ class TestDiscovery:
     @flaky(max_runs=3, min_passes=1)
     def test_discover_registry_nonexistent_ref(self):
         """Test that discovery fails gracefully for nonexistent ref."""
-        source = ModelSource(
+        source = ModelSourceRepo(
             repo=TEST_MODELS_REPO,
             name=TEST_MODELS_SOURCE_NAME,
             refs=["nonexistent-branch-12345"],
@@ -268,11 +272,10 @@ class TestSync:
         """Test syncing a single source/ref."""
         _DEFAULT_CACHE.clear(source=TEST_MODELS_SOURCE_NAME, ref=TEST_MODELS_REF)
 
-        source = ModelSource(
+        source = ModelSourceRepo(
             repo=TEST_MODELS_REPO,
             name=TEST_MODELS_SOURCE_NAME,
             refs=[TEST_MODELS_REF],
-            verbose=True,
         )
         result = source.sync(ref=TEST_MODELS_REF, verbose=True)
 
@@ -286,7 +289,7 @@ class TestSync:
         _DEFAULT_CACHE.clear(source=TEST_MODELS_SOURCE_NAME, ref=TEST_MODELS_REF)
         assert not _DEFAULT_CACHE.has(TEST_MODELS_SOURCE_NAME, TEST_MODELS_REF)
 
-        source = ModelSource(
+        source = ModelSourceRepo(
             repo=TEST_MODELS_REPO,
             name=TEST_MODELS_SOURCE_NAME,
             refs=[TEST_MODELS_REF],
@@ -299,7 +302,7 @@ class TestSync:
         """Test that sync skips already-cached registries."""
         _DEFAULT_CACHE.clear(source=TEST_MODELS_SOURCE_NAME, ref=TEST_MODELS_REF)
 
-        source = ModelSource(
+        source = ModelSourceRepo(
             repo=TEST_MODELS_REPO,
             name=TEST_MODELS_SOURCE_NAME,
             refs=[TEST_MODELS_REF],
@@ -319,7 +322,7 @@ class TestSync:
         """Test that force flag re-syncs cached registries."""
         _DEFAULT_CACHE.clear(source=TEST_MODELS_SOURCE_NAME, ref=TEST_MODELS_REF)
 
-        source = ModelSource(
+        source = ModelSourceRepo(
             repo=TEST_MODELS_REPO,
             name=TEST_MODELS_SOURCE_NAME,
             refs=[TEST_MODELS_REF],
@@ -340,7 +343,7 @@ class TestSync:
         _DEFAULT_CACHE.clear(source=TEST_MODELS_SOURCE_NAME, ref=TEST_MODELS_REF)
 
         # Create source with test repo override
-        source = ModelSource(
+        source = ModelSourceRepo(
             repo=TEST_MODELS_REPO,
             name=TEST_MODELS_SOURCE_NAME,
             refs=[TEST_MODELS_REF],
@@ -357,7 +360,7 @@ class TestSync:
         """Test ModelSourceRepo.is_synced() method."""
         _DEFAULT_CACHE.clear(source=TEST_MODELS_SOURCE_NAME, ref=TEST_MODELS_REF)
 
-        source = ModelSource(
+        source = ModelSourceRepo(
             repo=TEST_MODELS_REPO,
             name=TEST_MODELS_SOURCE_NAME,
             refs=[TEST_MODELS_REF],
@@ -372,7 +375,7 @@ class TestSync:
         """Test ModelSourceRepo.list_synced_refs() method."""
         _DEFAULT_CACHE.clear(source=TEST_MODELS_SOURCE_NAME, ref=TEST_MODELS_REF)
 
-        source = ModelSource(
+        source = ModelSourceRepo(
             repo=TEST_MODELS_REPO,
             name=TEST_MODELS_SOURCE_NAME,
             refs=[TEST_MODELS_REF],
@@ -391,7 +394,7 @@ class TestRegistry:
     def synced_registry(self):
         """Fixture that syncs and loads a registry once for all tests."""
         _DEFAULT_CACHE.clear(source=TEST_MODELS_SOURCE_NAME, ref=TEST_MODELS_REF)
-        source = ModelSource(
+        source = ModelSourceRepo(
             repo=TEST_MODELS_REPO,
             name=TEST_MODELS_SOURCE_NAME,
             refs=[TEST_MODELS_REF],
@@ -459,7 +462,7 @@ class TestCLI:
     def test_cli_list_with_cache(self, capsys):
         """Test 'list' command with cached registries."""
         _DEFAULT_CACHE.clear(source=TEST_MODELS_SOURCE_NAME, ref=TEST_MODELS_REF)
-        source = ModelSource(
+        source = ModelSourceRepo(
             repo=TEST_MODELS_REPO,
             name=TEST_MODELS_SOURCE_NAME,
             refs=[TEST_MODELS_REF],
@@ -486,7 +489,7 @@ class TestCLI:
         """Test 'clear' command."""
         # Sync a registry first
         _DEFAULT_CACHE.clear(source=TEST_MODELS_SOURCE_NAME, ref=TEST_MODELS_REF)
-        source = ModelSource(
+        source = ModelSourceRepo(
             repo=TEST_MODELS_REPO,
             name=TEST_MODELS_SOURCE_NAME,
             refs=[TEST_MODELS_REF],
@@ -515,7 +518,7 @@ class TestCLI:
         """Test 'copy' command."""
         # Sync a registry first
         _DEFAULT_CACHE.clear(source=TEST_MODELS_SOURCE_NAME, ref=TEST_MODELS_REF)
-        source = ModelSource(
+        source = ModelSourceRepo(
             repo=TEST_MODELS_REPO,
             name=TEST_MODELS_SOURCE_NAME,
             refs=[TEST_MODELS_REF],
@@ -552,7 +555,7 @@ class TestCLI:
         """Test 'copy' command with nonexistent model."""
         # Sync a registry first
         _DEFAULT_CACHE.clear(source=TEST_MODELS_SOURCE_NAME, ref=TEST_MODELS_REF)
-        source = ModelSource(
+        source = ModelSourceRepo(
             repo=TEST_MODELS_REPO,
             name=TEST_MODELS_SOURCE_NAME,
             refs=[TEST_MODELS_REF],
@@ -585,7 +588,7 @@ class TestCLI:
         """Test 'cp' alias for 'copy' command."""
         # Sync a registry first
         _DEFAULT_CACHE.clear(source=TEST_MODELS_SOURCE_NAME, ref=TEST_MODELS_REF)
-        source = ModelSource(
+        source = ModelSourceRepo(
             repo=TEST_MODELS_REPO,
             name=TEST_MODELS_SOURCE_NAME,
             refs=[TEST_MODELS_REF],
@@ -623,7 +626,7 @@ class TestCLI:
         """Test Python API cp() alias for copy_to()."""
         # Sync a registry first
         _DEFAULT_CACHE.clear(source=TEST_MODELS_SOURCE_NAME, ref=TEST_MODELS_REF)
-        source = ModelSource(
+        source = ModelSourceRepo(
             repo=TEST_MODELS_REPO,
             name=TEST_MODELS_SOURCE_NAME,
             refs=[TEST_MODELS_REF],
@@ -662,7 +665,7 @@ class TestIntegration:
         """Test complete workflow: discover -> cache -> load."""
         _DEFAULT_CACHE.clear(source=TEST_MODELS_SOURCE_NAME, ref=TEST_MODELS_REF)
 
-        source = ModelSource(
+        source = ModelSourceRepo(
             repo=TEST_MODELS_REPO,
             name=TEST_MODELS_SOURCE_NAME,
             refs=[TEST_MODELS_REF],
@@ -685,7 +688,7 @@ class TestIntegration:
         """Test syncing and listing available models."""
         _DEFAULT_CACHE.clear(source=TEST_MODELS_SOURCE_NAME, ref=TEST_MODELS_REF)
 
-        source = ModelSource(
+        source = ModelSourceRepo(
             repo=TEST_MODELS_REPO,
             name=TEST_MODELS_SOURCE_NAME,
             refs=[TEST_MODELS_REF],

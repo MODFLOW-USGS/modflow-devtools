@@ -1,0 +1,132 @@
+name = "utl-ts"
+parent = "package"
+schema_version = "2"
+multi = true
+subtype = "utility"
+
+[blocks.attributes]
+name = "attributes"
+
+[blocks.attributes.fields.time_series_namerecord]
+name = "time_series_namerecord"
+description = "xxx"
+
+[blocks.attributes.fields.time_series_namerecord.fields.names]
+name = "names"
+description = "xxx"
+
+[blocks.attributes.fields.time_series_namerecord.fields.time_series_names]
+name = "time_series_names"
+description = "name by which a package references a particular time-array series. the name must be unique among all time-array series used in a package."
+dtype = "string"
+
+[blocks.attributes.fields.interpolation_methodrecord]
+name = "interpolation_methodrecord"
+description = "xxx"
+optional = true
+
+[blocks.attributes.fields.interpolation_methodrecord.fields.methods]
+name = "methods"
+description = " xxx"
+
+[blocks.attributes.fields.interpolation_methodrecord.fields.interpolation_method]
+name = "interpolation_method"
+description = "interpolation method, which is either stepwise or linear."
+dtype = "string"
+
+[blocks.attributes.fields.interpolation_methodrecord_single]
+name = "interpolation_methodrecord_single"
+description = "xxx"
+optional = true
+
+[blocks.attributes.fields.method]
+name = "method"
+description = " xxx"
+
+[blocks.attributes.fields.interpolation_method_single]
+name = "interpolation_method_single"
+description = "interpolation method, which is either stepwise or linear."
+tagged = false
+valid = [
+    "s",
+    "t",
+    "e",
+    "p",
+    "w",
+    "i",
+    "s",
+    "e",
+    " ",
+    "l",
+    "i",
+    "n",
+    "e",
+    "a",
+    "r",
+    " ",
+    "l",
+    "i",
+    "n",
+    "e",
+    "a",
+    "r",
+    "e",
+    "n",
+    "d",
+]
+
+[blocks.attributes.fields.sfacrecord]
+name = "sfacrecord"
+description = "xxx"
+optional = true
+
+[blocks.attributes.fields.sfacrecord.fields.sfacs]
+name = "sfacs"
+description = " xxx"
+
+[blocks.attributes.fields.sfacrecord.fields.sfacval]
+name = "sfacval"
+description = "scale factor, which will multiply all array values in time series. sfac is an optional attribute; if omitted, sfac = 1.0."
+dtype = "double"
+
+[blocks.attributes.fields.sfacrecord_single]
+name = "sfacrecord_single"
+description = "xxx"
+optional = true
+
+[blocks.attributes.fields.sfacrecord_single.fields.sfacval]
+name = "sfacval"
+description = "scale factor, which will multiply all array values in time series. sfac is an optional attribute; if omitted, sfac = 1.0."
+dtype = "double"
+
+[blocks.attributes.fields.sfac]
+name = "sfac"
+description = " xxx"
+
+[blocks.timeseries]
+name = "timeseries"
+
+[blocks.timeseries.fields.timeseries]
+name = "timeseries"
+description = "xxx"
+
+[blocks.timeseries.fields.timeseries.item]
+name = "timeseries"
+description = "xxx"
+
+[blocks.timeseries.fields.timeseries.item.fields.ts_time]
+name = "ts_time"
+description = "a numeric time relative to the start of the simulation, in the time unit used in the simulation. times must be strictly increasing."
+tagged = false
+
+[blocks.timeseries.fields.timeseries.item.fields.ts_array]
+name = "ts_array"
+description = "a 2-d array of numeric, floating-point values, or a constant value, readable by the u2drel array-reading utility."
+dtype = "double"
+shape = [
+    "interpolation_method",
+]
+
+[dims.interpolation_method]
+field = "interpolation_method"
+scope = "component"

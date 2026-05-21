@@ -1,0 +1,185 @@
+name = "gwf-wel"
+schema_version = "2"
+multi = true
+subtype = "stress"
+
+[blocks.options]
+name = "options"
+
+[blocks.options.fields.auxiliary]
+name = "auxiliary"
+longname = "keyword to specify aux variables"
+description = "defines an array of one or more auxiliary variable names.  there is no limit on the number of auxiliary variables that can be provided on this line; however, lists of information provided in subsequent blocks must have a column of data for each auxiliary variable name defined here.   the number of auxiliary variables detected on this line determines the value for naux.  comments cannot be provided anywhere on this line as they will be interpreted as auxiliary variable names.  auxiliary variables may not be used by the package, but they will be available for use by other parts of the program.  the program will terminate with an error if auxiliary variables are specified on more than one line in the options block."
+optional = true
+dtype = "string"
+
+[blocks.options.fields.auxmultname]
+name = "auxmultname"
+longname = "name of auxiliary variable for multiplier"
+description = "name of auxiliary variable to be used as multiplier of well flow rate."
+optional = true
+tagged = false
+
+[blocks.options.fields.boundnames]
+name = "boundnames"
+description = "keyword to indicate that boundary names may be provided with the list of well cells."
+optional = true
+
+[blocks.options.fields.print_input]
+name = "print_input"
+longname = "print input to listing file"
+description = "keyword to indicate that the list of well information will be written to the listing file immediately after it is read."
+optional = true
+
+[blocks.options.fields.print_flows]
+name = "print_flows"
+longname = "print calculated flows to listing file"
+description = "keyword to indicate that the list of well flow rates will be printed to the listing file for every stress period time step in which 'budget print' is specified in output control.  if there is no output control option and 'print_flows' is specified, then flow rates are printed for the last time step of each stress period."
+optional = true
+
+[blocks.options.fields.save_flows]
+name = "save_flows"
+longname = "save well flows to budget file"
+description = "keyword to indicate that well flow terms will be written to the file specified with 'budget fileout' in output control."
+optional = true
+
+[blocks.options.fields.auto_flow_reduce]
+name = "auto_flow_reduce"
+longname = "cell fractional thickness for reduced pumping"
+description = "keyword and real value that defines the fraction of the cell thickness used as an interval for smoothly adjusting negative pumping rates to 0 in cells with head values less than or equal to the bottom of the cell. negative pumping rates are adjusted to 0 or a smaller negative value when the head in the cell is equal to or less than the calculated interval above the cell bottom. auto_flow_reduce is set to 0.1 if the specified value is less than or equal to zero. by default, negative pumping rates are not reduced during a simulation.  this auto_flow_reduce option only applies to wells in model cells that are marked as 'convertible' (icelltype /= 0) in the node property flow (npf) input file. reduction in flow will not occur for wells in cells marked as confined (icelltype = 0)."
+optional = true
+tagged = false
+
+[blocks.options.fields.afrcsv_filerecord]
+name = "afrcsv_filerecord"
+optional = true
+
+[blocks.options.fields.afrcsv_filerecord.fields.auto_flow_reduce_csv]
+name = "auto_flow_reduce_csv"
+longname = "budget keyword"
+description = "keyword to specify that record corresponds to the auto_flow_reduce output option in which a new record is written for each well and for each time step in which the user-requested extraction rate is reduced by the program."
+
+[blocks.options.fields.afrcsv_filerecord.fields.fileout]
+name = "fileout"
+longname = "file keyword"
+description = "keyword to specify that an output filename is expected next."
+
+[blocks.options.fields.afrcsv_filerecord.fields.afrcsvfile]
+name = "afrcsvfile"
+longname = "file keyword"
+description = "name of the comma-separated value (csv) output file to write information about well extraction rates that have been reduced by the program.  entries are only written if the extraction rates are reduced."
+tagged = false
+case_sensitive = true
+
+[blocks.options.fields.flow_reduction_length]
+name = "flow_reduction_length"
+longname = "flow reduction length keyword"
+description = "keyword that indicates the auto_flow_reduce value is a length instead of a fraction of the cell thickness. a warning will be issued if the flow_reduction_length option is specified but the auto_flow_reduce option is not specified in the options block. the program will terminate with an error if the flow_reduction_length option is specified and the auto_flow_reduce value specified in the options block is less than or equal to zero."
+optional = true
+
+[blocks.options.fields.ts_filerecord]
+name = "ts_filerecord"
+optional = true
+
+[blocks.options.fields.ts_filerecord.fields.ts6]
+name = "ts6"
+longname = "head keyword"
+description = "keyword to specify that record corresponds to a time-series file."
+
+[blocks.options.fields.ts_filerecord.fields.filein]
+name = "filein"
+longname = "file keyword"
+description = "keyword to specify that an input filename is expected next."
+
+[blocks.options.fields.ts_filerecord.fields.ts6_filename]
+name = "ts6_filename"
+longname = "file name of time series information"
+description = "defines a time-series file defining time series that can be used to assign time-varying values. see the 'time-variable input' section for instructions on using the time-series capability."
+tagged = false
+case_sensitive = true
+
+[blocks.options.fields.obs_filerecord]
+name = "obs_filerecord"
+optional = true
+
+[blocks.options.fields.obs_filerecord.fields.obs6]
+name = "obs6"
+longname = "obs keyword"
+description = "keyword to specify that record corresponds to an observations file."
+
+[blocks.options.fields.obs_filerecord.fields.filein]
+name = "filein"
+longname = "file keyword"
+description = "keyword to specify that an input filename is expected next."
+
+[blocks.options.fields.obs_filerecord.fields.obs6_filename]
+name = "obs6_filename"
+longname = "obs6 input filename"
+description = "name of input file to define observations for the wel package. see the 'observation utility' section for instructions for preparing observation input files. table {#2} lists observation type(s) supported by the wel package."
+tagged = false
+case_sensitive = true
+
+[blocks.options.fields.mover]
+name = "mover"
+description = "keyword to indicate that this instance of the well package can be used with the water mover (mvr) package.  when the mover option is specified, additional memory is allocated within the package to store the available, provided, and received water."
+optional = true
+
+[blocks.dimensions]
+name = "dimensions"
+
+[blocks.dimensions.fields.maxbound]
+name = "maxbound"
+longname = "maximum number of wells"
+description = "integer value specifying the maximum number of wells cells that will be specified for use during any stress period."
+tagged = false
+
+[blocks.period]
+name = "period"
+
+[blocks.period.fields.stress_period_data]
+name = "stress_period_data"
+
+[blocks.period.fields.stress_period_data.item]
+name = "stress_period_data"
+
+[blocks.period.fields.stress_period_data.item.fields.cellid]
+name = "cellid"
+longname = "cell identifier"
+description = "is the cell identifier, and depends on the type of grid that is used for the simulation.  for a structured grid that uses the dis input file, cellid is the layer, row, and column.   for a grid that uses the disv input file, cellid is the layer and cell2d number.  if the model uses the unstructured discretization (disu) input file, cellid is the node number for the cell."
+dtype = "integer"
+shape = [
+    "ncelldim",
+]
+
+[blocks.period.fields.stress_period_data.item.fields.q]
+name = "q"
+longname = "well rate"
+description = "is the volumetric well rate. a positive value indicates recharge (injection) and a negative value indicates discharge (extraction). if the options block includes a timeseriesfile entry (see the 'time-variable input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
+tagged = false
+time_series = true
+
+[blocks.period.fields.stress_period_data.item.fields.aux]
+name = "aux"
+longname = "auxiliary variables"
+description = "represents the values of the auxiliary variables for each well. the values of auxiliary variables must be present for each well. the values must be specified in the order of the auxiliary variables specified in the options block.  if the package supports time series and the options block includes a timeseriesfile entry (see the 'time-variable input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
+optional = true
+dtype = "double"
+shape = [
+    "auxiliary",
+]
+time_series = true
+
+[blocks.period.fields.stress_period_data.item.fields.boundname]
+name = "boundname"
+longname = "well name"
+description = "name of the well cell.  boundname is an ascii character variable that can contain as many as 40 characters.  if boundname contains spaces in it, then the entire name must be enclosed within single quotes."
+optional = true
+tagged = false
+
+[dims.maxbound]
+field = "maxbound"
+scope = "gwf"
+
+[dims.auxiliary]
+field = "auxiliary"
+scope = "component"

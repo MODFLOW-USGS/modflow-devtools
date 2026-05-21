@@ -1,0 +1,44 @@
+name = "utl-hpc"
+parent = "simulation"
+schema_version = "2"
+subtype = "utility"
+
+[blocks.options]
+name = "options"
+
+[blocks.options.fields.print_table]
+name = "print_table"
+longname = "model print table to listing file"
+description = "keyword to indicate that the partition table will be printed to the listing file."
+optional = true
+
+[blocks.options.fields.dev_log_mpi]
+name = "dev_log_mpi"
+longname = "log mpi traffic"
+description = "keyword to enable (extremely verbose) logging of mpi traffic to file."
+optional = true
+
+[blocks.partitions]
+name = "partitions"
+
+[blocks.partitions.fields.partitions]
+name = "partitions"
+longname = "list of partition numbers"
+description = "is the list of zero-based partition numbers."
+optional = true
+
+[blocks.partitions.fields.partitions.item]
+name = "partitions"
+description = "is the record of zero-based partition numbers."
+
+[blocks.partitions.fields.partitions.item.fields.mname]
+name = "mname"
+longname = "model name"
+description = "is the unique model name."
+tagged = false
+
+[blocks.partitions.fields.partitions.item.fields.mrank]
+name = "mrank"
+longname = "model rank"
+description = "is the zero-based partition number (also: mpi rank or processor id) to which the model will be assigned."
+tagged = false

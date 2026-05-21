@@ -9,7 +9,6 @@ import tomli
 from pydantic import (
     BaseModel,
     computed_field,
-    field_validator,
     model_validator,
 )
 from pydantic import (
@@ -82,20 +81,10 @@ class Integer(FieldBase):
     netcdf: bool = False
     tagged: bool = True
     valid: list[int] | None = None
-    dimension: Literal["record", "component", "model", "simulation"] | None = None
     time_series: bool = False
     pk: bool = False
     fk: str | None = None
     fk_ref: str | None = None
-
-    @field_validator("dimension", mode="before")
-    @classmethod
-    def _coerce_dimension(cls, v: Any) -> Any:
-        if v is True:
-            return "component"
-        if v is False:
-            return None
-        return v
 
 
 class Double(FieldBase):
@@ -141,26 +130,6 @@ class Array(FieldBase):
     shape: list[str] = []
     time_series: bool = False
     repeat: str | None = None
-    dimension: Literal["component", "model", "simulation"] | None = None
-
-    @field_validator("dimension", mode="before")
-    @classmethod
-    def _coerce_dimension(cls, v: Any) -> Any:
-        if v is True:
-            return "component"
-        if v is False:
-            return None
-        return v
-
-    @model_validator(mode="after")
-    def _validate_dimension(self) -> "Array":
-        if self.dimension is not None and self.shape:
-            raise ValueError(
-                f"Array {self.name!r}: the 'dimension' attribute may only "
-                "be set on self-sizing arrays (i.e., arrays whose 'shape' "
-                "is empty)"
-            )
-        return self
 
 
 class Record(FieldBase):
@@ -218,37 +187,6 @@ Field = Annotated[
 Record.model_rebuild()
 Union.model_rebuild()
 List.model_rebuild()
-
-
-DIMENSION_SCOPES = ("component", "model", "simulation")
-
-
-def _collect_explicit_dims(component: "ComponentBase") -> set[str]:
-    """
-    Gather all explicitly declared dimension names from a component.
-
-    Collects integer or array fields with a ``dimension`` attribute,
-    recursing into Records, Union arms, and List items as necessary.
-    """
-    dims: set[str] = set()
-
-    def _scan(fields: "dict[str, Any]") -> None:
-        for f in fields.values():
-            if isinstance(f, Integer) and f.dimension in DIMENSION_SCOPES:
-                dims.add(f.name)
-            elif isinstance(f, Array) and f.dimension in DIMENSION_SCOPES:
-                dims.add(f.name)
-            elif isinstance(f, Record):
-                _scan(f.fields)
-            elif isinstance(f, Union):
-                _scan(f.arms)
-            elif isinstance(f, List):
-                item = f.item
-                _scan(item.fields if isinstance(item, Record) else item.arms)
-
-    for block in (component.blocks or {}).values():
-        _scan(block.fields)
-    return dims
 
 
 def _names_in_expr(expr: str) -> set[str]:
@@ -320,27 +258,55 @@ def _validate_sum_call(call: ast.Call, component: "ComponentBase", expr: str) ->
         )
 
 
+class DimDef(BaseModel):
+    """A named dimension, either backed by a field or derived from an expression."""
+
+    field: str | None = None  # name of the field that provides this dimension
+    expr: str | None = None  # derivation expression, e.g. "nlay * nrow * ncol"
+    scope: str  # "component" | "model" | "simulation" | "<component name>"
+
+    @model_validator(mode="after")
+    def _check_exclusive(self) -> "DimDef":
+        if (self.field is None) == (self.expr is None):
+            raise ValueError("DimDef must have exactly one of 'field' or 'expr'")
+        return self
+
+    @property
+    def is_derived(self) -> bool:
+        return self.expr is not None
+
+
+_SIM_PREFIXES: frozenset[str] = frozenset({"sim", "sln", "exg", "utl"})
+
+
+def _model_type(name: str) -> str | None:
+    """Extract model type from a component name, e.g. 'gwf' from 'gwf-npf'."""
+    prefix = name.split("-")[0] if "-" in name else name
+    return None if prefix in _SIM_PREFIXES else prefix
+
+
 def _resolve_derived_dims(component: "ComponentBase", known_dims: set[str]) -> list[str]:
     """
-    Validate derived_dims expressions and return their names in topological order.
+    Validate derived dims expressions and return their names in topological order.
     Raises ValueError on cycles or unresolvable operands.
 
-    ``known_dims`` is the full set of dim names visible to this component
-    (explicit + derived + inherited); pass ``_known_dims_for(spec, name)`` from
-    ``DfnSpec._validate_dims_and_shapes``, or an explicit set in tests.
+    ``known_dims`` is the full set of dim names visible to this component;
+    pass ``spec.dims(name)`` or an explicit set in tests.
     """
-    derived = component.derived_dims or {}
+    derived = {n: d for n, d in (component.dims or {}).items() if d.is_derived}
     if not derived:
         return []
 
     derived_names = set(derived.keys())
     deps: dict[str, set[str]] = {}
 
-    for name, expr in derived.items():
+    for name, dim_def in derived.items():
+        expr = dim_def.expr
+        assert expr is not None
         try:
             tree = ast.parse(expr, mode="eval")
         except SyntaxError as e:
-            raise ValueError(f"Invalid derived_dims {name!r}: {expr!r}: {e}") from e
+            raise ValueError(f"Invalid dims {name!r}: {expr!r}: {e}") from e
 
         for node in ast.walk(tree):
             if (
@@ -353,7 +319,7 @@ def _resolve_derived_dims(component: "ComponentBase", known_dims: set[str]) -> l
         operands = _names_in_expr(expr)
         for op in operands:
             if op not in known_dims and op not in derived_names:
-                raise ValueError(f"derived_dims {name!r} operand {op!r} is not a known dimension")
+                raise ValueError(f"dims {name!r} operand {op!r} is not a known dimension")
         deps[name] = operands & derived_names
 
     in_degree = dict.fromkeys(derived_names, 0)
@@ -375,7 +341,7 @@ def _resolve_derived_dims(component: "ComponentBase", known_dims: set[str]) -> l
 
     if len(order) != len(derived_names):
         cyclic = {n for n, d in in_degree.items() if d > 0}
-        raise ValueError(f"Cycle in derived_dims: {cyclic}")
+        raise ValueError(f"Cycle in dims: {cyclic}")
 
     return order
 
@@ -398,7 +364,7 @@ class ComponentBase(BaseModel):
     blocks: dict[str, Block] | None = None
     parent: str | list[str] | None = None
     schema_version: str | None = None
-    derived_dims: dict[str, str] | None = None
+    dims: dict[str, DimDef] | None = None
 
 
 class Simulation(ComponentBase):
@@ -425,22 +391,6 @@ _DIM_RE = re.compile(r"^[A-Za-z_]\w*$")
 _LOOKUP_RE = re.compile(r"^(\w+)\.(\w+)\((\w+)\)$")
 _BOUND_RE = re.compile(r"^[<>]=?")
 _ARITH_RE = re.compile(r"^([A-Za-z_]\w*)\s*[+-]\s*\d+$")
-
-
-def _known_dims_for(spec: "Dfns", component_name: str) -> set[str]:
-    """
-    Return the full set of dim names valid for shape references in a component.
-    Scope chain (levels 1-3; level 4 is intra-record sibling, checked per-field):
-      1. local explicit dims: Integer(dimension=True) and Array(dtype="string", dimension=True)
-      2. local derived dims (keys of component.derived_dims)
-      3. inherited grid dims (from all other components in the spec)
-    """
-    component = spec.components[component_name]
-    return (
-        _collect_explicit_dims(component)
-        | set((component.derived_dims or {}).keys())
-        | spec.grid_dims_for(component_name)
-    )
 
 
 def _find_list_in_block(component: "ComponentBase", block_name: str) -> "List | None":
@@ -484,7 +434,7 @@ def _validate_shape_element(
             return
         if enclosing_record is not None:
             sibling = enclosing_record.fields.get(core)
-            if isinstance(sibling, Integer) and sibling.dimension == "record":
+            if isinstance(sibling, Integer):
                 return
         raise ValueError(
             f"Array {array_field.name!r} shape element {element!r}: "
@@ -498,7 +448,7 @@ def _validate_shape_element(
         # an inline count on the same line.
         if enclosing_record is not None:
             sibling = enclosing_record.fields.get(element)
-            if isinstance(sibling, Integer) and sibling.dimension == "record":
+            if isinstance(sibling, Integer):
                 return
         raise ValueError(
             f"Array {array_field.name!r} shape element {element!r} "
@@ -569,7 +519,7 @@ def _validate_shape_element(
             return
         if enclosing_record is not None:
             sibling = enclosing_record.fields.get(dim_name)
-            if isinstance(sibling, Integer) and sibling.dimension == "record":
+            if isinstance(sibling, Integer):
                 return
         raise ValueError(
             f"Array {array_field.name!r} shape element {element!r}: "
@@ -652,7 +602,7 @@ def _validate_array_shapes(
     if not component.blocks:
         return
 
-    known_dims = _known_dims_for(spec, component_name)
+    known_dims = spec.dims(component_name)
 
     def _check_array(arr: "Array", enclosing: "Record | None") -> None:
         if not arr.shape:
@@ -693,7 +643,7 @@ class Dfns(BaseModel):
 
     components: dict[str, Component] = PydanticField(default_factory=dict)
 
-    @computed_field
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def schema_version(self) -> str:
         for c in self.components.values():
@@ -709,27 +659,44 @@ class Dfns(BaseModel):
                 return c
         return None
 
-    def children_of(self, name: str) -> "dict[str, Component]":
-        """Return all components whose parent matches ``name``."""
+    def children(self, name: str) -> "dict[str, Component]":
+        """Components whose parent matches ``name``."""
         return {n: c for n, c in self.components.items() if c.parent == name}
 
-    def explicit_dims_for(self, component_name: str) -> set[str]:
-        """Return the set of explicit dim names for a component."""
-        return _collect_explicit_dims(self.components[component_name])
+    def local_dims(self, component_name: str) -> set[str]:
+        """Dim names declared in this component's dims section."""
+        return set((self.components[component_name].dims or {}).keys())
 
-    def grid_dims_for(self, component_name: str) -> set[str]:
+    def inherited_dims(self, component_name: str) -> set[str]:
+        """Dim names visible to ``component_name`` from other components."""
+        inherited: set[str] = set()
+        component = self.components[component_name]
+        for cname, c in self.components.items():
+            if cname == component_name:
+                continue
+            for dim_name, dim in (c.dims or {}).items():
+                match dim.scope:
+                    case "simulation":
+                        inherited.add(dim_name)
+                    case "model":
+                        if "model" in component.parent or cname in component.parent:
+                            inherited.add(dim_name)
+                    case "component":
+                        if cname in component.parent:
+                            inherited.add(dim_name)
+        return inherited
+
+    def dims(self, component_name: str) -> set[str]:
         """
-        Return dim names inherited by ``component_name`` from the rest of the spec.
+        Return all dim names visible to ``component_name`` for shape resolution.
+
+        This is the union of the component's own declared dims (field-backed and
+        derived) and any dims inherited from other components via scoping rules.
         """
-        dims: set[str] = set()
-        for name, c in self.components.items():
-            if name != component_name:
-                dims |= _collect_explicit_dims(c)
-                dims |= set((c.derived_dims or {}).keys())
-        return dims
+        return self.local_dims(component_name) | self.inherited_dims(component_name)
 
     @model_validator(mode="after")
-    def _validate_schema_version_consistency(self) -> "Dfns":
+    def _validate_schema_version(self) -> "Dfns":
         versions = {
             c.schema_version for c in self.components.values() if c.schema_version is not None
         }
@@ -741,17 +708,10 @@ class Dfns(BaseModel):
         return self
 
     @model_validator(mode="after")
-    def _validate_dims_and_shapes(self) -> "Dfns":
-        """
-        At construction time, for every component:
-          1. Validate derived_dims expressions (topological sort, operand scope).
-          2. Validate every Array.shape element (dim reference or row-level lookup).
-        Shape validation runs after dims so the derived dim names are available
-        as part of the known scope when checking dim references.
-        """
+    def _validate_relations(self) -> "Dfns":
         for name, component in self.components.items():
-            if component.derived_dims:
-                _resolve_derived_dims(component, _known_dims_for(self, name))
+            if component.dims and any(d.is_derived for d in component.dims.values()):
+                _resolve_derived_dims(component, self.dims(name))
         for name, component in self.components.items():
             _validate_fk_fields(component, self)
         for name, component in self.components.items():

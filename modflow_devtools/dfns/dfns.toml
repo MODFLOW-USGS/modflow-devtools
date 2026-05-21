@@ -4,5 +4,6 @@
 #   - Windows: %APPDATA%/modflow-devtools/dfns.toml
 
 releases = [
-    "MODFLOW-ORG/modflow6-nightly-build@20260518"
+    "MODFLOW-ORG/modflow6@latest",
+    "MODFLOW-ORG/modflow6-nightly-build@latest"
 ]

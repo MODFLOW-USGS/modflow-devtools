@@ -1,0 +1,465 @@
+name = "gwf-maw"
+schema_version = "2"
+multi = true
+subtype = "advanced"
+
+[blocks.options]
+name = "options"
+
+[blocks.options.fields.auxiliary]
+name = "auxiliary"
+longname = "keyword to specify aux variables"
+description = "defines an array of one or more auxiliary variable names.  there is no limit on the number of auxiliary variables that can be provided on this line; however, lists of information provided in subsequent blocks must have a column of data for each auxiliary variable name defined here.   the number of auxiliary variables detected on this line determines the value for naux.  comments cannot be provided anywhere on this line as they will be interpreted as auxiliary variable names.  auxiliary variables may not be used by the package, but they will be available for use by other parts of the program.  the program will terminate with an error if auxiliary variables are specified on more than one line in the options block."
+optional = true
+dtype = "string"
+
+[blocks.options.fields.boundnames]
+name = "boundnames"
+description = "keyword to indicate that boundary names may be provided with the list of multi-aquifer well cells."
+optional = true
+
+[blocks.options.fields.print_input]
+name = "print_input"
+longname = "print input to listing file"
+description = "keyword to indicate that the list of multi-aquifer well information will be written to the listing file immediately after it is read."
+optional = true
+
+[blocks.options.fields.print_head]
+name = "print_head"
+longname = "print calculated heads to listing file"
+description = "keyword to indicate that the list of multi-aquifer well {#2} will be printed to the listing file for every stress period in which 'head print' is specified in output control.  if there is no output control option and print_{#3} is specified, then {#2} are printed for the last time step of each stress period."
+optional = true
+
+[blocks.options.fields.print_flows]
+name = "print_flows"
+longname = "print calculated flows to listing file"
+description = "keyword to indicate that the list of multi-aquifer well flow rates will be printed to the listing file for every stress period time step in which 'budget print' is specified in output control.  if there is no output control option and 'print_flows' is specified, then flow rates are printed for the last time step of each stress period."
+optional = true
+
+[blocks.options.fields.save_flows]
+name = "save_flows"
+longname = "save well flows to budget file"
+description = "keyword to indicate that multi-aquifer well flow terms will be written to the file specified with 'budget fileout' in output control."
+optional = true
+
+[blocks.options.fields.head_filerecord]
+name = "head_filerecord"
+optional = true
+
+[blocks.options.fields.head_filerecord.fields.head]
+name = "head"
+longname = "head keyword"
+description = "keyword to specify that record corresponds to head."
+
+[blocks.options.fields.head_filerecord.fields.fileout]
+name = "fileout"
+longname = "file keyword"
+description = "keyword to specify that an output filename is expected next."
+
+[blocks.options.fields.head_filerecord.fields.headfile]
+name = "headfile"
+longname = "file keyword"
+description = "name of the binary output file to write head information."
+tagged = false
+case_sensitive = true
+
+[blocks.options.fields.budget_filerecord]
+name = "budget_filerecord"
+optional = true
+
+[blocks.options.fields.budget_filerecord.fields.budget]
+name = "budget"
+longname = "budget keyword"
+description = "keyword to specify that record corresponds to the budget."
+
+[blocks.options.fields.budget_filerecord.fields.fileout]
+name = "fileout"
+longname = "file keyword"
+description = "keyword to specify that an output filename is expected next."
+
+[blocks.options.fields.budget_filerecord.fields.budgetfile]
+name = "budgetfile"
+longname = "file keyword"
+description = "name of the binary output file to write budget information."
+tagged = false
+case_sensitive = true
+
+[blocks.options.fields.budgetcsv_filerecord]
+name = "budgetcsv_filerecord"
+optional = true
+
+[blocks.options.fields.budgetcsv_filerecord.fields.budgetcsv]
+name = "budgetcsv"
+longname = "budget keyword"
+description = "keyword to specify that record corresponds to the budget csv."
+
+[blocks.options.fields.budgetcsv_filerecord.fields.fileout]
+name = "fileout"
+longname = "file keyword"
+description = "keyword to specify that an output filename is expected next."
+
+[blocks.options.fields.budgetcsv_filerecord.fields.budgetcsvfile]
+name = "budgetcsvfile"
+longname = "file keyword"
+description = "name of the comma-separated value (csv) output file to write budget summary information.  a budget summary record will be written to this file for each time step of the simulation."
+tagged = false
+case_sensitive = true
+
+[blocks.options.fields.no_well_storage]
+name = "no_well_storage"
+longname = "deactivate well storage"
+description = "keyword that deactivates inclusion of well storage contributions to the multi-aquifer well package continuity equation."
+optional = true
+
+[blocks.options.fields.flow_correction]
+name = "flow_correction"
+longname = "activate flow correction"
+description = "keyword that activates flow corrections in cases where the head in a multi-aquifer well is below the bottom of the screen for a connection or the head in a convertible cell connected to a multi-aquifer well is below the cell bottom. when flow corrections are activated, unit head gradients are used to calculate the flow between a multi-aquifer well and a connected gwf cell. by default, flow corrections are not made."
+optional = true
+
+[blocks.options.fields.flowing_wells]
+name = "flowing_wells"
+longname = "activate flowing wells"
+description = "keyword that activates the flowing wells option for the multi-aquifer well package."
+optional = true
+
+[blocks.options.fields.shutdown_theta]
+name = "shutdown_theta"
+longname = "shutdown theta"
+description = "value that defines the weight applied to discharge rate for wells that limit the water level in a discharging well (defined using the head_limit keyword in the stress period data). shutdown_theta is used to control discharge rate oscillations when the flow rate from the aquifer is less than the specified flow rate from the aquifer to the well. values range between 0.0 and 1.0, and larger values increase the weight (decrease under-relaxation) applied to the well discharge rate. the head_limit option has been included to facilitate backward compatibility with previous versions of modflow but use of the rate_scaling option instead of the head_limit option is recommended. by default, shutdown_theta is 0.7."
+optional = true
+tagged = false
+
+[blocks.options.fields.shutdown_kappa]
+name = "shutdown_kappa"
+longname = "shutdown kappa"
+description = "value that defines the weight applied to discharge rate for wells that limit the water level in a discharging well (defined using the head_limit keyword in the stress period data). shutdown_kappa is used to control discharge rate oscillations when the flow rate from the aquifer is less than the specified flow rate from the aquifer to the well. values range between 0.0 and 1.0, and larger values increase the weight applied to the well discharge rate. the head_limit option has been included to facilitate backward compatibility with previous versions of modflow but use of the rate_scaling option instead of the head_limit option is recommended. by default, shutdown_kappa is 0.0001."
+optional = true
+tagged = false
+
+[blocks.options.fields.mfrcsv_filerecord]
+name = "mfrcsv_filerecord"
+optional = true
+
+[blocks.options.fields.mfrcsv_filerecord.fields.maw_flow_reduce_csv]
+name = "maw_flow_reduce_csv"
+longname = "budget keyword"
+description = "keyword to specify that record corresponds to the output option in which a new record is written for each multi-aquifer well and for each time step in which the user-requested extraction or injection rate is reduced by the program."
+
+[blocks.options.fields.mfrcsv_filerecord.fields.fileout]
+name = "fileout"
+longname = "file keyword"
+description = "keyword to specify that an output filename is expected next."
+
+[blocks.options.fields.mfrcsv_filerecord.fields.mfrcsvfile]
+name = "mfrcsvfile"
+longname = "file keyword"
+description = "name of the comma-separated value (csv) output file to write information about multi-aquifer well extraction or injection rates that have been reduced by the program. entries are only written if the extraction or injection rates are reduced."
+tagged = false
+case_sensitive = true
+
+[blocks.options.fields.ts_filerecord]
+name = "ts_filerecord"
+optional = true
+
+[blocks.options.fields.ts_filerecord.fields.ts6]
+name = "ts6"
+longname = "head keyword"
+description = "keyword to specify that record corresponds to a time-series file."
+
+[blocks.options.fields.ts_filerecord.fields.filein]
+name = "filein"
+longname = "file keyword"
+description = "keyword to specify that an input filename is expected next."
+
+[blocks.options.fields.ts_filerecord.fields.ts6_filename]
+name = "ts6_filename"
+longname = "file name of time series information"
+description = "defines a time-series file defining time series that can be used to assign time-varying values. see the 'time-variable input' section for instructions on using the time-series capability."
+tagged = false
+case_sensitive = true
+
+[blocks.options.fields.obs_filerecord]
+name = "obs_filerecord"
+optional = true
+
+[blocks.options.fields.obs_filerecord.fields.obs6]
+name = "obs6"
+longname = "obs keyword"
+description = "keyword to specify that record corresponds to an observations file."
+
+[blocks.options.fields.obs_filerecord.fields.filein]
+name = "filein"
+longname = "file keyword"
+description = "keyword to specify that an input filename is expected next."
+
+[blocks.options.fields.obs_filerecord.fields.obs6_filename]
+name = "obs6_filename"
+longname = "obs6 input filename"
+description = "name of input file to define observations for the maw package. see the 'observation utility' section for instructions for preparing observation input files. table {#2} lists observation type(s) supported by the maw package."
+tagged = false
+case_sensitive = true
+
+[blocks.options.fields.mover]
+name = "mover"
+description = "keyword to indicate that this instance of the maw package can be used with the water mover (mvr) package.  when the mover option is specified, additional memory is allocated within the package to store the available, provided, and received water."
+optional = true
+
+[blocks.dimensions]
+name = "dimensions"
+
+[blocks.dimensions.fields.nmawwells]
+name = "nmawwells"
+longname = "number of maw wells"
+description = "integer value specifying the number of multi-aquifer wells that will be simulated for all stress periods."
+tagged = false
+
+[blocks.packagedata]
+name = "packagedata"
+
+[blocks.packagedata.fields.packagedata]
+name = "packagedata"
+
+[blocks.packagedata.fields.packagedata.item]
+name = "packagedata"
+
+[blocks.packagedata.fields.packagedata.item.fields.ifno]
+name = "ifno"
+longname = "well number for this entry"
+description = "integer value that defines the feature (well) number associated with the specified packagedata data on the line. ifno must be greater than zero and less than or equal to nmawwells. multi-aquifer well information must be specified for every multi-aquifer well or the program will terminate with an error.  the program will also terminate with an error if information for a multi-aquifer well is specified more than once."
+tagged = false
+
+[blocks.packagedata.fields.packagedata.item.fields.radius]
+name = "radius"
+longname = "well radius"
+description = "radius for the multi-aquifer well. the program will terminate with an error if the radius is less than or equal to zero."
+tagged = false
+
+[blocks.packagedata.fields.packagedata.item.fields.bottom]
+name = "bottom"
+longname = "well bottom"
+description = "bottom elevation of the multi-aquifer well. if condeqn is specified, thiem, skin, or cumulative, bottom is set to the cell bottom in the lowermost gwf cell connection in cases where the specified well bottom is above the bottom of this gwf cell. if condeqn is mean, bottom is set to the lowermost gwf cell connection screen bottom in cases where the specified well bottom is above this value. the bottom elevation defines the lowest well head that will be simulated when the newton under_relaxation option is specified in the gwf model name file. the bottom elevation is also used to calculate volumetric storage in the well."
+tagged = false
+
+[blocks.packagedata.fields.packagedata.item.fields.strt]
+name = "strt"
+longname = "starting head"
+description = "starting head for the multi-aquifer well. the program will terminate with an error if the starting head is less than the specified well bottom."
+tagged = false
+
+[blocks.packagedata.fields.packagedata.item.fields.condeqn]
+name = "condeqn"
+longname = "conductance equation"
+description = "character string that defines the conductance equation that is used to calculate the saturated conductance for the multi-aquifer well. possible multi-aquifer well condeqn strings include: specified--character keyword to indicate the multi-aquifer well saturated conductance will be specified.  thiem--character keyword to indicate the multi-aquifer well saturated conductance will be calculated using the thiem equation, which considers the cell top and bottom, aquifer hydraulic conductivity, and effective cell and well radius.  skin--character keyword to indicate that the multi-aquifer well saturated conductance will be calculated using the cell top and bottom, aquifer and screen hydraulic conductivity, and well and skin radius.  cumulative--character keyword to indicate that the multi-aquifer well saturated conductance will be calculated using a combination of the thiem and skin equations.  mean--character keyword to indicate the multi-aquifer well saturated conductance will be calculated using the aquifer and screen top and bottom, aquifer and screen hydraulic conductivity, and well and skin radius. the cumulative conductance equation is identical to the skin losstype in the multi-node well (mnw2) package for modflow-2005. the program will terminate with an error condition if condeqn is skin or cumulative and the calculated saturated conductance is less than zero; if an error condition occurs, it is suggested that the thiem or mean conductance equations be used for these multi-aquifer wells."
+tagged = false
+
+[blocks.packagedata.fields.packagedata.item.fields.ngwfnodes]
+name = "ngwfnodes"
+longname = "number of connected gwf cells"
+description = "integer value that defines the number of gwf nodes connected to this (ifno) multi-aquifer well. ngwfnodes must be greater than zero."
+tagged = false
+
+[blocks.packagedata.fields.packagedata.item.fields.aux]
+name = "aux"
+longname = "auxiliary variables"
+description = "represents the values of the auxiliary variables for each multi-aquifer well. the values of auxiliary variables must be present for each multi-aquifer well. the values must be specified in the order of the auxiliary variables specified in the options block.  if the package supports time series and the options block includes a timeseriesfile entry (see the 'time-variable input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
+optional = true
+dtype = "double"
+shape = [
+    "auxiliary",
+]
+time_series = true
+
+[blocks.packagedata.fields.packagedata.item.fields.boundname]
+name = "boundname"
+longname = "well name"
+description = "name of the multi-aquifer well cell.  boundname is an ascii character variable that can contain as many as 40 characters.  if boundname contains spaces in it, then the entire name must be enclosed within single quotes."
+optional = true
+tagged = false
+
+[blocks.connectiondata]
+name = "connectiondata"
+
+[blocks.connectiondata.fields.connectiondata]
+name = "connectiondata"
+
+[blocks.connectiondata.fields.connectiondata.item]
+name = "connectiondata"
+
+[blocks.connectiondata.fields.connectiondata.item.fields.ifno]
+name = "ifno"
+longname = "well number for this entry"
+description = "integer value that defines the feature (well) number associated with the specified packagedata data on the line. ifno must be greater than zero and less than or equal to nmawwells. multi-aquifer well information must be specified for every multi-aquifer well or the program will terminate with an error.  the program will also terminate with an error if information for a multi-aquifer well is specified more than once."
+tagged = false
+
+[blocks.connectiondata.fields.connectiondata.item.fields.icon]
+name = "icon"
+longname = "connection number"
+description = "integer value that defines the gwf connection number for this multi-aquifer well connection entry. iconn must be greater than zero and less than or equal to ngwfnodes for multi-aquifer well ifno."
+tagged = false
+
+[blocks.connectiondata.fields.connectiondata.item.fields.cellid]
+name = "cellid"
+longname = "cell identifier"
+description = "is the cell identifier, and depends on the type of grid that is used for the simulation.  for a structured grid that uses the dis input file, cellid is the layer, row, and column.   for a grid that uses the disv input file, cellid is the layer and cell2d number.  if the model uses the unstructured discretization (disu) input file, cellid is the node number for the cell. one or more screened intervals can be connected to the same cellid if condeqn for a well is mean. the program will terminate with an error if maw wells using specified, thiem, skin, or cumulative conductance equations have more than one connection to the same cellid."
+dtype = "integer"
+shape = [
+    "ncelldim",
+]
+
+[blocks.connectiondata.fields.connectiondata.item.fields.scrn_top]
+name = "scrn_top"
+longname = "screen top"
+description = "value that defines the top elevation of the screen for the multi-aquifer well connection. if condeqn is specified, thiem, skin, or cumulative, scrn_top can be any value and is set to the top of the cell. if condeqn is mean, scrn_top is set to the multi-aquifer well connection cell top if the specified value is greater than the cell top. the program will terminate with an error if the screen top is less than the screen bottom."
+tagged = false
+
+[blocks.connectiondata.fields.connectiondata.item.fields.scrn_bot]
+name = "scrn_bot"
+longname = "screen bottom"
+description = "value that defines the bottom elevation of the screen for the multi-aquifer well connection. if condeqn is specified, thiem, skin, or cumulative, scrn_bot can be any value and is set to the bottom of the cell. if condeqn is mean, scrn_bot is set to the multi-aquifer well connection cell bottom if the specified value is less than the cell bottom. the program will terminate with an error if the screen bottom is greater than the screen top."
+tagged = false
+
+[blocks.connectiondata.fields.connectiondata.item.fields.hk_skin]
+name = "hk_skin"
+longname = "skin data"
+description = "value that defines the skin (filter pack) hydraulic conductivity (if condeqn for the multi-aquifer well is skin, cumulative, or mean) or conductance (if condeqn for the multi-aquifer well is specified) for each gwf node connected to the multi-aquifer well (ngwfnodes). if condeqn is specified, hk_skin must be greater than or equal to zero.  hk_skin can be any value if condeqn is thiem. otherwise, hk_skin must be greater than zero. if condeqn is skin, the contrast between the cell transmissivity (the product of geometric mean horizontal hydraulic conductivity and the cell thickness) and the well transmissivity (the product of hk_skin and the screen thicknesses) must be greater than one in node cellid or the program will terminate with an error condition; if an error condition occurs, it is suggested that the hk_skin be reduced to a value less than k11 and k22 in node cellid or the thiem or mean conductance equations be used for these multi-aquifer wells."
+tagged = false
+
+[blocks.connectiondata.fields.connectiondata.item.fields.radius_skin]
+name = "radius_skin"
+longname = "skin radius"
+description = "real value that defines the skin radius (filter pack radius) for the multi-aquifer well. radius_skin can be any value if condeqn is specified or thiem. if condeqn is skin, cumulative, or mean, the program will terminate with an error if  radius_skin is less than or equal to the radius for the multi-aquifer well."
+tagged = false
+
+[blocks.period]
+name = "period"
+
+[blocks.period.fields.perioddata]
+name = "perioddata"
+
+[blocks.period.fields.perioddata.item]
+name = "perioddata"
+
+[blocks.period.fields.perioddata.item.fields.ifno]
+name = "ifno"
+longname = "well number for this entry"
+description = "integer value that defines the well number associated with the specified period data on the line. ifno must be greater than zero and less than or equal to nmawwells."
+tagged = false
+
+[blocks.period.fields.perioddata.item.fields.mawsetting]
+name = "mawsetting"
+description = "line of information that is parsed into a keyword and values.  keyword values that can be used to start the mawsetting string include: status, flowing_well, rate, well_head, head_limit, shut_off, rate_scaling, and auxiliary."
+
+[blocks.period.fields.perioddata.item.fields.mawsetting.arms.status]
+name = "status"
+longname = "well status"
+description = "keyword option to define well status.  status can be active, inactive, or constant. by default, status is active."
+
+[blocks.period.fields.perioddata.item.fields.mawsetting.arms.flowing_wellrecord]
+name = "flowing_wellrecord"
+
+[blocks.period.fields.perioddata.item.fields.mawsetting.arms.flowing_wellrecord.fields.flowing_well]
+name = "flowing_well"
+longname = "well is a flowing well"
+description = "keyword to indicate the well is a flowing well.  the flowing_well option can be used to simulate flowing wells when the simulated well head exceeds the specified drainage elevation."
+
+[blocks.period.fields.perioddata.item.fields.mawsetting.arms.flowing_wellrecord.fields.fwelev]
+name = "fwelev"
+longname = "flowing well elevation"
+description = "elevation used to determine whether or not the well is flowing."
+tagged = false
+
+[blocks.period.fields.perioddata.item.fields.mawsetting.arms.flowing_wellrecord.fields.fwcond]
+name = "fwcond"
+longname = "well flowing well conductance"
+description = "conductance used to calculate the discharge of a free flowing well.  flow occurs when the head in the well is above the well top elevation (fwelev)."
+tagged = false
+
+[blocks.period.fields.perioddata.item.fields.mawsetting.arms.flowing_wellrecord.fields.fwrlen]
+name = "fwrlen"
+longname = "flowing well reduction length"
+description = "length used to reduce the conductance of the flowing well.  when the head in the well drops below the well top plus the reduction length, then the conductance is reduced.  this reduction length can be used to improve the stability of simulations with flowing wells so that there is not an abrupt change in flowing well rates."
+tagged = false
+
+[blocks.period.fields.perioddata.item.fields.mawsetting.arms.rate]
+name = "rate"
+longname = "well pumping rate"
+description = "is the volumetric pumping rate for the multi-aquifer well. a positive value indicates recharge and a negative value indicates discharge (pumping). rate only applies to active (status is active) multi-aquifer wells. if the options block includes a timeseriesfile entry (see the 'time-variable input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value. by default, the rate for each multi-aquifer well is zero."
+time_series = true
+
+[blocks.period.fields.perioddata.item.fields.mawsetting.arms.well_head]
+name = "well_head"
+longname = "well head"
+description = "is the head in the multi-aquifer well. well_head is only applied to constant head (status is constant) and inactive (status is inactive) multi-aquifer wells. if the options block includes a timeseriesfile entry (see the 'time-variable input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value. the program will terminate with an error if well_head is less than the bottom of the well."
+time_series = true
+
+[blocks.period.fields.perioddata.item.fields.mawsetting.arms.head_limit]
+name = "head_limit"
+longname = "head limit"
+description = "is the limiting water level (head) in the well, which is the minimum of the well rate or the well inflow rate from the aquifer. head_limit can be applied to extraction wells (rate $<$ 0) or injection wells (rate $>$ 0). head_limit can be deactivated by specifying the text string `off'. the head_limit option is based on the head_limit functionality available in the mnw2~citep{konikow2009} package for modflow-2005. the head_limit option has been included to facilitate backward compatibility with previous versions of modflow but use of the rate_scaling option instead of the head_limit option is recommended. by default, head_limit is `off'."
+
+[blocks.period.fields.perioddata.item.fields.mawsetting.arms.shutoffrecord]
+name = "shutoffrecord"
+
+[blocks.period.fields.perioddata.item.fields.mawsetting.arms.shutoffrecord.fields.shut_off]
+name = "shut_off"
+longname = "shut off well"
+description = "keyword for activating well shut off capability.  subsequent values define the minimum and maximum pumping rate that a well must exceed to shutoff or reactivate a well, respectively, during a stress period. shut_off is only applied to injection wells (rate$<0$) and if head_limit is specified (not set to `off').  if head_limit is specified, shut_off can be deactivated by specifying a minimum value equal to zero. the shut_off option is based on the shut_off functionality available in the mnw2~citep{konikow2009} package for modflow-2005. the shut_off option has been included to facilitate backward compatibility with previous versions of modflow but use of the rate_scaling option instead of the shut_off option is recommended. by default, shut_off is not used."
+
+[blocks.period.fields.perioddata.item.fields.mawsetting.arms.shutoffrecord.fields.minrate]
+name = "minrate"
+longname = "minimum shutoff rate"
+description = "is the minimum rate that a well must exceed to shutoff a well during a stress period. the well will shut down during a time step if the flow rate to the well from the aquifer is less than minrate. if a well is shut down during a time step, reactivation of the well cannot occur until the next time step to reduce oscillations. minrate must be less than maxrate."
+tagged = false
+
+[blocks.period.fields.perioddata.item.fields.mawsetting.arms.shutoffrecord.fields.maxrate]
+name = "maxrate"
+longname = "maximum shutoff rate"
+description = "is the maximum rate that a well must exceed to reactivate a well during a stress period. the well will reactivate during a timestep if the well was shutdown during the previous time step and the flow rate to the well from the aquifer exceeds maxrate. reactivation of the well cannot occur until the next time step if a well is shutdown to reduce oscillations. maxrate must be greater than minrate."
+tagged = false
+
+[blocks.period.fields.perioddata.item.fields.mawsetting.arms.rate_scalingrecord]
+name = "rate_scalingrecord"
+
+[blocks.period.fields.perioddata.item.fields.mawsetting.arms.rate_scalingrecord.fields.rate_scaling]
+name = "rate_scaling"
+longname = "rate scaling"
+description = "activate rate scaling.  if rate_scaling is specified, both pump_elevation and scaling_length must be specified. rate_scaling cannot be used with head_limit.  rate_scaling can be used for extraction or injection wells.  for extraction wells, the extraction rate will start to decrease once the head in the well lowers to a level equal to the pump elevation plus the scaling length.  if the head in the well drops below the pump elevation, then the extraction rate is calculated to be zero.  for an injection well, the injection rate will begin to decrease once the head in the well rises above the specified pump elevation.  if the head in the well rises above the pump elevation plus the scaling length, then the injection rate will be set to zero."
+
+[blocks.period.fields.perioddata.item.fields.mawsetting.arms.rate_scalingrecord.fields.pump_elevation]
+name = "pump_elevation"
+longname = "pump elevation"
+description = "is the elevation of the multi-aquifer well pump (pump_elevation).  pump_elevation should not be less than the bottom elevation (bottom) of the multi-aquifer well."
+tagged = false
+
+[blocks.period.fields.perioddata.item.fields.mawsetting.arms.rate_scalingrecord.fields.scaling_length]
+name = "scaling_length"
+description = "height above the pump elevation (scaling_length).  if the simulated well head is below this elevation (pump elevation plus the scaling length), then the pumping rate is reduced."
+tagged = false
+
+[blocks.period.fields.perioddata.item.fields.mawsetting.arms.auxiliaryrecord]
+name = "auxiliaryrecord"
+
+[blocks.period.fields.perioddata.item.fields.mawsetting.arms.auxiliaryrecord.fields.auxiliary]
+name = "auxiliary"
+description = "keyword for specifying auxiliary variable."
+
+[blocks.period.fields.perioddata.item.fields.mawsetting.arms.auxiliaryrecord.fields.auxname]
+name = "auxname"
+description = "name for the auxiliary variable to be assigned auxval.  auxname must match one of the auxiliary variable names defined in the options block. if auxname does not match one of the auxiliary variable names defined in the options block the data are ignored."
+tagged = false
+
+[blocks.period.fields.perioddata.item.fields.mawsetting.arms.auxiliaryrecord.fields.auxval]
+name = "auxval"
+longname = "auxiliary variable value"
+description = "value for the auxiliary variable. if the options block includes a timeseriesfile entry (see the 'time-variable input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
+tagged = false
+time_series = true
+
+[dims.nmawwells]
+field = "nmawwells"
+scope = "gwf"
+
+[dims.auxiliary]
+field = "auxiliary"
+scope = "component"

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from modflow_devtools.dfn import schema as v1
 
 
@@ -12,16 +10,16 @@ def map_field(field: v1.Field) -> v1.Field:
     return v1.Field(
         name=field["name"],
         type=field["type"],
-        block=field["block"],
-        default=field["default"],
-        longname=field["longname"],
-        description=field["description"],
-        optional=field["optional"],
-        developmode=field["developmode"],
-        shape=field["shape"],
-        valid=field["valid"],
-        netcdf=field["netcdf"],
-        tagged=field["tagged"],
+        block=field.get("block"),
+        default=field.get("default"),
+        longname=field.get("longname"),
+        description=field.get("description"),
+        optional=field.get("optional", False),
+        developmode=field.get("developmode", False),
+        shape=field.get("shape"),
+        valid=field.get("valid"),
+        netcdf=field.get("netcdf", False),
+        tagged=field.get("tagged", False),
     )
 
 
@@ -33,13 +31,13 @@ def map(dfn: v1.Dfn) -> v1.Dfn:
         blocks[block_name] = {
             field_name: map_field(field)
             for field_name, field in block_fields.items()
-            if isinstance(field, v1.Field)
+            if isinstance(field, dict)
         }
 
     for block_name, block_fields in blocks.items():
-        dfn.setdefault(block_name, {})
+        dfn.setdefault(block_name, {})  # type: ignore[misc]
         for field_name, field_data in block_fields.items():
-            dfn[block_name][field_name] = field_data
+            dfn[block_name][field_name] = field_data  # type: ignore[literal-required]
 
     dfn["blocks"] = blocks if blocks else None
     dfn["schema_version"] = "1.1"

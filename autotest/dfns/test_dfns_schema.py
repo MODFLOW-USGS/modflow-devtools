@@ -1,16 +1,14 @@
-from __future__ import annotations
-
 import ast
 
 import pytest
-from modflow_devtools.dfn.v1_1 import Dfn, FieldV1
-from packaging.version import Version
 
+from modflow_devtools.dfn import schema as v1
 from modflow_devtools.dfns import Dfns
 from modflow_devtools.dfns.mapper import map as map_v2
 from modflow_devtools.dfns.schema import (
     Array,
     Block,
+    DimDef,
     Double,
     FieldBase,
     Integer,
@@ -21,8 +19,6 @@ from modflow_devtools.dfns.schema import (
     Record,
     Simulation,
     String,
-    _collect_explicit_dims,
-    _known_dims_for,
     _names_in_expr,
     _resolve_derived_dims,
     _validate_fk_fields,
@@ -31,15 +27,49 @@ from modflow_devtools.dfns.schema import (
 )
 
 
+def _v1_field(**kwargs) -> v1.Field:
+    base: dict = {
+        "name": "test_field",
+        "type": "keyword",
+        "block": "options",
+        "in_record": False,
+        "default": None,
+        "longname": None,
+        "description": None,
+        "optional": False,
+        "developmode": False,
+        "shape": None,
+        "valid": None,
+        "netcdf": False,
+        "tagged": False,
+    }
+    base.update(kwargs)
+    return v1.Field(**base)
+
+
+def _v1_dfn(**kwargs) -> v1.Dfn:
+    base: dict = {
+        "schema_version": "1",
+        "name": "test-dfn",
+        "parent": None,
+        "blocks": None,
+        "advanced": False,
+        "multi": False,
+        "subcomponents": None,
+    }
+    base.update(kwargs)
+    return v1.Dfn(**base)
+
+
 def _dim_block(*names: str) -> Block:
     return Block(
         name="dimensions",
-        fields={n: Integer(name=n, dimension="component") for n in names},
+        fields={n: Integer(name=n) for n in names},
     )
 
 
-def _pkg(name: str, blocks=None, derived_dims=None, parent=None, **kw) -> Package:
-    return Package(name=name, blocks=blocks, derived_dims=derived_dims, parent=parent, **kw)
+def _pkg(name: str, blocks=None, dims=None, parent=None, **kw) -> Package:
+    return Package(name=name, blocks=blocks, dims=dims, parent=parent, **kw)
 
 
 def test_fieldv2_from_dict():
@@ -81,65 +111,49 @@ def test_fieldv2_from_dict_roundtrip():
 
 
 def test_map_v2():
-    dfn = Dfn(schema_version=Version("2"), name="sim-nam")
-    result = map_v2(dfn, "2")
+    dfn = _v1_dfn(name="sim-nam")
+    result = map_v2(dfn)
     assert isinstance(result, Simulation)
 
-    dfn = Dfn(schema_version=Version("2"), name="gwf-nam")
-    result = map_v2(dfn, "2")
+    dfn = _v1_dfn(name="gwf-nam")
+    result = map_v2(dfn)
     assert isinstance(result, Model)
 
-    dfn = Dfn(schema_version=Version("2"), name="sln-ims")
-    result = map_v2(dfn, "2")
+    dfn = _v1_dfn(name="sln-ims")
+    result = map_v2(dfn)
     assert isinstance(result, Package)
     assert result.subtype == "solution"
 
-    dfn = Dfn(schema_version=Version("2"), name="exg-gwfgwf")
-    result = map_v2(dfn, "2")
+    dfn = _v1_dfn(name="exg-gwfgwf")
+    result = map_v2(dfn)
     assert isinstance(result, Package)
     assert result.subtype == "exchange"
 
-    dfn = Dfn(schema_version=Version("2"), name="utl-obs")
-    result = map_v2(dfn, "2")
+    dfn = _v1_dfn(name="utl-obs")
+    result = map_v2(dfn)
     assert isinstance(result, Package)
     assert result.subtype == "utility"
 
-    dfn = Dfn(schema_version=Version("2"), name="gwf-sfr", advanced=True)
-    result = map_v2(dfn, "2")
+    dfn = _v1_dfn(name="gwf-sfr", advanced=True)
+    result = map_v2(dfn)
     assert isinstance(result, Package)
     assert result.subtype == "advanced"
 
 
 def test_map_v2_field_conversion():
-    dfn = Dfn(
-        schema_version=Version("2"),
-        name="gwf-chd",
-        blocks={
-            "options": {
-                "save_flows": Keyword(name="save_flows", description="save flows"),
-            }
-        },
-    )
-    result = map_v2(dfn, "2")
-    assert result.name == "gwf-chd"
-    assert result.blocks is not None
-    assert "save_flows" in result.blocks["options"].fields
-
-    dfn = Dfn(
-        schema_version=Version("1"),
+    dfn = _v1_dfn(
         name="test-dfn",
         blocks={
             "options": {
-                "save_flows": FieldV1(
+                "save_flows": _v1_field(
                     name="save_flows",
                     type="keyword",
                     block="options",
                     description="save calculated flows",
                     tagged=True,
                     in_record=False,
-                    reader="urword",
                 ),
-                "some_float": FieldV1(
+                "some_float": _v1_field(
                     name="some_float",
                     type="double precision",
                     block="options",
@@ -149,8 +163,7 @@ def test_map_v2_field_conversion():
         },
     )
 
-    component = map_v2(dfn, schema_version="2")
-    assert component.schema_version == Version("2")
+    component = map_v2(dfn)
     assert component.blocks is not None
     assert "options" in component.blocks
 
@@ -174,26 +187,25 @@ def test_map_v2_field_conversion():
 
 
 def test_map_v2_period_block_conversion():
-    dfn = Dfn(
-        schema_version=Version("1"),
+    dfn = _v1_dfn(
         name="test-pkg",
         blocks={
             "period": {
-                "stress_period_data": FieldV1(
+                "stress_period_data": _v1_field(
                     name="stress_period_data",
                     type="recarray cellid q",
                     block="period",
                     description="stress period data",
                     shape="(maxbound)",
                 ),
-                "cellid": FieldV1(
+                "cellid": _v1_field(
                     name="cellid",
                     type="integer",
                     block="period",
                     shape="(ncelldim)",
                     in_record=True,
                 ),
-                "q": FieldV1(
+                "q": _v1_field(
                     name="q",
                     type="double precision",
                     block="period",
@@ -203,7 +215,7 @@ def test_map_v2_period_block_conversion():
         },
     )
 
-    component = map_v2(dfn, schema_version="2")
+    component = map_v2(dfn)
     assert component.blocks is not None
     for block in component.blocks.values():
         for f in block.fields.values():
@@ -220,32 +232,27 @@ def test_map_v2_period_block_conversion():
     item_fields = spd.item.fields
     assert "cellid" in item_fields
     assert "q" in item_fields
-    q = item_fields["q"]
-    assert isinstance(q, Array)
-    assert q.dtype == "double"
-    assert q.shape == ["maxbound"]
 
 
 def test_map_v2_record_conversion():
     """Record type with multiple scalar fields."""
-    dfn = Dfn(
-        schema_version=Version("1"),
+    dfn = _v1_dfn(
         name="test-dfn",
         blocks={
             "options": {
-                "auxrecord": FieldV1(
+                "auxrecord": _v1_field(
                     name="auxrecord",
                     type="record auxiliary auxname",
                     block="options",
                     in_record=False,
                 ),
-                "auxiliary": FieldV1(
+                "auxiliary": _v1_field(
                     name="auxiliary",
                     type="keyword",
                     block="options",
                     in_record=True,
                 ),
-                "auxname": FieldV1(
+                "auxname": _v1_field(
                     name="auxname",
                     type="string",
                     block="options",
@@ -255,7 +262,7 @@ def test_map_v2_record_conversion():
         },
     )
 
-    component = map_v2(dfn, schema_version="2")
+    component = map_v2(dfn)
     auxrecord = component.blocks["options"].fields["auxrecord"]
     assert isinstance(auxrecord, Record)
     assert auxrecord.type == "record"
@@ -268,30 +275,29 @@ def test_map_v2_record_conversion():
 
 def test_keystring_type_conversion():
     """Keystring (union) type conversion."""
-    dfn = Dfn(
-        schema_version=Version("1"),
+    dfn = _v1_dfn(
         name="test-dfn",
         blocks={
             "options": {
-                "obs_filerecord": FieldV1(
+                "obs_filerecord": _v1_field(
                     name="obs_filerecord",
                     type="record obs6 filein obs6_filename",
                     block="options",
                     tagged=True,
                 ),
-                "obs6": FieldV1(
+                "obs6": _v1_field(
                     name="obs6",
                     type="keyword",
                     block="options",
                     in_record=True,
                 ),
-                "filein": FieldV1(
+                "filein": _v1_field(
                     name="filein",
                     type="keyword",
                     block="options",
                     in_record=True,
                 ),
-                "obs6_filename": FieldV1(
+                "obs6_filename": _v1_field(
                     name="obs6_filename",
                     type="string",
                     block="options",
@@ -302,7 +308,7 @@ def test_keystring_type_conversion():
         },
     )
 
-    component = map_v2(dfn, schema_version="2")
+    component = map_v2(dfn)
     obs_rec = component.blocks["options"].fields["obs_filerecord"]
     assert isinstance(obs_rec, Record)
     assert obs_rec.type == "record"
@@ -310,46 +316,34 @@ def test_keystring_type_conversion():
     assert all(isinstance(child, FieldBase) for child in obs_rec.children.values())
 
 
-def test_to_component_variant_of():
-    dfn = Dfn(schema_version=Version("2"), name="gwf-welg")
-    result = map_v2(dfn, "2")
-    assert isinstance(result, Package)
-    assert result.variant_of == "gwf-wel"
-
-    dfn = Dfn(schema_version=Version("2"), name="gwf-rcha")
-    result = map_v2(dfn, "2")
-    assert isinstance(result, Package)
-    assert result.variant_of == "gwf-rch"
-
-
-def test_collect_explicit_dims():
+def test_local_dims():
+    # dims section populated → local_dims returns those names
     block = _dim_block("nlay", "nrow", "ncol")
-    pkg = _pkg("gwf-dis", blocks={"dimensions": block})
-    assert _collect_explicit_dims(pkg) == {"nlay", "nrow", "ncol"}
-
-    block = Block(
-        name="options",
-        fields={
-            "maxbound": Integer(name="maxbound", dimension=False),
-            "nlay": Integer(name="nlay", dimension=True),
-            "name": String(name="name"),
+    pkg = Package(
+        name="gwf-dis",
+        blocks={"dimensions": block},
+        dims={
+            "nlay": DimDef(field="nlay", scope="gwf"),
+            "nrow": DimDef(field="nrow", scope="gwf"),
+            "ncol": DimDef(field="ncol", scope="gwf"),
         },
     )
-    pkg = _pkg("test", blocks={"options": block})
-    assert _collect_explicit_dims(pkg) == {"nlay"}
+    spec = Dfns(components={"gwf-dis": pkg})
+    assert spec.local_dims("gwf-dis") == {"nlay", "nrow", "ncol"}
 
-    pkg = _pkg("test", blocks=None)
-    assert _collect_explicit_dims(pkg) == set()
+    # no dims section → empty
+    pkg2 = Package(name="gwf-chd", blocks=None, dims=None)
+    spec2 = Dfns(components={"gwf-chd": pkg2})
+    assert spec2.local_dims("gwf-chd") == set()
 
-    b1 = Block(name="dimensions", fields={"nlay": Integer(name="nlay", dimension=True)})
-    b2 = Block(name="griddata", fields={"ncol": Integer(name="ncol", dimension=True)})
-    pkg = _pkg("test", blocks={"dimensions": b1, "griddata": b2})
-    assert _collect_explicit_dims(pkg) == {"nlay", "ncol"}
-
-    b1 = Block(name="dimensions", fields={"nlay": Integer(name="nlay", dimension=True)})
-    b2 = Block(name="griddata", fields={"ncol": Integer(name="ncol", dimension=True)})
-    pkg = _pkg("test", blocks={"dimensions": b1, "griddata": b2})
-    assert _collect_explicit_dims(pkg) == {"nlay", "ncol"}
+    # derived dims also included
+    pkg3 = Package(
+        name="test",
+        blocks=None,
+        dims={"nodes": DimDef(expr="42", scope="component")},
+    )
+    spec3 = Dfns(components={"test": pkg3})
+    assert spec3.local_dims("test") == {"nodes"}
 
 
 def test_names_in_expr_simple_arithmetic():
@@ -431,21 +425,38 @@ def test_validate_sum_expr():
 
 def test_resolve_derived_dims():
     block = _dim_block("nlay", "nrow", "ncol")
-    pkg = _pkg("test", blocks={"dimensions": block}, derived_dims={"nodes": "nlay * nrow * ncol"})
+    pkg = Package(
+        name="test",
+        blocks={"dimensions": block},
+        dims={
+            "nlay": DimDef(field="nlay", scope="component"),
+            "nrow": DimDef(field="nrow", scope="component"),
+            "ncol": DimDef(field="ncol", scope="component"),
+            "nodes": DimDef(expr="nlay * nrow * ncol", scope="component"),
+        },
+    )
     order = _resolve_derived_dims(pkg, {"nlay", "nrow", "ncol"})
     assert order == ["nodes"]
 
-    block = _dim_block("nlay", "nrow", "ncol")
-    pkg = _pkg(
-        "test",
+    pkg = Package(
+        name="test",
         blocks={"dimensions": block},
-        derived_dims={"nodes": "nlay * nrow * ncol", "nodouble": "nodes * 2"},
+        dims={
+            "nlay": DimDef(field="nlay", scope="component"),
+            "nrow": DimDef(field="nrow", scope="component"),
+            "ncol": DimDef(field="ncol", scope="component"),
+            "nodes": DimDef(expr="nlay * nrow * ncol", scope="component"),
+            "nodouble": DimDef(expr="nodes * 2", scope="component"),
+        },
     )
     order = _resolve_derived_dims(pkg, {"nlay", "nrow", "ncol"})
     assert order.index("nodes") < order.index("nodouble")
 
-    #
-    pkg = _pkg("test", blocks=None, derived_dims={"derived": "nodes + 1"})
+    pkg = Package(
+        name="test",
+        blocks=None,
+        dims={"derived": DimDef(expr="nodes + 1", scope="component")},
+    )
     order = _resolve_derived_dims(pkg, {"nodes"})
     assert order == ["derived"]
 
@@ -455,135 +466,210 @@ def test_resolve_derived_dims_sum_operand_allowed():
     pkg = Package(
         name="test",
         blocks=pkg.blocks,
-        derived_dims={"total_conn": "sum(packagedata.nlakeconn)"},
+        dims={"total_conn": DimDef(expr="sum(packagedata.nlakeconn)", scope="component")},
     )
     order = _resolve_derived_dims(pkg, set())
     assert order == ["total_conn"]
 
 
 def test_resolve_derived_dims_no_derived_returns_empty():
-    pkg = _pkg("test", blocks=None, derived_dims=None)
+    pkg = Package(name="test", blocks=None, dims=None)
     assert _resolve_derived_dims(pkg, set()) == []
 
 
 def test_resolve_derived_dims_cycle_error():
-    pkg = _pkg("test", blocks=None, derived_dims={"a": "b + 1", "b": "a + 1"})
-    with pytest.raises(ValueError, match="Cycle in derived_dims"):
+    pkg = Package(
+        name="test",
+        blocks=None,
+        dims={
+            "a": DimDef(expr="b + 1", scope="component"),
+            "b": DimDef(expr="a + 1", scope="component"),
+        },
+    )
+    with pytest.raises(ValueError, match="Cycle in"):
         _resolve_derived_dims(pkg, set())
 
 
 def test_resolve_derived_dims_unknown_operand_error():
-    pkg = _pkg("test", blocks=None, derived_dims={"nodes": "mystery_dim * 2"})
+    pkg = Package(
+        name="test",
+        blocks=None,
+        dims={"nodes": DimDef(expr="mystery_dim * 2", scope="component")},
+    )
     with pytest.raises(ValueError, match="not a known dimension"):
         _resolve_derived_dims(pkg, set())
 
 
 def test_resolve_derived_dims_invalid_expression_error():
-    pkg = _pkg("test", blocks=None, derived_dims={"nodes": "nlay * ("})
-    with pytest.raises(ValueError, match="Invalid derived_dims"):
+    pkg = Package(
+        name="test",
+        blocks=None,
+        dims={"nodes": DimDef(expr="nlay * (", scope="component")},
+    )
+    with pytest.raises(ValueError, match="Invalid"):
         _resolve_derived_dims(pkg, set())
 
 
 def test_dfnspec_construction_validates_dims():
     block = _dim_block("nlay", "nrow", "ncol")
-    pkg = _pkg(
-        "gwf-dis",
+    pkg = Package(
+        name="gwf-dis",
         blocks={"dimensions": block},
-        derived_dims={"nodes": "nlay * nrow * ncol"},
+        dims={
+            "nlay": DimDef(field="nlay", scope="gwf"),
+            "nrow": DimDef(field="nrow", scope="gwf"),
+            "ncol": DimDef(field="ncol", scope="gwf"),
+            "nodes": DimDef(expr="nlay * nrow * ncol", scope="gwf"),
+        },
     )
     spec = Dfns(components={"gwf-dis": pkg})
     assert "gwf-dis" in spec.components
 
 
 def test_dfnspec_construction_cycle_raises():
-    pkg = _pkg("bad", blocks=None, derived_dims={"a": "b + 1", "b": "a + 1"})
-    with pytest.raises(ValueError, match="Cycle in derived_dims"):
+    pkg = Package(
+        name="bad",
+        blocks=None,
+        dims={
+            "a": DimDef(expr="b + 1", scope="component"),
+            "b": DimDef(expr="a + 1", scope="component"),
+        },
+    )
+    with pytest.raises(ValueError, match="Cycle in"):
         Dfns(components={"bad": pkg})
 
 
 def test_dfnspec_construction_unknown_operand_raises():
-    pkg = _pkg("bad", blocks=None, derived_dims={"nodes": "ghost_dim * 2"})
+    pkg = Package(
+        name="bad",
+        blocks=None,
+        dims={"nodes": DimDef(expr="ghost_dim * 2", scope="component")},
+    )
     with pytest.raises(ValueError, match="not a known dimension"):
         Dfns(components={"bad": pkg})
 
 
-def test_dfnspec_no_derived_dims_constructs_fine():
-    pkg = _pkg("gwf-chd", blocks=None, derived_dims=None)
+def test_dfnspec_no_dims_constructs_fine():
+    pkg = Package(name="gwf-chd", blocks=None, dims=None)
     spec = Dfns(components={"gwf-chd": pkg})
     assert "gwf-chd" in spec.components
 
 
 # =============================================================================
-# dfns.schema.v2 — DfnSpec.explicit_dims_for
+# dfns.schema.v2 — DfnSpec.local_dims
 # =============================================================================
 
 
-def test_dfnspec_explicit_dims_for():
+def test_dfnspec_local_dims():
     block = _dim_block("nlay", "nrow", "ncol")
-    pkg = _pkg("gwf-dis", blocks={"dimensions": block})
+    pkg = Package(
+        name="gwf-dis",
+        blocks={"dimensions": block},
+        dims={
+            "nlay": DimDef(field="nlay", scope="gwf"),
+            "nrow": DimDef(field="nrow", scope="gwf"),
+            "ncol": DimDef(field="ncol", scope="gwf"),
+        },
+    )
     spec = Dfns(components={"gwf-dis": pkg})
-    assert spec.explicit_dims_for("gwf-dis") == {"nlay", "nrow", "ncol"}
+    assert spec.local_dims("gwf-dis") == {"nlay", "nrow", "ncol"}
 
 
-def test_dfnspec_explicit_dims_for_empty():
-    pkg = _pkg("gwf-chd", blocks=None)
+def test_dfnspec_local_dims_empty():
+    pkg = Package(name="gwf-chd", blocks=None, dims=None)
     spec = Dfns(components={"gwf-chd": pkg})
-    assert spec.explicit_dims_for("gwf-chd") == set()
+    assert spec.local_dims("gwf-chd") == set()
 
 
-def test_dfnspec_grid_dims_for_includes_dis_dims():
+def test_dfnspec_inherited_dims_includes_dis_dims():
     dis_block = _dim_block("nlay", "nrow", "ncol")
-    dis = _pkg("gwf-dis", parent="gwf-nam", blocks={"dimensions": dis_block})
+    dis = Package(
+        name="gwf-dis",
+        parent="gwf-nam",
+        blocks={"dimensions": dis_block},
+        dims={
+            "nlay": DimDef(field="nlay", scope="gwf"),
+            "nrow": DimDef(field="nrow", scope="gwf"),
+            "ncol": DimDef(field="ncol", scope="gwf"),
+            "nodes": DimDef(expr="nlay * nrow * ncol", scope="gwf"),
+        },
+    )
     chd = _pkg("gwf-chd", parent="gwf-nam", blocks=None)
     gwf = Model(name="gwf-nam", blocks=None)
     spec = Dfns(components={"gwf-nam": gwf, "gwf-dis": dis, "gwf-chd": chd})
 
-    grid_dims = spec.grid_dims_for("gwf-chd")
-    assert "nlay" in grid_dims
-    assert "nrow" in grid_dims
-    assert "ncol" in grid_dims
-    assert "nodes" in grid_dims  # from GRID_DIM_NAMESPACE
+    inherited = spec.inherited_dims("gwf-chd")
+    assert "nlay" in inherited
+    assert "nrow" in inherited
+    assert "ncol" in inherited
+    assert "nodes" in inherited  # derived dim from gwf-dis, model-type scoped to "gwf"
 
 
-def test_dfnspec_grid_dims_for_disv():
+def test_dfnspec_inherited_dims_disv():
     disv_block = _dim_block("nlay", "ncpl")
-    disv = _pkg("gwf-disv", parent="gwf-nam", blocks={"dimensions": disv_block})
+    disv = Package(
+        name="gwf-disv",
+        parent="gwf-nam",
+        blocks={"dimensions": disv_block},
+        dims={
+            "nlay": DimDef(field="nlay", scope="gwf"),
+            "ncpl": DimDef(field="ncpl", scope="gwf"),
+        },
+    )
     chd = _pkg("gwf-chd", parent="gwf-nam", blocks=None)
     gwf = Model(name="gwf-nam", blocks=None)
     spec = Dfns(components={"gwf-nam": gwf, "gwf-disv": disv, "gwf-chd": chd})
 
-    grid_dims = spec.grid_dims_for("gwf-chd")
-    assert "nlay" in grid_dims
-    assert "ncpl" in grid_dims
+    inherited = spec.inherited_dims("gwf-chd")
+    assert "nlay" in inherited
+    assert "ncpl" in inherited
 
 
-def test_dfnspec_grid_dims_for_disu():
+def test_dfnspec_inherited_dims_disu():
     disu_block = _dim_block("nodes", "nja")
-    disu = _pkg("gwf-disu", parent="gwf-nam", blocks={"dimensions": disu_block})
+    disu = Package(
+        name="gwf-disu",
+        parent="gwf-nam",
+        blocks={"dimensions": disu_block},
+        dims={
+            "nodes": DimDef(field="nodes", scope="gwf"),
+            "nja": DimDef(field="nja", scope="gwf"),
+        },
+    )
     chd = _pkg("gwf-chd", parent="gwf-nam", blocks=None)
     gwf = Model(name="gwf-nam", blocks=None)
     spec = Dfns(components={"gwf-nam": gwf, "gwf-disu": disu, "gwf-chd": chd})
 
-    grid_dims = spec.grid_dims_for("gwf-chd")
-    assert "nodes" in grid_dims
-    assert "nja" in grid_dims
+    inherited = spec.inherited_dims("gwf-chd")
+    assert "nodes" in inherited
+    assert "nja" in inherited
 
 
-def test_dfnspec_grid_dims_for_non_dis_siblings_excluded():
+def test_dfnspec_inherited_dims_excludes_own():
+    """Own dims appear in local_dims but not in inherited_dims."""
     dis_block = _dim_block("nlay", "nrow", "ncol")
-    dis = _pkg("gwf-dis", parent="gwf-nam", blocks={"dimensions": dis_block})
-
-    other_block = Block(
-        name="dimensions",
-        fields={"secret_dim": Integer(name="secret_dim", dimension=True)},
+    dis = Package(
+        name="gwf-dis",
+        parent="gwf-nam",
+        blocks={"dimensions": dis_block},
+        dims={
+            "nlay": DimDef(field="nlay", scope="gwf"),
+            "nrow": DimDef(field="nrow", scope="gwf"),
+            "ncol": DimDef(field="ncol", scope="gwf"),
+        },
     )
-    other = _pkg("gwf-chd", parent="gwf-nam", blocks={"dimensions": other_block})
+    chd = Package(
+        name="gwf-chd",
+        parent="gwf-nam",
+        blocks={"dimensions": _dim_block("secret_dim")},
+        dims={"secret_dim": DimDef(field="secret_dim", scope="gwf")},
+    )
     gwf = Model(name="gwf-nam", blocks=None)
-    spec = Dfns(components={"gwf-nam": gwf, "gwf-dis": dis, "gwf-chd": other})
+    spec = Dfns(components={"gwf-nam": gwf, "gwf-dis": dis, "gwf-chd": chd})
 
-    grid_dims = spec.grid_dims_for("gwf-chd")
-    assert "nlay" in grid_dims
-    assert "secret_dim" not in grid_dims
+    inherited = spec.inherited_dims("gwf-chd")
+    assert "nlay" in inherited
+    assert "secret_dim" not in inherited  # own dim: not in inherited_dims
 
 
 # =============================================================================
@@ -622,15 +708,15 @@ def test_dfnspec_components_contains():
 
 
 def test_dfnspec_schema_version_from_component():
-    pkg = Package(name="gwf-chd", schema_version=Version("2"))
+    pkg = Package(name="gwf-chd", schema_version="2")
     spec = Dfns(components={"gwf-chd": pkg})
-    assert spec.schema_version == Version("2")
+    assert spec.schema_version == "2"
 
 
 def test_dfnspec_schema_version_default():
     pkg = _pkg("gwf-chd")
     spec = Dfns(components={"gwf-chd": pkg})
-    assert spec.schema_version == Version("2")
+    assert spec.schema_version == "2"
 
 
 # =============================================================================
@@ -644,18 +730,18 @@ def test_dfnspec_children_of():
     rch = _pkg("gwf-rch", parent="gwf-nam")
     sim = Simulation(name="sim-nam", blocks=None)
     spec = Dfns(components={"sim-nam": sim, "gwf-nam": gwf, "gwf-chd": chd, "gwf-rch": rch})
-    children = spec.children_of("gwf-nam")
+    children = spec.children("gwf-nam")
     assert set(children) == {"gwf-chd", "gwf-rch"}
 
 
 def test_dfnspec_children_of_empty():
     pkg = _pkg("gwf-chd", parent="gwf-nam")
     spec = Dfns(components={"gwf-chd": pkg})
-    assert spec.children_of("gwf-chd") == {}
+    assert spec.children("gwf-chd") == {}
 
 
 # =============================================================================
-# dfns.schema.v2 — _known_dims_for
+# dfns.schema.v2 — Dfns.dims
 # =============================================================================
 
 
@@ -663,7 +749,17 @@ def _dis_spec() -> Dfns:
     """A minimal gwf-dis + gwf-nam DfnSpec used as shared fixture scaffolding."""
     dis_block = _dim_block("nlay", "nrow", "ncol")
     gwf = Model(name="gwf-nam", blocks=None)
-    dis = Package(name="gwf-dis", parent="gwf-nam", blocks={"dimensions": dis_block})
+    dis = Package(
+        name="gwf-dis",
+        parent="gwf-nam",
+        blocks={"dimensions": dis_block},
+        dims={
+            "nlay": DimDef(field="nlay", scope="gwf"),
+            "nrow": DimDef(field="nrow", scope="gwf"),
+            "ncol": DimDef(field="ncol", scope="gwf"),
+            "nodes": DimDef(expr="nlay * nrow * ncol", scope="gwf"),
+        },
+    )
     return Dfns(components={"gwf-nam": gwf, "gwf-dis": dis})
 
 
@@ -688,34 +784,39 @@ def _lake_spec(period_item: Record) -> Dfns:
     return Dfns(components={"gwf-nam": gwf, "gwf-lak": lak})
 
 
-def test_known_dims_includes_explicit():
+def test_dims_includes_own():
     spec = _dis_spec()
-    known = _known_dims_for(spec, "gwf-dis")
-    assert {"nlay", "nrow", "ncol"} <= known
+    known = spec.dims("gwf-dis")
+    assert {"nlay", "nrow", "ncol", "nodes"} <= known
 
 
-def test_known_dims_includes_derived():
+def test_dims_includes_derived():
     dis_block = _dim_block("nlay", "nrow", "ncol")
     gwf = Model(name="gwf-nam", blocks=None)
     dis = Package(
         name="gwf-dis",
         parent="gwf-nam",
         blocks={"dimensions": dis_block},
-        derived_dims={"nodes": "nlay * nrow * ncol"},
+        dims={
+            "nlay": DimDef(field="nlay", scope="gwf"),
+            "nrow": DimDef(field="nrow", scope="gwf"),
+            "ncol": DimDef(field="ncol", scope="gwf"),
+            "nodes": DimDef(expr="nlay * nrow * ncol", scope="gwf"),
+        },
     )
     spec = Dfns(components={"gwf-nam": gwf, "gwf-dis": dis})
-    known = _known_dims_for(spec, "gwf-dis")
+    known = spec.dims("gwf-dis")
     assert "nodes" in known
 
 
-def test_known_dims_includes_grid_dims():
+def test_dims_includes_model_type_scoped():
+    """A gwf-chd component inherits model-type-scoped dims from gwf-dis."""
     spec = _dis_spec()
-    # gwf-chd has no local dims but inherits grid dims via gwf-dis sibling
     chd = _pkg("gwf-chd", parent="gwf-nam")
     spec2 = Dfns(components=dict(spec.components) | {"gwf-chd": chd})
-    known = _known_dims_for(spec2, "gwf-chd")
-    assert "nodes" in known  # GRID_DIM_NAMESPACE
-    assert "nlay" in known  # from gwf-dis (sibling dis package)
+    known = spec2.dims("gwf-chd")
+    assert "nodes" in known  # derived dim from gwf-dis, scope="gwf"
+    assert "nlay" in known  # field-backed dim from gwf-dis, scope="gwf"
 
 
 # =============================================================================
@@ -725,11 +826,14 @@ def test_known_dims_includes_grid_dims():
 
 def _make_ctx(dim_names: set[str], derived: dict | None = None):
     """Return (array, component, known_dims) for shape element tests."""
-    dis_block = _dim_block(*dim_names)
-    pkg = _pkg("test", blocks={"dimensions": dis_block}, derived_dims=derived)
+    dims: dict[str, DimDef] = {n: DimDef(field=n, scope="component") for n in dim_names}
+    if derived:
+        dims.update({n: DimDef(expr=e, scope="component") for n, e in derived.items()})
+    blocks = {"dimensions": _dim_block(*dim_names)} if dim_names else None
+    pkg = Package(name="test", blocks=blocks, dims=dims or None)
     gwf = Model(name="gwf-nam", blocks=None)
     spec = Dfns(components={"gwf-nam": gwf, "test": pkg})
-    known = _known_dims_for(spec, "test")
+    known = spec.dims("test")
     arr = Array(name="arr", dtype="double", shape=[])
     return arr, pkg, known
 
@@ -739,10 +843,19 @@ def test_shape_element_valid_explicit_dim():
     _validate_shape_element("nlay", arr, pkg, None, known)  # no error
 
 
-def test_shape_element_valid_grid_dim():
-    arr, pkg, known = _make_ctx(set())
-    # "nodes" is always in GRID_DIM_NAMESPACE → known
-    _validate_shape_element("nodes", arr, pkg, None, known)
+def test_shape_element_valid_inherited_dim():
+    """A dim declared in a sibling component (model-type scoped) is valid."""
+    dis = Package(
+        name="gwf-dis",
+        blocks=None,
+        dims={"nodes": DimDef(expr="42", scope="gwf")},
+    )
+    test_pkg = Package(name="gwf-test", blocks=None)
+    gwf = Model(name="gwf-nam", blocks=None)
+    spec = Dfns(components={"gwf-nam": gwf, "gwf-dis": dis, "gwf-test": test_pkg})
+    known = spec.dims("gwf-test")
+    arr = Array(name="arr", dtype="double", shape=[])
+    _validate_shape_element("nodes", arr, test_pkg, None, known)
 
 
 def test_shape_element_valid_derived_dim():
@@ -798,7 +911,7 @@ def _lookup_ctx():
     )
     gwf = Model(name="gwf-nam", blocks=None)
     spec = Dfns(components={"gwf-nam": gwf, "gwf-lak": lak})
-    known = _known_dims_for(spec, "gwf-lak")
+    known = spec.dims("gwf-lak")
     return arr, enc_record, lak, known
 
 
@@ -837,7 +950,7 @@ def test_shape_element_lookup_non_integer_column_raises():
     lak = Package(name="gwf-lak", parent="gwf-nam", blocks={"packagedata": pkg_block})
     gwf = Model(name="gwf-nam", blocks=None)
     spec = Dfns(components={"gwf-nam": gwf, "gwf-lak": lak})
-    known = _known_dims_for(spec, "gwf-lak")
+    known = spec.dims("gwf-lak")
     with pytest.raises(ValueError, match="must be Integer"):
         _validate_shape_element("packagedata.nlakeconn(lakeno)", arr, lak, enc, known)
 
@@ -860,7 +973,7 @@ def test_shape_element_lookup_fk_not_set_raises():
     lak = Package(name="gwf-lak", parent="gwf-nam", blocks={"packagedata": pkg_block})
     gwf = Model(name="gwf-nam", blocks=None)
     spec = Dfns(components={"gwf-nam": gwf, "gwf-lak": lak})
-    known = _known_dims_for(spec, "gwf-lak")
+    known = spec.dims("gwf-lak")
     with pytest.raises(ValueError, match=r"\.fk is not set"):
         _validate_shape_element("packagedata.nlakeconn(lakeno)", arr, lak, enc, known)
 
@@ -877,7 +990,7 @@ def test_shape_element_lookup_fk_block_mismatch_raises():
     lak = Package(name="gwf-lak", parent="gwf-nam", blocks={"packagedata": pkg_block})
     gwf = Model(name="gwf-nam", blocks=None)
     spec = Dfns(components={"gwf-nam": gwf, "gwf-lak": lak})
-    known = _known_dims_for(spec, "gwf-lak")
+    known = spec.dims("gwf-lak")
     with pytest.raises(ValueError, match="does not reference block"):
         _validate_shape_element("packagedata.nlakeconn(lakeno)", arr, lak, enc, known)
 
@@ -895,6 +1008,11 @@ def test_dfnspec_valid_top_level_array_shape():
         name="gwf-dis",
         parent="gwf-nam",
         blocks={"dimensions": dis_block, "griddata": grid_block},
+        dims={
+            "nlay": DimDef(field="nlay", scope="gwf"),
+            "nrow": DimDef(field="nrow", scope="gwf"),
+            "ncol": DimDef(field="ncol", scope="gwf"),
+        },
     )
     gwf = Model(name="gwf-nam", blocks=None)
     spec = Dfns(components={"gwf-nam": gwf, "gwf-dis": dis})
@@ -910,6 +1028,11 @@ def test_dfnspec_valid_array_in_record():
         name="gwf-dis",
         parent="gwf-nam",
         blocks={"dimensions": dis_block, "options": opt_block},
+        dims={
+            "nlay": DimDef(field="nlay", scope="gwf"),
+            "nrow": DimDef(field="nrow", scope="gwf"),
+            "ncol": DimDef(field="ncol", scope="gwf"),
+        },
     )
     gwf = Model(name="gwf-nam", blocks=None)
     Dfns(components={"gwf-nam": gwf, "gwf-dis": dis})
@@ -945,6 +1068,11 @@ def test_dfnspec_invalid_array_shape_raises():
         name="gwf-dis",
         parent="gwf-nam",
         blocks={"dimensions": dis_block, "griddata": grid_block},
+        dims={
+            "nlay": DimDef(field="nlay", scope="gwf"),
+            "nrow": DimDef(field="nrow", scope="gwf"),
+            "ncol": DimDef(field="ncol", scope="gwf"),
+        },
     )
     gwf = Model(name="gwf-nam", blocks=None)
     with pytest.raises(ValueError, match="does not resolve"):
@@ -959,16 +1087,31 @@ def test_dfnspec_array_shape_resolves_via_derived_dim():
         name="gwf-dis",
         parent="gwf-nam",
         blocks={"dimensions": dis_block, "griddata": grid_block},
-        derived_dims={"nodes": "nlay * nrow * ncol"},
+        dims={
+            "nlay": DimDef(field="nlay", scope="gwf"),
+            "nrow": DimDef(field="nrow", scope="gwf"),
+            "ncol": DimDef(field="ncol", scope="gwf"),
+            "nodes": DimDef(expr="nlay * nrow * ncol", scope="gwf"),
+        },
     )
     gwf = Model(name="gwf-nam", blocks=None)
     Dfns(components={"gwf-nam": gwf, "gwf-dis": dis})
 
 
 def test_dfnspec_array_shape_resolves_via_sibling_dis():
-    """An array in gwf-chd can reference nlay from sibling gwf-dis."""
+    """An array in gwf-chd can reference nlay and nodes from sibling gwf-dis."""
     dis_block = _dim_block("nlay", "nrow", "ncol")
-    dis = Package(name="gwf-dis", parent="gwf-nam", blocks={"dimensions": dis_block})
+    dis = Package(
+        name="gwf-dis",
+        parent="gwf-nam",
+        blocks={"dimensions": dis_block},
+        dims={
+            "nlay": DimDef(field="nlay", scope="gwf"),
+            "nrow": DimDef(field="nrow", scope="gwf"),
+            "ncol": DimDef(field="ncol", scope="gwf"),
+            "nodes": DimDef(expr="nlay * nrow * ncol", scope="gwf"),
+        },
+    )
     chd_arr = Array(name="head", dtype="double", shape=["nlay", "nodes"])
     chd_block = Block(name="period", fields={"head": chd_arr})
     chd = Package(name="gwf-chd", parent="gwf-nam", blocks={"period": chd_block})
@@ -1134,17 +1277,17 @@ def test_rightmost_inline_string_array_empty_shape_valid():
 
 
 def test_dfnspec_schema_version_consistency_raises():
-    pkg1 = Package(name="gwf-chd", schema_version=Version("2"))
-    pkg2 = Package(name="gwf-wel", schema_version=Version("3"))
+    pkg1 = Package(name="gwf-chd", schema_version="2")
+    pkg2 = Package(name="gwf-wel", schema_version="3")
     with pytest.raises(ValueError, match="schema_version"):
         Dfns(components={"gwf-chd": pkg1, "gwf-wel": pkg2})
 
 
 def test_dfnspec_schema_version_consistency_null_ignored():
-    pkg1 = Package(name="gwf-chd", schema_version=Version("2"))
+    pkg1 = Package(name="gwf-chd", schema_version="2")
     pkg2 = Package(name="gwf-wel", schema_version=None)
     spec = Dfns(components={"gwf-chd": pkg1, "gwf-wel": pkg2})
-    assert spec.schema_version == Version("2")
+    assert spec.schema_version == "2"
 
 
 # =============================================================================

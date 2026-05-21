@@ -1,0 +1,68 @@
+name = "gwt-api"
+schema_version = "2"
+multi = true
+
+[blocks.options]
+name = "options"
+
+[blocks.options.fields.boundnames]
+name = "boundnames"
+description = "keyword to indicate that boundary names may be provided with the list of api boundary cells."
+optional = true
+
+[blocks.options.fields.print_input]
+name = "print_input"
+longname = "print input to listing file"
+description = "keyword to indicate that the list of api boundary information will be written to the listing file immediately after it is read."
+optional = true
+
+[blocks.options.fields.print_flows]
+name = "print_flows"
+longname = "print calculated flows to listing file"
+description = "keyword to indicate that the list of api boundary flow rates will be printed to the listing file for every stress period time step in which 'budget print' is specified in output control.  if there is no output control option and 'print_flows' is specified, then flow rates are printed for the last time step of each stress period."
+optional = true
+
+[blocks.options.fields.save_flows]
+name = "save_flows"
+longname = "save api flows to budget file"
+description = "keyword to indicate that api boundary flow terms will be written to the file specified with 'budget fileout' in output control."
+optional = true
+
+[blocks.options.fields.obs_filerecord]
+name = "obs_filerecord"
+optional = true
+
+[blocks.options.fields.obs_filerecord.fields.obs6]
+name = "obs6"
+longname = "obs keyword"
+description = "keyword to specify that record corresponds to an observations file."
+
+[blocks.options.fields.obs_filerecord.fields.filein]
+name = "filein"
+longname = "file keyword"
+description = "keyword to specify that an input filename is expected next."
+
+[blocks.options.fields.obs_filerecord.fields.obs6_filename]
+name = "obs6_filename"
+longname = "obs6 input filename"
+description = "name of input file to define observations for the api boundary package. see the 'observation utility' section for instructions for preparing observation input files. table {#2} lists observation type(s) supported by the api boundary package."
+tagged = false
+case_sensitive = true
+
+[blocks.options.fields.mover]
+name = "mover"
+description = "keyword to indicate that this instance of the api boundary package can be used with the water mover (mvr) package.  when the mover option is specified, additional memory is allocated within the package to store the available, provided, and received water."
+optional = true
+
+[blocks.dimensions]
+name = "dimensions"
+
+[blocks.dimensions.fields.maxbound]
+name = "maxbound"
+longname = "maximum number of user-defined api boundaries"
+description = "integer value specifying the maximum number of api boundary cells that will be specified for use during any stress period."
+tagged = false
+
+[dims.maxbound]
+field = "maxbound"
+scope = "gwt"

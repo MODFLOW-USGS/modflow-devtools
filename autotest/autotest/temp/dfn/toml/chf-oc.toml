@@ -1,0 +1,187 @@
+name = "chf-oc"
+schema_version = "2"
+subtype = "stress"
+
+[blocks.options]
+name = "options"
+
+[blocks.options.fields.budget_filerecord]
+name = "budget_filerecord"
+optional = true
+
+[blocks.options.fields.budget_filerecord.fields.budget]
+name = "budget"
+longname = "budget keyword"
+description = "keyword to specify that record corresponds to the budget."
+
+[blocks.options.fields.budget_filerecord.fields.fileout]
+name = "fileout"
+longname = "file keyword"
+description = "keyword to specify that an output filename is expected next."
+
+[blocks.options.fields.budget_filerecord.fields.budgetfile]
+name = "budgetfile"
+longname = "file keyword"
+description = "name of the output file to write budget information."
+tagged = false
+case_sensitive = true
+
+[blocks.options.fields.budgetcsv_filerecord]
+name = "budgetcsv_filerecord"
+optional = true
+
+[blocks.options.fields.budgetcsv_filerecord.fields.budgetcsv]
+name = "budgetcsv"
+longname = "budget keyword"
+description = "keyword to specify that record corresponds to the budget csv."
+
+[blocks.options.fields.budgetcsv_filerecord.fields.fileout]
+name = "fileout"
+longname = "file keyword"
+description = "keyword to specify that an output filename is expected next."
+
+[blocks.options.fields.budgetcsv_filerecord.fields.budgetcsvfile]
+name = "budgetcsvfile"
+longname = "file keyword"
+description = "name of the comma-separated value (csv) output file to write budget summary information.  a budget summary record will be written to this file for each time step of the simulation."
+tagged = false
+case_sensitive = true
+
+[blocks.options.fields.qoutflow_filerecord]
+name = "qoutflow_filerecord"
+optional = true
+
+[blocks.options.fields.qoutflow_filerecord.fields.qoutflow]
+name = "qoutflow"
+longname = "qoutflow keyword"
+description = "keyword to specify that record corresponds to qoutflow."
+
+[blocks.options.fields.qoutflow_filerecord.fields.fileout]
+name = "fileout"
+longname = "file keyword"
+description = "keyword to specify that an output filename is expected next."
+
+[blocks.options.fields.qoutflow_filerecord.fields.qoutflowfile]
+name = "qoutflowfile"
+longname = "file keyword"
+description = "name of the output file to write conc information."
+tagged = false
+case_sensitive = true
+
+[blocks.options.fields.stage_filerecord]
+name = "stage_filerecord"
+optional = true
+
+[blocks.options.fields.stage_filerecord.fields.stage]
+name = "stage"
+longname = "stage keyword"
+description = "keyword to specify that record corresponds to stage."
+
+[blocks.options.fields.stage_filerecord.fields.fileout]
+name = "fileout"
+longname = "file keyword"
+description = "keyword to specify that an output filename is expected next."
+
+[blocks.options.fields.stage_filerecord.fields.stagefile]
+name = "stagefile"
+longname = "file keyword"
+description = "name of the output file to write stage information."
+tagged = false
+case_sensitive = true
+
+[blocks.options.fields.qoutflowprintrecord]
+name = "qoutflowprintrecord"
+optional = true
+
+[blocks.options.fields.qoutflowprintrecord.fields.qoutflow]
+name = "qoutflow"
+longname = "qoutflow keyword"
+description = "keyword to specify that record corresponds to qoutflow."
+
+[blocks.options.fields.qoutflowprintrecord.fields.print_format]
+name = "print_format"
+longname = "keyword to indicate that a print format follows"
+description = "keyword to specify format for printing to the listing file."
+
+[blocks.period]
+name = "period"
+
+[blocks.period.fields.saverecord]
+name = "saverecord"
+optional = true
+
+[blocks.period.fields.saverecord.fields.save]
+name = "save"
+longname = "keyword to save"
+description = "keyword to indicate that information will be saved this stress period."
+
+[blocks.period.fields.saverecord.fields.rtype]
+name = "rtype"
+longname = "record type"
+description = "type of information to save or print.  can be budget."
+tagged = false
+
+[blocks.period.fields.saverecord.fields.ocsetting]
+name = "ocsetting"
+description = "specifies the steps for which the data will be saved."
+
+[blocks.period.fields.saverecord.fields.ocsetting.arms.all]
+name = "all"
+description = "keyword to indicate save for all time steps in period."
+
+[blocks.period.fields.saverecord.fields.ocsetting.arms.first]
+name = "first"
+description = "keyword to indicate save for first step in period. this keyword may be used in conjunction with other keywords to print or save results for multiple time steps."
+
+[blocks.period.fields.saverecord.fields.ocsetting.arms.last]
+name = "last"
+description = "keyword to indicate save for last step in period. this keyword may be used in conjunction with other keywords to print or save results for multiple time steps."
+
+[blocks.period.fields.saverecord.fields.ocsetting.arms.frequency]
+name = "frequency"
+description = "save at the specified time step frequency. this keyword may be used in conjunction with other keywords to print or save results for multiple time steps."
+
+[blocks.period.fields.saverecord.fields.ocsetting.arms.steps]
+name = "steps"
+description = "save for each step specified in steps. this keyword may be used in conjunction with other keywords to print or save results for multiple time steps."
+dtype = "integer"
+
+[blocks.period.fields.printrecord]
+name = "printrecord"
+optional = true
+
+[blocks.period.fields.printrecord.fields.print]
+name = "print"
+longname = "keyword to save"
+description = "keyword to indicate that information will be printed this stress period."
+
+[blocks.period.fields.printrecord.fields.rtype]
+name = "rtype"
+longname = "record type"
+description = "type of information to save or print.  can be budget."
+tagged = false
+
+[blocks.period.fields.printrecord.fields.ocsetting]
+name = "ocsetting"
+description = "specifies the steps for which the data will be saved."
+
+[blocks.period.fields.printrecord.fields.ocsetting.arms.all]
+name = "all"
+description = "keyword to indicate save for all time steps in period."
+
+[blocks.period.fields.printrecord.fields.ocsetting.arms.first]
+name = "first"
+description = "keyword to indicate save for first step in period. this keyword may be used in conjunction with other keywords to print or save results for multiple time steps."
+
+[blocks.period.fields.printrecord.fields.ocsetting.arms.last]
+name = "last"
+description = "keyword to indicate save for last step in period. this keyword may be used in conjunction with other keywords to print or save results for multiple time steps."
+
+[blocks.period.fields.printrecord.fields.ocsetting.arms.frequency]
+name = "frequency"
+description = "save at the specified time step frequency. this keyword may be used in conjunction with other keywords to print or save results for multiple time steps."
+
+[blocks.period.fields.printrecord.fields.ocsetting.arms.steps]
+name = "steps"
+description = "save for each step specified in steps. this keyword may be used in conjunction with other keywords to print or save results for multiple time steps."
+dtype = "integer"
