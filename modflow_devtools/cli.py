@@ -47,9 +47,9 @@ def _sync_all():
     # Sync Models
     print("=== Models ===")
     try:
-        from modflow_devtools.models import ModelSources
+        from modflow_devtools.models import ModelSourceConfig
 
-        config = ModelSources.load()
+        config = ModelSourceConfig.load()
         config.sync()
         print("Models synced successfully")
     except Exception as e:
