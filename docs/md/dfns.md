@@ -23,19 +23,19 @@ Downloads all `.dfn` files for the specified MODFLOW 6 release into the given ou
 
 ### Converting to TOML
 
-The `dfn` dependency group is required for the TOML conversion tool:
+The `dfn` dependency group is required for the conversion tool:
 
 ```shell
 pip install modflow-devtools[dfn]
 ```
 
-To convert legacy `.dfn` files to TOML:
+To convert legacy `.dfn` files (default output format is YAML):
 
 ```shell
-python -m modflow_devtools.dfn2toml -i <dfn dir path> -o <output dir path>
+python -m modflow_devtools.dfnmap -i <dfn dir path> -o <output dir path>
 ```
 
-The tool may also be used on individual files. To validate legacy format files, use the `--validate` flag.
+Use `--format` / `-f` to select `yaml` (default), `toml`, or `json`. The tool may also be used on individual files.
 
 ---
 
@@ -56,14 +56,18 @@ These are two separate concerns.
 **File format** is the serialization:
 
 - **Legacy DFN format** (`.dfn`): flat text with comments demarcating blocks, used by MODFLOW 6 releases.
-- **TOML format** (`.toml`): per-component TOML documents, produced by the `dfn2toml` conversion tool.
+- **TOML format** (`.toml`): per-component TOML documents.
+- **YAML format** (`.yaml`): per-component YAML documents.
+- **JSON format** (`.json`): per-component JSON documents.
+
+TOML, YAML, and JSON files are produced by the `dfnmap` conversion tool.
 
 **Schema version** describes the structure and semantics of the content:
 
 - **v1 schema**: the original structure embedded in legacy `.dfn` files. Mixes structural definitions with input format details (e.g., `in_record`, `tagged`).
 - **v2 schema**: a cleaner, hierarchical representation. Each component has explicitly typed, nested fields; blocks and records are first-class objects; structural specification is separated from input format concerns.
 
-`modflow_devtools.dfns` always works with v2 schema objects internally. When loading a directory of `.dfn` files, they are parsed as v1 and automatically mapped to v2. TOML files carry v2 content directly and are loaded without mapping. Both file formats are supported by `Dfns.load()`.
+`modflow_devtools.dfns` always works with v2 schema objects internally. When loading a directory of `.dfn` files, they are parsed as v1 and automatically mapped to v2. TOML, YAML, and JSON files carry v2 content directly and are loaded without mapping. All file formats are supported by `Dfns.load()`.
 
 ### Core classes
 

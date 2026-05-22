@@ -9,6 +9,7 @@ import tomli
 from pydantic import (
     BaseModel,
     computed_field,
+    model_serializer,
     model_validator,
 )
 from pydantic import (
@@ -25,6 +26,14 @@ class FieldBase(BaseModel):
     developmode: bool = False
     netcdf: bool = False
     tagged: bool = True
+
+    @model_serializer(mode="wrap")
+    def _serialize(self, handler: Any) -> dict[str, Any]:
+        data = handler(self)
+        # `type` has a frozen default so exclude_defaults=True drops it; restore it.
+        if "type" not in data and "type" in type(self).model_fields:
+            data = {"type": getattr(self, "type"), **data}
+        return data
 
     @classmethod
     def from_dict(cls, d: dict, strict: bool = False) -> "FieldBase":
@@ -345,6 +354,13 @@ class ComponentBase(BaseModel):
     parent: str | list[str] | None = None
     schema_version: str | None = None
     dims: dict[str, Dim] | None = None
+
+    @model_serializer(mode="wrap")
+    def _serialize(self, handler: Any) -> dict[str, Any]:
+        data = handler(self)
+        if "type" not in data and "type" in type(self).model_fields:
+            data = {"type": getattr(self, "type"), **data}
+        return data
 
 
 class Simulation(ComponentBase):

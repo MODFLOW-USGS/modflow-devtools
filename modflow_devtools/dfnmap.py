@@ -1,23 +1,26 @@
-"""Convert MODFLOW 6 DFN files to TOML."""
+"""Map MODFLOW 6 DFN files to a new schema version and serialize to YAML, TOML, or JSON."""
 
 import argparse
+import json
 from os import PathLike
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
-import tomli_w as tomli
+import pyaml
+import tomli_w
 from pydantic import BaseModel
 
 from modflow_devtools.dfn import schema as v1
 from modflow_devtools.dfn.mapper import map as map_v1_1
 from modflow_devtools.dfns.mapper import map as map_v2
 
+Format = Literal["yaml", "toml", "json"]
 
-def _toml_safe(obj: Any) -> Any:
-    """
-    Recursively coerce non-TOML-native types to containers
-    and primitives suitable for TOML serialization.
-    """
+_EXT: dict[str, str] = {"yaml": ".yaml", "toml": ".toml", "json": ".json"}
+
+
+def _serialize_safe(obj: Any) -> Any:
+    """Recursively coerce non-native types to primitives suitable for serialization."""
 
     if isinstance(obj, BaseModel):
         return obj.model_dump(
@@ -26,19 +29,36 @@ def _toml_safe(obj: Any) -> Any:
             exclude_defaults=True,
         )
     if isinstance(obj, dict):
-        return {k: _toml_safe(v) for k, v in obj.items() if v is not None}
+        return {k: _serialize_safe(v) for k, v in obj.items() if v is not None}
     if isinstance(obj, list):
-        return [_toml_safe(v) for v in obj]
+        return [_serialize_safe(v) for v in obj]
     if isinstance(obj, (str, int, float, bool)) or obj is None:
         return obj
     return str(obj)  # Version → str, etc.
 
 
+def _write(data: dict, path: Path, fmt: Format) -> None:
+    if fmt == "toml":
+        with path.open("wb") as f:
+            tomli_w.dump(data, f)
+    elif fmt == "json":
+        with path.open("w") as f:
+            json.dump(data, f, indent=2)
+    elif fmt == "yaml":
+        with path.open("w") as f:
+            pyaml.dump(data, f)
+
+
 # mypy: ignore-errors
 
 
-def migrate(inpath: str | PathLike, outdir: str | PathLike, schema_version: str = "2") -> None:
-    """Migrate DFN files' schema version and convert to TOML.
+def migrate(
+    inpath: str | PathLike,
+    outdir: str | PathLike,
+    schema_version: str = "2",
+    fmt: Format = "yaml",
+) -> None:
+    """Migrate DFN files' schema version and serialize to the given format.
 
     Parameters
     ----------
@@ -48,10 +68,13 @@ def migrate(inpath: str | PathLike, outdir: str | PathLike, schema_version: str 
         Output directory.
     schema_version : str, optional
         Target schema version: "1", "1.1", or "2". Default "2".
+    fmt : str, optional
+        Output format: "yaml", "toml", or "json". Default "yaml".
     """
     inpath = Path(inpath).expanduser().absolute()
     outdir = Path(outdir).expanduser().absolute()
     outdir.mkdir(exist_ok=True, parents=True)
+    ext = _EXT[fmt]
 
     if inpath.is_file():
         if inpath.name == "common.dfn":
@@ -66,7 +89,7 @@ def migrate(inpath: str | PathLike, outdir: str | PathLike, schema_version: str 
             dfn = v1.Dfn.load(f, name=inpath.stem, common=common)
 
         if schema_version == "1":
-            pass  # nothing to do
+            pass
         elif schema_version == "1.1":
             dfn = map_v1_1(dfn)
         elif schema_version == "2":
@@ -76,14 +99,12 @@ def migrate(inpath: str | PathLike, outdir: str | PathLike, schema_version: str 
                 f"Got schema version {schema_version}, supported versions are: 1, 1.1, 2"
             )
 
-        dfn_path = outdir / f"{inpath.stem}.toml"
-        with Path.open(dfn_path, "wb") as f:
-            tomli.dump(_toml_safe(dfn), f)
+        _write(_serialize_safe(dfn), outdir / f"{inpath.stem}{ext}", fmt)
     else:
         dfns = v1.load_all(inpath)
 
         if schema_version == "1":
-            pass  # nothing to do
+            pass
         elif schema_version == "1.1":
             dfns = v1.to_flat(v1.to_tree(dfns))
             dfns = {name: map_v1_1(dfn) for name, dfn in dfns.items()}
@@ -95,27 +116,22 @@ def migrate(inpath: str | PathLike, outdir: str | PathLike, schema_version: str 
             )
 
         for dfn_name, dfn in dfns.items():
-            dfn_path = outdir / f"{dfn_name}.toml"
-            with Path.open(dfn_path, "wb") as f:
-                tomli.dump(_toml_safe(dfn), f)
-
-
-convert = migrate  # backwards-compatible alias
+            _write(_serialize_safe(dfn), outdir / f"{dfn_name}{ext}", fmt)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Migrate DFN files' schema version and convert to TOML.",
+        description="Migrate DFN files' schema version and serialize to YAML, TOML, or JSON.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
-        "--indir",
+        "--input",
         "-i",
         type=str,
         help="Input file or directory containing DFN files.",
     )
     parser.add_argument(
-        "--outdir",
+        "--output",
         "-o",
         help="Output directory.",
     )
@@ -126,5 +142,17 @@ if __name__ == "__main__":
         choices=["1", "1.1", "2"],
         help="Target schema version (default: 2).",
     )
+    parser.add_argument(
+        "--format",
+        "-f",
+        default="yaml",
+        choices=["yaml", "toml", "json"],
+        help="Output format (default: yaml).",
+    )
     args = parser.parse_args()
-    migrate(indir=args.indir, outdir=args.outdir, schema_version=args.schema_version)
+    migrate(
+        inpath=args.input,
+        outdir=args.output,
+        schema_version=args.schema_version,
+        fmt=args.format,
+    )

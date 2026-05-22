@@ -282,12 +282,12 @@ def map(dfn: v1.Dfn) -> v2.Component:
                         developmode=developmode,
                         netcdf=netcdf,
                         tagged=tagged,
-                        valid=list(valid) if valid else None,
+                        valid=valid.split() if isinstance(valid, str) and valid else (list(valid) if valid else None),
                         case_sensitive=preserve_case,
                         time_series=time_series,
                     )
                 if _type == "integer":
-                    v = [int(x) for x in valid] if valid else None
+                    v = [int(x) for x in valid.split()] if isinstance(valid, str) and valid else ([int(x) for x in valid] if valid else None)
                     return v2.Integer(
                         name=_name,
                         longname=longname,
@@ -419,7 +419,69 @@ def map(dfn: v1.Dfn) -> v2.Component:
                 )
 
             if _type.startswith("record"):
-                rec_fields = _record_fields()
+                subnames = (_type or "").split()[1:]
+                # Detect filerecord: a subfield named 'filein' or 'fileout' with type keyword
+                file_mode: str | None = None
+                for sname in subnames:
+                    if sname in ("filein", "fileout"):
+                        m = next(
+                            (fi for fi in fields.values(multi=True)
+                             if fi["name"] == sname and try_parse_bool(fi.get("in_record", False))),
+                            None,
+                        )
+                        if m and (m.get("type") or "").strip() == "keyword":
+                            file_mode = sname
+                            break
+
+                if file_mode:
+                    # Filerecord pattern: <tag_kw> <filein|fileout> <path_string>
+                    # In v2: drop the mode keyword and the untagged path string; promote
+                    # the tag keyword to a File field (tagged=True, name=tag keyword name).
+                    # Find the untagged string (the path value) so we can skip it.
+                    path_field_name: str | None = None
+                    for sname in subnames:
+                        if sname == file_mode:
+                            continue
+                        m_s = next(
+                            (fi for fi in fields.values(multi=True)
+                             if fi["name"] == sname and try_parse_bool(fi.get("in_record", False))),
+                            None,
+                        )
+                        if m_s and (m_s.get("type") or "").strip() == "string" and not _to_bool(m_s.get("tagged"), True):
+                            path_field_name = sname
+                            break
+
+                    rec_fields = {}
+                    for rname in subnames:
+                        if rname in (file_mode, path_field_name):
+                            continue  # drop mode keyword and path string
+                        m = next(
+                            (fi for fi in fields.values(multi=True)
+                             if fi["name"] == rname
+                             and try_parse_bool(fi.get("in_record", False))
+                             and not (fi.get("type") or "").startswith("record")),
+                            None,
+                        )
+                        if m is None:
+                            continue
+                        ftype = (m.get("type") or "").strip()
+                        if ftype == "keyword":
+                            # Tag keyword becomes the File field (tagged=True, name=keyword name)
+                            rec_fields[rname] = v2.File(
+                                name=rname,
+                                longname=m.get("longname") or None,
+                                description=m.get("description") or None,
+                                optional=_to_bool(m.get("optional"), False),
+                                developmode=_to_bool(m.get("developmode"), False),
+                                netcdf=_to_bool(m.get("netcdf"), False),
+                                tagged=True,
+                                mode=file_mode,  # type: ignore[arg-type]
+                            )
+                        else:
+                            rec_fields[rname] = __map_field(m)
+                else:
+                    rec_fields = _record_fields()
+
                 return v2.Record(
                     name=_name,
                     longname=longname,

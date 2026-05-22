@@ -98,7 +98,7 @@ FormatVersion = Literal[1, 2]
 """DFN format version number."""
 
 
-DfnFormat = Literal["dfn", "toml"]
+DfnFormat = Literal["dfn", "toml", "yaml", "json"]
 """DFN serialization format."""
 
 
@@ -612,8 +612,19 @@ class Dfn(TypedDict):
         )
 
     @classmethod  # type: ignore[misc]
-    def _load_v2(cls, f, name) -> "Dfn":
-        data = tomli.load(f)
+    def _load_v2(cls, f, name, fmt: str = "toml") -> "Dfn":
+        if fmt == "toml":
+            data = tomli.load(f)
+        elif fmt == "json":
+            import json
+
+            data = json.load(f)
+        elif fmt == "yaml":
+            import yaml
+
+            data = yaml.safe_load(f)
+        else:
+            raise ValueError(f"Unsupported format: {fmt!r}")
         if name and name != data.get("name", None):
             raise ValueError(f"Name mismatch, expected {name}")
         return cls(**data)
@@ -633,9 +644,15 @@ class Dfn(TypedDict):
         if version in ["dfn", 1]:
             return cls._load_v1(f, name, **kwargs)
         elif version in ["toml", 2]:
-            return cls._load_v2(f, name)
+            return cls._load_v2(f, name, fmt="toml")
+        elif version == "yaml":
+            return cls._load_v2(f, name, fmt="yaml")
+        elif version == "json":
+            return cls._load_v2(f, name, fmt="json")
         else:
-            raise ValueError(f"Unsupported version, expected one of {version.__args__}")
+            raise ValueError(
+                f"Unsupported version {version!r}, expected one of: 'dfn', 'toml', 'yaml', 'json', 1, 2"
+            )
 
     @staticmethod  # type: ignore[misc]
     def load_all(dfndir: PathLike, version: FormatVersion | None = None) -> Dfns:
@@ -645,20 +662,26 @@ class Dfn(TypedDict):
             warn("load_all() argument 'version' is deprecated and ignored")
 
         dfns: Dfns = {}
+        dfndir = Path(dfndir)
+        _EXCLUDE = {"common", "flopy"}
 
-        dfn_paths: list[Path] = [
-            p for p in dfndir.glob("*.dfn") if p.stem not in ["common", "flopy"]
+        dfn_paths: list[Path] = [p for p in dfndir.glob("*.dfn") if p.stem not in _EXCLUDE]
+        toml_paths: list[Path] = [p for p in dfndir.glob("*.toml") if p.stem not in _EXCLUDE]
+        yaml_paths: list[Path] = [
+            p
+            for ext in ("*.yaml", "*.yml")
+            for p in dfndir.glob(ext)
+            if p.stem not in _EXCLUDE
         ]
-        toml_paths: list[Path] = [
-            p for p in dfndir.glob("*.toml") if p.stem not in ["common", "flopy"]
-        ]
+        json_paths: list[Path] = [p for p in dfndir.glob("*.json") if p.stem not in _EXCLUDE]
 
-        if any(dfn_paths) and any(toml_paths):
-            raise ValueError("Directory contains both DFN and TOML definition files")
-        if not any(dfn_paths) and not any(toml_paths):
+        groups = [g for g in [dfn_paths, toml_paths, yaml_paths, json_paths] if g]
+        if len(groups) > 1:
+            raise ValueError("Directory contains definition files in multiple formats")
+        if not groups:
             raise ValueError("Directory contains no definition files")
 
-        if any(dfn_paths):
+        if dfn_paths:
             # load common fields
             common_path: Path | None = dfndir / "common.dfn"
             if not common_path.is_file():
@@ -681,10 +704,20 @@ class Dfn(TypedDict):
                 with path.open() as f:
                     dfn = Dfn.load(f, name=path.stem, common=common, refs=refs)
                     dfns[path.stem] = dfn
-        else:
+        elif toml_paths:
             for path in toml_paths:
                 with path.open(mode="rb") as f:
-                    dfn = Dfn.load(f, name=path.stem)
+                    dfn = Dfn.load(f, name=path.stem, version="toml")
+                    dfns[path.stem] = dfn
+        elif yaml_paths:
+            for path in yaml_paths:
+                with path.open() as f:
+                    dfn = Dfn.load(f, name=path.stem, version="yaml")
+                    dfns[path.stem] = dfn
+        elif json_paths:
+            for path in json_paths:
+                with path.open() as f:
+                    dfn = Dfn.load(f, name=path.stem, version="json")
                     dfns[path.stem] = dfn
 
         return dfns
