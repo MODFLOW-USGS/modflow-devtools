@@ -41,7 +41,7 @@ Python development tools for MODFLOW 6 and related projects.
 
 ## Requirements
 
-Python3.10+, dependency-free by default.
+Python3.11+, dependency-free by default.
 
 Two main dependency groups are available, oriented around specific use cases:
 
