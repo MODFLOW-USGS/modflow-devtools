@@ -3,7 +3,7 @@ import os
 import shutil
 import warnings
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 from os import PathLike
 from pathlib import Path
 
@@ -1416,7 +1416,6 @@ class ProgramManager:
             If installation fails
         """
         import shutil
-        from datetime import timezone
 
         # 1. Load config and find program in registries
         config = self.config
@@ -1576,7 +1575,7 @@ class ProgramManager:
             version=version,
             platform=platform,
             bindir=bindir,
-            installed_at=datetime.now(timezone.utc),
+            installed_at=datetime.now(UTC),
             source=source_info,
             executables=[exe_name],
         )

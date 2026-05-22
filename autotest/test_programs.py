@@ -1,4 +1,5 @@
 import warnings
+from datetime import UTC
 from pathlib import Path
 
 import pytest
@@ -304,7 +305,7 @@ class TestProgramManager:
 
     def test_installation_metadata_integration(self):
         """Test InstallationMetadata integration with ProgramManager."""
-        from datetime import datetime, timezone
+        from datetime import datetime
         from pathlib import Path
 
         from modflow_devtools.programs import (
@@ -322,7 +323,7 @@ class TestProgramManager:
             version="1.0.0",
             platform="linux",
             bindir=Path("/tmp/test"),
-            installed_at=datetime.now(timezone.utc),
+            installed_at=datetime.now(UTC),
             source={
                 "repo": "test/repo",
                 "tag": "1.0.0",
