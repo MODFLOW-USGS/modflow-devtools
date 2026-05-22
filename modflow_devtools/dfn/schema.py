@@ -754,7 +754,10 @@ def get_fields(dfn: Dfn) -> OMD:
 
 def _has_grid_dependent_shapes(dfn: Dfn) -> bool:
     """Return True if any field uses a semicolon grid-type-dependent shape."""
-    for block in dfn.get("blocks", {}).values():
+    blocks = dfn.get("blocks", {})
+    if not blocks:
+        return False
+    for block in blocks.values():
         for field in block.values():
             if ";" in str(field.get("shape") or ""):
                 return True
