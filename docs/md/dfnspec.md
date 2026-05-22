@@ -39,6 +39,7 @@
       - [Type-specific attributes](#type-specific-attributes-2)
         - [`valid`](#valid)
         - [`case_sensitive`](#case_sensitive)
+        - [`time_series`](#time_series)
         - [`pk`](#pk)
         - [`fk`](#fk)
         - [`fk_ref`](#fk_ref)
@@ -52,7 +53,7 @@
     - [Double](#double)
       - [Type-specific attributes](#type-specific-attributes-4)
         - [`time_series`](#time_series-1)
-    - [Path](#path)
+    - [File](#file)
       - [Type-specific attributes](#type-specific-attributes-5)
         - [`mode`](#mode)
   - [Composites](#composites)
@@ -309,6 +310,10 @@ Type `string`.
 
 `boolean (default: false)`. Indicates that the string's case must be preserved. The MF6 parser uppercases strings by default.
 
+###### `time_series`
+
+`boolean (default: false)`. Marks fields where the parser accepts either a string literal or a time-series name (referencing a `utl-ts` object).
+
 ###### `pk`
 
 `boolean (default: false)`. Marks this scalar as the primary key of its containing list's item record. Valid only on integer or string scalars that are columns in a list item record. Exactly one column per list item may be marked pk.
@@ -326,10 +331,6 @@ Type `string`.
 Type `integer`.
 
 ##### Type-specific attributes
-
-###### `tagged`
-
-`boolean (default: true)`. Indicates that the field value should be preceded by the field name.
 
 ###### `valid`
 
@@ -357,17 +358,13 @@ Type `double`.
 
 ##### Type-specific attributes
 
-###### `tagged`
-
-`boolean (default: true)`. Indicates that the field value should be preceded by the field name.
-
 ###### `time_series`
 
 `boolean (default: false)`. Marks fields where the parser accepts either a numeric literal or a time-series name (referencing a `utl-ts` object). Not inferable from structural type. Also appears on array fields (where it references a `utl-tas` object instead). Note that `utl-tas` currently only works with layered arrays, not full-grid arrays, though generalizing has been considered.
 
-#### Path
+#### File
 
-Type `path`.
+Type `file`.
 
 ##### Type-specific attributes
 
@@ -472,13 +469,14 @@ And a `scope` (see [Scope and resolution](#scope-and-resolution)) that controls 
 
 Self-sizing `array` fields (those with `shape: []`) may also serve as dimension sources: any such array's name may appear in a `shape` expression to mean "one element per item in this array." These are registered in `dims` with `field` pointing to the array name.
 
-Shape expressions for non-string arrays may use one of three structural forms. All three may additionally carry a bound annotation:
+Shape expressions for non-string arrays may use one of four structural forms. Dim references may additionally carry a bound annotation:
 
 - **Dim reference** (`^[A-Za-z_]\w*$`): a plain identifier resolved via the scope chain (explicit → derived → inherited dims). When the array is a subfield of a record and the identifier does not resolve globally, resolution falls back to intra-record sibling scope (see below).
 - **Intra-record sibling reference**: a dim reference that names a sibling `integer` in the same enclosing record. Makes the record a variadic tuple whose width varies per row. Valid only when the array is a subfield of a record. See below.
+- **Arithmetic offset** (`dim [+-] integer`): a dim reference with an integer offset, e.g. `nlay + 1`. Only the dim portion is validated; the offset is accepted as-is.
 - **Row-level column lookup** (`block.column(fk_field)`): a cross-list per-row quantity, valid only for array subfields of records. See below.
 
-Any dim reference (either of the first two forms) may carry a **bound annotation** prefix (`<`, `>`, `<=`, or `>=`). The dim portion validates normally; the bound is advisory and is not enforced by the MF6 parser.
+Any dim reference (including the dim portion of an arithmetic offset) may carry a **bound annotation** prefix (`<`, `>`, `<=`, or `>=`). The dim portion validates normally; the bound is advisory and is not enforced by the MF6 parser.
 
 A shape expression that does not match one of these forms is a schema validation error. String arrays (`dtype: "string"`) must have empty `shape`.
 

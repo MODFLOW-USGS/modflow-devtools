@@ -17,6 +17,15 @@ from pydantic import (
 
 
 class FieldBase(BaseModel):
+    name: str
+    longname: str | None = None
+    description: str | None = None
+    optional: bool = False
+    default: Any | None = None
+    developmode: bool = False
+    netcdf: bool = False
+    tagged: bool = True
+
     @classmethod
     def from_dict(cls, d: dict, strict: bool = False) -> "FieldBase":
         type_name = d.get("type")
@@ -25,7 +34,7 @@ class FieldBase(BaseModel):
             "string": String,
             "integer": Integer,
             "double": Double,
-            "path": File,
+            "file": File,
             "array": Array,
             "record": Record,
             "union": Union,
@@ -43,25 +52,10 @@ class FieldBase(BaseModel):
 
 class Keyword(FieldBase):
     type: Literal["keyword"] = PydanticField(default="keyword", frozen=True)
-    name: str
-    longname: str | None = None
-    description: str | None = None
-    optional: bool = False
-    default: Any | None = None
-    developmode: bool = False
-    netcdf: bool = False
 
 
 class String(FieldBase):
     type: Literal["string"] = PydanticField(default="string", frozen=True)
-    name: str
-    longname: str | None = None
-    description: str | None = None
-    optional: bool = False
-    default: Any | None = None
-    developmode: bool = False
-    netcdf: bool = False
-    tagged: bool = True
     valid: list[str] | None = None
     case_sensitive: bool = False
     time_series: bool = False
@@ -72,14 +66,6 @@ class String(FieldBase):
 
 class Integer(FieldBase):
     type: Literal["integer"] = PydanticField(default="integer", frozen=True)
-    name: str
-    longname: str | None = None
-    description: str | None = None
-    optional: bool = False
-    default: Any | None = None
-    developmode: bool = False
-    netcdf: bool = False
-    tagged: bool = True
     valid: list[int] | None = None
     time_series: bool = False
     pk: bool = False
@@ -89,25 +75,11 @@ class Integer(FieldBase):
 
 class Double(FieldBase):
     type: Literal["double"] = PydanticField(default="double", frozen=True)
-    name: str
-    longname: str | None = None
-    description: str | None = None
-    optional: bool = False
-    default: Any | None = None
-    developmode: bool = False
-    netcdf: bool = False
-    tagged: bool = True
     time_series: bool = False
 
 
 class File(FieldBase):
     type: Literal["file"] = PydanticField(default="file", frozen=True)
-    name: str
-    longname: str | None = None
-    description: str | None = None
-    optional: bool = False
-    default: Any | None = None
-    developmode: bool = False
     mode: Literal["filein", "fileout"]
 
 
@@ -119,13 +91,6 @@ Scalar = Annotated[
 
 class Array(FieldBase):
     type: Literal["array"] = PydanticField(default="array", frozen=True)
-    name: str
-    longname: str | None = None
-    description: str | None = None
-    optional: bool = False
-    default: Any | None = None
-    developmode: bool = False
-    netcdf: bool = False
     dtype: Literal["keyword", "integer", "double", "string"]
     shape: list[str] = []
     time_series: bool = False
@@ -134,12 +99,6 @@ class Array(FieldBase):
 
 class Record(FieldBase):
     type: Literal["record"] = PydanticField(default="record", frozen=True)
-    name: str
-    longname: str | None = None
-    description: str | None = None
-    optional: bool = False
-    default: Any | None = None
-    developmode: bool = False
     fields: "dict[str, Scalar | Array | Record | Union]" = PydanticField(default_factory=dict)
 
     @property
@@ -149,12 +108,6 @@ class Record(FieldBase):
 
 class Union(FieldBase):
     type: Literal["union"] = PydanticField(default="union", frozen=True)
-    name: str
-    longname: str | None = None
-    description: str | None = None
-    optional: bool = False
-    default: Any | None = None
-    developmode: bool = False
     arms: "dict[str, Scalar | Array | Record]" = PydanticField(default_factory=dict)
 
     @property
@@ -164,13 +117,6 @@ class Union(FieldBase):
 
 class List(FieldBase):
     type: Literal["list"] = PydanticField(default="list", frozen=True)
-    name: str
-    longname: str | None = None
-    description: str | None = None
-    optional: bool = False
-    default: Any | None = None
-    developmode: bool = False
-    netcdf: bool = False
     item: "Record | Union"
 
     @property
@@ -397,7 +343,7 @@ class Simulation(ComponentBase):
 
 class Model(ComponentBase):
     type: Literal["model"] = "model"
-    solution: str | list[str] | None = None  # compatible solution type(s)
+    solution: Literal["ims", "ems", "sln-ims", "sln-ems"] | None = None
 
 
 class Package(ComponentBase):
