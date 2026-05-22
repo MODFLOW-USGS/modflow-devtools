@@ -204,7 +204,7 @@ def _validate_sum_call(call: ast.Call, component: "ComponentBase", expr: str) ->
         )
 
 
-class DimDef(BaseModel):
+class Dim(BaseModel):
     """A named dimension, either backed by a field or derived from an expression."""
 
     field: str | None = None  # name of the field that provides this dimension
@@ -212,9 +212,9 @@ class DimDef(BaseModel):
     scope: Literal["component", "model", "simulation"] = "component"
 
     @model_validator(mode="after")
-    def _check_exclusive(self) -> "DimDef":
+    def _check_exclusive(self) -> "Dim":
         if (self.field is None) == (self.expr is None):
-            raise ValueError("DimDef must have exactly one of 'field' or 'expr'")
+            raise ValueError("Dim must have exactly one of 'field' or 'expr'")
         return self
 
     @property
@@ -334,7 +334,7 @@ class ComponentBase(BaseModel):
     blocks: dict[str, Block] | None = None
     parent: str | list[str] | None = None
     schema_version: str | None = None
-    dims: dict[str, DimDef] | None = None
+    dims: dict[str, Dim] | None = None
 
 
 class Simulation(ComponentBase):

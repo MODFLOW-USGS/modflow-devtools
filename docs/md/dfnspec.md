@@ -85,13 +85,15 @@ This document describes the MODFLOW 6 component definition (DFN) system. This sy
 
 ## Overview
 
-A MODFLOW 6 simulation consists of a hierarchy of components, each one representing some functional element, such as a grid discretization, a hydrologic process (i.e. model), or a boundary condition.
+A MODFLOW 6 simulation consists of a hierarchy of modules, each one representing some functional element, such as a grid discretization, a hydrologic process (i.e. model), or a boundary condition.
 
-Each component is defined by a **component definition** (DFN), which specifies the valid contents of the component's input file. A definition characterizes the component, including its fields, relationships between fields or to other components, and data representations. A definition is one way of representing a module; it may not be the only way. Any number of representational variants may exist, each of which reflects a certain tradeoff between properties like program runtime, memory or disk usage, and convenience.
+Modules are specified by **component definitions** (DFNs), each of which describes the module's general properties, its input fields, and its relationships to other modules. A module be represented by more than one component definition. A definition describes one way of representing a module; it may not be the only way. Any number of representational variants may exist, each of which reflects a certain tradeoff between properties like program runtime, memory or disk usage, and convenience.
+
+This document refers to **components** instead of modules to emphasize this distinction.
 
 ## Components
 
-Component definitions consist primarily of a name, zero or more block definitions, as well as other optional attributes.
+Component definitions consist of a number of attributes:
 
 - `type`: the component type (`"simulation"`, `"model"`, or `"package"`)
 - `name`: the component's name
@@ -448,12 +450,12 @@ Type `list`. Collection type. Unlimited but for one rule: a list may not contain
 
 ### Array dimensions
 
-Dimensions are declared at the component level via the `dims` map, not on individual fields. Each entry in `dims` is a `DimDef`:
+Dimensions are declared at the component level via the `dims` map, not on individual fields. Each entry in `dims` consists of a source (a field or an expression combining other dimension fields) and a scope:
 
 ```yaml
 dims:
   nlay:
-    field: nlay        # backed by an integer field named 'nlay' in this component
+    field: nlay        # backed by a sibling integer field 'nlay'
     scope: model
   nodes:
     expr: "nlay * nrow * ncol"   # derived from other dims
@@ -463,63 +465,49 @@ dims:
     scope: simulation
 ```
 
-A `DimDef` has exactly one of:
-- `field`: the name of an `integer` field in this component that provides the dimension value
-- `expr`: a Python arithmetic expression that derives the dimension from other known dims
+The `field` and `expr` attributes are mutually exclusive, distinguishing explicit field-backed dimensions from derived dimensions:
+- `field`: the name of an `integer` or array field in this component that provides the dimension value
+- `expr`: an arithmetic expression that derives the dimension from other known dims
 
-And a `scope` (see [Scope and resolution](#scope-and-resolution)) that controls which other components can see it.
+The `scope` (see [Scope and resolution](#scope-and-resolution)) controls which other components can see the dimension.
 
-Self-sizing `array` fields (those with `shape: []`) may also serve as dimension sources: any such array's name may appear in a `shape` expression to mean "one element per item in this array." These are registered in `dims` with `field` pointing to the array name.
+Integer fields or self-sizing `array` fields (those with empty or absent `shape`) may serve as explicit dimensions. An integer field directly indicates the dimension size, whereas a self-sizing array indicate "one element per item in this array."
 
-Shape expressions for non-string arrays may use one of four structural forms. Dim references may additionally carry a bound annotation:
+A dimension with an `expr` attribute rather than a `field` is a derived dimension. Shape expressions use Python-like syntax and may contain several kinds of reference:
 
-- **Dim reference** (`^[A-Za-z_]\w*$`): a plain identifier resolved via the scope chain (explicit → derived → inherited dims). When the array is a subfield of a record and the identifier does not resolve globally, resolution falls back to intra-record sibling scope (see below).
-- **Intra-record sibling reference**: a dim reference that names a sibling `integer` in the same enclosing record. Makes the record a variadic tuple whose width varies per row. Valid only when the array is a subfield of a record. See below.
-- **Arithmetic offset** (`dim [+-] integer`): a dim reference with an integer offset, e.g. `nlay + 1`. Only the dim portion is validated; the offset is accepted as-is.
-- **Row-level column lookup** (`block.column(fk_field)`): a cross-list per-row quantity, valid only for array subfields of records. See below.
+- **Dimension reference** (`^[A-Za-z_]\w*$`): names a dimension either resolved locally or inherited from another component.
+- **Record subfield reference**: names a sibling `integer` subfield in the same record. Makes the record a variadic tuple whose width varies per row. Valid only when the array is a subfield of a record.
+- **List column reference** (`block.list.column(fk_field)`): names a subfield of a record which is the item type of a regular (i.e. tabular) list.
 
-Any dim reference (including the dim portion of an arithmetic offset) may carry a **bound annotation** prefix (`<`, `>`, `<=`, or `>=`). The dim portion validates normally; the bound is advisory and is not enforced by the MF6 parser.
+Shape expressions may also include simple integer arithmetic, e.g. `nlay + 1`, as well as constraints, e.g. `<`, `>`, `<=`, or `>=` and simple math functions like `sum()`.
 
-A shape expression that does not match one of these forms is a schema validation error. String arrays (`dtype: "string"`) must have empty `shape`.
-
-#### Derived dimensions
-
-A `DimDef` with an `expr` rather than a `field` is a derived dimension. Its expression uses Python arithmetic syntax. Operands may be:
-
-- Explicit dimensions: any field-backed dim in this component's `dims`
-- Other derived dims: another derived dim in this component; circular dependencies are a schema error
-- Functions of columns in a tabular list block: `sum(block.list.column)` sums the integer values of `column` across all rows of list field `list` in block `block`. When the list field shares its name with its containing block — the MF6 convention — the block qualifier may be omitted: `sum(list.column)`.
-
-Derived dims carry the same `scope` as field-backed dims and are visible to other components under the same rules.
-
-Canonical examples:
+Canonical examples of explicit and derived dimensions:
 
 ```yaml
 dims:
-  # gwf-dis: nodes and ncpl are derived to give packages a uniform dim
-  # regardless of discretization type (DISV has ncpl explicit; DIS derives it)
-  nlay:   {field: nlay,  scope: model}
-  nrow:   {field: nrow,  scope: model}
-  ncol:   {field: ncol,  scope: model}
-  ncpl:   {expr: "nrow * ncol",        scope: model}
-  nodes:  {expr: "nlay * nrow * ncol", scope: model}
-  ncelldim: {expr: "3",               scope: model}
+  # sim-tdis
+  nper: {field: nper, scope: simulation}
 
-  # gwf-disv: ncpl is explicit; nodes is derived
-  ncpl:   {field: ncpl,  scope: model}
-  nodes:  {expr: "nlay * ncpl",        scope: model}
-  ncelldim: {expr: "2",               scope: model}
+  # gwf-dis
+  nlay: {field: nlay, scope: model}
+  nrow: {field: nrow, scope: model}
+  ncol: {field: ncol, scope: model}
+  ncpl: {expr: "nrow * ncol", scope: model}
+  nodes: {expr: "nlay * nrow * ncol", scope: model}
+  ncelldim: {expr: "3", scope: model}
+
+  # gwf-disv
+  ncpl: {field: ncpl, scope: model}
+  nodes: {expr: "nlay * ncpl", scope: model}
+  ncelldim: {expr: "2", scope: model}
 
   # gwf-lak
   total_lake_connections: {expr: "sum(packagedata.nlakeconn)", scope: component}
-
-  # sim-tdis
-  nper:   {field: nper,  scope: simulation}
 ```
 
-#### Row-level column lookups
+#### Inline arrays
 
-An array appearing as a subfield of a record may have its size determined per row by a value in another list. The shape expression form for this is:
+An array appearing as a subfield of a record is called an **inline array**. An inline array may have its size determined by an integer subfield in the same record, or by a column in another list, . The shape expression form for this is:
 
 ```
 block.column(fk_field)
@@ -539,9 +527,7 @@ Validation rules:
 - `column` must exist in `block`'s item record and be of type `integer`
 - This form is only valid when the array is a subfield of a record; it is a schema error on a top-level array field
 
-Unlike derived dimensions, row-level lookups are not pre-computable at load time. They are evaluated per row during parsing.
-
-Canonical example — `gwf-sfr.connectiondata.ic`, whose length varies per reach according to the `ncon` column in `packagedata`:
+The canonical example of this is `gwf-sfr.connectiondata.ic`, an array field whose length varies per reach according to the `ncon` column in `packagedata`:
 
 ```yaml
 packagedata:
@@ -623,7 +609,7 @@ Row-level column lookups and bound annotations (`<dim` etc.) are not resolved vi
 
 #### Dimension scope
 
-Each `DimDef` carries a `scope: "component" | "model" | "simulation"` that determines which other components can inherit it:
+Each `Dim` carries a `scope: "component" | "model" | "simulation"` that determines which other components can inherit it:
 
 - **`"component"`**: only visible within this component (or to subpackages that list this component as their explicit parent).
 - **`"model"`**: visible to any component that can share the same model instance, determined dynamically from `parent` attributes. A dim defined in component A (with `scope: "model"`) is visible to component B when:
