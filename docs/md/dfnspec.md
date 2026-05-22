@@ -87,7 +87,7 @@ This document describes the MODFLOW 6 component definition (DFN) system. This sy
 
 A MODFLOW 6 simulation consists of a hierarchy of components, each one representing some functional element, such as a grid discretization, a hydrologic process (i.e. model), or a boundary condition.
 
-Each component is defined by a **component definition** (DFN), which specifies the valid contents of the component's input file. A definition characterizes the component and its fields, relationships between fields or to other components, and data representations and in some cases formatting information. A definition is one way of representing a module; it may not be the only way. Any number of representational variants may exist, each of which reflects a certain tradeoff between properties like program runtime, memory or disk usage, and convenience.
+Each component is defined by a **component definition** (DFN), which specifies the valid contents of the component's input file. A definition characterizes the component, including its fields, relationships between fields or to other components, and data representations. A definition is one way of representing a module; it may not be the only way. Any number of representational variants may exist, each of which reflects a certain tradeoff between properties like program runtime, memory or disk usage, and convenience.
 
 ## Components
 
