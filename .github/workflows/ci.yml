@@ -83,12 +83,11 @@ jobs:
         python: [ "3.11", "3.12", "3.13", "3.14" ]
     env:
       GCC_V: 11
+      UV_PROJECT_ENVIRONMENT: ${{ github.workspace }}/.venv
     steps:
 
       - name: Checkout repo
         uses: actions/checkout@v4
-        with:
-          path: modflow-devtools
 
       - name: Checkout modflow6 for DFN autodiscovery
         uses: actions/checkout@v4
@@ -127,7 +126,7 @@ jobs:
           DFNS_PATH: ${{ github.workspace }}/modflow6/doc/mf6io/mf6ivar/dfn
           MODFLOW_DEVTOOLS_AUTO_SYNC: 0
         # use --dist loadfile to so tests requiring pytest-virtualenv run on the same worker
-        run: uv run pytest -v -n auto --dist loadfile --durations 0 --ignore test_download.py --ignore test_models.py --ignore test_dfns_registry.py
+        run: uv run pytest -v -n auto --dist loadfile --durations 0 --ignore test_download.py --ignore test_models.py --ignore dfns/test_dfns_registry.py
 
       - name: Run network-dependent tests
         # only invoke the GH API on one OS and Python version
@@ -151,7 +150,7 @@ jobs:
           TEST_PROGRAMS_REPO: MODFLOW-ORG/modflow6
           TEST_PROGRAMS_REF: develop
           TEST_PROGRAMS_SOURCE: modflow6
-        run: uv run pytest -v -n auto --dist loadgroup --durations 0 test_download.py test_models.py test_dfns_registry.py
+        run: uv run pytest -v -n auto --dist loadgroup --durations 0 test_download.py test_models.py dfns/test_dfns_registry.py
   
   rtd:
     name: Docs

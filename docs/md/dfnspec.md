@@ -1,5 +1,7 @@
 # DFN specification
 
+This document describes the MODFLOW 6 component definition (DFN) system. This system is used to specify MODFLOW 6 components and their inputs, and reflects the MODFLOW 6 input data model as described in the MF6 IO guide.
+
 - [Overview](#overview)
 - [Components](#components)
   - [Shared attributes](#shared-attributes)
