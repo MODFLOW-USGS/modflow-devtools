@@ -752,13 +752,28 @@ def get_fields(dfn: Dfn) -> OMD:
     return OMD(items)
 
 
+def _has_grid_dependent_shapes(dfn: Dfn) -> bool:
+    """Return True if any field uses a semicolon grid-type-dependent shape."""
+    for block in dfn.get("blocks", {}).values():
+        for field in block.values():
+            if ";" in str(field.get("shape") or ""):
+                return True
+    return False
+
+
 def infer_parent(dfn: Dfn) -> str | None:
     """Infer a component's parent using naming conventions."""
     if dfn["name"] == "sim-nam":
         return None
     if dfn["name"].endswith("-nam"):
         return "sim-nam"
-    if dfn["name"].startswith(("exg-", "sln-", "utl-")):
+    if dfn["name"].startswith(("exg-", "sln-")):
+        return "sim-nam"
+    if dfn["name"].startswith("utl-"):
+        # Grid-dependent shapes (semicolon notation) mean the utility must be
+        # model-attached, not simulation-level.
+        if _has_grid_dependent_shapes(dfn):
+            return "package"
         return "sim-nam"
     if "-" in dfn["name"]:
         mdl = dfn["name"].split("-")[0]
@@ -768,8 +783,8 @@ def infer_parent(dfn: Dfn) -> str | None:
 
 def resolve_parent(dfn: Dfn) -> Dfn:
     """Infer and set a component's parent using naming conventions."""
-    parent = infer_parent(dfn)
-    dfn["parent"] = parent
+    if dfn["parent"] is None:
+        dfn["parent"] = infer_parent(dfn)
     return dfn
 
 

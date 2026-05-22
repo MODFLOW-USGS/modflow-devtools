@@ -1,53 +1,71 @@
+import tempfile
 from pathlib import Path
 
 from modflow_devtools.dfn import Dfn, fetch_dfns
 from modflow_devtools.dfn2toml import convert
 from modflow_devtools.markers import requires_pkg
 
-PROJ_ROOT = Path(__file__).parents[1]
-DFN_DIR = PROJ_ROOT / "autotest" / "temp" / "dfn"
-TOML_V1_DIR = DFN_DIR / "toml"
-TOML_V1_1_DIR = DFN_DIR / "toml-v1_1"
 MF6_OWNER = "MODFLOW-ORG"
 MF6_REPO = "modflow6"
 MF6_REF = "develop"
 
+_DFN_DIR: Path | None = None
+_TOML_V1_DIR: Path | None = None
+_TOML_V1_1_DIR: Path | None = None
+_TMPDIR: tempfile.TemporaryDirectory | None = None
+
+
+def _ensure_dfns() -> Path:
+    global _DFN_DIR, _TMPDIR
+    if _DFN_DIR is None:
+        _TMPDIR = tempfile.TemporaryDirectory()
+        _DFN_DIR = Path(_TMPDIR.name) / "dfn"
+        _DFN_DIR.mkdir()
+        fetch_dfns(MF6_OWNER, MF6_REPO, MF6_REF, _DFN_DIR, verbose=True)
+    return _DFN_DIR
+
+
+def _ensure_toml_v1() -> Path:
+    global _TOML_V1_DIR
+    dfn_dir = _ensure_dfns()
+    if _TOML_V1_DIR is None:
+        _TOML_V1_DIR = dfn_dir / "toml"
+        convert(dfn_dir, _TOML_V1_DIR, schema_version="1")
+    return _TOML_V1_DIR
+
+
+def _ensure_toml_v1_1() -> Path:
+    global _TOML_V1_1_DIR
+    dfn_dir = _ensure_dfns()
+    if _TOML_V1_1_DIR is None:
+        _TOML_V1_1_DIR = dfn_dir / "toml-v1_1"
+        convert(dfn_dir, _TOML_V1_1_DIR, schema_version="1.1")
+    return _TOML_V1_1_DIR
+
 
 def pytest_generate_tests(metafunc):
     if "dfn_name" in metafunc.fixturenames:
-        if not any(DFN_DIR.glob("*.dfn")):
-            fetch_dfns(MF6_OWNER, MF6_REPO, MF6_REF, DFN_DIR, verbose=True)
-        dfn_names = [
-            dfn.stem for dfn in DFN_DIR.glob("*.dfn") if dfn.stem not in ["common", "flopy"]
-        ]
+        dfn_dir = _ensure_dfns()
+        dfn_names = [p.stem for p in dfn_dir.glob("*.dfn") if p.stem not in ("common", "flopy")]
         metafunc.parametrize("dfn_name", dfn_names, ids=dfn_names)
 
     if "toml_name" in metafunc.fixturenames:
-        dfn_paths = [p for p in DFN_DIR.glob("*.dfn") if p.stem not in ["common", "flopy"]]
-        if not TOML_V1_DIR.exists() or not all(
-            (TOML_V1_DIR / f"{dfn.stem}.toml").is_file() for dfn in dfn_paths
-        ):
-            convert(DFN_DIR, TOML_V1_DIR)
-        assert all((TOML_V1_DIR / f"{dfn.stem}.toml").is_file() for dfn in dfn_paths)
-        toml_names = [toml.stem for toml in TOML_V1_DIR.glob("*.toml")]
+        toml_dir = _ensure_toml_v1()
+        toml_names = [p.stem for p in toml_dir.glob("*.toml")]
         metafunc.parametrize("toml_name", toml_names, ids=toml_names)
 
     if "toml_v1_1_name" in metafunc.fixturenames:
-        dfn_paths = [p for p in DFN_DIR.glob("*.dfn") if p.stem not in ["common", "flopy"]]
-        if not TOML_V1_1_DIR.exists() or not all(
-            (TOML_V1_1_DIR / f"{dfn.stem}.toml").is_file() for dfn in dfn_paths
-        ):
-            convert(DFN_DIR, TOML_V1_1_DIR, schema_version="1.1")
-        assert all((TOML_V1_1_DIR / f"{dfn.stem}.toml").is_file() for dfn in dfn_paths)
-        toml_names = [toml.stem for toml in TOML_V1_1_DIR.glob("*.toml")]
+        toml_dir = _ensure_toml_v1_1()
+        toml_names = [p.stem for p in toml_dir.glob("*.toml")]
         metafunc.parametrize("toml_v1_1_name", toml_names, ids=toml_names)
 
 
 @requires_pkg("boltons")
 def test_load_v1(dfn_name):
+    dfn_dir = _ensure_dfns()
     with (
-        (DFN_DIR / "common.dfn").open() as common_file,
-        (DFN_DIR / f"{dfn_name}.dfn").open() as dfn_file,
+        (dfn_dir / "common.dfn").open() as common_file,
+        (dfn_dir / f"{dfn_name}.dfn").open() as dfn_file,
     ):
         common, _ = Dfn._load_v1_flat(common_file)
         dfn = Dfn.load(dfn_file, name=dfn_name, common=common)
@@ -56,16 +74,16 @@ def test_load_v1(dfn_name):
 
 @requires_pkg("boltons")
 def test_load_v2(toml_name):
-    with (TOML_V1_DIR / f"{toml_name}.toml").open(mode="rb") as toml_file:
+    toml_dir = _ensure_toml_v1()
+    with (toml_dir / f"{toml_name}.toml").open(mode="rb") as toml_file:
         toml = Dfn.load(toml_file, name=toml_name, version=2)
         assert any(toml)
 
 
 @requires_pkg("boltons")
 def test_load_all():
-    if not any(DFN_DIR.glob("*.dfn")):
-        fetch_dfns(MF6_OWNER, MF6_REPO, MF6_REF, DFN_DIR, verbose=True)
-    dfns = Dfn.load_all(DFN_DIR)
+    dfn_dir = _ensure_dfns()
+    dfns = Dfn.load_all(dfn_dir)
     assert any(dfns)
 
 
@@ -76,7 +94,8 @@ def test_convert_v1_1(toml_v1_1_name):
     except ImportError:
         import tomli as tomllib  # type: ignore[no-redef]
 
-    with (TOML_V1_1_DIR / f"{toml_v1_1_name}.toml").open("rb") as f:
+    toml_dir = _ensure_toml_v1_1()
+    with (toml_dir / f"{toml_v1_1_name}.toml").open("rb") as f:
         data = tomllib.load(f)
     assert data["name"] == toml_v1_1_name
     assert data["schema_version"] == "1.1"

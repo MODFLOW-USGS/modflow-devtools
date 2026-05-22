@@ -9,45 +9,58 @@ from modflow_devtools.misc import try_literal_eval
 
 _IDENT_RE = re.compile(r"^[A-Za-z_]\w*$")
 _LOOKUP_RE = re.compile(r"^(\w+)\.(\w+)\((\w+)\)$")
-_SIM_PREFIXES: frozenset[str] = frozenset({"sim", "sln", "exg", "utl"})
 
 
-def _model_type_of(name: str) -> str | None:
-    """Extract model type from a component name, e.g. 'gwf' from 'gwf-npf'."""
-    prefix = name.split("-")[0] if "-" in name else name
-    return None if prefix in _SIM_PREFIXES else prefix
+def _scope_for(
+    parent: "str | list[str] | None",
+) -> "Literal['component', 'model', 'simulation']":
+    """
+    Derive the DimDef scope for dims in a component's dimensions block from its parent.
+
+    - Parent is a model (``<type>-nam``) or a generic type (``"model"``,
+      ``"package"``, ``"*"``) → ``"model"``
+    - Parent is ``"sim-nam"`` (directly under simulation) → ``"simulation"``
+    - Otherwise → ``"component"``
+    """
+    parents = ([parent] if isinstance(parent, str) else parent) if parent is not None else []
+    for p in parents:
+        if p == "sim-nam":
+            return "simulation"
+        if p.endswith("-nam") or p in ("model", "package", "*"):
+            return "model"
+    return "component"
 
 
-def _build_explicit_dims(dfn_name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.DimDef]:
+def _build_explicit_dims(
+    parent: "str | list[str] | None",
+    blocks: dict[str, v2.Block],
+) -> dict[str, v2.DimDef]:
     """Build the dims section from a component's dimensions block."""
     dims: dict[str, v2.DimDef] = {}
     dim_block = blocks.get("dimensions")
     if not dim_block:
         return dims
 
-    model_type = _model_type_of(dfn_name)
-    if dfn_name == "sim-tdis":
-        default_scope = "simulation"
-    elif model_type:
-        default_scope = model_type
-    else:
-        default_scope = "component"
-
+    scope = _scope_for(parent)
     for fname, field in dim_block.fields.items():
         if isinstance(field, v2.Integer):
-            dims[fname] = v2.DimDef(field=fname, scope=default_scope)
+            dims[fname] = v2.DimDef(field=fname, scope=scope)
 
-    # Add derived dims for standard MF6 grid discretization types.
-    if model_type:
+    if scope == "model":
         has = set(dims.keys())
         if {"nlay", "nrow", "ncol"} <= has:
-            dims["nodes"] = v2.DimDef(expr="nlay * nrow * ncol", scope=model_type)
-            dims["ncelldim"] = v2.DimDef(expr="3", scope=model_type)
+            dims["ncpl"] = v2.DimDef(expr="nrow * ncol", scope="model")
+            dims["nodes"] = v2.DimDef(expr="nlay * nrow * ncol", scope="model")
+            dims["ncelldim"] = v2.DimDef(expr="3", scope="model")
         elif {"nlay", "ncpl"} <= has:
-            dims["nodes"] = v2.DimDef(expr="nlay * ncpl", scope=model_type)
-            dims["ncelldim"] = v2.DimDef(expr="2", scope=model_type)
+            dims["nodes"] = v2.DimDef(expr="nlay * ncpl", scope="model")
+            dims["ncelldim"] = v2.DimDef(expr="2", scope="model")
+        elif {"nrow", "ncol"} <= has:
+            dims["ncpl"] = v2.DimDef(expr="nrow * ncol", scope="model")
+            dims["nodes"] = v2.DimDef(expr="nrow * ncol", scope="model")
+            dims["ncelldim"] = v2.DimDef(expr="2", scope="model")
         elif "nodes" in has:
-            dims["ncelldim"] = v2.DimDef(expr="1", scope=model_type)
+            dims["ncelldim"] = v2.DimDef(expr="1", scope="model")
 
     return dims
 
@@ -476,7 +489,7 @@ def map(dfn: v1.Dfn) -> v2.Component:
 
     blocks, array_dims = _resolve_dimensions(blocks)
     blocks = _resolve_relations(blocks)
-    explicit_dims = _build_explicit_dims(name, blocks)
+    explicit_dims = _build_explicit_dims(dfn["parent"], blocks)
     dims = {**explicit_dims, **array_dims} or None
 
     d: dict[str, Any] = {

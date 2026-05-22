@@ -609,7 +609,7 @@ Row-level column lookups and bound annotations (`<dim` etc.) are not resolved vi
 
 The `dimension` attribute is categorical, not binary. Valid values differ by field type:
 
-- For `integer`: `"record" | "component" | "model" | "simulation" | true | false | null`
+- For `integer`: `"self" | "model" | "simulation" | true | false | null`
 - For `array` (self-sizing only, i.e. `shape: []`): `"component" | "model" | "simulation" | null`
 
 Meanings:

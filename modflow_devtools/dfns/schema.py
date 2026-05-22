@@ -263,7 +263,7 @@ class DimDef(BaseModel):
 
     field: str | None = None  # name of the field that provides this dimension
     expr: str | None = None  # derivation expression, e.g. "nlay * nrow * ncol"
-    scope: str  # "component" | "model" | "simulation" | "<component name>"
+    scope: Literal["component", "model", "simulation"] = "component"
 
     @model_validator(mode="after")
     def _check_exclusive(self) -> "DimDef":
@@ -276,13 +276,37 @@ class DimDef(BaseModel):
         return self.expr is not None
 
 
-_SIM_PREFIXES: frozenset[str] = frozenset({"sim", "sln", "exg", "utl"})
+def _parents_as_set(parent: "str | list[str] | None") -> set[str]:
+    if parent is None:
+        return set()
+    return {parent} if isinstance(parent, str) else set(parent)
 
 
-def _model_type(name: str) -> str | None:
-    """Extract model type from a component name, e.g. 'gwf' from 'gwf-npf'."""
-    prefix = name.split("-")[0] if "-" in name else name
-    return None if prefix in _SIM_PREFIXES else prefix
+def _can_share_model(
+    req_parent: "str | list[str] | None",
+    dim_parent: "str | list[str] | None",
+) -> bool:
+    """
+    Return True if the requesting component (req_parent) can be in the same
+    model as the dim-defining component (dim_parent).
+
+    The dim-provider's parent identifies which model it belongs to (a concrete
+    ``<type>-nam`` name, e.g. ``"gwf-nam"``).  The requesting component's parent
+    determines whether it can be in that model: an explicit match, or a generic
+    type like ``"model"`` or ``"package"`` meaning any model.
+    """
+    dim_parents = _parents_as_set(dim_parent)
+    model_contexts = {p for p in dim_parents if p.endswith("-nam") and p != "sim-nam"}
+    if not model_contexts:
+        return False
+
+    req_parents = _parents_as_set(req_parent)
+    for rp in req_parents:
+        if rp in ("model", "package", "*"):
+            return True
+        if rp in model_contexts:
+            return True
+    return False
 
 
 def _resolve_derived_dims(component: "ComponentBase", known_dims: set[str]) -> list[str]:
@@ -668,9 +692,19 @@ class Dfns(BaseModel):
         return set((self.components[component_name].dims or {}).keys())
 
     def inherited_dims(self, component_name: str) -> set[str]:
-        """Dim names visible to ``component_name`` from other components."""
+        """
+        Dim names visible to ``component_name`` from other components.
+
+        - ``"simulation"`` scope: always visible.
+        - ``"model"`` scope: visible when the requesting component can share a
+          model with the dim-defining component, determined purely from parent
+          attributes (no hardcoded model-type strings).
+        - ``"component"`` scope: visible when the dim-defining component is
+          explicitly listed as a parent of the requesting component (subpackage).
+        """
         inherited: set[str] = set()
         component = self.components[component_name]
+        req_parent = component.parent
         for cname, c in self.components.items():
             if cname == component_name:
                 continue
@@ -679,10 +713,10 @@ class Dfns(BaseModel):
                     case "simulation":
                         inherited.add(dim_name)
                     case "model":
-                        if "model" in component.parent or cname in component.parent:
+                        if _can_share_model(req_parent, c.parent):
                             inherited.add(dim_name)
                     case "component":
-                        if cname in component.parent:
+                        if cname in _parents_as_set(req_parent):
                             inherited.add(dim_name)
         return inherited
 
