@@ -10,6 +10,7 @@ This document describes the MODFLOW 6 component definition (DFN) system. This sy
     - [`blocks`](#blocks)
     - [`parent`](#parent)
     - [`schema_version`](#schema_version)
+    - [`dims`](#dims)
   - [Component types](#component-types)
     - [Simulation](#simulation)
     - [Model](#model)
@@ -74,11 +75,8 @@ This document describes the MODFLOW 6 component definition (DFN) system. This sy
     - [List](#list)
       - [Type-specific attributes](#type-specific-attributes-9)
         - [`item`](#item)
-  - [Array dimensions](#array-dimensions)
-    - [Derived dimensions](#derived-dimensions)
-    - [Row-level column lookups](#row-level-column-lookups)
-    - [Intra-record sibling references](#intra-record-sibling-references)
-    - [Scope and resolution](#scope-and-resolution)
+  - [Dimensions](#dimensions)
+    - [Dimension sources](#dimension-sources)
     - [Dimension scope](#dimension-scope)
   - [Primary/foreign keys](#primaryforeign-keys)
     - [Examples](#examples)
@@ -139,6 +137,10 @@ Parent relationships are defined bottom-up with attribute `parent`:
 #### `schema_version`
 
 `string | null (default: null)`. The version of the DFN schema. Optional but recommended. When multiple components are loaded together into a `DfnSpec`, all non-null `schema_version` values must agree; mixed versions are a validation error.
+
+#### `dims`
+
+`{string: Dim} (default: {})`. Named dimensions available for use in array and list shape expressions. Each entry is either field-backed (`field`: the name of an integer or self-sizing array field in this component) or derived (`expr`: an arithmetic expression over other dims), plus a `scope` that controls visibility to other components. See [Dimensions](#dimensions).
 
 ### Component types
 
@@ -388,7 +390,9 @@ Type `array`.
 
 Arrays are not proper composites. An array does not have an item subfield as does a list. Instead, it has a `dtype` attribute identifying its scalar element type. An array may not contain composite elements; `dtype` must be a scalar type.
 
-An array is **self-sizing** when its `shape` is empty (`[]`). A self-sizing array is read inline by the parser: it consumes tokens until the end of the current line, dynamically determining its own length. Its element count may serve as a dimension for other arrays (see `dimension` below). The only invalid position for a self-sizing array is as a non-rightmost subfield of a record, where subsequent fields on the same line would be unreadable. Arrays with a declared shape are parsed to exactly that many elements.
+A 1D array may have absent or empty `shape`, indicating no constraint on its size, in which case it is called **self-sizing**. Self-sizing arrays are parsed by MF6 dynamically at runtime. The size of a self-sizing array may serve as a dimension for other arrays (see below).
+
+A 1D array appearing as a subfield of a record is called an **inline array**. Inline arrays with a declared shape are self-explanatory. An inline array may only be self-sizing if it is the right-most subfield of the record; in this case the record is essentially a variadic tuple.
 
 ##### Type-specific attributes
 
@@ -398,13 +402,7 @@ An array is **self-sizing** when its `shape` is empty (`[]`). A self-sizing arra
 
 ###### `shape`
 
-`[string] (default: [])`. The array's shape, as a list of shape expressions. An empty list means the array is **self-sizing** (see above). There is one constraint on self-sizing arrays: they may not appear as a non-rightmost subfield of a record, because subsequent fields on the same line would be unreadable. In all other positions — top-level in a block, or rightmost in a record — a self-sizing array is valid. Parsing rules by position:
-
-- **Top-level** (a direct field of a block, not inside a record): read as inline tokens on the block line. `shape` may be empty (self-sizing) or declared.
-- **Inline, not rightmost** (a subfield of a record with at least one subsequent field): `shape` must be declared and non-empty; the size must be determinable from already-parsed context (a global dim or a preceding sibling field).
-- **Inline, rightmost** (the last subfield of a record): `shape` may be empty (self-sizing) or declared.
-
-Each declared shape expression is either a global dimension name (explicit or derived; see [Array dimensions](#array-dimensions)) or a row-level column lookup (see [Row-level column lookups](#row-level-column-lookups)). The latter form is only valid when the array is a subfield of a record. Any shape expression may additionally carry an advisory **bound annotation** prefix (`<`, `>`, `<=`, or `>=`); the bound is not enforced by the MF6 parser.
+`[string] (default: [])`. The array's shape, as a list of shape expressions, one per dimension. An empty list means the array is 1-dimensional and **self-sizing** (see above).
 
 ###### `time_series`
 
@@ -446,11 +444,15 @@ Type `list`. Collection type. Unlimited but for one rule: a list may not contain
 
 ###### `item`
 
-`Record | Union`. Subfield (item type), required.
+`record | union`. Item type, required.
 
-### Array dimensions
+###### `shape`
 
-Dimensions are declared at the component level via the `dims` map, not on individual fields. Each entry in `dims` consists of a source (a field or an expression combining other dimension fields) and a scope:
+`[string] (default: [])`. The list's shape, as a list of shape expressions. May have at most one element, as lists are necessarily 1-dimensional.
+
+### Dimensions
+
+Dimensions may be declared by a component with a `dims` map. Each entry in `dims` consists of a **source** (a field or an expression combining other dimension fields) and a **scope**:
 
 ```yaml
 dims:
@@ -465,23 +467,24 @@ dims:
     scope: simulation
 ```
 
-The `field` and `expr` attributes are mutually exclusive, distinguishing explicit field-backed dimensions from derived dimensions:
-- `field`: the name of an `integer` or array field in this component that provides the dimension value
-- `expr`: an arithmetic expression that derives the dimension from other known dims
+Dimensions may be used in the `shape` expression of `list` and `array` fields.
 
-The `scope` (see [Scope and resolution](#scope-and-resolution)) controls which other components can see the dimension.
+#### Dimension sources
 
-Integer fields or self-sizing `array` fields (those with empty or absent `shape`) may serve as explicit dimensions. An integer field directly indicates the dimension size, whereas a self-sizing array indicate "one element per item in this array."
+The `field` and `expr` attributes define dimension sources. These attributes are mutually exclusive, distinguishing **explicit dimensions** from **derived dimensions**.
 
-A dimension with an `expr` attribute rather than a `field` is a derived dimension. Shape expressions use Python-like syntax and may contain several kinds of reference:
+Explicit dimensions are most straightforwardly defined with an `integer` field, directly indicating the size of the dimension. Self-sizing `array` fields may also may serve as explicit dimension sources; a self-sizing array dimension is effectively a dynamic dimension size, indicating "the same size as this array".
 
-- **Dimension reference** (`^[A-Za-z_]\w*$`): names a dimension either resolved locally or inherited from another component.
-- **Record subfield reference**: names a sibling `integer` subfield in the same record. Makes the record a variadic tuple whose width varies per row. Valid only when the array is a subfield of a record.
-- **List column reference** (`block.list.column(fk_field)`): names a subfield of a record which is the item type of a regular (i.e. tabular) list.
+A dimension with an `expr` attribute rather than `field` is a derived dimension. Shape expressions use Python-like syntax and may contain several kinds of reference, resolved in the order presented below:
+
+- **Local dimension**: an explicit or derived dimension in this component, resolved in dependency order.
+- **Inherited dimension**: a dimension inherited from another component, per scoping rules (see below).
+- **Record subfield**: a sibling `integer` subfield in the same record. Makes the record a variadic tuple whose width varies per row. Valid only when the array is a subfield of a record.
+- **List column**: a subfield of a record which is the item type of a regular (i.e. tabular) list, in this component or another. If in another component, the name must be fully qualified (see below). Valid only when the array is a subfield of a record.
 
 Shape expressions may also include simple integer arithmetic, e.g. `nlay + 1`, as well as constraints, e.g. `<`, `>`, `<=`, or `>=` and simple math functions like `sum()`.
 
-Canonical examples of explicit and derived dimensions:
+Canonical examples of dimensions:
 
 ```yaml
 dims:
@@ -505,27 +508,35 @@ dims:
   total_lake_connections: {expr: "sum(packagedata.nlakeconn)", scope: component}
 ```
 
-#### Inline arrays
+An inline array may have its size determined by an integer subfield in the same record, or if the record it is within is the item type of a list, by a column in another list.
 
-An array appearing as a subfield of a record is called an **inline array**. An inline array may have its size determined by an integer subfield in the same record, or by a column in another list, . The shape expression form for this is:
+If a record contains an `integer` field followed by an `array` whose shape expression names that field, the record is self-describing: it carries its own sizing information. Inline array dimensions of this kind need not be declared at the component level. For instance:
 
+```yaml
+connectiondata:
+  type: list
+  item:
+    type: record
+    fields:
+      icno:
+        type: integer
+        fk: "packagedata.icno"
+      ncvert:
+        type: integer
+      icvert:
+        type: array
+        dtype: integer
+        shape: ["ncvert"]
 ```
-block.column(fk_field)
-```
 
-where:
-- `block` is the name of a list block in the same component
-- `column` is an integer column in that list's item record
-- `fk_field` is a sibling field in the same record whose `fk` attribute resolves to a PK in `block`
+If an inline array appears in a record which is the item type of a list, the array's size may be specified by a column in another regular list. This is a form of primary-/foreign-key relation; see [Primary/foreign keys](#primaryforeign-keys). The syntax for this form is `[component.]block.column(fk_field)`. If the list is in the same component, the dimension need not be declared in `dims`.
 
-This notation is consistent with FK path conventions (`block.field` for within-component references). The parenthetical `(fk_field)` serves as the row selector, distinguishing this form from a derived dimension expression over the same path. Cross-component references extend the path naturally to `component.block.column(fk_field)`.
+- `component`: the component name. Only required if in a different component.
+- `block`: the name of the block containing the list. In all current cases the list field has the same name as its containing block, so this also serves as the list name.
+- `column`: an integer subfield in the list's record item type.
+- `fk_field`: an integer subfield in the referring array's record whose `fk` attribute resolves to a `pk` subfield in the dimension-providing record.
 
-Validation rules:
-- `fk_field` must be a sibling field in the same enclosing record
-- `fk_field` must have `fk` set, and its `fk` attribute's block portion must match `block`
-- `block`'s list item record must have exactly one `pk: true` field
-- `column` must exist in `block`'s item record and be of type `integer`
-- This form is only valid when the array is a subfield of a record; it is a schema error on a top-level array field
+The parenthetical `(fk_field)` serves as the row selector, distinguishing this form from a derived dimension expression over the same path, e.g. `[component.]block.column`
 
 The canonical example of this is `gwf-sfr.connectiondata.ic`, an array field whose length varies per reach according to the `ncon` column in `packagedata`:
 
@@ -556,74 +567,22 @@ connectiondata:
         shape: ["packagedata.ncon(ifno)"]
 ```
 
-`packagedata.ncon(ifno)` means: follow `ifno`'s FK to identify the `packagedata` row, then read `ncon` from it. Each `connectiondata` row has a different number of `ic` values. The `ic` array is read inline on the same line as the rest of the record, making the record a variadic tuple.
-
-#### Intra-record sibling references
-
-A record may also be a variadic tuple without any FK-linked list. If a record contains an `integer` field followed by an `array` whose shape names that field, the record is self-describing: it carries its own count. The `array`'s shape element is a plain identifier that resolves to the sibling field, not to a global dim.
-
-```yaml
-connectiondata:
-  type: list
-  item:
-    type: record
-    fields:
-      icno:
-        type: integer
-        fk: "packagedata.icno"
-      ncvert:
-        type: integer
-      icvert:
-        type: array
-        dtype: integer
-        shape: ["ncvert"]
-```
-
-`ncvert` is not a globally declared dim — it is a sibling field in the same record row. Each row supplies `ncvert` first, then `ncvert` vertex indices inline. This is structurally distinct from the row-level column lookup: no FK relationship is implied, and no separate list is consulted. The count is simply read from the same line.
-
-Validation rules:
-- Valid only when the array is a subfield of a record (not a top-level block field).
-- The sibling field must be an `integer`. No special annotation is required on the sibling.
-- Resolution order: the scope chain is tried first; sibling resolution is only the fallback when the identifier does not resolve globally.
-
-#### Bound-annotated shape expressions
-
-A dim reference (either a global dim or an intra-record sibling) may be prefixed with a relational operator (`<`, `>`, `<=`, `>=`) to express an advisory bound on the array's length, e.g. `<time_series_names`. The dim portion resolves and validates exactly as it would without the prefix. The bound itself is not enforced by the MF6 parser — the array is read inline token by token — but it is meaningful to consumers that wish to validate data before writing.
-
-```yaml
-sfacval:
-  type: array
-  dtype: double
-  shape: ["<time_series_names"]
-```
-
-#### Scope and resolution
-
-Dim references (plain identifiers) resolve in this order:
-
-1. **Local dims**: entries in this component's `dims` map — both field-backed and derived — resolved in dependency order.
-2. **Inherited dims**: dims from other components in the spec, filtered by their `scope` and the requesting component's `parent` attribute (see below).
-3. **Intra-record sibling**: a sibling `integer` in the same enclosing record — fallback when steps 1–2 fail and the array is inside a record.
-
-Row-level column lookups and bound annotations (`<dim` etc.) are not resolved via this scope chain. Row-level lookups are evaluated per row at parse time using the FK relationship. Bound annotations are advisory only.
+`packagedata.ncon(ifno)` means: follow `ifno`'s FK to identify the `packagedata` row, then read `ncon` from it. Each `connectiondata` row has a different number of `ic` values; each record is a variadic tuple, making the list jagged.
 
 #### Dimension scope
 
-Each `Dim` carries a `scope: "component" | "model" | "simulation"` that determines which other components can inherit it:
+Dimensions may specify a `scope` attribute controlling which other components can inherit the dimension:
 
-- **`"component"`**: only visible within this component (or to subpackages that list this component as their explicit parent).
-- **`"model"`**: visible to any component that can share the same model instance, determined dynamically from `parent` attributes. A dim defined in component A (with `scope: "model"`) is visible to component B when:
-  - A's `parent` contains a concrete model-name entry (e.g. `"gwf-nam"`, `"chf-nam"`) — meaning A is model-attached, and
-  - B's `parent` contains either that same model-name entry, or a generic type (`"model"`, `"package"`, `"*"`) — meaning B can belong to the same model.
-  
-  This means `"model"` scope is not tied to any specific model type. A package that can attach to any model (e.g. a utility with `parent: "package"`) inherits model-scoped dims from whichever grid discretization is in its model.
-
+- **`"component"`**: only visible within this component (or to subpackages that list this component as their explicit parent). The default scope.
+- **`"model"`**: visible to any component that can share the same model instance, as determined by component `parent` attributes. A dimension defined in component A with `scope: "model"` is visible to component B if:
+  - A's `parent` contains a concrete model-name entry (e.g. `"gwf-nam"`, `"chf-nam"`), and
+  - B's `parent` contains either that same model-name entry (meaning B can belong to the same model type), a generic type (`"model"` or `"package"`, meaning B can be attached to any such type), or a wildcard pattern (`"*"`, meaning B can be attached to any component).
 - **`"simulation"`**: always visible to all components.
 
 Examples:
-- `nrow`, `ncol`, `nlay` in `gwf-dis` — `scope: "model"` — accessible to `gwf-chd`, `gwf-wel`, `utl-spca` (which has `parent: "package"`), and any other component attached to the same GWF model.
-- `nper` in `sim-tdis` — `scope: "simulation"` — accessible everywhere.
-- `total_lake_connections` in `gwf-lak` — `scope: "component"` — private to that component.
+- `gwf-dis.dims.nrow`, `ncol`, `nlay` have `scope: "model"`: accessible to `gwf-chd`, `gwf-wel`, and any other component whose parent is `gwf-nam`, but also to e.g. `utl-spca` (which has `parent: "package"`).
+- `sim-tdis.dims.nper` has `scope: "simulation"`: accessible from all components.
+- `gwf-lak.dims.total_lake_connections` has `scope: "component"`: private to that component.
 
 ### Primary/foreign keys
 

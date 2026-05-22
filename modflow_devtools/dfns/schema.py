@@ -118,6 +118,16 @@ class Union(FieldBase):
 class List(FieldBase):
     type: Literal["list"] = PydanticField(default="list", frozen=True)
     item: "Record | Union"
+    shape: list[str] = []
+
+    @model_validator(mode="after")
+    def _check_shape_length(self) -> "List":
+        if len(self.shape) > 1:
+            raise ValueError(
+                f"List {self.name!r}: shape must have at most one element "
+                f"(lists are 1-dimensional), got {self.shape!r}"
+            )
+        return self
 
     @property
     def children(self) -> "dict[str, Field]":
@@ -358,7 +368,7 @@ Component = Annotated[
 ]
 
 _DIM_RE = re.compile(r"^[A-Za-z_]\w*$")
-_LOOKUP_RE = re.compile(r"^(\w+)\.(\w+)\((\w+)\)$")
+_LOOKUP_RE = re.compile(r"^(?:([\w-]+)\.)?(\w+)\.(\w+)\((\w+)\)$")
 _BOUND_RE = re.compile(r"^[<>]=?")
 _ARITH_RE = re.compile(r"^([A-Za-z_]\w*)\s*[+-]\s*\d+$")
 
@@ -380,6 +390,7 @@ def _validate_shape_element(
     component: "ComponentBase",
     enclosing_record: "Record | None",
     known_dims: set[str],
+    spec: "Dfns | None" = None,
 ) -> None:
     """
     Validate one element of an Array.shape list.
@@ -427,7 +438,7 @@ def _validate_shape_element(
         )
 
     if m := _LOOKUP_RE.fullmatch(element):
-        block_name, col_name, fk_field_name = m.groups()
+        component_ref, block_name, col_name, fk_field_name = m.groups()
 
         # Check 5: array must be a subfield of a record, not a top-level block field
         if enclosing_record is None:
@@ -436,12 +447,29 @@ def _validate_shape_element(
                 f"row-level lookup but the array is not inside a record"
             )
 
-        # Check 1: block_name must identify a list block in this component
-        list_field = _find_list_in_block(component, block_name)
+        # Resolve target component (cross-component reference or local)
+        if component_ref is not None:
+            if spec is None:
+                raise ValueError(
+                    f"Array {array_field.name!r} shape element {element!r}: "
+                    f"cross-component reference requires a Dfns spec"
+                )
+            target = spec.components.get(component_ref)
+            if target is None:
+                raise ValueError(
+                    f"Array {array_field.name!r} shape element {element!r}: "
+                    f"component {component_ref!r} not found in spec"
+                )
+        else:
+            target = component  # type: ignore
+
+        # Check 1: block_name must identify a list block in the target component
+        list_field = _find_list_in_block(target, block_name)  # type: ignore
         if list_field is None:
+            where = f"component {component_ref!r}" if component_ref else "this component"
             raise ValueError(
                 f"Array {array_field.name!r} shape element {element!r}: "
-                f"{block_name!r} is not a list block in this component"
+                f"{block_name!r} is not a list block in {where}"
             )
 
         # Check 2: col_name must be an Integer field in the list's item record
@@ -501,6 +529,58 @@ def _validate_shape_element(
         f"Array {array_field.name!r} has invalid shape element {element!r}: "
         f"must be a dim reference (^[A-Za-z_]\\w*$), an arithmetic offset "
         f"(dim [+-] integer), or a row-level lookup (block.column(fk_field))"
+    )
+
+
+def _validate_list_shape_element(
+    element: str,
+    list_field: "List",
+    known_dims: set[str],
+) -> None:
+    """
+    Validate one element of a List.shape.
+
+    Valid forms are a strict subset of array shape forms — no row-level lookup
+    and no intra-record sibling reference, since lists are not inside records:
+      - Plain dim reference
+      - Bound-annotated dim reference (<, >, <=, >=)
+      - Arithmetic offset (dim [+-] integer)
+    """
+    if bound_m := _BOUND_RE.match(element):
+        core = element[bound_m.end() :]
+        if not _DIM_RE.fullmatch(core):
+            raise ValueError(
+                f"List {list_field.name!r} has invalid shape element {element!r}: "
+                f"must be a plain identifier after the bound operator"
+            )
+        if core not in known_dims:
+            raise ValueError(
+                f"List {list_field.name!r} shape element {element!r}: "
+                f"{core!r} does not resolve to a known dim"
+            )
+        return
+
+    if _DIM_RE.fullmatch(element):
+        if element not in known_dims:
+            raise ValueError(
+                f"List {list_field.name!r} shape element {element!r} "
+                f"does not resolve to a known dim"
+            )
+        return
+
+    if m := _ARITH_RE.fullmatch(element):
+        dim_name = m.group(1)
+        if dim_name not in known_dims:
+            raise ValueError(
+                f"List {list_field.name!r} shape element {element!r}: "
+                f"{dim_name!r} does not resolve to a known dim"
+            )
+        return
+
+    raise ValueError(
+        f"List {list_field.name!r} has invalid shape element {element!r}: "
+        f"must be a dim reference (^[A-Za-z_]\\w*$), an arithmetic offset "
+        f"(dim [+-] integer), or a bound-annotated dim (</<=/>/>=dim)"
     )
 
 
@@ -574,6 +654,10 @@ def _validate_array_shapes(
 
     known_dims = spec.dims(component_name)
 
+    def _check_list(lst: "List") -> None:
+        for elem in lst.shape:
+            _validate_list_shape_element(elem, lst, known_dims)
+
     def _check_array(arr: "Array", enclosing: "Record | None") -> None:
         if not arr.shape:
             # Self-sizing (shape=[]) is valid at the top level and as the rightmost
@@ -588,7 +672,7 @@ def _validate_array_shapes(
                     )
             return  # self-sizing: nothing to validate
         for elem in arr.shape:
-            _validate_shape_element(elem, arr, component, enclosing, known_dims)
+            _validate_shape_element(elem, arr, component, enclosing, known_dims, spec)
 
     for block in component.blocks.values():
         for field in block.fields.values():
@@ -601,6 +685,8 @@ def _validate_array_shapes(
                         _check_array(subfield, field)
 
             elif isinstance(field, List):
+                if field.shape:
+                    _check_list(field)
                 item = field.item
                 if isinstance(item, Record):
                     for subfield in item.fields.values():
