@@ -45,7 +45,6 @@
     - [Integer](#integer)
       - [Type-specific attributes](#type-specific-attributes-3)
         - [`valid`](#valid-1)
-        - [`dimension`](#dimension)
         - [`time_series`](#time_series)
         - [`pk`](#pk-1)
         - [`fk`](#fk-1)
@@ -75,7 +74,9 @@
   - [Array dimensions](#array-dimensions)
     - [Derived dimensions](#derived-dimensions)
     - [Row-level column lookups](#row-level-column-lookups)
+    - [Intra-record sibling references](#intra-record-sibling-references)
     - [Scope and resolution](#scope-and-resolution)
+    - [Dimension scope](#dimension-scope)
   - [Primary/foreign keys](#primaryforeign-keys)
     - [Examples](#examples)
 
@@ -94,7 +95,7 @@ Component definitions consist primarily of a name, zero or more block definition
 - `blocks`: block definitions
 - `parent`: parent component(s)
 - `schema_version`: DFN schema version
-- `derived_dims`: dimensions computed from other dimensions
+- `dims`: named dimensions (field-backed or derived) available for use in array shapes
 
 Components may refer to, i.e. be constrained by, other components. Cross-component constraints include parent-child relations, solution compatibility, and format variants.
 
@@ -334,10 +335,6 @@ Type `integer`.
 
 `[integer] | null`. Permitted values (enumeration constraint). Empty list is treated as absent.
 
-###### `dimension`
-
-`"record" | "component" | "model" | "simulation" | true | false | null (default: null)`. Declares this field as a dimension source and specifies its scope. See [Scope and resolution](#scope-and-resolution). A `true` value indicates `"component"` scope; `false` and `null` are equivalent.
-
 ###### `time_series`
 
 `boolean (default: false)`. Marks fields where the parser accepts either a numeric literal or a time-series name (referencing a `utl-ts` object). Not inferable from structural type. Also appears on array fields (where it references a `utl-tas` object instead). Note that `utl-tas` currently only works with layered arrays, not full-grid arrays, though generalizing has been considered.
@@ -416,12 +413,6 @@ Each declared shape expression is either a global dimension name (explicit or de
 
 `string | null (default: null)`. Names the field (within the same component) whose runtime length determines how many times this field is read sequentially within an array block, with each reading appended to an accumulated sequence. See `repeat` section below.
 
-###### `dimension`
-
-`"component" | "model" | "simulation" | null (default: null)`. Marks this self-sizing array as a dimension source at the given scope: the array's name may appear in other arrays' `shape` expressions to mean "one value per element of this array." Valid only on self-sizing arrays (`shape` must be empty); a schema error on arrays with a declared shape.
-
-Because a self-sizing array is read inline and dynamically sized, the parser knows its element count immediately after reading the line — no separate integer field is needed to declare the size in advance. That count is what other arrays reference when they name this array in their `shape`. The dtype of the dimension-source array is not constrained: a string array whose elements are named identifiers (e.g. auxiliary variable names) and a numeric array whose elements happen to fix a count both provide the same thing to the shape system — a dynamic integer size. `"record"` scope is not valid for arrays.
-
 #### Record
 
 Type `record`. Product type. In MF6 input files, records appear on a single line. Record subfields may or may not be `tagged`. While blocks can be considered product types also, in the DFN specification only records are considered fields; blocks are considered named collections of related fields.
@@ -458,15 +449,33 @@ Type `list`. Collection type. Unlimited but for one rule: a list may not contain
 
 ### Array dimensions
 
-A field defined in one component can be referenced by name in the `shape` expression of an array field in the same or another component. Two field types may serve as dimension sources:
+Dimensions are declared at the component level via the `dims` map, not on individual fields. Each entry in `dims` is a `DimDef`:
 
-- `integer` fields with `dimension: true`
-- `array` fields with `dtype: "string"` and `dimension: true` — the array's name becomes a valid shape dim meaning "one value per element of this string array"
+```yaml
+dims:
+  nlay:
+    field: nlay        # backed by an integer field named 'nlay' in this component
+    scope: model
+  nodes:
+    expr: "nlay * nrow * ncol"   # derived from other dims
+    scope: model
+  nper:
+    field: nper
+    scope: simulation
+```
+
+A `DimDef` has exactly one of:
+- `field`: the name of an `integer` field in this component that provides the dimension value
+- `expr`: a Python arithmetic expression that derives the dimension from other known dims
+
+And a `scope` (see [Scope and resolution](#scope-and-resolution)) that controls which other components can see it.
+
+Self-sizing `array` fields (those with `shape: []`) may also serve as dimension sources: any such array's name may appear in a `shape` expression to mean "one element per item in this array." These are registered in `dims` with `field` pointing to the array name.
 
 Shape expressions for non-string arrays may use one of three structural forms. All three may additionally carry a bound annotation:
 
 - **Dim reference** (`^[A-Za-z_]\w*$`): a plain identifier resolved via the scope chain (explicit → derived → inherited dims). When the array is a subfield of a record and the identifier does not resolve globally, resolution falls back to intra-record sibling scope (see below).
-- **Intra-record sibling reference**: a dim reference that names a sibling `integer` or `dimension: true` `array` in the same enclosing record. Makes the record a variadic tuple whose width varies per row. Valid only when the array is a subfield of a record. See below.
+- **Intra-record sibling reference**: a dim reference that names a sibling `integer` in the same enclosing record. Makes the record a variadic tuple whose width varies per row. Valid only when the array is a subfield of a record. See below.
 - **Row-level column lookup** (`block.column(fk_field)`): a cross-list per-row quantity, valid only for array subfields of records. See below.
 
 Any dim reference (either of the first two forms) may carry a **bound annotation** prefix (`<`, `>`, `<=`, or `>=`). The dim portion validates normally; the bound is advisory and is not enforced by the MF6 parser.
@@ -475,29 +484,37 @@ A shape expression that does not match one of these forms is a schema validation
 
 #### Derived dimensions
 
-The optional component attribute `derived_dims` maps dimension names to expressions with which to evaluate the dimension size. Expressions use Python arithmetic syntax. Operands may be:
+A `DimDef` with an `expr` rather than a `field` is a derived dimension. Its expression uses Python arithmetic syntax. Operands may be:
 
-- Explicit dimensions: any `dimension: true` field in this component
-- Derived dimensions: another derived dimension; circular dependencies are a schema error
+- Explicit dimensions: any field-backed dim in this component's `dims`
+- Other derived dims: another derived dim in this component; circular dependencies are a schema error
 - Functions of columns in a tabular list block: `sum(block.list.column)` sums the integer values of `column` across all rows of list field `list` in block `block`. When the list field shares its name with its containing block — the MF6 convention — the block qualifier may be omitted: `sum(list.column)`.
+
+Derived dims carry the same `scope` as field-backed dims and are visible to other components under the same rules.
 
 Canonical examples:
 
 ```yaml
-# gwf-dis: nodes is derived; ncpl is also derived to give packages a uniform
-# per-layer cell count dim regardless of discretization type (DISV has ncpl
-# as an explicit dim; DIS derives it from nrow * ncol)
-nodes: "nlay * nrow * ncol"
-ncpl: "nrow * ncol"
+dims:
+  # gwf-dis: nodes and ncpl are derived to give packages a uniform dim
+  # regardless of discretization type (DISV has ncpl explicit; DIS derives it)
+  nlay:   {field: nlay,  scope: model}
+  nrow:   {field: nrow,  scope: model}
+  ncol:   {field: ncol,  scope: model}
+  ncpl:   {expr: "nrow * ncol",        scope: model}
+  nodes:  {expr: "nlay * nrow * ncol", scope: model}
+  ncelldim: {expr: "3",               scope: model}
 
-# gwf-disv: ncpl is explicit; nodes is derived
-nodes: "nlay * ncpl"
+  # gwf-disv: ncpl is explicit; nodes is derived
+  ncpl:   {field: ncpl,  scope: model}
+  nodes:  {expr: "nlay * ncpl",        scope: model}
+  ncelldim: {expr: "2",               scope: model}
 
-# gwf-lak
-total_lake_connections: "sum(packagedata.nlakeconn)"
+  # gwf-lak
+  total_lake_connections: {expr: "sum(packagedata.nlakeconn)", scope: component}
 
-# gwf-evt
-nseg_minus_1: "nseg - 1"
+  # sim-tdis
+  nper:   {field: nper,  scope: simulation}
 ```
 
 #### Row-level column lookups
@@ -557,7 +574,7 @@ connectiondata:
 
 #### Intra-record sibling references
 
-A record may also be a variadic tuple without any FK-linked list. If a record contains an `integer` field (or a string-dim `array`) followed by an `array` whose shape names that preceding field, the record is self-describing: it carries its own count. The `array`'s shape element is a plain identifier that resolves to the sibling field, not to a global dim.
+A record may also be a variadic tuple without any FK-linked list. If a record contains an `integer` field followed by an `array` whose shape names that field, the record is self-describing: it carries its own count. The `array`'s shape element is a plain identifier that resolves to the sibling field, not to a global dim.
 
 ```yaml
 connectiondata:
@@ -580,7 +597,7 @@ connectiondata:
 
 Validation rules:
 - Valid only when the array is a subfield of a record (not a top-level block field).
-- The sibling field must be an `integer` with `dimension: "record"`. The `"record"` scope annotation makes the role explicit and prevents accidental resolution of unrelated integer fields.
+- The sibling field must be an `integer`. No special annotation is required on the sibling.
 - Resolution order: the scope chain is tried first; sibling resolution is only the fallback when the identifier does not resolve globally.
 
 #### Bound-annotated shape expressions
@@ -598,28 +615,29 @@ sfacval:
 
 Dim references (plain identifiers) resolve in this order:
 
-1. Local explicit dims: `integer` fields with `dimension` set and self-sizing `array` fields (i.e. `shape: []`) with `dimension` set, in this component
-2. Local derived dims: entries in this component's `derived_dims`, resolved in dependency order
-3. Inherited dims: explicit dims from other components in the spec (filtered by scope — `"model"` dims available to packages in the same model, `"simulation"` dims available to all)
-4. Intra-record siblings with `dimension: "record"`: a sibling `integer` in the same enclosing record that has been explicitly marked as a per-row inline count — fallback when steps 1–3 all fail and the array is inside a record.
+1. **Local dims**: entries in this component's `dims` map — both field-backed and derived — resolved in dependency order.
+2. **Inherited dims**: dims from other components in the spec, filtered by their `scope` and the requesting component's `parent` attribute (see below).
+3. **Intra-record sibling**: a sibling `integer` in the same enclosing record — fallback when steps 1–2 fail and the array is inside a record.
 
 Row-level column lookups and bound annotations (`<dim` etc.) are not resolved via this scope chain. Row-level lookups are evaluated per row at parse time using the FK relationship. Bound annotations are advisory only.
 
-#### Explicit dimension scope
+#### Dimension scope
 
-The `dimension` attribute is categorical, not binary. Valid values differ by field type:
+Each `DimDef` carries a `scope: "component" | "model" | "simulation"` that determines which other components can inherit it:
 
-- For `integer`: `"self" | "model" | "simulation" | true | false | null`
-- For `array` (self-sizing only, i.e. `shape: []`): `"component" | "model" | "simulation" | null`
+- **`"component"`**: only visible within this component (or to subpackages that list this component as their explicit parent).
+- **`"model"`**: visible to any component that can share the same model instance, determined dynamically from `parent` attributes. A dim defined in component A (with `scope: "model"`) is visible to component B when:
+  - A's `parent` contains a concrete model-name entry (e.g. `"gwf-nam"`, `"chf-nam"`) — meaning A is model-attached, and
+  - B's `parent` contains either that same model-name entry, or a generic type (`"model"`, `"package"`, `"*"`) — meaning B can belong to the same model.
+  
+  This means `"model"` scope is not tied to any specific model type. A package that can attach to any model (e.g. a utility with `parent: "package"`) inherits model-scoped dims from whichever grid discretization is in its model.
 
-Meanings:
-- `null` (default): not a dimension source.
-- `"record"`: intra-record scope. The integer field is an inline count on the same record row. Valid only on `integer`. Makes the sibling-resolution fallback (scope level 4) explicit and annotated.
-- `"component"`: available within this component.
-- `"model"`: exported to model scope; available to all packages whose parent is the same model. Example: `nrow`, `ncol`, `nlay` in `gwf-dis` are model-scoped — accessible to `gwf-chd`, `gwf-wel`, and all other packages in the same GWF model.
-- `"simulation"`: exported to simulation scope; available to all components. Example: `nper` in `sim-tdis`.
+- **`"simulation"`**: always visible to all components.
 
-Dimension `true` is equivalent to `"component"`, `false` to `null`.
+Examples:
+- `nrow`, `ncol`, `nlay` in `gwf-dis` — `scope: "model"` — accessible to `gwf-chd`, `gwf-wel`, `utl-spca` (which has `parent: "package"`), and any other component attached to the same GWF model.
+- `nper` in `sim-tdis` — `scope: "simulation"` — accessible everywhere.
+- `total_lake_connections` in `gwf-lak` — `scope: "component"` — private to that component.
 
 ### Primary/foreign keys
 
