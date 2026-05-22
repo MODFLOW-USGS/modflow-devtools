@@ -30,6 +30,7 @@ class FieldBase(BaseModel):
     @model_serializer(mode="wrap")
     def _serialize(self, handler: Any) -> dict[str, Any]:
         data = handler(self)
+        data.pop("name", None)  # name is the dict key in the parent container
         # `type` has a frozen default so exclude_defaults=True drops it; restore it.
         if "type" not in data and "type" in type(self).model_fields:
             data = {"type": getattr(self, "type"), **data}
@@ -128,6 +129,18 @@ class List(FieldBase):
     type: Literal["list"] = PydanticField(default="list", frozen=True)
     item: "Record | Union"
     shape: list[str] = []
+
+    @model_serializer(mode="wrap")
+    def _serialize(self, handler: Any) -> dict[str, Any]:
+        data = handler(self)
+        data.pop("name", None)  # name is the dict key in Block.fields
+        if "type" not in data:
+            data = {"type": "list", **data}
+        # item.name is stripped by FieldBase._serialize since item is a FieldBase subclass,
+        # but item is not stored as a dict key — re-inject its name.
+        if "item" in data and isinstance(data["item"], dict):
+            data["item"] = {"name": self.item.name, **data["item"]}
+        return data
 
     @model_validator(mode="after")
     def _check_shape_length(self) -> "List":
@@ -340,6 +353,12 @@ class Block(BaseModel):
     fields: dict[str, Field]
     repeats: bool = False
 
+    @model_serializer(mode="wrap")
+    def _serialize(self, handler: Any) -> dict[str, Any]:
+        data = handler(self)
+        data.pop("name", None)  # name is the dict key in ComponentBase.blocks
+        return data
+
     @property
     def optional(self) -> bool:
         return all(f.optional for f in self.fields.values())
@@ -349,16 +368,16 @@ Blocks = Mapping[str, Block]
 
 
 class ComponentBase(BaseModel):
-    name: str
-    blocks: dict[str, Block] | None = None
-    parent: str | list[str] | None = None
     schema_version: str | None = None
+    name: str
+    parent: str | list[str] | None = None
     dims: dict[str, Dim] | None = None
+    blocks: dict[str, Block] | None = None
 
     @model_serializer(mode="wrap")
     def _serialize(self, handler: Any) -> dict[str, Any]:
         data = handler(self)
-        if "type" not in data and "type" in type(self).model_fields:
+        if "type" not in data:
             data = {"type": getattr(self, "type"), **data}
         return data
 
@@ -710,6 +729,26 @@ def _validate_array_shapes(
                             _check_array(subfield, item)
 
 
+def _inject_field_names(fields: dict) -> None:
+    """Recursively inject name from dict key into field dicts."""
+    for field_name, field in fields.items():
+        field.setdefault("name", field_name)
+        _inject_field_names(field.get("fields") or {})  # Record.fields
+        _inject_field_names(field.get("arms") or {})  # Union.arms
+        item = field.get("item")
+        if isinstance(item, dict):
+            # List.item.name is re-injected during serialization; recurse into its children.
+            _inject_field_names(item.get("fields") or {})
+            _inject_field_names(item.get("arms") or {})
+
+
+def _inject_names(comp_data: dict) -> None:
+    """Inject block and field names from dict keys before Pydantic validation."""
+    for block_name, block in (comp_data.get("blocks") or {}).items():
+        block.setdefault("name", block_name)
+        _inject_field_names(block.get("fields") or {})
+
+
 class Dfns(BaseModel):
     """A set of component definitions."""
 
@@ -803,22 +842,47 @@ class Dfns(BaseModel):
     @classmethod
     def load(cls, path: str | PathLike) -> "Dfns":
         """Load a directory of definition files."""
+        import json
+
+        import yaml
+
         from modflow_devtools.dfn import schema as v1
         from modflow_devtools.dfns.mapper import map as map_v2
 
         dfns: dict = {}
         path = Path(path).expanduser().resolve()
+        _EXCLUDE = {"common", "flopy"}
 
-        dfn_paths = {p.stem: p for p in path.glob("*.dfn") if p.name not in v1.EXCLUDE_DFNS}
-        toml_paths = {p.stem: p for p in path.glob("*.toml") if p.name not in v1.EXCLUDE_DFNS}
+        dfn_paths = {p.stem: p for p in path.glob("*.dfn") if p.stem not in _EXCLUDE}
+        toml_paths = {p.stem: p for p in path.glob("*.toml") if p.stem not in _EXCLUDE}
+        yaml_paths = {
+            p.stem: p
+            for ext in ("*.yaml", "*.yml")
+            for p in path.glob(ext)
+            if p.stem not in _EXCLUDE
+        }
+        json_paths = {p.stem: p for p in path.glob("*.json") if p.stem not in _EXCLUDE}
 
         if dfn_paths:
             dfns = v1.resolve_parents(v1.load_all(path))
             dfns = {n: map_v2(d) for n, d in dfns.items()}
-        if toml_paths:
+        elif toml_paths:
             for toml_path in toml_paths.values():
                 with toml_path.open("rb") as f:
                     dfn = tomli.load(f)
-                    dfns[dfn["name"]] = dfn
+                _inject_names(dfn)
+                dfns[dfn["name"]] = dfn
+        elif yaml_paths:
+            for yaml_path in yaml_paths.values():
+                with yaml_path.open() as f:
+                    dfn = yaml.safe_load(f)
+                _inject_names(dfn)
+                dfns[dfn["name"]] = dfn
+        elif json_paths:
+            for json_path in json_paths.values():
+                with json_path.open() as f:
+                    dfn = json.load(f)
+                _inject_names(dfn)
+                dfns[dfn["name"]] = dfn
 
         return cls(components=dfns)

@@ -282,12 +282,18 @@ def map(dfn: v1.Dfn) -> v2.Component:
                         developmode=developmode,
                         netcdf=netcdf,
                         tagged=tagged,
-                        valid=valid.split() if isinstance(valid, str) and valid else (list(valid) if valid else None),
+                        valid=valid.split()
+                        if isinstance(valid, str) and valid
+                        else (list(valid) if valid else None),
                         case_sensitive=preserve_case,
                         time_series=time_series,
                     )
                 if _type == "integer":
-                    v = [int(x) for x in valid.split()] if isinstance(valid, str) and valid else ([int(x) for x in valid] if valid else None)
+                    v = (
+                        [int(x) for x in valid.split()]
+                        if isinstance(valid, str) and valid
+                        else ([int(x) for x in valid] if valid else None)
+                    )
                     return v2.Integer(
                         name=_name,
                         longname=longname,
@@ -425,8 +431,12 @@ def map(dfn: v1.Dfn) -> v2.Component:
                 for sname in subnames:
                     if sname in ("filein", "fileout"):
                         m = next(
-                            (fi for fi in fields.values(multi=True)
-                             if fi["name"] == sname and try_parse_bool(fi.get("in_record", False))),
+                            (
+                                fi
+                                for fi in fields.values(multi=True)
+                                if fi["name"] == sname
+                                and try_parse_bool(fi.get("in_record", False))
+                            ),
                             None,
                         )
                         if m and (m.get("type") or "").strip() == "keyword":
@@ -443,11 +453,19 @@ def map(dfn: v1.Dfn) -> v2.Component:
                         if sname == file_mode:
                             continue
                         m_s = next(
-                            (fi for fi in fields.values(multi=True)
-                             if fi["name"] == sname and try_parse_bool(fi.get("in_record", False))),
+                            (
+                                fi
+                                for fi in fields.values(multi=True)
+                                if fi["name"] == sname
+                                and try_parse_bool(fi.get("in_record", False))
+                            ),
                             None,
                         )
-                        if m_s and (m_s.get("type") or "").strip() == "string" and not _to_bool(m_s.get("tagged"), True):
+                        if (
+                            m_s
+                            and (m_s.get("type") or "").strip() == "string"
+                            and not _to_bool(m_s.get("tagged"), True)
+                        ):
                             path_field_name = sname
                             break
 
@@ -456,10 +474,13 @@ def map(dfn: v1.Dfn) -> v2.Component:
                         if rname in (file_mode, path_field_name):
                             continue  # drop mode keyword and path string
                         m = next(
-                            (fi for fi in fields.values(multi=True)
-                             if fi["name"] == rname
-                             and try_parse_bool(fi.get("in_record", False))
-                             and not (fi.get("type") or "").startswith("record")),
+                            (
+                                fi
+                                for fi in fields.values(multi=True)
+                                if fi["name"] == rname
+                                and try_parse_bool(fi.get("in_record", False))
+                                and not (fi.get("type") or "").startswith("record")
+                            ),
                             None,
                         )
                         if m is None:
@@ -478,7 +499,7 @@ def map(dfn: v1.Dfn) -> v2.Component:
                                 mode=file_mode,  # type: ignore[arg-type]
                             )
                         else:
-                            rec_fields[rname] = __map_field(m)
+                            rec_fields[rname] = __map_field(m)  # type: ignore
                 else:
                     rec_fields = _record_fields()
 

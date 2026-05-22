@@ -18,6 +18,12 @@ Format = Literal["yaml", "toml", "json"]
 
 _EXT: dict[str, str] = {"yaml": ".yaml", "toml": ".toml", "json": ".json"}
 
+# YAML 1.1 (PyYAML default) serializes booleans as yes/no; override to true/false (YAML 1.2).
+pyaml.add_representer(
+    bool,
+    lambda dumper, v: dumper.represent_scalar("tag:yaml.org,2002:bool", "true" if v else "false"),
+)
+
 
 def _serialize_safe(obj: Any) -> Any:
     """Recursively coerce non-native types to primitives suitable for serialization."""
@@ -29,7 +35,12 @@ def _serialize_safe(obj: Any) -> Any:
             exclude_defaults=True,
         )
     if isinstance(obj, dict):
-        return {k: _serialize_safe(v) for k, v in obj.items() if v is not None}
+        result = {k: _serialize_safe(v) for k, v in obj.items() if v is not None}
+        # Strip redundant name from v1/v1.1 field dicts — name is the dict key in the parent block.
+        # (v2 Pydantic models handle this via their own serializers.)
+        if "name" in result and "type" in result:
+            del result["name"]
+        return result
     if isinstance(obj, list):
         return [_serialize_safe(v) for v in obj]
     if isinstance(obj, (str, int, float, bool)) or obj is None:
@@ -37,7 +48,19 @@ def _serialize_safe(obj: Any) -> Any:
     return str(obj)  # Version → str, etc.
 
 
+def _scalars_first(obj: Any) -> Any:
+    """Recursively reorder dict keys so scalar values precede dicts and lists."""
+    if isinstance(obj, dict):
+        scalars = {k: _scalars_first(v) for k, v in obj.items() if not isinstance(v, (dict, list))}
+        complex_ = {k: _scalars_first(v) for k, v in obj.items() if isinstance(v, (dict, list))}
+        return {**scalars, **complex_}
+    if isinstance(obj, list):
+        return [_scalars_first(v) for v in obj]
+    return obj
+
+
 def _write(data: dict, path: Path, fmt: Format) -> None:
+    data = _scalars_first(data)
     if fmt == "toml":
         with path.open("wb") as f:
             tomli_w.dump(data, f)
@@ -46,7 +69,7 @@ def _write(data: dict, path: Path, fmt: Format) -> None:
             json.dump(data, f, indent=2)
     elif fmt == "yaml":
         with path.open("w") as f:
-            pyaml.dump(data, f)
+            pyaml.dump(data, f, vspacing=False, sort_keys=False)
 
 
 # mypy: ignore-errors

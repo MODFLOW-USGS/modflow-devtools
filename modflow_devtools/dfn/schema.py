@@ -627,6 +627,9 @@ class Dfn(TypedDict):
             raise ValueError(f"Unsupported format: {fmt!r}")
         if name and name != data.get("name", None):
             raise ValueError(f"Name mismatch, expected {name}")
+        for block in (data.get("blocks") or {}).values():
+            for field_name, field in block.items():
+                field.setdefault("name", field_name)
         return cls(**data)
 
     @classmethod  # type: ignore[misc]
@@ -651,7 +654,7 @@ class Dfn(TypedDict):
             return cls._load_v2(f, name, fmt="json")
         else:
             raise ValueError(
-                f"Unsupported version {version!r}, expected one of: 'dfn', 'toml', 'yaml', 'json', 1, 2"
+                f"Unsupported version {version!r}, expected one of: 'dfn', 'toml', 'yaml', 'json'"
             )
 
     @staticmethod  # type: ignore[misc]
@@ -668,10 +671,7 @@ class Dfn(TypedDict):
         dfn_paths: list[Path] = [p for p in dfndir.glob("*.dfn") if p.stem not in _EXCLUDE]
         toml_paths: list[Path] = [p for p in dfndir.glob("*.toml") if p.stem not in _EXCLUDE]
         yaml_paths: list[Path] = [
-            p
-            for ext in ("*.yaml", "*.yml")
-            for p in dfndir.glob(ext)
-            if p.stem not in _EXCLUDE
+            p for ext in ("*.yaml", "*.yml") for p in dfndir.glob(ext) if p.stem not in _EXCLUDE
         ]
         json_paths: list[Path] = [p for p in dfndir.glob("*.json") if p.stem not in _EXCLUDE]
 
