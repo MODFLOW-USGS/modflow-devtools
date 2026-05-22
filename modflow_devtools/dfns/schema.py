@@ -8,6 +8,7 @@ from typing import Annotated, Any, Literal
 import tomli
 from pydantic import (
     BaseModel,
+    SerializationInfo,
     computed_field,
     model_serializer,
     model_validator,
@@ -28,16 +29,29 @@ class FieldBase(BaseModel):
     tagged: bool = True
 
     @model_serializer(mode="wrap")
-    def _serialize(self, handler: Any) -> dict[str, Any]:
+    def _serialize(self, handler: Any, info: SerializationInfo) -> dict[str, Any]:
         data = handler(self)
-        data.pop("name", None)  # name is the dict key in the parent container
+        if info.context and info.context.get("strip_names"):
+            data.pop("name", None)
         # `type` has a frozen default so exclude_defaults=True drops it; restore it.
         if "type" not in data and "type" in type(self).model_fields:
             data = {"type": getattr(self, "type"), **data}
         return data
 
+    def dump(self, *, strip_names: bool = True, **kwargs) -> dict[str, Any]:
+        if strip_names:
+            kwargs["context"] = {**(kwargs.get("context") or {}), "strip_names": True}
+        return self.model_dump(**kwargs)
+
+    def dump_json(self, *, strip_names: bool = True, **kwargs) -> str:
+        if strip_names:
+            kwargs["context"] = {**(kwargs.get("context") or {}), "strip_names": True}
+        return self.model_dump_json(**kwargs)
+
     @classmethod
-    def from_dict(cls, d: dict, strict: bool = False) -> "FieldBase":
+    def from_dict(cls, d: dict, name: str | None = None, strict: bool = False) -> "FieldBase":
+        if name is not None:
+            d = {"name": name, **d}
         type_name = d.get("type")
         type_map: dict[str | None, type[FieldBase]] = {
             "keyword": Keyword,
@@ -131,13 +145,14 @@ class List(FieldBase):
     shape: list[str] = []
 
     @model_serializer(mode="wrap")
-    def _serialize(self, handler: Any) -> dict[str, Any]:
+    def _serialize(self, handler: Any, info: SerializationInfo) -> dict[str, Any]:
         data = handler(self)
-        data.pop("name", None)  # name is the dict key in Block.fields
+        if info.context and info.context.get("strip_names"):
+            data.pop("name", None)
         if "type" not in data:
             data = {"type": "list", **data}
-        # item.name is stripped by FieldBase._serialize since item is a FieldBase subclass,
-        # but item is not stored as a dict key — re-inject its name.
+        # item is stored as an attribute, not a dict key, so its name is never
+        # implicit — always re-inject it regardless of strip_names.
         if "item" in data and isinstance(data["item"], dict):
             data["item"] = {"name": self.item.name, **data["item"]}
         return data
@@ -358,6 +373,16 @@ class Block(BaseModel):
         data = handler(self)
         data.pop("name", None)  # name is the dict key in ComponentBase.blocks
         return data
+
+    def dump(self, *, strip_names: bool = True, **kwargs) -> dict[str, Any]:
+        if strip_names:
+            kwargs["context"] = {**(kwargs.get("context") or {}), "strip_names": True}
+        return self.model_dump(**kwargs)
+
+    def dump_json(self, *, strip_names: bool = True, **kwargs) -> str:
+        if strip_names:
+            kwargs["context"] = {**(kwargs.get("context") or {}), "strip_names": True}
+        return self.model_dump_json(**kwargs)
 
     @property
     def optional(self) -> bool:

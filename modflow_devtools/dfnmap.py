@@ -29,7 +29,10 @@ def _serialize_safe(obj: Any) -> Any:
     """Recursively coerce non-native types to primitives suitable for serialization."""
 
     if isinstance(obj, BaseModel):
+        # strip_names context propagates through v2 FieldBase/_Block serializers;
+        # ignored harmlessly by v1/v1.1 models that don't inspect it.
         return obj.model_dump(
+            context={"strip_names": True},
             exclude_none=True,
             exclude_unset=True,
             exclude_defaults=True,
@@ -37,7 +40,6 @@ def _serialize_safe(obj: Any) -> Any:
     if isinstance(obj, dict):
         result = {k: _serialize_safe(v) for k, v in obj.items() if v is not None}
         # Strip redundant name from v1/v1.1 field dicts — name is the dict key in the parent block.
-        # (v2 Pydantic models handle this via their own serializers.)
         if "name" in result and "type" in result:
             del result["name"]
         return result
