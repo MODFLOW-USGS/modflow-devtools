@@ -31,6 +31,59 @@ def _scope_for(
     return "component"
 
 
+def _raw_dim_names(blocks: dict[str, v2.Block]) -> set[str]:
+    """Names of all Integer fields in the dimensions block."""
+    dim_block = blocks.get("dimensions")
+    if not dim_block:
+        return set()
+    return {fname for fname, f in dim_block.fields.items() if isinstance(f, v2.Integer)}
+
+
+def _parse_list_shape(s: str) -> list[str]:
+    """
+    Parse a v1 recarray shape string into a ``List.shape`` value.
+
+    Only a bare identifier is accepted — complex expressions such as
+    ``sum(nlakeconn)`` cannot be represented in ``List.shape`` and are dropped.
+    """
+    if not s:
+        return []
+    s_clean = s.strip()
+    if s_clean.startswith("(") and s_clean.endswith(")"):
+        s_clean = s_clean[1:-1].strip()
+    if _IDENT_RE.fullmatch(s_clean):
+        return [s_clean]
+    return []
+
+
+def _normalize_n_prefix_shapes(
+    blocks: dict[str, v2.Block],
+    raw_dim_names: set[str],
+) -> dict[str, v2.Block]:
+    """
+    Fix List shapes that use ``nFoo`` where the actual dimension is ``maxFoo``.
+
+    Some v1 DFNs (e.g. ``gwf-mvr [packages]`` with ``shape (npackages)``) use
+    an ``n``-prefixed name while the dimensions block defines the same quantity
+    under a ``max``-prefixed name.  Normalise before building explicit dims.
+    """
+    result = {}
+    for bname, block in blocks.items():
+        new_fields = {}
+        changed = False
+        for fname, field in block.fields.items():
+            if isinstance(field, v2.List) and field.shape:
+                elem = field.shape[0]
+                if elem not in raw_dim_names and elem.startswith("n") and len(elem) > 1:
+                    candidate = "max" + elem[1:]
+                    if candidate in raw_dim_names:
+                        field = field.model_copy(update={"shape": [candidate]})
+                        changed = True
+            new_fields[fname] = field
+        result[bname] = block.model_copy(update={"fields": new_fields}) if changed else block
+    return result
+
+
 def _build_explicit_dims(
     parent: "str | list[str] | None",
     blocks: dict[str, v2.Block],
@@ -63,6 +116,33 @@ def _build_explicit_dims(
             dims["ncelldim"] = v2.Dim(expr="1", scope="model")
 
     return dims
+
+
+def _sanitize_list_shapes(
+    blocks: dict[str, v2.Block],
+    known_dims: set[str],
+) -> dict[str, v2.Block]:
+    """
+    Clear the shape of any List whose shape element doesn't resolve to a known
+    dim.
+
+    Advanced packages (LAK, SFR, GNC, transport packages, etc.) often carry
+    ``shape (maxbound)`` in their v1 DFNs as a convention even though
+    ``maxbound`` is not declared as a dimension.  The structurally correct v2
+    representation for such lists is ``shape=[]``.
+    """
+    result = {}
+    for bname, block in blocks.items():
+        new_fields = {}
+        changed = False
+        for fname, field in block.fields.items():
+            if isinstance(field, v2.List) and field.shape:
+                if any(elem not in known_dims for elem in field.shape):
+                    field = field.model_copy(update={"shape": []})
+                    changed = True
+            new_fields[fname] = field
+        result[bname] = block.model_copy(update={"fields": new_fields}) if changed else block
+    return result
 
 
 def _resolve_dimensions(
@@ -174,6 +254,34 @@ def _resolve_relations(blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
         block_name: block.model_copy(update={"fields": _resolve_fields(block_name, block.fields)})
         for block_name, block in blocks.items()
     }
+
+
+def _fill_period_list_shapes(
+    blocks: dict[str, v2.Block],
+    explicit_dims: dict[str, v2.Dim],
+) -> dict[str, v2.Block]:
+    """
+    For period blocks whose List field has no shape expression, infer the shape
+    from the component's explicit dims.  Currently handles ``maxbound`` only:
+    if the component defines a ``maxbound`` dimension but the period list omits
+    it, add ``shape=["maxbound"]``.
+    """
+    if "maxbound" not in explicit_dims:
+        return blocks
+    result = {}
+    for bname, block in blocks.items():
+        if "period" not in bname:
+            result[bname] = block
+            continue
+        new_fields = {}
+        changed = False
+        for fname, field in block.fields.items():
+            if isinstance(field, v2.List) and not field.shape:
+                field = field.model_copy(update={"shape": ["maxbound"]})
+                changed = True
+            new_fields[fname] = field
+        result[bname] = block.model_copy(update={"fields": new_fields}) if changed else block
+    return result
 
 
 def map(dfn: v1.Dfn) -> v2.Component:
@@ -401,6 +509,7 @@ def map(dfn: v1.Dfn) -> v2.Component:
 
             if _type.startswith("recarray"):
                 item = _row_field()
+                list_shape = _parse_list_shape(shape_str) if shape_str else []
                 return v2.List(
                     name=_name,
                     longname=longname,
@@ -410,6 +519,7 @@ def map(dfn: v1.Dfn) -> v2.Component:
                     developmode=developmode,
                     netcdf=netcdf,
                     item=item,
+                    shape=list_shape,
                 )
 
             if _type.startswith("keystring"):
@@ -572,7 +682,12 @@ def map(dfn: v1.Dfn) -> v2.Component:
 
     blocks, array_dims = _resolve_dimensions(blocks)
     blocks = _resolve_relations(blocks)
+    raw_dim_names = _raw_dim_names(blocks)
+    blocks = _normalize_n_prefix_shapes(blocks, raw_dim_names)
     explicit_dims = _build_explicit_dims(dfn["parent"], blocks)
+    known_dims = set(explicit_dims) | set(array_dims)
+    blocks = _sanitize_list_shapes(blocks, known_dims)
+    blocks = _fill_period_list_shapes(blocks, explicit_dims)
     dims = {**explicit_dims, **array_dims} or None
 
     d: dict[str, Any] = {

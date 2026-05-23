@@ -179,6 +179,14 @@ def test_map_recarray_conversion():
     dfn = _v1_dfn(
         name="test-pkg",
         blocks={
+            "dimensions": {
+                "maxbound": _v1_field(
+                    name="maxbound",
+                    type="integer",
+                    block="dimensions",
+                    in_record=False,
+                ),
+            },
             "period": {
                 "stress_period_data": _v1_field(
                     name="stress_period_data",
@@ -199,13 +207,105 @@ def test_map_recarray_conversion():
                     block="period",
                     in_record=True,
                 ),
-            }
+            },
         },
     )
     component = map_v2(dfn)
     period_fields = component.blocks["period"].fields
     spd = period_fields["stress_period_data"]
     assert isinstance(spd, List)
+    assert spd.shape == ["maxbound"]
     assert isinstance(spd.item, Record)
     assert "cellid" in spd.item.fields
     assert "q" in spd.item.fields
+
+
+def test_map_recarray_missing_shape_inferred_from_maxbound():
+    """Period list with empty shape gets shape=["maxbound"] when maxbound dim exists."""
+    dfn = _v1_dfn(
+        name="utl-spc",
+        blocks={
+            "dimensions": {
+                "maxbound": _v1_field(
+                    name="maxbound",
+                    type="integer",
+                    block="dimensions",
+                    in_record=False,
+                ),
+            },
+            "period": {
+                "spd": _v1_field(
+                    name="spd",
+                    type="recarray bndno spcsetting",
+                    block="period",
+                    shape="",  # empty in v1
+                ),
+                "bndno": _v1_field(
+                    name="bndno",
+                    type="integer",
+                    block="period",
+                    in_record=True,
+                ),
+                "spcsetting": _v1_field(
+                    name="spcsetting",
+                    type="keystring concentration",
+                    block="period",
+                    in_record=True,
+                ),
+                "concentration": _v1_field(
+                    name="concentration",
+                    type="double precision",
+                    block="period",
+                    tagged=True,
+                    in_record=True,
+                ),
+            },
+        },
+    )
+    component = map_v2(dfn)
+    period_fields = component.blocks["period"].fields
+    spd = period_fields["spd"]
+    assert isinstance(spd, List)
+    assert spd.shape == ["maxbound"]
+
+
+def test_map_recarray_no_shape_no_maxbound():
+    """Period list with no shape and no maxbound dim keeps shape=[]."""
+    dfn = _v1_dfn(
+        name="gwf-sfr",
+        advanced=True,
+        blocks={
+            "period": {
+                "perioddata": _v1_field(
+                    name="perioddata",
+                    type="recarray ifno sfrsetting",
+                    block="period",
+                    shape="",
+                ),
+                "ifno": _v1_field(
+                    name="ifno",
+                    type="integer",
+                    block="period",
+                    in_record=True,
+                ),
+                "sfrsetting": _v1_field(
+                    name="sfrsetting",
+                    type="keystring status",
+                    block="period",
+                    in_record=True,
+                ),
+                "status": _v1_field(
+                    name="status",
+                    type="string",
+                    block="period",
+                    tagged=True,
+                    in_record=True,
+                ),
+            },
+        },
+    )
+    component = map_v2(dfn)
+    period_fields = component.blocks["period"].fields
+    lst = period_fields["perioddata"]
+    assert isinstance(lst, List)
+    assert lst.shape == []
