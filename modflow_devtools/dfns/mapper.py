@@ -344,9 +344,7 @@ def _collapse_sto_keywords(
             optional=True,
             valid=["steady-state", "transient"],
         )
-        result[bname] = block.model_copy(
-            update={"fields": {**non_sto, "storage": storage}}
-        )
+        result[bname] = block.model_copy(update={"fields": {**non_sto, "storage": storage}})
     return result
 
 
