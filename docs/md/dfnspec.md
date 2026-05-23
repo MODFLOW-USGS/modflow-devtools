@@ -176,11 +176,13 @@ Optional discriminator indicating the package's functional role. Several package
 
 - `"solution"`: provides solving capability for models. Compatibility with a model is determined by the model's `solution` attribute.
 - `"exchange"`: connects two models, enabling them to share boundary conditions or state at their interface. Parent is the simulation.
-- `"stress"`: imposes boundary conditions on a model. Period data is provided per stress period; each period block replaces the full set of stresses for that period.
+- `"stress"`: imposes boundary conditions on a model. Period data is provided per stress period; each period block replaces the full set of stresses for that period. Stress packages always declare a `maxbound` integer dimension (the maximum number of boundary entries per stress period) and their period block list carries `shape: ["maxbound"]`.
 - `"advanced"`: an advanced stress package. Differs from `"stress"` in three key ways:
   1. Solves a continuity equation. Each feature (well, reach, lake cell, UZF cell) internally balances inflows, outflows, and change in storage. Traditional stress packages impose static conditions and do not have an internal water budget. **Note:** advanced packages can act as receivers in the Water Mover (MVR/MVE) package because they have an internal continuity equation to receive diverted water into. Traditional stress packages cannot.
   2. Has dynamic state variables. Advanced packages compute a dependent variable (e.g., lake stage, well head, reach stage) that is part of the solution. Traditional stress packages use fixed/user-specified values.
   3. Stress periods have feature replacement rather than block replacement semantics: when a new period block configuration is provided, traditional stress packages replace the entire previous configuration; advanced packages perform partial updates, modifying only features explicitly appearing in the new period block. **Note:** both simple and advanced packages fill-forward across omitted stress periods; the distinction is only in what happens when a new period block configuration is specified.
+
+  Advanced packages do **not** declare a `maxbound` dimension. Their list lengths (packagedata rows, period entries per feature, etc.) are determined at runtime — typically derived from a linked flow package's budget object or internal state — and are not declared in the DFN. Accordingly, their list fields carry `shape: []`.
 - `"utility"`: an auxiliary package that may be attached to models or packages, such as time series, time-array series, or observations. Utility packages (`utl-*`) are distinguished from primary model input packages by providing configurational or cross-cutting concerns rather than representing a first-class hydrologic process. They may support `multi`.
 
 `subtype: null` (the default) covers packages that don't fall into any named category, such as output control packages.
@@ -448,7 +450,13 @@ Type `list`. Collection type. Unlimited but for one rule: a list may not contain
 
 ###### `shape`
 
-`[string] (default: [])`. The list's shape, as a list of shape expressions. May have at most one element, as lists are necessarily 1-dimensional.
+`[string] (default: [])`. The list's shape, as a list of at most one shape expression (lists are necessarily 1-dimensional).
+
+An **empty `shape`** means the list length is unconstrained at schema-definition time. This is the correct representation for any list whose length is determined at runtime rather than from a declared dimension — including all list fields in advanced packages (LAK, SFR, MAW, UZF, and their transport-side counterparts), whose lengths are derived from a linked flow package's budget or internal state and are never declared in the DFN.
+
+A **non-empty `shape`** (exactly one element) names a declared dimension that bounds the list. The canonical case is a stress package's period block list, which carries `shape: ["maxbound"]`. The `maxbound` dimension is explicitly declared in the stress package's `dimensions` block as an integer field the user must supply.
+
+**Note:** Some non-period lists in stress-type packages (e.g. `utl-spc`) also reference `maxbound`; these follow the same rule — `maxbound` must be an explicitly declared dimension for the shape to be meaningful.
 
 ### Dimensions
 
