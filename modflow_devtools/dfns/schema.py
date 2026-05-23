@@ -477,7 +477,7 @@ def _validate_shape_element(
 
     Raises ValueError on any violation.
     """
-    # Advisory bound annotation prefix (<, >, <=, >=): strip it and validate the core identifier.
+    # strip bounds (<, >, <=, >=) and validate the core identifier
     if bound_m := _BOUND_RE.match(element):
         core = element[bound_m.end() :]
         if not _DIM_RE.fullmatch(core):
@@ -514,7 +514,7 @@ def _validate_shape_element(
     if m := _LOOKUP_RE.fullmatch(element):
         component_ref, block_name, col_name, fk_field_name = m.groups()
 
-        # Check 5: array must be a subfield of a record, not a top-level block field
+        # array must be a subfield of a record, not a top-level block field
         if enclosing_record is None:
             raise ValueError(
                 f"Array {array_field.name!r} shape element {element!r} is a "
@@ -537,7 +537,7 @@ def _validate_shape_element(
         else:
             target = component  # type: ignore
 
-        # Check 1: block_name must identify a list block in the target component
+        # block_name must identify a list block in the target component
         list_field = _find_list_in_block(target, block_name)  # type: ignore
         if list_field is None:
             where = f"component {component_ref!r}" if component_ref else "this component"
@@ -546,7 +546,7 @@ def _validate_shape_element(
                 f"{block_name!r} is not a list block in {where}"
             )
 
-        # Check 2: col_name must be an Integer field in the list's item record
+        # col_name must be an Integer field in the list's item record
         item = list_field.item
         item_fields: dict = item.fields if isinstance(item, Record) else item.arms
         col_field = item_fields.get(col_name)
@@ -561,7 +561,7 @@ def _validate_shape_element(
                 f"{col_name!r} is {type(col_field).__name__}, must be Integer"
             )
 
-        # Check 3: fk_field_name must be a sibling field in the enclosing record
+        # fk_field_name must be a sibling field in the enclosing record
         fk_field = enclosing_record.fields.get(fk_field_name)
         if fk_field is None:
             raise ValueError(
@@ -569,7 +569,7 @@ def _validate_shape_element(
                 f"{fk_field_name!r} is not a sibling field in the enclosing record"
             )
 
-        # Check 4: fk_field.fk must be set and its block portion must match block_name
+        # fk_field.fk must be set and its block portion must match block_name
         fk = getattr(fk_field, "fk", None)
         if fk is None:
             raise ValueError(
@@ -584,8 +584,8 @@ def _validate_shape_element(
             )
         return
 
+    # validate simple integer arithmetic
     if m := _ARITH_RE.fullmatch(element):
-        # Arithmetic offset: `dim [+-] integer` — validate the dim part only.
         dim_name = m.group(1)
         if dim_name in known_dims:
             return
@@ -660,11 +660,10 @@ def _validate_list_shape_element(
 
 def _validate_fk_fields(component: "ComponentBase", spec: "Dfns") -> None:
     """
-    For every Integer/String field with fk or fk_ref set, validate structural
-    consistency:
-      - fk must reference a list block in this component, and that list's item
-        must have at least one pk=True field.
-      - fk_ref must name a component that exists in the spec.
+    For every Integer/String field with fk or fk_ref set, validate structure:
+
+    - fk must reference a list block whose item must have at least one pk field.
+    - fk_ref must name a component that exists in the spec.
     """
     if not component.blocks:
         return
@@ -717,11 +716,6 @@ def _validate_array_shapes(
 ) -> None:
     """
     Validate all Array.shape elements in a component.
-
-    Arrays are found at three nesting levels:
-      - Top-level block fields (no enclosing record)
-      - Fields within a top-level Record (enclosing_record = the Record)
-      - Fields within a List item Record (enclosing_record = the item Record)
     """
     if not component.blocks:
         return
@@ -769,7 +763,11 @@ def _validate_array_shapes(
 
 
 def _inject_field_names(fields: dict) -> None:
-    """Recursively inject name from dict key into field dicts."""
+    """
+    Recursively inject name from dict key into field dicts.
+    Necessary to compensate for field names being absent in
+    serialized DFN file data.
+    """
     for field_name, field in fields.items():
         field.setdefault("name", field_name)
         _inject_field_names(field.get("fields") or {})  # Record.fields
@@ -782,7 +780,11 @@ def _inject_field_names(fields: dict) -> None:
 
 
 def _inject_names(comp_data: dict) -> None:
-    """Inject block and field names from dict keys before Pydantic validation."""
+    """
+    Inject block and field names from dict keys before Pydantic validation.
+    Necessary to compensate for field and block names being absent in
+    serialized DFN file data.
+    """
     for block_name, block in (comp_data.get("blocks") or {}).items():
         block.setdefault("name", block_name)
         _inject_field_names(block.get("fields") or {})
@@ -890,17 +892,17 @@ class Dfns(BaseModel):
 
         dfns: dict = {}
         path = Path(path).expanduser().resolve()
-        _EXCLUDE = {"common", "flopy"}
+        exclude = {"common", "flopy"}
 
-        dfn_paths = {p.stem: p for p in path.glob("*.dfn") if p.stem not in _EXCLUDE}
-        toml_paths = {p.stem: p for p in path.glob("*.toml") if p.stem not in _EXCLUDE}
+        dfn_paths = {p.stem: p for p in path.glob("*.dfn") if p.stem not in exclude}
+        toml_paths = {p.stem: p for p in path.glob("*.toml") if p.stem not in exclude}
         yaml_paths = {
             p.stem: p
             for ext in ("*.yaml", "*.yml")
             for p in path.glob(ext)
-            if p.stem not in _EXCLUDE
+            if p.stem not in exclude
         }
-        json_paths = {p.stem: p for p in path.glob("*.json") if p.stem not in _EXCLUDE}
+        json_paths = {p.stem: p for p in path.glob("*.json") if p.stem not in exclude}
 
         if dfn_paths:
             dfns = v1.resolve_parents(v1.load_all(path))
