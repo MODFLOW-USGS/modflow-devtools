@@ -11,7 +11,6 @@ import tomli_w
 from pydantic import BaseModel
 
 from modflow_devtools.dfn import schema as v1
-from modflow_devtools.dfn.mapper import map as map_v1_1
 from modflow_devtools.dfns.mapper import map as map_v2
 
 Format = Literal["yaml", "toml", "json"]
@@ -37,7 +36,7 @@ def _serialize_safe(obj: Any) -> Any:
         )
     if isinstance(obj, dict):
         result = {k: _serialize_safe(v) for k, v in obj.items() if v is not None}
-        # Strip redundant name from v1/v1.1 field dicts — name is the dict key in the parent block.
+        # Strip redundant name from field dicts — name is the dict key in the parent block.
         if "name" in result and "type" in result:
             del result["name"]
         return result
@@ -81,7 +80,7 @@ def migrate(
     schema_version: str = "2",
     fmt: Format = "yaml",
 ) -> None:
-    """Migrate DFN files' schema version and serialize to the given format.
+    """Migrate DFN files to the v2 schema and serialize to the given format.
 
     Parameters
     ----------
@@ -90,7 +89,7 @@ def migrate(
     outdir : str or PathLike
         Output directory.
     schema_version : str, optional
-        Target schema version: "1.1" or "2". Default "2".
+        Target schema version. Default "2".
     fmt : str, optional
         Output format: "yaml", "toml", or "json". Default "yaml".
     """
@@ -111,27 +110,11 @@ def migrate(
         with inpath.open() as f:
             dfn = v1.Dfn.load(f, name=inpath.stem, common=common)
 
-        if schema_version == "1.1":
-            dfn = map_v1_1(dfn)
-        elif schema_version == "2":
-            dfn = map_v2(dfn)
-        else:
-            raise ValueError(f"Got schema version {schema_version}, supported versions are: 1.1, 2")
-
-        _write(_serialize_safe(dfn), outdir / f"{inpath.stem}{ext}", fmt)
+        _write(_serialize_safe(map_v2(dfn)), outdir / f"{inpath.stem}{ext}", fmt)
     else:
         dfns = v1.load_all(inpath)
-
-        if schema_version == "1.1":
-            dfns = v1.to_flat(v1.to_tree(dfns))
-            dfns = {name: map_v1_1(dfn) for name, dfn in dfns.items()}
-        elif schema_version == "2":
-            dfns = {name: map_v2(dfn) for name, dfn in dfns.items()}
-        else:
-            raise ValueError(f"Got schema version {schema_version}, supported versions are: 1.1, 2")
-
         for dfn_name, dfn in dfns.items():
-            _write(_serialize_safe(dfn), outdir / f"{dfn_name}{ext}", fmt)
+            _write(_serialize_safe(map_v2(dfn)), outdir / f"{dfn_name}{ext}", fmt)
 
 
 if __name__ == "__main__":
@@ -154,7 +137,6 @@ if __name__ == "__main__":
         "--schema-version",
         "-s",
         default="2",
-        choices=["1.1", "2"],
         help="Target schema version (default: 2).",
     )
     parser.add_argument(

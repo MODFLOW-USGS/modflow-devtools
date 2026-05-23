@@ -827,39 +827,3 @@ def resolve_parent(dfn: Dfn) -> Dfn:
 def resolve_parents(dfns: Dfns) -> Dfns:
     """Infer and set component parents using naming conventions."""
     return {name: resolve_parent(dfn) for name, dfn in dfns.items()}
-
-
-def to_tree(dfns: Dfns) -> Dfn:
-    """Condense flat definitions to a hierarchical definition."""
-
-    first_dfn = next(iter(dfns.values()), None)
-    if first_dfn is None:
-        raise ValueError("No definitions found")
-    if first_dfn["schema_version"] != "1":
-        raise ValueError(f"Expected schema version 1, got {first_dfn['schema_version']!r}")
-
-    dfns = resolve_parents(dfns)
-    roots = {name: dfn for name, dfn in dfns.items() if dfn["parent"] is None}
-    if (nroots := len(roots)) != 1:
-        raise ValueError(f"Expected one root component, found {nroots}")
-
-    def _to_tree(dfn: Dfn) -> Dfn:
-        children = {name: _dfn for name, _dfn in dfns.items() if _dfn["parent"] == dfn["name"]}
-        dfn["children"] = {name: _to_tree(_dfn) for name, _dfn in children.items()} or None
-        return dfn
-
-    return _to_tree(next(iter(roots.values())))
-
-
-def to_flat(dfn: Dfn) -> Dfns:
-    """Flatten a hierarchical definition into its constituent definitions."""
-
-    def _to_flat(_dfn: Dfn) -> Dfns:
-        children = dict(_dfn.get("children") or {})
-        result: Dfns = {_dfn["name"]: _dfn}
-        result[_dfn["name"]]["children"] = None
-        for child in children.values():
-            result.update(_to_flat(child))
-        return result
-
-    return _to_flat(dfn)

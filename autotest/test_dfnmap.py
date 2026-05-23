@@ -37,30 +37,11 @@ def dfn_dir(module_tmpdir):
 
 
 @pytest.fixture(scope="module", params=FORMATS)
-def converted_v1_1(request, dfn_dir, module_tmpdir):
-    fmt = request.param
-    out = module_tmpdir / f"v1.1-{fmt}"
-    migrate(dfn_dir, out, schema_version="1.1", fmt=fmt)
-    return out, fmt
-
-
-@pytest.fixture(scope="module", params=FORMATS)
 def converted_v2(request, dfn_dir, module_tmpdir):
     fmt = request.param
     out = module_tmpdir / f"v2-{fmt}"
     migrate(dfn_dir, out, schema_version="2", fmt=fmt)
     return out, fmt
-
-
-@requires_pkg("boltons")
-def test_convert_v1_1(converted_v1_1):
-    out, fmt = converted_v1_1
-    files = list(out.glob(f"*.{fmt}"))
-    assert files
-    for p in files:
-        data = _load(p, fmt)
-        assert data["name"] == p.stem
-        assert data["schema_version"] == "1.1"
 
 
 @requires_pkg("boltons")

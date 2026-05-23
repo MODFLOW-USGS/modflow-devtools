@@ -4,6 +4,7 @@ from os import PathLike
 from pathlib import Path
 
 from modflow_devtools.dfn.schema import (
+    _SCALAR_TYPES,
     Dfn,
     Dfns,
     Field,
@@ -13,7 +14,6 @@ from modflow_devtools.dfn.schema import (
     Reader,
     Ref,
     Sln,
-    _SCALAR_TYPES,
     get_fields,
 )
 from modflow_devtools.download import download_and_unzip
@@ -21,6 +21,8 @@ from modflow_devtools.download import download_and_unzip
 SCALAR_TYPES = _SCALAR_TYPES
 
 __all__ = [
+    "SCALAR_TYPES",
+    "_SCALAR_TYPES",
     "Dfn",
     "Dfns",
     "Field",
@@ -29,8 +31,6 @@ __all__ = [
     "FormatVersion",
     "Reader",
     "Ref",
-    "SCALAR_TYPES",
-    "_SCALAR_TYPES",
     "Sln",
     "fetch_dfns",
     "get_fields",
