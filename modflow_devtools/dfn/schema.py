@@ -855,9 +855,10 @@ def to_flat(dfn: Dfn) -> Dfns:
     """Flatten a hierarchical definition into its constituent definitions."""
 
     def _to_flat(_dfn: Dfn) -> Dfns:
+        children = dict(_dfn.get("children") or {})
         result: Dfns = {_dfn["name"]: _dfn}
         result[_dfn["name"]]["children"] = None
-        for child in (_dfn["children"] or {}).values():
+        for child in children.values():
             result.update(_to_flat(child))
         return result
 

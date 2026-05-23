@@ -39,6 +39,6 @@ def map(dfn: v1.Dfn) -> v1.Dfn:
         for field_name, field_data in block_fields.items():
             dfn[block_name][field_name] = field_data  # type: ignore[literal-required]
 
-    dfn["blocks"] = blocks if blocks else None
+    dfn["blocks"] = None  # cleared; _serialize_safe drops None, blocks are now top-level keys
     dfn["schema_version"] = "1.1"
     return dfn
