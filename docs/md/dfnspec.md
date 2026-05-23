@@ -100,7 +100,7 @@ Component definitions consist of a number of attributes:
 - `schema_version`: DFN schema version
 - `dims`: named dimensions (field-backed or derived) available for use in array shapes
 
-Components may refer to, i.e. be constrained by, other components. Cross-component constraints include parent-child relations, solution compatibility, and format variants.
+Components may refer to, i.e. be constrained by, other components. Cross-component constraints include parent-child relations, model-solution compatibility restrictions, and primary/foreign keys.
 
 ### Shared attributes
 
@@ -122,7 +122,7 @@ The component's type. Required. One of:
 
 #### `parent`
 
-Except for the simulation, which is the root of the runtime hierarchy, all MF6 components have a parent. Parent-child relations may range from fully constrained (e.g., a `gwf-chd` package must be a child of a GWF model) to completely unconstrained. Components which may be attached to multiple possible parents are historically called **subpackages**.
+Except for the simulation, which is the root of the runtime hierarchy, all MF6 components have a parent. Parent-child relations may range from fully constrained (e.g., a `gwf-chd` package must be a child of a `gwf-nam` model) to completely unconstrained. Components which may be attached to multiple possible parents are historically called **subpackages**.
 
 Parent relationships are defined bottom-up with attribute `parent`:
 
@@ -130,13 +130,13 @@ Parent relationships are defined bottom-up with attribute `parent`:
 - `"*"` — unconstrained; any parent component type is allowed.
 - A string or list of strings — declares the set of valid parent component types. Entries are either:
   - **Component type names:** `"simulation"`, `"model"`, or `"package"`.
-  - **Concrete component names:** e.g. `"gwf-sfr"`, `"gwf-nam"`
+  - **Concrete component names:** e.g. ``"gwf-nam"`
 
 **Note:** Type names and concrete component names may be mixed. A type name subsumes any named component of the same type: e.g., `["gwf-sfr", "package"]` reduces to `["package"]` since `gwf-sfr` is a package.
 
 #### `schema_version`
 
-`string | null (default: null)`. The version of the DFN schema. Optional but recommended. When multiple components are loaded together into a `DfnSpec`, all non-null `schema_version` values must agree; mixed versions are a validation error.
+`string | null (default: null)`. The version of the DFN schema. When multiple component definitions are loaded together, all non-null `schema_version` values must agree; mixed versions are a validation error.
 
 #### `dims`
 
@@ -233,12 +233,12 @@ Tagged fields must precede untagged fields. Fields whose values are not preceded
 
 ## Fields
 
-A field is a [union](https://en.wikipedia.org/wiki/Tagged_union) of concrete data types, discriminated by a `type` attribute. A field consists of a set of attributes, some shared, some type-specific.
+A field is conceptually a [union](https://en.wikipedia.org/wiki/Tagged_union) of concrete data types, discriminated by a `type` attribute. A field consists of a set of attributes, some shared, some type-specific.
 
 Field definitions are not entirely self-contained. Some fields may refer to other fields, in the same component or in another. There are two cases of this:
 
 - array dimensions
-- list primary/foreign keys
+- primary/foreign keys
 
 These cases are associated with type-specific attributes described below.
 
@@ -517,9 +517,6 @@ dims:
   ncpl: {field: ncpl, scope: model}
   nodes: {expr: "nlay * ncpl", scope: model}
   ncelldim: {expr: "2", scope: model}
-
-  # gwf-lak
-  total_lake_connections: {expr: "sum(packagedata.nlakeconn)", scope: component}
 ```
 
 An inline array may have its size determined by an integer subfield in the same record, or if the record it is within is the item type of a list, by a column in another list.
@@ -596,24 +593,23 @@ Dimensions may specify a `scope` attribute controlling which other components ca
 Examples:
 - `gwf-dis.dims.nrow`, `ncol`, `nlay` have `scope: "model"`: accessible to `gwf-chd`, `gwf-wel`, and any other component whose parent is `gwf-nam`, but also to e.g. `utl-spca` (which has `parent: "package"`).
 - `sim-tdis.dims.nper` has `scope: "simulation"`: accessible from all components.
-- `gwf-lak.dims.total_lake_connections` has `scope: "component"`: private to that component.
 
 ### Primary/foreign keys
 
 Sometimes a column in one list identifies a row in another list, or a grid cell. This can be conceptualized as a primary key (PK) / foreign key (FK) relation. Integers and strings may encode PK/FK semantics with attributes `pk`, `fk`, and `fk_ref`.
 
-**Note**: PK/FK attributes are only valid on integer and string fields, and only fields appearing as columns in a list item record type.
+**Note**: PK/FK attributes are only valid on integer and string fields appearing as columns in a tabular (i.e. regular) list's record item type.
 
 The `fk` attribute can take one of three forms:
 
-- **Hierarchical path** — `"block.field"` for within-component references, `"component.block.field"` for cross-component references where the target is statically known. Used without `fk_ref`.
-- **`"node"` sentinel** — indicates a grid cell reference. The target is the parent model's spatial discretization, resolved at runtime. Used without `fk_ref`, wherever a field carries a cellid (e.g., `cellid` columns in sparse stress period blocks, the integer arm of `utl-obs.continuous.id`).
-- **Bare block name** (e.g., `"packagedata"`) — used together with `fk_ref`. `fk_ref` resolves the target component at runtime; `fk` names the block within it. The codec then finds the unique `pk: true` field in that block. A bare block name contains no dot and is not `"node"`.
+- **Hierarchical path** — `"block.field"` for within-component references, `"component.block.field"` for cross-component references where the target is statically known. The name of the list is omitted from the path because it is universally the same as the name of the block. Used without `fk_ref`.
+- **`"node"` sentinel** — indicates a grid cell reference. The target is the parent model's spatial discretization, resolved at runtime. Used without `fk_ref` wherever a field carries a cellid (e.g., `cellid` columns, or `utl-obs.continuous.id`).
+- **Bare block name** (e.g., `"packagedata"`) — used together with `fk_ref`. `fk_ref` resolves the target component at runtime; `fk` names the block within it, in which there must be one unique `pk: true` field. Blocks not be named "node", to avoid interference with the grid cell reference sentinel.
 
 The `fk_ref` attribute names a sibling string field whose runtime value identifies the target component. Two sub-cases exist:
 
-- **With `fk`** (bare block name): the codec resolves the component from `fk_ref`, then finds the unique `pk: true` field in the block named by `fk`. This is fully explicit and preferred when the target block is known. For all current corpus cases where `fk_ref` is used with a polymorphic integer pk target (SFR, MAW, UZF, LAK via `gwf-mvr`), the block is `packagedata`; `fk: "packagedata"` should therefore always be set alongside `fk_ref` for these cases.
-- **Without `fk`**: the target block is also unknown at schema time. The codec must resolve case-by-case. This mode is unavoidable when the target block itself varies by component (e.g., the `utl-obs.continuous.id` string arm, where the target is a boundary name field whose block varies by package type). Document these cases explicitly rather than relying on a generic convention.
+- **With `fk`** (bare block name): resolve the component from `fk_ref`, then find the unique `pk: true` field in the block named by `fk`. This is fully explicit and preferred when the target block is known. For all current corpus cases where `fk_ref` identifies an integer "feature number" PK (e.g. SFR, MAW, UZF, LAK via `gwf-mvr`), the block is `packagedata`; `fk: "packagedata"` should therefore always be set alongside `fk_ref` for these cases.
+- **Without `fk`**: the target block varies by component (e.g. `utl-obs.continuous.id`, where the target is a boundary name whose block varies by package type).
 
 #### Examples
 
