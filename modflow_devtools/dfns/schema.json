@@ -1,0 +1,1334 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/MODFLOW-ORG/modflow-devtools/main/modflow_devtools/dfns/schema.json",
+  "title": "MODFLOW 6 definition file (v2)",
+  "description": "Schema for MODFLOW 6 component definition files (DFNs), schema version 2.",
+  "$defs": {
+    "Array": {
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "longname": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Longname"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "optional": {
+          "default": false,
+          "title": "Optional",
+          "type": "boolean"
+        },
+        "default": {
+          "anyOf": [
+            {},
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Default"
+        },
+        "developmode": {
+          "default": false,
+          "title": "Developmode",
+          "type": "boolean"
+        },
+        "netcdf": {
+          "default": false,
+          "title": "Netcdf",
+          "type": "boolean"
+        },
+        "tagged": {
+          "default": true,
+          "title": "Tagged",
+          "type": "boolean"
+        },
+        "type": {
+          "const": "array",
+          "default": "array",
+          "title": "Type",
+          "type": "string"
+        },
+        "dtype": {
+          "enum": [
+            "keyword",
+            "integer",
+            "double",
+            "string"
+          ],
+          "title": "Dtype",
+          "type": "string"
+        },
+        "shape": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Shape",
+          "type": "array"
+        },
+        "time_series": {
+          "default": false,
+          "title": "Time Series",
+          "type": "boolean"
+        },
+        "repeat": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Repeat"
+        }
+      },
+      "required": [
+        "name",
+        "dtype"
+      ],
+      "title": "Array",
+      "type": "object"
+    },
+    "Block": {
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "fields": {
+          "additionalProperties": {
+            "discriminator": {
+              "mapping": {
+                "array": "#/$defs/Array",
+                "double": "#/$defs/Double",
+                "file": "#/$defs/File",
+                "integer": "#/$defs/Integer",
+                "keyword": "#/$defs/Keyword",
+                "list": "#/$defs/List",
+                "record": "#/$defs/Record",
+                "string": "#/$defs/String",
+                "union": "#/$defs/Union"
+              },
+              "propertyName": "type"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/Keyword"
+              },
+              {
+                "$ref": "#/$defs/String"
+              },
+              {
+                "$ref": "#/$defs/Integer"
+              },
+              {
+                "$ref": "#/$defs/Double"
+              },
+              {
+                "$ref": "#/$defs/File"
+              },
+              {
+                "$ref": "#/$defs/Array"
+              },
+              {
+                "$ref": "#/$defs/Record"
+              },
+              {
+                "$ref": "#/$defs/Union"
+              },
+              {
+                "$ref": "#/$defs/List"
+              }
+            ]
+          },
+          "title": "Fields",
+          "type": "object"
+        },
+        "repeats": {
+          "default": false,
+          "title": "Repeats",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "name",
+        "fields"
+      ],
+      "title": "Block",
+      "type": "object"
+    },
+    "Dim": {
+      "description": "A named dimension, either backed by a field or derived from an expression.",
+      "properties": {
+        "field": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Field"
+        },
+        "expr": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expr"
+        },
+        "scope": {
+          "default": "component",
+          "enum": [
+            "component",
+            "model",
+            "simulation"
+          ],
+          "title": "Scope",
+          "type": "string"
+        }
+      },
+      "title": "Dim",
+      "type": "object"
+    },
+    "Double": {
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "longname": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Longname"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "optional": {
+          "default": false,
+          "title": "Optional",
+          "type": "boolean"
+        },
+        "default": {
+          "anyOf": [
+            {},
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Default"
+        },
+        "developmode": {
+          "default": false,
+          "title": "Developmode",
+          "type": "boolean"
+        },
+        "netcdf": {
+          "default": false,
+          "title": "Netcdf",
+          "type": "boolean"
+        },
+        "tagged": {
+          "default": true,
+          "title": "Tagged",
+          "type": "boolean"
+        },
+        "type": {
+          "const": "double",
+          "default": "double",
+          "title": "Type",
+          "type": "string"
+        },
+        "time_series": {
+          "default": false,
+          "title": "Time Series",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "Double",
+      "type": "object"
+    },
+    "File": {
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "longname": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Longname"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "optional": {
+          "default": false,
+          "title": "Optional",
+          "type": "boolean"
+        },
+        "default": {
+          "anyOf": [
+            {},
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Default"
+        },
+        "developmode": {
+          "default": false,
+          "title": "Developmode",
+          "type": "boolean"
+        },
+        "netcdf": {
+          "default": false,
+          "title": "Netcdf",
+          "type": "boolean"
+        },
+        "tagged": {
+          "default": true,
+          "title": "Tagged",
+          "type": "boolean"
+        },
+        "type": {
+          "const": "file",
+          "default": "file",
+          "title": "Type",
+          "type": "string"
+        },
+        "mode": {
+          "enum": [
+            "filein",
+            "fileout"
+          ],
+          "title": "Mode",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "mode"
+      ],
+      "title": "File",
+      "type": "object"
+    },
+    "Integer": {
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "longname": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Longname"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "optional": {
+          "default": false,
+          "title": "Optional",
+          "type": "boolean"
+        },
+        "default": {
+          "anyOf": [
+            {},
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Default"
+        },
+        "developmode": {
+          "default": false,
+          "title": "Developmode",
+          "type": "boolean"
+        },
+        "netcdf": {
+          "default": false,
+          "title": "Netcdf",
+          "type": "boolean"
+        },
+        "tagged": {
+          "default": true,
+          "title": "Tagged",
+          "type": "boolean"
+        },
+        "type": {
+          "const": "integer",
+          "default": "integer",
+          "title": "Type",
+          "type": "string"
+        },
+        "valid": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Valid"
+        },
+        "time_series": {
+          "default": false,
+          "title": "Time Series",
+          "type": "boolean"
+        },
+        "pk": {
+          "default": false,
+          "title": "Pk",
+          "type": "boolean"
+        },
+        "fk": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fk"
+        },
+        "fk_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fk Ref"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "Integer",
+      "type": "object"
+    },
+    "Keyword": {
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "longname": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Longname"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "optional": {
+          "default": false,
+          "title": "Optional",
+          "type": "boolean"
+        },
+        "default": {
+          "anyOf": [
+            {},
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Default"
+        },
+        "developmode": {
+          "default": false,
+          "title": "Developmode",
+          "type": "boolean"
+        },
+        "netcdf": {
+          "default": false,
+          "title": "Netcdf",
+          "type": "boolean"
+        },
+        "tagged": {
+          "default": true,
+          "title": "Tagged",
+          "type": "boolean"
+        },
+        "type": {
+          "const": "keyword",
+          "default": "keyword",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "Keyword",
+      "type": "object"
+    },
+    "List": {
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "longname": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Longname"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "optional": {
+          "default": false,
+          "title": "Optional",
+          "type": "boolean"
+        },
+        "default": {
+          "anyOf": [
+            {},
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Default"
+        },
+        "developmode": {
+          "default": false,
+          "title": "Developmode",
+          "type": "boolean"
+        },
+        "netcdf": {
+          "default": false,
+          "title": "Netcdf",
+          "type": "boolean"
+        },
+        "tagged": {
+          "default": true,
+          "title": "Tagged",
+          "type": "boolean"
+        },
+        "type": {
+          "const": "list",
+          "default": "list",
+          "title": "Type",
+          "type": "string"
+        },
+        "item": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Record"
+            },
+            {
+              "$ref": "#/$defs/Union"
+            }
+          ],
+          "title": "Item"
+        },
+        "shape": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Shape",
+          "type": "array"
+        }
+      },
+      "required": [
+        "name",
+        "item"
+      ],
+      "title": "List",
+      "type": "object"
+    },
+    "Model": {
+      "properties": {
+        "schema_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Schema Version"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "parent": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parent"
+        },
+        "dims": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "$ref": "#/$defs/Dim"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Dims"
+        },
+        "blocks": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "$ref": "#/$defs/Block"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Blocks"
+        },
+        "type": {
+          "const": "model",
+          "default": "model",
+          "title": "Type",
+          "type": "string"
+        },
+        "solution": {
+          "anyOf": [
+            {
+              "enum": [
+                "ims",
+                "ems",
+                "sln-ims",
+                "sln-ems"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Solution"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "Model",
+      "type": "object"
+    },
+    "Package": {
+      "properties": {
+        "schema_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Schema Version"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "parent": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parent"
+        },
+        "dims": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "$ref": "#/$defs/Dim"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Dims"
+        },
+        "blocks": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "$ref": "#/$defs/Block"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Blocks"
+        },
+        "type": {
+          "const": "package",
+          "default": "package",
+          "title": "Type",
+          "type": "string"
+        },
+        "multi": {
+          "default": false,
+          "title": "Multi",
+          "type": "boolean"
+        },
+        "subtype": {
+          "anyOf": [
+            {
+              "enum": [
+                "solution",
+                "exchange",
+                "stress",
+                "advanced",
+                "utility"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Subtype"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "Package",
+      "type": "object"
+    },
+    "Record": {
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "longname": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Longname"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "optional": {
+          "default": false,
+          "title": "Optional",
+          "type": "boolean"
+        },
+        "default": {
+          "anyOf": [
+            {},
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Default"
+        },
+        "developmode": {
+          "default": false,
+          "title": "Developmode",
+          "type": "boolean"
+        },
+        "netcdf": {
+          "default": false,
+          "title": "Netcdf",
+          "type": "boolean"
+        },
+        "tagged": {
+          "default": true,
+          "title": "Tagged",
+          "type": "boolean"
+        },
+        "type": {
+          "const": "record",
+          "default": "record",
+          "title": "Type",
+          "type": "string"
+        },
+        "fields": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "discriminator": {
+                  "mapping": {
+                    "double": "#/$defs/Double",
+                    "file": "#/$defs/File",
+                    "integer": "#/$defs/Integer",
+                    "keyword": "#/$defs/Keyword",
+                    "string": "#/$defs/String"
+                  },
+                  "propertyName": "type"
+                },
+                "oneOf": [
+                  {
+                    "$ref": "#/$defs/Keyword"
+                  },
+                  {
+                    "$ref": "#/$defs/String"
+                  },
+                  {
+                    "$ref": "#/$defs/Integer"
+                  },
+                  {
+                    "$ref": "#/$defs/Double"
+                  },
+                  {
+                    "$ref": "#/$defs/File"
+                  }
+                ]
+              },
+              {
+                "$ref": "#/$defs/Array"
+              },
+              {
+                "$ref": "#/$defs/Record"
+              },
+              {
+                "$ref": "#/$defs/Union"
+              }
+            ]
+          },
+          "title": "Fields",
+          "type": "object"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "Record",
+      "type": "object"
+    },
+    "Simulation": {
+      "properties": {
+        "schema_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Schema Version"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "parent": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parent"
+        },
+        "dims": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "$ref": "#/$defs/Dim"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Dims"
+        },
+        "blocks": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "$ref": "#/$defs/Block"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Blocks"
+        },
+        "type": {
+          "const": "simulation",
+          "default": "simulation",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "Simulation",
+      "type": "object"
+    },
+    "String": {
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "longname": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Longname"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "optional": {
+          "default": false,
+          "title": "Optional",
+          "type": "boolean"
+        },
+        "default": {
+          "anyOf": [
+            {},
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Default"
+        },
+        "developmode": {
+          "default": false,
+          "title": "Developmode",
+          "type": "boolean"
+        },
+        "netcdf": {
+          "default": false,
+          "title": "Netcdf",
+          "type": "boolean"
+        },
+        "tagged": {
+          "default": true,
+          "title": "Tagged",
+          "type": "boolean"
+        },
+        "type": {
+          "const": "string",
+          "default": "string",
+          "title": "Type",
+          "type": "string"
+        },
+        "valid": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Valid"
+        },
+        "case_sensitive": {
+          "default": false,
+          "title": "Case Sensitive",
+          "type": "boolean"
+        },
+        "time_series": {
+          "default": false,
+          "title": "Time Series",
+          "type": "boolean"
+        },
+        "pk": {
+          "default": false,
+          "title": "Pk",
+          "type": "boolean"
+        },
+        "fk": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fk"
+        },
+        "fk_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fk Ref"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "String",
+      "type": "object"
+    },
+    "Union": {
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "longname": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Longname"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "optional": {
+          "default": false,
+          "title": "Optional",
+          "type": "boolean"
+        },
+        "default": {
+          "anyOf": [
+            {},
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Default"
+        },
+        "developmode": {
+          "default": false,
+          "title": "Developmode",
+          "type": "boolean"
+        },
+        "netcdf": {
+          "default": false,
+          "title": "Netcdf",
+          "type": "boolean"
+        },
+        "tagged": {
+          "default": true,
+          "title": "Tagged",
+          "type": "boolean"
+        },
+        "type": {
+          "const": "union",
+          "default": "union",
+          "title": "Type",
+          "type": "string"
+        },
+        "arms": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "discriminator": {
+                  "mapping": {
+                    "double": "#/$defs/Double",
+                    "file": "#/$defs/File",
+                    "integer": "#/$defs/Integer",
+                    "keyword": "#/$defs/Keyword",
+                    "string": "#/$defs/String"
+                  },
+                  "propertyName": "type"
+                },
+                "oneOf": [
+                  {
+                    "$ref": "#/$defs/Keyword"
+                  },
+                  {
+                    "$ref": "#/$defs/String"
+                  },
+                  {
+                    "$ref": "#/$defs/Integer"
+                  },
+                  {
+                    "$ref": "#/$defs/Double"
+                  },
+                  {
+                    "$ref": "#/$defs/File"
+                  }
+                ]
+              },
+              {
+                "$ref": "#/$defs/Array"
+              },
+              {
+                "$ref": "#/$defs/Record"
+              }
+            ]
+          },
+          "title": "Arms",
+          "type": "object"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "Union",
+      "type": "object"
+    }
+  },
+  "discriminator": {
+    "mapping": {
+      "model": "#/$defs/Model",
+      "package": "#/$defs/Package",
+      "simulation": "#/$defs/Simulation"
+    },
+    "propertyName": "type"
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/Simulation"
+    },
+    {
+      "$ref": "#/$defs/Model"
+    },
+    {
+      "$ref": "#/$defs/Package"
+    }
+  ]
+}

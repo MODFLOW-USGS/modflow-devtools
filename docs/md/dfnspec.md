@@ -200,8 +200,6 @@ end <block name>
 
 Blocks are treated differently depending on the structural composition of their top-level fields. The sample above is typical of a block containing configuration options, which is essentially a dictionary mapping field names to values.
 
-A field's value need not be preceded by its name; see the `tagged` section below. Tagged fields must precede any and all untagged fields in the block definition and consequently in input files.
-
 ### Attributes
 
 #### `name`
@@ -224,6 +222,14 @@ A block has no explicit `optional` attribute. Its optionality is derived from it
 | `false` | `true` | may appear at most once |
 | `true` | `false` | must appear at least once |
 | `true` | `true` | may appear zero or more times |
+
+### Field ordering
+
+Field order within a block can be significant.
+
+Tagged fields must precede untagged fields. Fields whose values are not preceded by their name (i.e., `tagged: false`) must come after all tagged fields. Among tagged fields, relative order is unconstrained. Untagged fields must appear in the same order of appearance as in the definition.
+
+**Note:** the `tagged` attribute does not apply to `list` fields. A list cannot be tagged because lists span multiple rows in the block body with no keyword delimiter; once a parser reaches a list, it must continue to read lines as list items until the block's end tag. Therefore a list must be the last field in its block and a block may have at most one list.
 
 ## Fields
 

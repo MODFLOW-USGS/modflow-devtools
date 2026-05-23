@@ -284,6 +284,72 @@ def _fill_period_list_shapes(
     return result
 
 
+def _wrap_oc_period_records(
+    blocks: dict[str, v2.Block],
+) -> dict[str, v2.Block]:
+    """
+    OC packages define their period block as sibling optional Records (saverecord,
+    printrecord) with no wrapping List, implying each appears at most once. Wrap
+    them into a List[Union] so the repeatable nature is explicit in the schema.
+    """
+    result = {}
+    for bname, block in blocks.items():
+        if "period" not in bname:
+            result[bname] = block
+            continue
+        fields = block.fields
+        if not fields or any(isinstance(f, v2.List) for f in fields.values()):
+            result[bname] = block
+            continue
+        if not all(isinstance(f, v2.Record) and f.optional for f in fields.values()):
+            result[bname] = block
+            continue
+        union = v2.Union(
+            name="output_record",
+            arms=dict(fields),  # type: ignore[arg-type]
+        )
+        lst = v2.List(name="output", optional=True, item=union)
+        result[bname] = block.model_copy(update={"fields": {"output": lst}})
+    return result
+
+
+def _collapse_sto_keywords(
+    blocks: dict[str, v2.Block],
+) -> dict[str, v2.Block]:
+    """
+    STO packages define their period block with two mutually exclusive optional
+    Keywords (steady-state, transient). Replace them with a single optional
+    String field named 'storage' with constrained valid values.
+    """
+    _STO_KEYWORDS = frozenset({"steady-state", "transient"})
+    result = {}
+    for bname, block in blocks.items():
+        if "period" not in bname:
+            result[bname] = block
+            continue
+        fields = block.fields
+        present = {
+            name
+            for name, f in fields.items()
+            if isinstance(f, v2.Keyword) and f.optional and name in _STO_KEYWORDS
+        }
+        if present != _STO_KEYWORDS:
+            result[bname] = block
+            continue
+        non_sto = {name: f for name, f in fields.items() if name not in _STO_KEYWORDS}
+        storage = v2.String(
+            name="storage",
+            longname="storage state",
+            description=fields["steady-state"].description,
+            optional=True,
+            valid=["steady-state", "transient"],
+        )
+        result[bname] = block.model_copy(
+            update={"fields": {**non_sto, "storage": storage}}
+        )
+    return result
+
+
 def map(dfn: v1.Dfn) -> v2.Component:
     """Map a component definition from the v1 schema to v2."""
 
@@ -688,6 +754,8 @@ def map(dfn: v1.Dfn) -> v2.Component:
     known_dims = set(explicit_dims) | set(array_dims)
     blocks = _sanitize_list_shapes(blocks, known_dims)
     blocks = _fill_period_list_shapes(blocks, explicit_dims)
+    blocks = _wrap_oc_period_records(blocks)
+    blocks = _collapse_sto_keywords(blocks)
     dims = {**explicit_dims, **array_dims} or None
 
     d: dict[str, Any] = {

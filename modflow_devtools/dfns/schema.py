@@ -151,10 +151,6 @@ class List(FieldBase):
             data.pop("name", None)
         if "type" not in data:
             data = {"type": "list", **data}
-        # item is stored as an attribute, not a dict key, so its name is never
-        # implicit — always re-inject it regardless of strip_names.
-        if "item" in data and isinstance(data["item"], dict):
-            data["item"] = {"name": self.item.name, **data["item"]}
         return data
 
     @model_validator(mode="after")
@@ -762,7 +758,7 @@ def _inject_field_names(fields: dict) -> None:
         _inject_field_names(field.get("arms") or {})  # Union.arms
         item = field.get("item")
         if isinstance(item, dict):
-            # List.item.name is re-injected during serialization; recurse into its children.
+            item.setdefault("name", field_name)
             _inject_field_names(item.get("fields") or {})
             _inject_field_names(item.get("arms") or {})
 
