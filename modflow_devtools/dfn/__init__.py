@@ -13,9 +13,12 @@ from modflow_devtools.dfn.schema import (
     Reader,
     Ref,
     Sln,
+    _SCALAR_TYPES,
     get_fields,
 )
 from modflow_devtools.download import download_and_unzip
+
+SCALAR_TYPES = _SCALAR_TYPES
 
 __all__ = [
     "Dfn",
@@ -26,6 +29,8 @@ __all__ = [
     "FormatVersion",
     "Reader",
     "Ref",
+    "SCALAR_TYPES",
+    "_SCALAR_TYPES",
     "Sln",
     "fetch_dfns",
     "get_fields",
