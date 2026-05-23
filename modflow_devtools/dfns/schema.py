@@ -141,6 +141,7 @@ class Union(FieldBase):
 
 class List(FieldBase):
     type: Literal["list"] = PydanticField(default="list", frozen=True)
+    tagged: Literal[False] = PydanticField(default=False, frozen=True)
     item: "Record | Union"
     shape: list[str] = []
 
@@ -363,6 +364,23 @@ class Block(BaseModel):
     name: str
     fields: dict[str, Field]
     repeats: bool = False
+
+    @model_validator(mode="after")
+    def _check_field_order(self) -> "Block":
+        fields_list = list(self.fields.items())
+        list_indices = [i for i, (_, f) in enumerate(fields_list) if isinstance(f, List)]
+        if len(list_indices) > 1:
+            names = [fields_list[i][0] for i in list_indices]
+            raise ValueError(
+                f"Block {self.name!r}: at most one list field is allowed; found: {names!r}"
+            )
+        if list_indices and list_indices[0] != len(fields_list) - 1:
+            after = [n for n, _ in fields_list[list_indices[0] + 1 :]]
+            raise ValueError(
+                f"Block {self.name!r}: list field must be last (lists are untagged and "
+                f"consume all remaining block content); found fields after it: {after!r}"
+            )
+        return self
 
     @model_serializer(mode="wrap")
     def _serialize(self, handler: Any) -> dict[str, Any]:
