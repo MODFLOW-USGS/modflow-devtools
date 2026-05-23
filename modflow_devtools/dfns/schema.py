@@ -48,31 +48,6 @@ class FieldBase(BaseModel):
             kwargs["context"] = {**(kwargs.get("context") or {}), "strip_names": True}
         return self.model_dump_json(**kwargs)
 
-    @classmethod
-    def from_dict(cls, d: dict, name: str | None = None, strict: bool = False) -> "FieldBase":
-        if name is not None:
-            d = {"name": name, **d}
-        type_name = d.get("type")
-        type_map: dict[str | None, type[FieldBase]] = {
-            "keyword": Keyword,
-            "string": String,
-            "integer": Integer,
-            "double": Double,
-            "file": File,
-            "array": Array,
-            "record": Record,
-            "union": Union,
-            "list": List,
-        }
-        type_ = type_map.get(type_name)
-        if type_ is None:
-            raise ValueError(f"Unknown or missing field type: {type_name!r}")
-        if strict:
-            extra = set(d.keys()) - set(type_.model_fields.keys())
-            if extra:
-                raise ValueError(f"Unrecognized keys in field data: {extra}")
-        return type_.model_validate(d)
-
 
 class Keyword(FieldBase):
     type: Literal["keyword"] = PydanticField(default="keyword", frozen=True)

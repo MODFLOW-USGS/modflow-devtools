@@ -72,38 +72,13 @@ def _pkg(name: str, blocks=None, dims=None, parent=None, **kw) -> Package:
     return Package(name=name, blocks=blocks, dims=dims, parent=parent, **kw)
 
 
-def test_fieldv2_from_dict():
-    d = {
-        "name": "test_field",
-        "type": "keyword",
-        "extra_key": "should be allowed",
-        "another_extra": 123,
-    }
-    f = FieldBase.from_dict(d)
-    assert f.name == "test_field"
-    assert f.type == "keyword"
-    assert isinstance(f, Keyword)
-
-
-def test_fieldv2_from_dict_strict():
-    d = {
-        "name": "test_field",
-        "type": "keyword",
-        "extra_key": "should cause error",
-    }
-    with pytest.raises(ValueError, match="Unrecognized keys in field data"):
-        FieldBase.from_dict(d, strict=True)
-
-
-def test_fieldv2_from_dict_roundtrip():
+def test_field_roundtrip():
     i = Integer(
         name="nper",
         description="number of stress periods",
         optional=False,
     )
-    d = i.model_dump()
-    f = FieldBase.from_dict(d)
-    assert isinstance(f, Integer)
+    f = Integer.model_validate(i.model_dump())
     assert f.name == i.name
     assert f.type == i.type
     assert f.description == i.description
