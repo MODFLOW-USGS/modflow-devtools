@@ -2,78 +2,119 @@
 
 MODFLOW 6 specifies input components and their variables in configuration files with a custom format. Such files are called definition (DFN) files and conventionally have suffix `.dfn`.
 
-`modflow_devtools` provides two modules for working with MODFLOW 6 input specification files:
+The `modflow_devtools.dfns` module provides a structured API for working with MODFLOW 6 input specifications, including typed Python objects representing each component and field type, tools for acquiring, loading and managing specification versions, and a utility to convert `.dfn` files to a revised v2 schema and standard file formats.
 
-- **`modflow_devtools.dfn`:** stable utilities for parsing legacy `.dfn` files
-- **`modflow_devtools.dfns`:** experimental structured API, subject to change without notice
+> **Note**: The `modflow_devtools.dfns` module is experimental. The API may change without following normal deprecation procedures. To suppress the warning emitted on import, use:
+> ```python
+> import warnings
+> warnings.filterwarnings('ignore', message='.*modflow_devtools.dfns.*experimental.*')
+> ```
+> The `modflow_devtools.dfn` module is stable but not recommended.
 
-## `modflow_devtools.dfn` (stable)
+Either the `ecosystem` or `dfn` dependency group is required to use either module:
 
-The stable `modflow_devtools.dfn` module provides basic utilities for parsing legacy `.dfn` files and downloading them from the MODFLOW 6 repository.
+```shell
+pip install modflow-devtools[ecosystem]
+```
 
-### Downloading definition files
+### CLI
+
+A command line interface is available to manage DFN file sets by release.
+
+```shell
+# Show sync status for all configured releases
+python -m modflow_devtools.dfns info
+
+# Sync all configured releases (downloads dfns.zip from GitHub releases)
+python -m modflow_devtools.dfns sync
+
+# Force re-download even if already cached
+python -m modflow_devtools.dfns sync --force
+
+# Clean the DFN cache
+python -m modflow_devtools.dfns clean
+```
+
+A tool is also provided to convert `.dfn` files to the tentative v2 schema:
+
+```shell
+python -m modflow_devtools.dfnmap -i <dfn dir path> -o <output dir path>
+```
+
+The default output format is YAML. Use `--format` / `-f` to select `yaml` (default), `toml`, or `json`. The tool may also be used on individual files.
+
+#### Configuration
+
+The package ships with a built-in configuration (`modflow_devtools/dfns/dfns.toml`) that specifies default DFN release versions to support.
+
+```toml
+releases = [
+    "MODFLOW-ORG/modflow6@latest",
+    "MODFLOW-ORG/modflow6-nightly-build@latest"
+]
+```
+
+You can extend or override the default registry configuration by creating:
+
+- Linux/macOS: `~/.config/modflow-devtools/dfns.toml` (respects `$XDG_CONFIG_HOME`)
+- Windows: `%APPDATA%/modflow-devtools/dfns.toml`
+
+Entries in the user config are merged with (and take precedence over) the defaults. The file uses the same format as the bundled configuration file. For instance, to point to DFN releases on your own fork, substitute your GitHub username for "MODFLOW-ORG".
+
+DFN files are expected in an asset called `dfns.zip` in configured releases.
+
+#### Caching
+
+DFN files are cached under:
+
+- Linux/macOS: `$XDG_CACHE_HOME/modflow-devtools/dfns/` (default `~/.cache/`)
+- Windows: `%LOCALAPPDATA%/modflow-devtools/dfns/`
+
+The cache is organized by repository and release tag:
+
+```
+~/.cache/modflow-devtools/dfns/
+└── MODFLOW-ORG/
+    └── modflow6/
+        ├── 6.6.0/
+        │   ├── sim-nam.dfn
+        │   ├── gwf-chd.dfn
+        │   └── ...
+        └── 6.5.0/
+            └── ...
+```
+
+To get the base cache path programmatically:
 
 ```python
-from modflow_devtools.dfn import fetch_dfns
+RemoteDfnRegistry.base_cache_path()
+```
+
+To check the cache contents:
+
+```python
+from modflow_devtools.dfns.registry import is_cached
+
+is_cached("MODFLOW-ORG/modflow6@6.6.0")
+```
+
+When `MODFLOW_DEVTOOLS_AUTO_SYNC=1` is set, `RemoteDfnRegistry.from_ids()` will automatically call `sync()` for any release ID that has no cached files yet.
+
+### Python API
+
+#### Downloading definition files
+
+```python
+from modflow_devtools.dfns import fetch_dfns
 
 fetch_dfns("MODFLOW-ORG", "modflow6", "6.6.0", "/tmp/dfns")
 ```
 
 Downloads all `.dfn` files for the specified MODFLOW 6 release into the given output directory.
 
-### Converting to TOML
+### Inspecting the specification
 
-The `dfn` dependency group is required for the conversion tool:
-
-```shell
-pip install modflow-devtools[dfn]
-```
-
-To convert legacy `.dfn` files (default output format is YAML):
-
-```shell
-python -m modflow_devtools.dfnmap -i <dfn dir path> -o <output dir path>
-```
-
-Use `--format` / `-f` to select `yaml` (default), `toml`, or `json`. The tool may also be used on individual files.
-
----
-
-## `modflow_devtools.dfns` (experimental)
-
-> **Note**: This module is experimental. The API may change without following normal deprecation procedures. To suppress the warning emitted on import, use:
-> ```python
-> import warnings
-> warnings.filterwarnings('ignore', message='.*modflow_devtools.dfns.*experimental.*')
-> ```
-
-The `modflow_devtools.dfns` module provides a structured API for working with MODFLOW 6 input specifications, including typed Python objects representing each component and field type, a registry system for remote caching, and tools for loading and navigating the full specification.
-
-### File format and schema version
-
-These are two separate concerns.
-
-**File format** is the serialization:
-
-- **Legacy DFN format** (`.dfn`): flat text with comments demarcating blocks, used by MODFLOW 6 releases.
-- **TOML format** (`.toml`): per-component TOML documents.
-- **YAML format** (`.yaml`): per-component YAML documents.
-- **JSON format** (`.json`): per-component JSON documents.
-
-TOML, YAML, and JSON files are produced by the `dfnmap` conversion tool.
-
-**Schema version** describes the structure and semantics of the content:
-
-- **v1 schema**: the original structure embedded in legacy `.dfn` files. Mixes structural definitions with input format details (e.g., `in_record`, `tagged`).
-- **v2 schema**: a cleaner, hierarchical representation. Each component has explicitly typed, nested fields; blocks and records are first-class objects; structural specification is separated from input format concerns.
-
-`modflow_devtools.dfns` always works with v2 schema objects internally. When loading a directory of `.dfn` files, they are parsed as v1 and automatically mapped to v2. TOML, YAML, and JSON files carry v2 content directly and are loaded without mapping. All file formats are supported by `Dfns.load()`.
-
-### Core classes
-
-#### `Dfns`
-
-`Dfns` is a Pydantic model representing the full set of component definitions for a release. It is the primary object returned by `Dfns.load()` (see also [Registry](#registry) below, which loads and caches DFN files from remote releases).
+`Dfns` is a Pydantic model representing a set of component definitions.
 
 ```python
 from modflow_devtools.dfns import Dfns
@@ -95,7 +136,7 @@ sim_children = spec.children_of("sim-nam")   # {"gwf-nam": ..., ...}
 gwf_children = spec.children_of("gwf-nam")   # {"gwf-chd": ..., "gwf-wel": ..., ...}
 ```
 
-#### Component types
+**Note**: Calling `Dfns.load()` on a directory of `.dfn` files will convert to the v2 schema automatically.
 
 Each entry in `spec.components` is one of three component types, discriminated by a `type` field:
 
@@ -114,8 +155,6 @@ assert isinstance(gwf_chd, Package)
 assert gwf_chd.multi is False
 assert gwf_chd.subtype == "stress"
 ```
-
-#### Blocks and fields
 
 Each component has `blocks`, a dict mapping block names to `Block` objects. Each `Block` has a `fields` dict of typed field objects.
 
@@ -149,13 +188,11 @@ Available field types:
 
 See [DFN specification](dfnspec.md) for full attribute documentation.
 
-### Registry
+### Managing specifications
 
-The registry system handles caching and accessing DFN files from MODFLOW 6 releases.
+A registry system handles caching and accessing DFN files from MODFLOW 6 releases.
 
-#### `LocalDfnRegistry`
-
-For working with DFN files on the local filesystem.
+For working with DFN files on the local filesystem, there is `LocalDfnRegistry`.
 
 ```python
 from modflow_devtools.dfns import LocalDfnRegistry
@@ -165,121 +202,38 @@ spec = registry.spec                      # Dfns instance
 path = registry.get_path("gwf-chd")      # Path to the component file
 ```
 
-#### `RemoteDfnRegistry`
-
-For fetching and caching DFN files from a MODFLOW 6 release. The `release_id` takes the form `"owner/repo@tag"`, where `tag` may be a specific version or `"latest"`.
+For fetching and caching DFN files from a MODFLOW 6 release, `RemoteDfnRegistry`:
 
 ```python
 from modflow_devtools.dfns import RemoteDfnRegistry
 
 registry = RemoteDfnRegistry(release_id="MODFLOW-ORG/modflow6@6.6.0")
-registry.sync()                           # download and cache DFN files
-registry.sync(force=True)                 # force re-download
+registry.sync()  # download and cache DFN files
+registry.sync(force=True)  # force re-download
 
-spec = registry.spec                      # Dfns (auto-syncs if needed)
-path = registry.get_path("gwf-chd")      # Path to cached component file
+spec = registry.spec  # get the specification
 
-tag = registry.latest_tag()              # resolve "latest" to actual tag (network)
-tag = registry.cached_tag()              # return cached tag (no network)
+tag = registry.latest_tag()  # resolve "latest" to actual tag
+tag = registry.cached_tag()  # return cached tag
 ```
+
+The `release_id` takes the form `"owner/repo@tag"`, where `tag` may be a specific version or "latest".
 
 For `@latest`, `latest_tag()` queries the GitHub API once and caches the result.
 
-#### Default registries
+### Managing configurations
 
-The package ships with a built-in configuration (`modflow_devtools/dfns/dfns.toml`) that lists the default release IDs to track:
-
-```toml
-releases = [
-    "MODFLOW-ORG/modflow6@latest",
-    "MODFLOW-ORG/modflow6-nightly-build@latest",
-]
-```
-
-To load these defaults:
+To load the default registry configuration, i.e. the bundled configuration with user overlay if present:
 
 ```python
 registries = RemoteDfnRegistry.load_default()
-# {"MODFLOW-ORG/modflow6@latest": RemoteDfnRegistry(...), ...}
 ```
 
-To load specific release IDs programmatically:
+To load specific releases:
 
 ```python
 registries = RemoteDfnRegistry.from_ids(
     "MODFLOW-ORG/modflow6@6.6.0",
     "MODFLOW-ORG/modflow6@6.5.0",
 )
-```
-
-#### User config overlay
-
-You can extend or override the default registry configuration by creating:
-
-- Linux/macOS: `~/.config/modflow-devtools/dfns.toml` (respects `$XDG_CONFIG_HOME`)
-- Windows: `%APPDATA%/modflow-devtools/dfns.toml`
-
-The file uses the same format as the bundled config:
-
-```toml
-releases = [
-    "my-org/my-mf6-fork@main",
-]
-```
-
-Entries in the user config are merged with (and take precedence over) the defaults.
-
-#### Cache location
-
-Downloaded DFN files are cached under:
-
-- Linux/macOS: `$XDG_CACHE_HOME/modflow-devtools/dfns/` (default `~/.cache/`)
-- Windows: `%LOCALAPPDATA%/modflow-devtools/dfns/`
-
-The cache is organized by repository and release tag:
-
-```
-~/.cache/modflow-devtools/dfns/
-└── MODFLOW-ORG/
-    └── modflow6/
-        ├── 6.6.0/
-        │   ├── sim-nam.dfn
-        │   ├── gwf-chd.dfn
-        │   └── ...
-        └── 6.5.0/
-            └── ...
-```
-
-To get the base cache path programmatically:
-
-```python
-RemoteDfnRegistry.base_cache_path()
-```
-
-#### Checking cache status
-
-```python
-from modflow_devtools.dfns.registry import is_cached
-
-is_cached("MODFLOW-ORG/modflow6@6.6.0")   # True/False (no network)
-```
-
-#### Auto-sync
-
-When `MODFLOW_DEVTOOLS_AUTO_SYNC=1` is set, `RemoteDfnRegistry.from_ids()` will automatically call `sync()` for any release ID that has no cached files yet.
-
-### CLI
-
-```shell
-# Show sync status for all configured releases
-python -m modflow_devtools.dfns info
-
-# Sync all configured releases (downloads dfns.zip from GitHub releases)
-python -m modflow_devtools.dfns sync
-
-# Force re-download even if already cached
-python -m modflow_devtools.dfns sync --force
-
-# Clean the entire DFN cache
-python -m modflow_devtools.dfns clean
 ```
