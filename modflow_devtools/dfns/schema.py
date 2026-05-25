@@ -863,7 +863,7 @@ class Dfns(BaseModel):
         import yaml
 
         from modflow_devtools.dfn import schema as v1
-        from modflow_devtools.dfns.mapper import map as map_v2
+        from modflow_devtools.dfns.migrate_v1_to_v2 import v1_to_v2
 
         dfns: dict = {}
         path = Path(path).expanduser().resolve()
@@ -881,7 +881,7 @@ class Dfns(BaseModel):
 
         if dfn_paths:
             dfns = v1.resolve_parents(v1.load_all(path))
-            dfns = {n: map_v2(d) for n, d in dfns.items()}
+            dfns = {n: v1_to_v2(d) for n, d in dfns.items()}
         elif toml_paths:
             for toml_path in toml_paths.values():
                 with toml_path.open("rb") as f:

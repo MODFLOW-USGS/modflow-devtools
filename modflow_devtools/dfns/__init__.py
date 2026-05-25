@@ -3,6 +3,7 @@
 import warnings
 
 from modflow_devtools.dfn import FieldType, fetch_dfns
+from modflow_devtools.dfns.migrate import migrate
 from modflow_devtools.dfns.registry import DfnRegistry, LocalDfnRegistry, RemoteDfnRegistry
 from modflow_devtools.dfns.schema import (
     Array,
@@ -53,4 +54,5 @@ __all__ = [
     "String",
     "Union",
     "fetch_dfns",
+    "migrate",
 ]

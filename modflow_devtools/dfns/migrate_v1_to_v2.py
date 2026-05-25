@@ -348,7 +348,7 @@ def _collapse_sto_keywords(
     return result
 
 
-def map(dfn: v1.Dfn) -> v2.Component:
+def v1_to_v2(dfn: v1.Dfn) -> v2.Component:
     """Map a component definition from the v1 schema to v2."""
 
     if dfn["schema_version"] != "1":

@@ -7,38 +7,6 @@ from flaky import flaky
 from modflow_devtools.dfns.registry import LocalDfnRegistry, RemoteDfnRegistry
 
 
-def test_local_dfn_registry(dfn_dir):
-    registry = LocalDfnRegistry(path=dfn_dir)
-    assert registry.path == dfn_dir.resolve()
-
-    spec = registry.spec
-    assert spec.schema_version == "2"
-    assert len(spec.components) > 100
-    assert "gwf-chd" in spec.components
-    assert "sim-nam" in spec.components
-
-    dfn = spec.components["gwf-chd"]
-    assert dfn.name == "gwf-chd"
-    assert dfn.parent == "gwf-nam"
-
-    path = registry.get_path("gwf-chd")
-    assert path.exists()
-    assert path.name == "gwf-chd.dfn"
-
-    with pytest.raises(FileNotFoundError, match="nonexistent"):
-        registry.get_path("nonexistent")
-
-
-def test_remote_dfn_registry_init():
-    release_id = "MODFLOW-ORG/modflow6@6.6.0"
-    registry = RemoteDfnRegistry(release_id=release_id)
-    assert registry.release_id == release_id
-
-    cache_dir = registry.cache_path
-    assert "modflow6" in str(cache_dir)
-    assert "6.6.0" in str(cache_dir)
-
-
 def test_latest_tag_exact_tag():
     registry = RemoteDfnRegistry(release_id="MODFLOW-ORG/modflow6@6.6.0")
     assert registry.latest_tag() == "6.6.0"
@@ -178,6 +146,38 @@ def test_latest_tag_live():
     tag = registry.latest_tag()
     assert tag.startswith("v") or tag[0].isdigit()
     assert registry._latest == tag
+
+
+def test_local_dfn_registry(dfn_dir):
+    registry = LocalDfnRegistry(path=dfn_dir)
+    assert registry.path == dfn_dir.resolve()
+
+    spec = registry.spec
+    assert spec.schema_version == "2"
+    assert len(spec.components) > 100
+    assert "gwf-chd" in spec.components
+    assert "sim-nam" in spec.components
+
+    dfn = spec.components["gwf-chd"]
+    assert dfn.name == "gwf-chd"
+    assert dfn.parent == "gwf-nam"
+
+    path = registry.get_path("gwf-chd")
+    assert path.exists()
+    assert path.name == "gwf-chd.dfn"
+
+    with pytest.raises(FileNotFoundError, match="nonexistent"):
+        registry.get_path("nonexistent")
+
+
+def test_remote_dfn_registry_init():
+    release_id = "MODFLOW-ORG/modflow6@6.6.0"
+    registry = RemoteDfnRegistry(release_id=release_id)
+    assert registry.release_id == release_id
+
+    cache_dir = registry.cache_path
+    assert "modflow6" in str(cache_dir)
+    assert "6.6.0" in str(cache_dir)
 
 
 @pytest.mark.skip(reason="Requires dfns.zip release asset on GitHub")

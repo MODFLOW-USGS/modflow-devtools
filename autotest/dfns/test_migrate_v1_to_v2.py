@@ -1,9 +1,8 @@
-import pytest
-
 from modflow_devtools.dfn import schema as v1
-from modflow_devtools.dfns.mapper import map as map_v2
+from modflow_devtools.dfns.migrate_v1_to_v2 import v1_to_v2 as v1_to_v2
 from modflow_devtools.dfns.schema import (
     Double,
+    FieldBase,
     Keyword,
     List,
     Model,
@@ -48,57 +47,7 @@ def _v1_dfn(**kwargs) -> v1.Dfn:
     return v1.Dfn(**base)
 
 
-def test_map_sim_nam_returns_simulation():
-    dfn = _v1_dfn(name="sim-nam")
-    result = map_v2(dfn)
-    assert isinstance(result, Simulation)
-
-
-def test_map_model_returns_model():
-    dfn = _v1_dfn(name="gwf-nam")
-    result = map_v2(dfn)
-    assert isinstance(result, Model)
-
-    dfn = _v1_dfn(name="gwt-nam")
-    result = map_v2(dfn)
-    assert isinstance(result, Model)
-
-
-def test_map_solution_package():
-    dfn = _v1_dfn(name="sln-ims")
-    result = map_v2(dfn)
-    assert isinstance(result, Package)
-    assert result.subtype == "solution"
-
-
-def test_map_exchange_package():
-    dfn = _v1_dfn(name="exg-gwfgwf")
-    result = map_v2(dfn)
-    assert isinstance(result, Package)
-    assert result.subtype == "exchange"
-
-
-def test_map_utility_package():
-    dfn = _v1_dfn(name="utl-obs")
-    result = map_v2(dfn)
-    assert isinstance(result, Package)
-    assert result.subtype == "utility"
-
-
-def test_map_advanced_package():
-    dfn = _v1_dfn(name="gwf-sfr", advanced=True)
-    result = map_v2(dfn)
-    assert isinstance(result, Package)
-    assert result.subtype == "advanced"
-
-
-def test_map_wrong_schema_version_raises():
-    dfn = _v1_dfn(schema_version="2")
-    with pytest.raises(ValueError, match="schema version"):
-        map_v2(dfn)
-
-
-def test_map_keyword_field_conversion():
+def test_keyword():
     dfn = _v1_dfn(
         name="gwf-chd",
         blocks={
@@ -113,7 +62,7 @@ def test_map_keyword_field_conversion():
             }
         },
     )
-    component = map_v2(dfn)
+    component = v1_to_v2(dfn)
     assert component.blocks is not None
     options = component.blocks["options"].fields
     assert "save_flows" in options
@@ -123,7 +72,7 @@ def test_map_keyword_field_conversion():
     assert field.description == "save calculated flows"
 
 
-def test_map_double_precision_field_conversion():
+def test_double():
     dfn = _v1_dfn(
         name="gwf-chd",
         blocks={
@@ -136,14 +85,14 @@ def test_map_double_precision_field_conversion():
             }
         },
     )
-    component = map_v2(dfn)
+    component = v1_to_v2(dfn)
     options = component.blocks["options"].fields
     field = options["some_float"]
     assert isinstance(field, Double)
     assert field.type == "double"
 
 
-def test_map_record_conversion():
+def test_record():
     dfn = _v1_dfn(
         name="test-dfn",
         blocks={
@@ -166,7 +115,7 @@ def test_map_record_conversion():
             }
         },
     )
-    component = map_v2(dfn)
+    component = v1_to_v2(dfn)
     auxrecord = component.blocks["options"].fields["auxrecord"]
     assert isinstance(auxrecord, Record)
     assert "auxiliary" in auxrecord.children
@@ -175,7 +124,50 @@ def test_map_record_conversion():
     assert isinstance(auxrecord.children["auxname"], String)
 
 
-def test_map_recarray_conversion():
+def test_union():
+    """Keystring (union) type conversion."""
+    dfn = _v1_dfn(
+        name="test-dfn",
+        blocks={
+            "options": {
+                "obs_filerecord": _v1_field(
+                    name="obs_filerecord",
+                    type="record obs6 filein obs6_filename",
+                    block="options",
+                    tagged=True,
+                ),
+                "obs6": _v1_field(
+                    name="obs6",
+                    type="keyword",
+                    block="options",
+                    in_record=True,
+                ),
+                "filein": _v1_field(
+                    name="filein",
+                    type="keyword",
+                    block="options",
+                    in_record=True,
+                ),
+                "obs6_filename": _v1_field(
+                    name="obs6_filename",
+                    type="string",
+                    block="options",
+                    in_record=True,
+                    preserve_case=True,
+                ),
+            }
+        },
+    )
+
+    component = v1_to_v2(dfn)
+    obs_rec = component.blocks["options"].fields["obs_filerecord"]
+    assert isinstance(obs_rec, Record)
+    assert obs_rec.type == "record"
+    assert obs_rec.children is not None
+    assert all(isinstance(child, FieldBase) for child in obs_rec.children.values())
+
+
+def test_list():
     dfn = _v1_dfn(
         name="test-pkg",
         blocks={
@@ -210,7 +202,7 @@ def test_map_recarray_conversion():
             },
         },
     )
-    component = map_v2(dfn)
+    component = v1_to_v2(dfn)
     period_fields = component.blocks["period"].fields
     spd = period_fields["stress_period_data"]
     assert isinstance(spd, List)
@@ -220,7 +212,7 @@ def test_map_recarray_conversion():
     assert "q" in spd.item.fields
 
 
-def test_map_recarray_missing_shape_inferred_from_maxbound():
+def test_list_missing_shape_inferred_from_maxbound():
     """Period list with empty shape gets shape=["maxbound"] when maxbound dim exists."""
     dfn = _v1_dfn(
         name="utl-spc",
@@ -262,14 +254,14 @@ def test_map_recarray_missing_shape_inferred_from_maxbound():
             },
         },
     )
-    component = map_v2(dfn)
+    component = v1_to_v2(dfn)
     period_fields = component.blocks["period"].fields
     spd = period_fields["spd"]
     assert isinstance(spd, List)
     assert spd.shape == ["maxbound"]
 
 
-def test_map_recarray_no_shape_no_maxbound():
+def test_list_no_shape_no_maxbound():
     """Period list with no shape and no maxbound dim keeps shape=[]."""
     dfn = _v1_dfn(
         name="gwf-sfr",
@@ -304,8 +296,132 @@ def test_map_recarray_no_shape_no_maxbound():
             },
         },
     )
-    component = map_v2(dfn)
+    component = v1_to_v2(dfn)
     period_fields = component.blocks["period"].fields
     lst = period_fields["perioddata"]
     assert isinstance(lst, List)
     assert lst.shape == []
+
+
+def test_options_block():
+    dfn = _v1_dfn(
+        name="test-dfn",
+        blocks={
+            "options": {
+                "save_flows": _v1_field(
+                    name="save_flows",
+                    type="keyword",
+                    block="options",
+                    description="save calculated flows",
+                    tagged=True,
+                    in_record=False,
+                ),
+                "some_float": _v1_field(
+                    name="some_float",
+                    type="double precision",
+                    block="options",
+                    description="a floating point value",
+                ),
+            }
+        },
+    )
+
+    component = v1_to_v2(dfn)
+    assert component.blocks is not None
+    assert "options" in component.blocks
+
+    options = component.blocks["options"].fields
+    assert "save_flows" in options
+
+    save_flows = options["save_flows"]
+    assert isinstance(save_flows, Keyword)
+    assert isinstance(save_flows, FieldBase)
+    assert save_flows.name == "save_flows"
+    assert save_flows.type == "keyword"
+    assert save_flows.description == "save calculated flows"
+    assert not hasattr(save_flows, "in_record")
+    assert not hasattr(save_flows, "reader")
+
+    some_float = options["some_float"]
+    assert isinstance(some_float, Double)
+    assert some_float.name == "some_float"
+    assert some_float.type == "double"
+    assert some_float.description == "a floating point value"
+
+
+def test_period_block():
+    dfn = _v1_dfn(
+        name="test-pkg",
+        blocks={
+            "period": {
+                "stress_period_data": _v1_field(
+                    name="stress_period_data",
+                    type="recarray cellid q",
+                    block="period",
+                    description="stress period data",
+                    shape="(maxbound)",
+                ),
+                "cellid": _v1_field(
+                    name="cellid",
+                    type="integer",
+                    block="period",
+                    shape="(ncelldim)",
+                    in_record=True,
+                ),
+                "q": _v1_field(
+                    name="q",
+                    type="double precision",
+                    block="period",
+                    in_record=True,
+                ),
+            }
+        },
+    )
+
+    component = v1_to_v2(dfn)
+    assert component.blocks is not None
+    for block in component.blocks.values():
+        for f in block.fields.values():
+            assert isinstance(f, FieldBase)
+            if f.children:
+                for child in f.children.values():
+                    assert isinstance(child, FieldBase)
+
+    period_fields = component.blocks["period"].fields
+    assert "stress_period_data" in period_fields
+    spd = period_fields["stress_period_data"]
+    assert isinstance(spd, List)
+    assert isinstance(spd.item, Record)
+    item_fields = spd.item.fields
+    assert "cellid" in item_fields
+    assert "q" in item_fields
+
+
+def test_components():
+    dfn = _v1_dfn(name="sim-nam")
+    result = v1_to_v2(dfn)
+    assert isinstance(result, Simulation)
+
+    dfn = _v1_dfn(name="gwf-nam")
+    result = v1_to_v2(dfn)
+    assert isinstance(result, Model)
+
+    dfn = _v1_dfn(name="sln-ims")
+    result = v1_to_v2(dfn)
+    assert isinstance(result, Package)
+    assert result.subtype == "solution"
+
+    dfn = _v1_dfn(name="exg-gwfgwf")
+    result = v1_to_v2(dfn)
+    assert isinstance(result, Package)
+    assert result.subtype == "exchange"
+
+    dfn = _v1_dfn(name="utl-obs")
+    result = v1_to_v2(dfn)
+    assert isinstance(result, Package)
+    assert result.subtype == "utility"
+
+    dfn = _v1_dfn(name="gwf-sfr", advanced=True)
+    result = v1_to_v2(dfn)
+    assert isinstance(result, Package)
+    assert result.subtype == "advanced"

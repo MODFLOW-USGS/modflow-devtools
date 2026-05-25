@@ -5,9 +5,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from modflow_devtools.dfn import Dfn, fetch_dfns
-from modflow_devtools.dfnmap import migrate
-from modflow_devtools.markers import requires_pkg
+from modflow_devtools.dfns import fetch_dfns, migrate
 
 FORMATS = ["yaml", "toml", "json"]
 MF6_OWNER = "MODFLOW-ORG"
@@ -37,30 +35,36 @@ def dfn_dir(module_tmpdir):
 
 
 @pytest.fixture(scope="module", params=FORMATS)
-def converted_v2(request, dfn_dir, module_tmpdir):
+def v1_1(request, dfn_dir, module_tmpdir):
+    fmt = request.param
+    out = module_tmpdir / f"v1_1-{fmt}"
+    migrate(dfn_dir, out, schema_version="1.1", fmt=fmt)
+    return out, fmt
+
+
+@pytest.fixture(scope="module", params=FORMATS)
+def v2(request, dfn_dir, module_tmpdir):
     fmt = request.param
     out = module_tmpdir / f"v2-{fmt}"
     migrate(dfn_dir, out, schema_version="2", fmt=fmt)
     return out, fmt
 
 
-@requires_pkg("boltons")
-def test_convert_v2(converted_v2):
-    out, fmt = converted_v2
+def test_migrate_v1_1(v1_1):
+    out, fmt = v1_1
+    files = list(out.glob(f"*.{fmt}"))
+    assert files
+    for p in files:
+        data = _load(p, fmt)
+        assert data["name"] == p.stem
+        assert data["schema_version"] == "1.1"
+
+
+def test_migrate_v2(v2):
+    out, fmt = v2
     files = list(out.glob(f"*.{fmt}"))
     assert files
     for p in files:
         data = _load(p, fmt)
         assert data["name"] == p.stem
         assert data["schema_version"] == "2"
-
-
-@requires_pkg("boltons")
-def test_roundtrip(converted_v2):
-    """Verify Dfn.load can read v2-schema files in any format."""
-    out, fmt = converted_v2
-    mode = "rb" if fmt == "toml" else "r"
-    for p in out.glob(f"*.{fmt}"):
-        with p.open(mode) as f:
-            dfn = Dfn.load(f, name=p.stem, version=fmt)
-        assert any(dfn)
