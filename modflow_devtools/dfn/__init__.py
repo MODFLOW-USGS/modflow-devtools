@@ -33,6 +33,7 @@ __all__ = [
     "Ref",
     "Sln",
     "fetch_dfns",
+    "get_dfns",
     "get_fields",
 ]
 
@@ -51,3 +52,6 @@ def fetch_dfns(owner: str, repo: str, ref: str, outdir: str | PathLike, verbose:
         if verbose:
             print("Copying dfns from download dir to output dir")
         shutil.copytree(proj_path / "doc" / "mf6io" / "mf6ivar" / "dfn", outdir, dirs_exist_ok=True)
+
+
+get_dfns = fetch_dfns  # backwards-compatible alias
