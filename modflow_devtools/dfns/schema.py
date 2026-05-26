@@ -395,6 +395,16 @@ class ComponentBase(BaseModel):
             data = {"type": getattr(self, "type"), **data}
         return data
 
+    @property
+    def fields(self) -> dict[str, Field]:
+        result: dict[str, Field] = {}
+        for block in (self.blocks or {}).values():
+            for name, field in block.fields.items():
+                if name in result:
+                    raise ValueError(f"Duplicate field name {name!r} in component {self.name!r}")
+                result[name] = field
+        return result
+
 
 class Simulation(ComponentBase):
     type: Literal["simulation"] = "simulation"

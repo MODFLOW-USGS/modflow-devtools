@@ -124,3 +124,65 @@ def test_load(dfn_dir):
 def test_load_empty_directory(function_tmpdir):
     spec = Dfns.load(function_tmpdir)
     assert len(spec.components) == 0
+
+
+def test_component_fields_no_blocks():
+    pkg = _pkg("gwf-chd")
+    assert pkg.fields == {}
+
+
+def test_component_fields_none_blocks():
+    pkg = Package(name="gwf-chd", blocks=None)
+    assert pkg.fields == {}
+
+
+def test_component_fields_single_block():
+    nlay = Integer(name="nlay")
+    nrow = Integer(name="nrow")
+    pkg = _pkg(
+        "gwf-dis",
+        blocks={"dimensions": Block(name="dimensions", fields={"nlay": nlay, "nrow": nrow})},
+    )
+    assert pkg.fields == {"nlay": nlay, "nrow": nrow}
+
+
+def test_component_fields_multiple_blocks():
+    from modflow_devtools.dfns.schema import Keyword
+
+    verbose = Keyword(name="verbose", optional=True)
+    nlay = Integer(name="nlay")
+    pkg = _pkg(
+        "gwf-dis",
+        blocks={
+            "options": Block(name="options", fields={"verbose": verbose}),
+            "dimensions": Block(name="dimensions", fields={"nlay": nlay}),
+        },
+    )
+    assert pkg.fields == {"verbose": verbose, "nlay": nlay}
+
+
+def test_component_fields_duplicate_name_raises():
+    a1 = Integer(name="a")
+    a2 = Integer(name="a", optional=True)
+    pkg = _pkg(
+        "gwf-dis",
+        blocks={
+            "block1": Block(name="block1", fields={"a": a1}),
+            "block2": Block(name="block2", fields={"a": a2}),
+        },
+    )
+    with pytest.raises(ValueError, match="Duplicate field name 'a'"):
+        _ = pkg.fields
+
+
+def test_component_fields_loaded(dfn_dir):
+    spec = Dfns.load(dfn_dir)
+    gwf_dis = spec.components["gwf-dis"]
+    fields = gwf_dis.fields
+    assert isinstance(fields, dict)
+    assert len(fields) > 0
+    # every value is a Field instance, every key matches the field's name
+    for name, field in fields.items():
+        assert name == field.name
+    # fields from all blocks are present (nlay is in dimensions, not options)
+    assert "nlay" in fields
