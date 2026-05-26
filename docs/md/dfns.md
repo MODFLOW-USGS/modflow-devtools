@@ -172,7 +172,7 @@ Available field types:
 | `String` | `"string"` | String value |
 | `Integer` | `"integer"` | Integer value |
 | `Double` | `"double"` | Floating-point value |
-| `File` | `"file"` (legacy `"path"`) | File path |
+| `File` | `"file"` | File path |
 | `Array` | `"array"` | Fixed or dynamic array |
 | `Record` | `"record"` | Single-line product type |
 | `Union` | `"union"` | Tagged sum type |

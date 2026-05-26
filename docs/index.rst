@@ -26,7 +26,7 @@ The `modflow-devtools` package provides a set of tools for developing and testin
    :maxdepth: 2
    :caption: Specification
 
-   md/dfn-schema.md
+   md/dfnspec.md
    md/dfns.md
 
 .. toctree::
