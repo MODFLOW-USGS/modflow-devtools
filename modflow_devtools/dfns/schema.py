@@ -401,9 +401,15 @@ class ComponentBase(BaseModel):
         for block in (self.blocks or {}).values():
             for name, field in block.fields.items():
                 if name in result:
-                    raise ValueError(f"Duplicate field name {name!r} in component {self.name!r}")
+                    raise ValueError(f"Duplicate field {name!r} in component {self.name!r}")
                 result[name] = field
         return result
+
+    def get_block(self, field_name: str) -> Block | None:
+        for block in (self.blocks or {}).values():
+            if block.fields.get(field_name, None):
+                return block
+        return None
 
 
 class Simulation(ComponentBase):

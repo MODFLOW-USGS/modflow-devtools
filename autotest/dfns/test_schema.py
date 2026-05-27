@@ -175,6 +175,47 @@ def test_component_fields_duplicate_name_raises():
         _ = pkg.fields
 
 
+def test_get_block_no_blocks():
+    pkg = _pkg("gwf-chd")
+    assert pkg.get_block("nlay") is None
+
+
+def test_get_block_none_blocks():
+    pkg = Package(name="gwf-chd", blocks=None)
+    assert pkg.get_block("nlay") is None
+
+
+def test_get_block_field_not_found():
+    nlay = Integer(name="nlay")
+    pkg = _pkg(
+        "gwf-dis",
+        blocks={"dimensions": Block(name="dimensions", fields={"nlay": nlay})},
+    )
+    assert pkg.get_block("nrow") is None
+
+
+def test_get_block_found():
+    nlay = Integer(name="nlay")
+    dim_block = Block(name="dimensions", fields={"nlay": nlay})
+    pkg = _pkg("gwf-dis", blocks={"dimensions": dim_block})
+    assert pkg.get_block("nlay") is dim_block
+
+
+def test_get_block_found_in_second_block():
+    from modflow_devtools.dfns.schema import Keyword
+
+    verbose = Keyword(name="verbose", optional=True)
+    nlay = Integer(name="nlay")
+    opt_block = Block(name="options", fields={"verbose": verbose})
+    dim_block = Block(name="dimensions", fields={"nlay": nlay})
+    pkg = _pkg(
+        "gwf-dis",
+        blocks={"options": opt_block, "dimensions": dim_block},
+    )
+    assert pkg.get_block("verbose") is opt_block
+    assert pkg.get_block("nlay") is dim_block
+
+
 def test_component_fields_loaded(dfn_dir):
     spec = Dfns.load(dfn_dir)
     gwf_dis = spec.components["gwf-dis"]
