@@ -1,7 +1,7 @@
 import pytest
 
 from modflow_devtools.dfn import schema as v1
-from modflow_devtools.dfns.migrate_v1_to_v2 import _DEPENDENT_VARS
+from modflow_devtools.dfns.migrate_v1_to_v2 import _DEPENDENT_VARS, _OC_RTYPE_VALID
 from modflow_devtools.dfns.migrate_v1_to_v2 import v1_to_v2 as v1_to_v2
 from modflow_devtools.dfns.schema import (
     Double,
@@ -471,7 +471,7 @@ def _oc_dfn(prefix: str) -> v1.Dfn:
     )
 
 
-@pytest.mark.parametrize("prefix,expected", list(_DEPENDENT_VARS.items()))
+@pytest.mark.parametrize("prefix,expected", list(_OC_RTYPE_VALID.items()))
 def test_oc_rtype_valid(prefix, expected):
     component = v1_to_v2(_oc_dfn(prefix))
     assert isinstance(component, Package)
@@ -486,11 +486,14 @@ def test_oc_rtype_valid(prefix, expected):
         assert rtype.valid == expected
 
 
-@pytest.mark.parametrize(
-    "prefix,expected",
-    [(prefix, [v.lower() for v in vals]) for prefix, vals in _DEPENDENT_VARS.items()],
-)
+@pytest.mark.parametrize("prefix,expected", list(_DEPENDENT_VARS.items()))
 def test_model_dependent_variable(prefix, expected):
     result = v1_to_v2(_v1_dfn(name=f"{prefix}-nam"))
     assert isinstance(result, Model)
     assert result.dependent_variable == expected
+
+
+def test_model_no_dependent_variable():
+    result = v1_to_v2(_v1_dfn(name="prt-nam"))
+    assert isinstance(result, Model)
+    assert result.dependent_variable is None

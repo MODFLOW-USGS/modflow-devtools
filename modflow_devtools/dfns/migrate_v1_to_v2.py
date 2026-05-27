@@ -10,13 +10,23 @@ from modflow_devtools.misc import try_literal_eval
 _IDENT_RE = re.compile(r"^[A-Za-z_]\w*$")
 _LOOKUP_RE = re.compile(r"^(\w+)\.(\w+)\((\w+)\)$")
 
-_DEPENDENT_VARS: dict[str, list[str]] = {
+_DEPENDENT_VARS: dict[str, str] = {
+    "gwf": "head",
+    "gwt": "concentration",
+    "gwe": "temperature",
+    "chf": "stage",
+    "olf": "stage",
+    "swf": "stage",
+    # prt: particle tracking; no scalar dependent variable
+}
+
+_OC_RTYPE_VALID: dict[str, list[str]] = {
     "gwf": ["HEAD", "BUDGET"],
     "gwt": ["CONCENTRATION", "BUDGET"],
     "gwe": ["TEMPERATURE", "BUDGET"],
-    "chf": ["BUDGET"],
-    "olf": ["BUDGET"],
-    "swf": ["BUDGET"],
+    "chf": ["STAGE", "BUDGET"],
+    "olf": ["STAGE", "BUDGET"],
+    "swf": ["STAGE", "BUDGET"],
     "prt": ["BUDGET"],
 }
 
@@ -366,7 +376,7 @@ def _patch_oc_rtype(
     if not name.endswith("-oc"):
         return blocks
     prefix = name.split("-")[0]
-    valid = _DEPENDENT_VARS.get(prefix)
+    valid = _OC_RTYPE_VALID.get(prefix)
     if not valid:
         return blocks
 
@@ -833,8 +843,7 @@ def v1_to_v2(dfn: v1.Dfn) -> v2.Component:
         return v2.Simulation(**d)
     if name.endswith("-nam"):
         prefix = name.split("-")[0]
-        dep_vars = [v.lower() for v in _DEPENDENT_VARS.get(prefix, [])]
-        return v2.Model(**d, dependent_variable=dep_vars)
+        return v2.Model(**d, dependent_variable=_DEPENDENT_VARS.get(prefix))
 
     subtype: Literal["solution", "exchange", "stress", "advanced", "utility"] | None = None
     if name.startswith("sln-"):

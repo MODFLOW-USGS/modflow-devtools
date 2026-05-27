@@ -163,7 +163,7 @@ A model represents a hydrologic process. Models are managed and solved by the si
 
 ###### `dependent_variable`
 
-`[string] (default: [])`. The dependent variables this model type computes, declared in lowercase — e.g., `["head", "budget"]` for GWF. The model's OC package enumerates the same values as the `valid` set on its `rtype` string field.
+`string | null (default: null)`. The dependent variable this model type computes, e.g. `"head"` for GWF. The model's OC package `rtype` string field should also specify this variable's name as a `valid` value.
 
 #### Package
 

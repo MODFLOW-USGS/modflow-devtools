@@ -413,7 +413,7 @@ class Simulation(ComponentBase):
 class Model(ComponentBase):
     type: Literal["model"] = "model"
     solution: Literal["ims", "ems", "sln-ims", "sln-ems"] | None = None
-    dependent_variable: list[str] = []
+    dependent_variable: str | None = None
 
 
 class Package(ComponentBase):
