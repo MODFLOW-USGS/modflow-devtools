@@ -16,6 +16,7 @@ This document describes the MODFLOW 6 component definition (DFN) system. This sy
     - [Model](#model)
       - [Type-specific attributes](#type-specific-attributes)
         - [`solution`](#solution)
+        - [`dependent_variable`](#dependent_variable)
     - [Package](#package)
       - [Type-specific attributes](#type-specific-attributes-1)
         - [`multi`](#multi)
@@ -159,6 +160,10 @@ A model represents a hydrologic process. Models are managed and solved by the si
 ###### `solution`
 
 `"ims" | "ems" | "sln-ims" | "sln-ems" | null (default: null)`. MF6 supports different solution schemes: implicit solutions (solve systems of coupled equations iteratively) and explicit solutions (used when closed-form solutions are available). A model declares which solution type it requires with the optional `solution` attribute. Solution packages do not redundantly declare which model types they support; compatibility is determined entirely from the model side.
+
+###### `dependent_variable`
+
+`[string] (default: [])`. The dependent variables this model type computes, declared in lowercase — e.g., `["head", "budget"]` for GWF. The model's OC package enumerates the same values as the `valid` set on its `rtype` string field.
 
 #### Package
 

@@ -1,5 +1,7 @@
+import pytest
+
 from modflow_devtools.dfn import schema as v1
-from modflow_devtools.dfns.migrate_v1_to_v2 import v1_to_v2 as v1_to_v2
+from modflow_devtools.dfns.migrate_v1_to_v2 import _DEPENDENT_VARS, v1_to_v2 as v1_to_v2
 from modflow_devtools.dfns.schema import (
     Double,
     FieldBase,
@@ -10,6 +12,7 @@ from modflow_devtools.dfns.schema import (
     Record,
     Simulation,
     String,
+    Union,
 )
 
 
@@ -425,3 +428,67 @@ def test_components():
     result = v1_to_v2(dfn)
     assert isinstance(result, Package)
     assert result.subtype == "advanced"
+
+
+def _oc_dfn(prefix: str) -> v1.Dfn:
+    """Minimal OC-like v1 DFN for testing rtype.valid migration."""
+    return _v1_dfn(
+        name=f"{prefix}-oc",
+        parent=f"{prefix}-nam",
+        blocks={
+            "period": {
+                "saverecord": _v1_field(
+                    name="saverecord",
+                    type="record save rtype ocsetting",
+                    block="period",
+                    optional=True,
+                ),
+                "save": _v1_field(name="save", type="keyword", block="period", in_record=True),
+                "printrecord": _v1_field(
+                    name="printrecord",
+                    type="record print rtype ocsetting",
+                    block="period",
+                    optional=True,
+                ),
+                "print": _v1_field(name="print", type="keyword", block="period", in_record=True),
+                "rtype": _v1_field(
+                    name="rtype",
+                    type="string",
+                    block="period",
+                    in_record=True,
+                    tagged=False,
+                ),
+                "ocsetting": _v1_field(
+                    name="ocsetting",
+                    type="keystring all",
+                    block="period",
+                    in_record=True,
+                ),
+                "all": _v1_field(name="all", type="keyword", block="period", in_record=True),
+            }
+        },
+    )
+
+
+@pytest.mark.parametrize("prefix,expected", list(_DEPENDENT_VARS.items()))
+def test_oc_rtype_valid(prefix, expected):
+    component = v1_to_v2(_oc_dfn(prefix))
+    assert isinstance(component, Package)
+    period = component.blocks["period"]
+    output = period.fields["output"]
+    assert isinstance(output, List)
+    assert isinstance(output.item, Union)
+    for arm in output.item.arms.values():
+        assert isinstance(arm, Record)
+        rtype = arm.fields["rtype"]
+        assert isinstance(rtype, String)
+        assert rtype.valid == expected
+
+
+@pytest.mark.parametrize("prefix,expected", [
+    (prefix, [v.lower() for v in vals]) for prefix, vals in _DEPENDENT_VARS.items()
+])
+def test_model_dependent_variable(prefix, expected):
+    result = v1_to_v2(_v1_dfn(name=f"{prefix}-nam"))
+    assert isinstance(result, Model)
+    assert result.dependent_variable == expected
