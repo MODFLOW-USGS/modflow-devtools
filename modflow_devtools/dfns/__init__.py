@@ -21,10 +21,10 @@ from modflow_devtools.dfns.schema import (
     Model,
     Package,
     Record,
+    Scalar,
     Simulation,
     String,
     Union,
-    Scalar,
 )
 
 # Experimental API warning
@@ -58,9 +58,9 @@ __all__ = [
     "Package",
     "Record",
     "RemoteDfnRegistry",
+    "Scalar",
     "Simulation",
     "String",
-    "Scalar",
     "Union",
     "fetch_dfns",
     "migrate",

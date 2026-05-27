@@ -1,7 +1,8 @@
 import pytest
 
 from modflow_devtools.dfn import schema as v1
-from modflow_devtools.dfns.migrate_v1_to_v2 import _DEPENDENT_VARS, v1_to_v2 as v1_to_v2
+from modflow_devtools.dfns.migrate_v1_to_v2 import _DEPENDENT_VARS
+from modflow_devtools.dfns.migrate_v1_to_v2 import v1_to_v2 as v1_to_v2
 from modflow_devtools.dfns.schema import (
     Double,
     FieldBase,
@@ -485,9 +486,10 @@ def test_oc_rtype_valid(prefix, expected):
         assert rtype.valid == expected
 
 
-@pytest.mark.parametrize("prefix,expected", [
-    (prefix, [v.lower() for v in vals]) for prefix, vals in _DEPENDENT_VARS.items()
-])
+@pytest.mark.parametrize(
+    "prefix,expected",
+    [(prefix, [v.lower() for v in vals]) for prefix, vals in _DEPENDENT_VARS.items()],
+)
 def test_model_dependent_variable(prefix, expected):
     result = v1_to_v2(_v1_dfn(name=f"{prefix}-nam"))
     assert isinstance(result, Model)
