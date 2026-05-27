@@ -436,7 +436,7 @@ def _fix_prt_fmi(component: v2.Component) -> v2.Component:
         for name, longname in (
             ("gwfhead", "gwf head file"),
             ("gwfbudget", "gwf budget file"),
-            ("gwfspdis", "gwf spdis file"),
+            ("gwfgrid", "gwf grid file"),
         )
     }
     new_blocks = dict(component.blocks or {})

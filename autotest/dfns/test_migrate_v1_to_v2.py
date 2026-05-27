@@ -570,8 +570,8 @@ def test_prt_fmi_packagedata():
     )
     component = v1_to_v2(dfn)
     fields = component.blocks["packagedata"].fields
-    assert set(fields) == {"gwfhead", "gwfbudget", "gwfspdis"}
-    for fname in ("gwfhead", "gwfbudget", "gwfspdis"):
+    assert set(fields) == {"gwfhead", "gwfbudget", "gwfgrid"}
+    for fname in ("gwfhead", "gwfbudget", "gwfgrid"):
         f = fields[fname]
         assert isinstance(f, File)
         assert f.optional is True
