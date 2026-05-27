@@ -171,7 +171,7 @@ def test_component_fields_duplicate_name_raises():
             "block2": Block(name="block2", fields={"a": a2}),
         },
     )
-    with pytest.raises(ValueError, match="Duplicate field name 'a'"):
+    with pytest.raises(ValueError, match="Duplicate field 'a'"):
         _ = pkg.fields
 
 

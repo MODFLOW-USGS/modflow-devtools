@@ -9,8 +9,6 @@ PROJ_ROOT = Path(__file__).parents[1]
 
 DFNS_REPO = os.getenv("TEST_DFNS_REPO", "MODFLOW-ORG/modflow6")
 DFNS_REF = os.getenv("TEST_DFNS_REF", "develop")
-DFNS_SOURCE = os.getenv("TEST_DFNS_SOURCE", "modflow6")
-DFNS_VERSION = os.getenv("TEST_DFNS_VERSION", "6.6.0")
 
 
 @pytest.fixture(scope="module")
