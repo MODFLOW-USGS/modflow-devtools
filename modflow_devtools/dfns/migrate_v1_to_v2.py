@@ -423,6 +423,27 @@ def _patch_oc_rtype(
     return result
 
 
+def _fix_prt_fmi(component: v2.Component) -> v2.Component:
+    """
+    Replace prt-fmi's heterogeneous packagedata recarray with three named
+    optional File fields — one per flow type (GWFHEAD, GWFBUDGET, GWFSPDIS).
+    """
+    block = (component.blocks or {}).get("packagedata")
+    if block is None:
+        return component
+    new_fields = {
+        name: v2.File(name=name, longname=longname, optional=True, tagged=True, mode="filein")
+        for name, longname in (
+            ("gwfhead", "gwf head file"),
+            ("gwfbudget", "gwf budget file"),
+            ("gwfspdis", "gwf spdis file"),
+        )
+    }
+    new_blocks = dict(component.blocks or {})
+    new_blocks["packagedata"] = block.model_copy(update={"fields": new_fields})
+    return component.model_copy(update={"blocks": new_blocks})
+
+
 def v1_to_v2(dfn: v1.Dfn) -> v2.Component:
     """Map a component definition from the v1 schema to v2."""
 
@@ -635,9 +656,7 @@ def v1_to_v2(dfn: v1.Dfn) -> v2.Component:
                     matches = [
                         fi
                         for fi in fields.values(multi=True)
-                        if fi["name"] == rname
-                        and fi.get("in_record", False)
-                        and not (fi["type"] or "").startswith("record")
+                        if fi["name"] == rname and fi.get("in_record", False)
                     ]
                     if matches:
                         result[rname] = __map_field(matches[0])
@@ -855,8 +874,7 @@ def v1_to_v2(dfn: v1.Dfn) -> v2.Component:
     else:
         is_stress_pkg = bool(any(blocks) and any("period" in k for k in blocks))
         subtype = "advanced" if dfn["advanced"] else "stress" if is_stress_pkg else None
-    return v2.Package(
-        **d,
-        subtype=subtype,
-        multi=dfn["multi"],
-    )
+    pkg = v2.Package(**d, subtype=subtype, multi=dfn["multi"])
+    if name == "prt-fmi":
+        return _fix_prt_fmi(pkg)
+    return pkg

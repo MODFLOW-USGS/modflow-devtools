@@ -6,6 +6,8 @@ from modflow_devtools.dfns.migrate_v1_to_v2 import v1_to_v2 as v1_to_v2
 from modflow_devtools.dfns.schema import (
     Double,
     FieldBase,
+    File,
+    Integer,
     Keyword,
     List,
     Model,
@@ -497,3 +499,80 @@ def test_model_no_dependent_variable():
     result = v1_to_v2(_v1_dfn(name="prt-nam"))
     assert isinstance(result, Model)
     assert result.dependent_variable is None
+
+
+def test_nested_record():
+    """Nested record subfields (e.g. gwf-oc formatrecord) are recursively mapped."""
+    dfn = _v1_dfn(
+        name="gwf-oc",
+        blocks={
+            "options": {
+                "headprintrecord": _v1_field(
+                    name="headprintrecord",
+                    type="record head print_format formatrecord",
+                    optional=True,
+                ),
+                "head": _v1_field(name="head", type="keyword", in_record=True),
+                "print_format": _v1_field(name="print_format", type="keyword", in_record=True),
+                "formatrecord": _v1_field(
+                    name="formatrecord",
+                    type="record columns width digits format",
+                    in_record=True,
+                ),
+                "columns": _v1_field(
+                    name="columns", type="integer", in_record=True, optional=True, tagged=True
+                ),
+                "width": _v1_field(
+                    name="width", type="integer", in_record=True, optional=True, tagged=True
+                ),
+                "digits": _v1_field(
+                    name="digits", type="integer", in_record=True, optional=True, tagged=True
+                ),
+                "format": _v1_field(
+                    name="format", type="string", in_record=True, optional=False, tagged=False
+                ),
+            }
+        },
+    )
+    component = v1_to_v2(dfn)
+    headprint = component.blocks["options"].fields["headprintrecord"]
+    assert isinstance(headprint, Record)
+    formatrecord = headprint.fields["formatrecord"]
+    assert isinstance(formatrecord, Record)
+    assert isinstance(formatrecord.fields["columns"], Integer)
+    assert isinstance(formatrecord.fields["width"], Integer)
+    assert isinstance(formatrecord.fields["digits"], Integer)
+    assert isinstance(formatrecord.fields["format"], String)
+
+
+def test_prt_fmi_packagedata():
+    """prt-fmi packagedata recarray is replaced with three named optional File fields."""
+    dfn = _v1_dfn(
+        name="prt-fmi",
+        blocks={
+            "packagedata": {
+                "packagedata": _v1_field(
+                    name="packagedata",
+                    type="recarray flowtype filein fname",
+                    block="packagedata",
+                ),
+                "flowtype": _v1_field(
+                    name="flowtype", type="string", block="packagedata", in_record=True
+                ),
+                "filein": _v1_field(
+                    name="filein", type="keyword", block="packagedata", in_record=True
+                ),
+                "fname": _v1_field(
+                    name="fname", type="string", block="packagedata", in_record=True
+                ),
+            }
+        },
+    )
+    component = v1_to_v2(dfn)
+    fields = component.blocks["packagedata"].fields
+    assert set(fields) == {"gwfhead", "gwfbudget", "gwfspdis"}
+    for fname in ("gwfhead", "gwfbudget", "gwfspdis"):
+        f = fields[fname]
+        assert isinstance(f, File)
+        assert f.optional is True
+        assert f.mode == "filein"
