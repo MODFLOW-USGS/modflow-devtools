@@ -98,6 +98,35 @@ def test_double():
     assert field.type == "double"
 
 
+def test_string_preserve_case():
+    """v1 string fields with preserve_case=True should get case_sensitive=True in v2."""
+    dfn = _v1_dfn(
+        name="gwf-dis",
+        blocks={
+            "options": {
+                "crs": _v1_field(
+                    name="crs",
+                    type="string",
+                    shape="lenbigline",
+                    preserve_case=True,
+                    optional=True,
+                ),
+                "name": _v1_field(
+                    name="name",
+                    type="string",
+                    preserve_case=True,
+                    optional=True,
+                ),
+            }
+        },
+    )
+    component = v1_to_v2(dfn)
+    for fname in ("crs", "name"):
+        field = component.blocks["options"].fields[fname]
+        assert isinstance(field, String), fname
+        assert field.case_sensitive is True, fname
+
+
 def test_record():
     dfn = _v1_dfn(
         name="test-dfn",
