@@ -98,8 +98,7 @@ def test_double():
     assert field.type == "double"
 
 
-def test_string_preserve_case():
-    """v1 string fields with preserve_case=True should get case_sensitive=True in v2."""
+def test_string():
     dfn = _v1_dfn(
         name="gwf-dis",
         blocks={
@@ -107,8 +106,8 @@ def test_string_preserve_case():
                 "crs": _v1_field(
                     name="crs",
                     type="string",
-                    shape="lenbigline",
-                    preserve_case=True,
+                    shape="lenbigline",  # shape (length) dropped in v2
+                    preserve_case=True,  # should become case_sensitive
                     optional=True,
                 ),
                 "name": _v1_field(
@@ -124,7 +123,7 @@ def test_string_preserve_case():
     for fname in ("crs", "name"):
         field = component.blocks["options"].fields[fname]
         assert isinstance(field, String), fname
-        assert field.case_sensitive is True, fname
+        assert field.case_sensitive, fname
 
 
 def test_record():
@@ -160,7 +159,6 @@ def test_record():
 
 
 def test_union():
-    """Keystring (union) type conversion."""
     dfn = _v1_dfn(
         name="test-dfn",
         blocks={
@@ -247,8 +245,13 @@ def test_list():
     assert "q" in spd.item.fields
 
 
-def test_list_missing_shape_inferred_from_maxbound():
-    """Period list with empty shape gets shape=["maxbound"] when maxbound dim exists."""
+def test_period_block_list_missing_shape_set_to_maxbound():
+    """
+    Completeness correction heuristic. A period block list with no shape gets
+    shape=["maxbound"] if a dim "maxbound" exists, otherwise it remains empty.
+    """
+
+    # with maxbound
     dfn = _v1_dfn(
         name="utl-spc",
         blocks={
@@ -295,9 +298,7 @@ def test_list_missing_shape_inferred_from_maxbound():
     assert isinstance(spd, List)
     assert spd.shape == ["maxbound"]
 
-
-def test_list_no_shape_no_maxbound():
-    """Period list with no shape and no maxbound dim keeps shape=[]."""
+    # no maxbound
     dfn = _v1_dfn(
         name="gwf-sfr",
         advanced=True,
