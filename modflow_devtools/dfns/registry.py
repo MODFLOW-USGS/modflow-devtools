@@ -8,6 +8,7 @@ from platform import system
 
 import pooch
 import tomli
+import tomli_w
 from pydantic import BaseModel, Field, PrivateAttr
 
 from modflow_devtools.dfns.schema import Dfns
@@ -16,6 +17,7 @@ __all__ = [
     "DfnRegistry",
     "LocalDfnRegistry",
     "RemoteDfnRegistry",
+    "add_to_user_config",
     "is_cached",
 ]
 
@@ -217,6 +219,32 @@ class RemoteDfnRegistry(DfnRegistry):
             if p.exists():
                 return p
         raise FileNotFoundError(f"Component '{component}' not found for '{self.release_id}'")
+
+
+def add_to_user_config(release_id: str) -> bool:
+    """
+    Add a release ID to the user overlay config file.
+
+    Returns True if the release was added, False if it was already present.
+    Creates the config file (and its parent directory) if they don't exist.
+    """
+    path = RemoteDfnRegistry.user_config_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    if path.exists():
+        with path.open("rb") as f:
+            data = tomli.load(f)
+    else:
+        data = {}
+
+    releases = data.get("releases", [])
+    if release_id in releases:
+        return False
+
+    data["releases"] = [*releases, release_id]
+    with path.open("wb") as f:
+        tomli_w.dump(data, f)
+    return True
 
 
 def is_cached(release_id: str) -> bool:

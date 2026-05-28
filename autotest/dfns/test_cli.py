@@ -4,6 +4,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
+import tomli
 
 from modflow_devtools.dfns.__main__ import main
 from modflow_devtools.dfns.registry import RemoteDfnRegistry
@@ -14,6 +15,14 @@ def cache_root(tmp_path):
     """Redirect the global DFN cache to a temp directory for test isolation."""
     with patch.object(RemoteDfnRegistry, "base_cache_path", return_value=tmp_path):
         yield tmp_path
+
+
+@pytest.fixture
+def user_config(tmp_path):
+    """Redirect the user overlay config to a temp path for test isolation."""
+    config_path = tmp_path / "modflow-devtools" / "dfns.toml"
+    with patch.object(RemoteDfnRegistry, "user_config_path", return_value=config_path):
+        yield config_path
 
 
 def _populate_cache(cache_root: Path, release_id: str) -> Path:
@@ -210,3 +219,102 @@ def test_roundtrip(cache_root, capsys):
 
         main(["info"])
         assert "Not cached" in capsys.readouterr().out
+
+
+# ── add ──────────────────────────────────────────────────────────────────────
+
+
+def test_add_writes_user_config(cache_root, user_config, capsys):
+    release_id = "MODFLOW-ORG/modflow6@6.6.0"
+
+    with patch.object(RemoteDfnRegistry, "sync", side_effect=lambda force=False: None):
+        result = main(["add", release_id])
+
+    assert result == 0
+    assert user_config.exists()
+    with user_config.open("rb") as f:
+        data = tomli.load(f)
+    assert release_id in data["releases"]
+    assert "Added" in capsys.readouterr().out
+
+
+def test_add_already_present(cache_root, user_config, capsys):
+    release_id = "MODFLOW-ORG/modflow6@6.6.0"
+    user_config.parent.mkdir(parents=True, exist_ok=True)
+    user_config.write_bytes(b'releases = ["MODFLOW-ORG/modflow6@6.6.0"]\n')
+
+    with patch.object(RemoteDfnRegistry, "sync", side_effect=lambda force=False: None):
+        result = main(["add", release_id])
+
+    assert result == 0
+    with user_config.open("rb") as f:
+        data = tomli.load(f)
+    assert data["releases"].count(release_id) == 1
+    assert "Already" in capsys.readouterr().out
+
+
+def test_add_appends_to_existing_config(cache_root, user_config, capsys):
+    user_config.parent.mkdir(parents=True, exist_ok=True)
+    user_config.write_bytes(b'releases = ["MODFLOW-ORG/modflow6@6.5.0"]\n')
+
+    with patch.object(RemoteDfnRegistry, "sync", side_effect=lambda force=False: None):
+        result = main(["add", "MODFLOW-ORG/modflow6@6.6.0"])
+
+    assert result == 0
+    with user_config.open("rb") as f:
+        data = tomli.load(f)
+    assert "MODFLOW-ORG/modflow6@6.5.0" in data["releases"]
+    assert "MODFLOW-ORG/modflow6@6.6.0" in data["releases"]
+
+
+def test_add_syncs_by_default(cache_root, user_config):
+    release_id = "MODFLOW-ORG/modflow6@6.6.0"
+    sync_calls: list[bool] = []
+
+    with patch.object(
+        RemoteDfnRegistry, "sync", side_effect=lambda force=False: sync_calls.append(force)
+    ):
+        result = main(["add", release_id])
+
+    assert result == 0
+    assert sync_calls == [False]
+
+
+def test_add_no_sync_skips_sync(cache_root, user_config):
+    release_id = "MODFLOW-ORG/modflow6@6.6.0"
+    sync_calls: list = []
+
+    with patch.object(
+        RemoteDfnRegistry, "sync", side_effect=lambda force=False: sync_calls.append(force)
+    ):
+        result = main(["add", "--no-sync", release_id])
+
+    assert result == 0
+    assert sync_calls == []
+    assert user_config.exists()
+
+
+def test_add_creates_config_dir(cache_root, user_config):
+    assert not user_config.parent.exists()
+
+    with patch.object(RemoteDfnRegistry, "sync", side_effect=lambda force=False: None):
+        result = main(["add", "MODFLOW-ORG/modflow6@6.6.0"])
+
+    assert result == 0
+    assert user_config.parent.exists()
+    assert user_config.exists()
+
+
+def test_add_invalid_release_id(cache_root, user_config, capsys):
+    for bad in ["no-at-sign", "@no-repo", "owner/name", "owner/name@"]:
+        result = main(["add", bad])
+        assert result != 0
+        assert "invalid" in capsys.readouterr().err.lower()
+
+
+def test_add_error_returns_nonzero(cache_root, user_config, capsys):
+    with patch.object(RemoteDfnRegistry, "sync", side_effect=ConnectionError("network down")):
+        result = main(["add", "MODFLOW-ORG/modflow6@6.6.0"])
+
+    assert result != 0
+    assert "network down" in capsys.readouterr().err

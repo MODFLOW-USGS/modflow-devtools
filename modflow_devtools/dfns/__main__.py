@@ -11,7 +11,7 @@ import argparse
 import shutil
 import sys
 
-from modflow_devtools.dfns.registry import RemoteDfnRegistry
+from modflow_devtools.dfns.registry import RemoteDfnRegistry, add_to_user_config
 
 
 def cmd_sync(args: argparse.Namespace) -> int:
@@ -53,6 +53,40 @@ def cmd_info(args: argparse.Namespace) -> int:
         return 1
 
 
+def cmd_add(args: argparse.Namespace) -> int:
+    """Add a DFN release to the user config and optionally sync it."""
+    release_id = args.release_id
+    parts = release_id.split("@")
+    if len(parts) != 2 or not parts[0] or not parts[1] or "/" not in parts[0]:
+        print(
+            f"Error: invalid release ID '{release_id}' (expected 'owner/name@tag')",
+            file=sys.stderr,
+        )
+        return 1
+
+    try:
+        added = add_to_user_config(release_id)
+        if added:
+            print(f"Added {release_id} to user config")
+        else:
+            print(f"Already in user config: {release_id}")
+
+        if not args.no_sync:
+            registry = RemoteDfnRegistry(release_id=release_id)
+            print(f"Syncing {release_id}...")
+            registry.sync()
+            n_files = (
+                len(list(registry.cache_path.glob("*.*"))) if registry.cache_path.exists() else 0
+            )
+            print(f"  {release_id}: {n_files} files")
+            print(f"Synced {release_id}")
+
+        return 0
+    except Exception as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 1
+
+
 def cmd_clean(args: argparse.Namespace) -> int:
     """Clean the DFN release cache directory."""
 
@@ -71,6 +105,18 @@ def main(argv: list[str] | None = None) -> int:
         description="MODFLOW 6 definition file tools",
     )
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
+
+    # add
+    add_parser = subparsers.add_parser("add", help="Add a DFN release to user config")
+    add_parser.add_argument(
+        "release_id",
+        help="Release ID in 'owner/name@tag' format",
+    )
+    add_parser.add_argument(
+        "--no-sync",
+        action="store_true",
+        help="Write to user config without downloading",
+    )
 
     # sync
     sync_parser = subparsers.add_parser("sync", help="Sync DFN files from release assets")
@@ -93,6 +139,8 @@ def main(argv: list[str] | None = None) -> int:
         parser.print_help()
         return 0
 
+    elif args.command == "add":
+        return cmd_add(args)
     elif args.command == "sync":
         return cmd_sync(args)
     elif args.command == "info":
