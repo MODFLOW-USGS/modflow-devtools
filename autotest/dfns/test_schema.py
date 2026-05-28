@@ -128,12 +128,12 @@ def test_load_empty_directory(function_tmpdir):
 
 def test_component_fields_no_blocks():
     pkg = _pkg("gwf-chd")
-    assert pkg.fields == {}
+    assert pkg.get_fields() == {}
 
 
 def test_component_fields_none_blocks():
     pkg = Package(name="gwf-chd", blocks=None)
-    assert pkg.fields == {}
+    assert pkg.get_fields() == {}
 
 
 def test_component_fields_single_block():
@@ -143,7 +143,7 @@ def test_component_fields_single_block():
         "gwf-dis",
         blocks={"dimensions": Block(name="dimensions", fields={"nlay": nlay, "nrow": nrow})},
     )
-    assert pkg.fields == {"nlay": nlay, "nrow": nrow}
+    assert pkg.get_fields() == {"nlay": nlay, "nrow": nrow}
 
 
 def test_component_fields_multiple_blocks():
@@ -158,10 +158,10 @@ def test_component_fields_multiple_blocks():
             "dimensions": Block(name="dimensions", fields={"nlay": nlay}),
         },
     )
-    assert pkg.fields == {"verbose": verbose, "nlay": nlay}
+    assert pkg.get_fields() == {"verbose": verbose, "nlay": nlay}
 
 
-def test_component_fields_duplicate_name_raises():
+def test_component_fields_duplicate_name():
     a1 = Integer(name="a")
     a2 = Integer(name="a", optional=True)
     pkg = _pkg(
@@ -171,8 +171,8 @@ def test_component_fields_duplicate_name_raises():
             "block2": Block(name="block2", fields={"a": a2}),
         },
     )
-    with pytest.raises(ValueError, match="Duplicate field 'a'"):
-        _ = pkg.fields
+    fields = pkg.get_fields()
+    assert fields.getlist("a") == [a1, a2]
 
 
 def test_get_block_no_blocks():
@@ -219,7 +219,7 @@ def test_get_block_found_in_second_block():
 def test_component_fields_loaded(dfn_dir):
     spec = Dfns.load(dfn_dir)
     gwf_dis = spec.components["gwf-dis"]
-    fields = gwf_dis.fields
+    fields = gwf_dis.get_fields()
     assert isinstance(fields, dict)
     assert len(fields) > 0
     # every value is a Field instance, every key matches the field's name

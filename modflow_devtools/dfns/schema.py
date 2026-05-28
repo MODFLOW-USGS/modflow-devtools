@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Annotated, Any, Literal
 
 import tomli
+from boltons.dictutils import OMD
 from pydantic import (
     BaseModel,
     SerializationInfo,
@@ -318,7 +319,7 @@ def _resolve_derived_dims(component: "ComponentBase", known_dims: set[str]) -> l
 
         if _DIM_RE.fullmatch(value):
             # Bare identifier: must name an Integer field in this component
-            field = component.fields.get(value)
+            field = component.get_fields().get(value)
             if field is None:
                 raise ValueError(f"dims {name!r}: field {value!r} not found in component")
             if not isinstance(field, Integer):
@@ -420,15 +421,21 @@ class ComponentBase(BaseModel):
             data = {"type": getattr(self, "type"), **data}
         return data
 
-    @property
-    def fields(self) -> dict[str, Field]:
-        result: dict[str, Field] = {}
+    def get_fields(self, recurse: bool = False) -> OMD:
+        items: list[tuple[str, Field]] = []
+
+        def _collect(fields: dict) -> None:
+            for name, field in fields.items():
+                items.append((name, field))
+                if recurse:
+                    if isinstance(field, (Record, Union)):
+                        _collect(field.children)
+                    elif isinstance(field, List):
+                        _collect(field.item.children)
+
         for block in (self.blocks or {}).values():
-            for name, field in block.fields.items():
-                if name in result:
-                    raise ValueError(f"Duplicate field {name!r} in component {self.name!r}")
-                result[name] = field
-        return result
+            _collect(block.fields)
+        return OMD(items)
 
     def get_block(self, field_name: str) -> Block | None:
         for block in (self.blocks or {}).values():

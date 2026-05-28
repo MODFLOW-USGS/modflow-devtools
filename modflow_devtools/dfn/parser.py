@@ -1,5 +1,4 @@
 from ast import literal_eval
-from typing import Any
 from warnings import warn
 
 from boltons.dictutils import OMD
@@ -39,21 +38,6 @@ def field_attr_sort_key(item) -> int:
     if k == "description":
         return 7
     return 8
-
-
-def try_parse_bool(value: Any) -> Any:
-    """
-    Try to parse a boolean from a string as represented
-    in a DFN file, otherwise return the value unaltered.
-    1. `"true"` -> `True`
-    2. `"false"` -> `False`
-    3. anything else -> `value`
-    """
-    if isinstance(value, str):
-        value = value.lower()
-        if value in ["true", "false"]:
-            return value == "true"
-    return value
 
 
 _FLOPY_CLASS_TO_V2_TYPE: dict[str, str] = {

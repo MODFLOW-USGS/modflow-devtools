@@ -550,6 +550,16 @@ def set_env(*remove, **update):
         [env.pop(k) for k in remove_after]
 
 
+def drop_none_or_empty(path, key, value):
+    """
+    Drop dictionary items with None or empty values.
+    For use with `boltons.iterutils.remap`.
+    """
+    if value is None or (isinstance(value, Iterable) and not any(value)):
+        return False
+    return True
+
+
 def try_get_enum_value(v: Any) -> Any:
     """
     Get the enum's value if the object is an instance
@@ -569,11 +579,14 @@ def try_literal_eval(value: str) -> Any:
         return value
 
 
-def drop_none_or_empty(path, key, value):
-    """
-    Drop dictionary items with None or empty values.
-    For use with `boltons.iterutils.remap`.
-    """
-    if value is None or (isinstance(value, Iterable) and not any(value)):
-        return False
-    return True
+def try_parse_bool(v: Any, default: bool = False) -> bool:
+    """Try to parse a boolean from a string."""
+    if isinstance(v, bool):
+        return v
+    if isinstance(v, str):
+        s = v.strip().lower()
+        if s == "true":
+            return True
+        if s in ("false", ""):
+            return False
+    return default

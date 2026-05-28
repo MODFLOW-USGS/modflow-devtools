@@ -1,17 +1,17 @@
 import ast
 import re
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from typing import Any, Literal
 
 from boltons.dictutils import OMD
 
 from modflow_devtools.dfn import schema as v1
-from modflow_devtools.dfn.parser import try_parse_bool
 from modflow_devtools.dfns import schema as v2
-from modflow_devtools.misc import try_literal_eval
+from modflow_devtools.misc import try_literal_eval, try_parse_bool
 
 _IDENT_RE = re.compile(r"^[A-Za-z_]\w*$")
 _LOOKUP_RE = re.compile(r"^(\w+)\.(\w+)\((\w+)\)$")
+_COL_FK_RE = re.compile(r"^([A-Za-z_]\w*)\(([A-Za-z_]\w*)\)$")
 
 _DEPENDENT_VARS: dict[str, str] = {
     "gwf": "head",
@@ -79,6 +79,30 @@ def _parse_list_shape(s: str) -> list[str]:
     return []
 
 
+def _remap_list_shapes(
+    blocks: dict[str, v2.Block],
+    fn: "Callable[[str, str, v2.List], list[str] | None]",
+) -> dict[str, v2.Block]:
+    """
+    Walk every List field in every block, calling ``fn(bname, fname, field)``.
+    If ``fn`` returns a new shape list, replace the field's shape; otherwise
+    leave it unchanged.  Returns a new blocks dict (immutable update pattern).
+    """
+    result = {}
+    for bname, block in blocks.items():
+        new_fields = {}
+        changed = False
+        for fname, field in block.fields.items():
+            if isinstance(field, v2.List):
+                new_shape = fn(bname, fname, field)
+                if new_shape is not None:
+                    field = field.model_copy(update={"shape": new_shape})
+                    changed = True
+            new_fields[fname] = field
+        result[bname] = block.model_copy(update={"fields": new_fields}) if changed else block
+    return result
+
+
 def _normalize_n_prefix_shapes(
     blocks: dict[str, v2.Block],
     raw_dim_names: set[str],
@@ -90,21 +114,18 @@ def _normalize_n_prefix_shapes(
     an ``n``-prefixed name while the dimensions block defines the same quantity
     under a ``max``-prefixed name.  Normalise before building explicit dims.
     """
-    result = {}
-    for bname, block in blocks.items():
-        new_fields = {}
-        changed = False
-        for fname, field in block.fields.items():
-            if isinstance(field, v2.List) and field.shape:
-                elem = field.shape[0]
-                if elem not in raw_dim_names and elem.startswith("n") and len(elem) > 1:
-                    candidate = "max" + elem[1:]
-                    if candidate in raw_dim_names:
-                        field = field.model_copy(update={"shape": [candidate]})
-                        changed = True
-            new_fields[fname] = field
-        result[bname] = block.model_copy(update={"fields": new_fields}) if changed else block
-    return result
+
+    def _fn(bname, fname, field):
+        if not field.shape:
+            return None
+        elem = field.shape[0]
+        if elem not in raw_dim_names and elem.startswith("n") and len(elem) > 1:
+            candidate = "max" + elem[1:]
+            if candidate in raw_dim_names:
+                return [candidate]
+        return None
+
+    return _remap_list_shapes(blocks, _fn)
 
 
 def _build_explicit_dims(
@@ -154,18 +175,12 @@ def _sanitize_list_shapes(
     ``maxbound`` is not declared as a dimension.  The structurally correct v2
     representation for such lists is ``shape=[]``.
     """
-    result = {}
-    for bname, block in blocks.items():
-        new_fields = {}
-        changed = False
-        for fname, field in block.fields.items():
-            if isinstance(field, v2.List) and field.shape:
-                if any(elem not in known_dims for elem in field.shape):
-                    field = field.model_copy(update={"shape": []})
-                    changed = True
-            new_fields[fname] = field
-        result[bname] = block.model_copy(update={"fields": new_fields}) if changed else block
-    return result
+    return _remap_list_shapes(
+        blocks,
+        lambda bname, fname, field: (
+            [] if field.shape and any(elem not in known_dims for elem in field.shape) else None
+        ),
+    )
 
 
 def _resolve_dimensions(
@@ -268,12 +283,18 @@ def _resolve_relations(blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
             if isinstance(f, v2.Record):
                 f = _resolve_record(f)
             elif isinstance(f, v2.Union):
-                f.arms = _resolve_fields(block_name, f.arms)  # type: ignore[assignment]
+                f = f.model_copy(update={"arms": _resolve_fields(block_name, f.arms)})
             elif isinstance(f, v2.List):
                 if isinstance(f.item, v2.Record):
-                    f.item = _resolve_record(f.item)
+                    f = f.model_copy(update={"item": _resolve_record(f.item)})
                 else:
-                    f.item.arms = _resolve_fields(block_name, f.item.arms)  # type: ignore[assignment]
+                    f = f.model_copy(
+                        update={
+                            "item": f.item.model_copy(
+                                update={"arms": _resolve_fields(block_name, f.item.arms)}
+                            )
+                        }
+                    )
             result[name] = f
         return result
 
@@ -295,20 +316,10 @@ def _fill_period_list_shapes(
     """
     if "maxbound" not in explicit_dims:
         return blocks
-    result = {}
-    for bname, block in blocks.items():
-        if "period" not in bname:
-            result[bname] = block
-            continue
-        new_fields = {}
-        changed = False
-        for fname, field in block.fields.items():
-            if isinstance(field, v2.List) and not field.shape:
-                field = field.model_copy(update={"shape": ["maxbound"]})
-                changed = True
-            new_fields[fname] = field
-        result[bname] = block.model_copy(update={"fields": new_fields}) if changed else block
-    return result
+    return _remap_list_shapes(
+        blocks,
+        lambda bname, fname, field: ["maxbound"] if "period" in bname and not field.shape else None,
+    )
 
 
 def _item_array_dims(field: v2.List) -> set[str]:
@@ -344,39 +355,29 @@ def _fill_named_list_shapes(
     4. If exactly one candidate remains, use it.
     """
     # Dims already claimed by existing shaped lists in non-period blocks.
-    used: set[str] = set()
-    for bname, block in blocks.items():
-        if "period" in bname:
-            continue
-        for field in block.fields.values():
-            if isinstance(field, v2.List) and field.shape:
-                used.update(field.shape)
-
+    used: set[str] = {
+        dim
+        for bname, block in blocks.items()
+        if "period" not in bname
+        for field in block.fields.values()
+        if isinstance(field, v2.List)
+        for dim in field.shape
+    }
     _SKIP = {"auxiliary"}
 
-    result = {}
-    for bname, block in blocks.items():
-        if "period" in bname:
-            result[bname] = block
-            continue
-        new_fields = {}
-        changed = False
-        for fname, field in block.fields.items():
-            if isinstance(field, v2.List) and not field.shape:
-                # Per-row column-count dims referenced inside the item record.
-                intra_row = _item_array_dims(field)
-                candidates = [
-                    n
-                    for n in explicit_dims
-                    if n not in _SKIP and n not in used and n not in intra_row
-                ]
-                if len(candidates) == 1:
-                    field = field.model_copy(update={"shape": list(candidates)})
-                    used.update(candidates)
-                    changed = True
-            new_fields[fname] = field
-        result[bname] = block.model_copy(update={"fields": new_fields}) if changed else block
-    return result
+    def _fn(bname, fname, field):
+        if "period" in bname or field.shape:
+            return None
+        intra_row = _item_array_dims(field)
+        candidates = [
+            n for n in explicit_dims if n not in _SKIP and n not in used and n not in intra_row
+        ]
+        if len(candidates) == 1:
+            used.update(candidates)
+            return list(candidates)
+        return None
+
+    return _remap_list_shapes(blocks, _fn)
 
 
 def _col_to_list_map(blocks: dict[str, v2.Block]) -> dict[str, str]:
@@ -627,6 +628,14 @@ def _patch_oc_rtype(
     return result
 
 
+def _parse_valid(valid: Any, coerce=None) -> list | None:
+    """Parse a v1 ``valid`` attribute to a list, optionally coercing each element."""
+    parts = valid.split() if isinstance(valid, str) else (list(valid) if valid else [])
+    if not parts:
+        return None
+    return [coerce(x) for x in parts] if coerce else parts
+
+
 def _fix_prt_fmi(component: v2.Component) -> v2.Component:
     """
     Replace prt-fmi's heterogeneous packagedata recarray with three named
@@ -656,223 +665,69 @@ def v1_to_v2(dfn: v1.Dfn) -> v2.Component:
 
     fields = v1.get_fields(dfn)
 
-    def _map_field(field: v1.Field) -> v2.Field:
+    def _map_field(f: v1.Field) -> v2.Field:
+        fd: dict[str, Any] = dict(f)
 
-        def _to_bool(v: Any, default: bool = False) -> bool:
-            if isinstance(v, bool):
-                return v
-            if isinstance(v, str):
-                s = v.strip().lower()
-                if s == "true":
-                    return True
-                if s in ("false", ""):
-                    return False
-            return default
+        _name: str = fd["name"]
+        _type: str | None = fd.get("type")
+        shape_str: str | None = fd.get("shape") or None
+        description: str | None = fd.get("description") or None
+        longname: str | None = fd.get("longname") or None
+        optional: bool = try_parse_bool(fd.get("optional"), False)
+        developmode: bool = try_parse_bool(fd.get("developmode"), False)
+        netcdf: bool = try_parse_bool(fd.get("netcdf"), False)
+        tagged: bool = try_parse_bool(fd.get("tagged"), False)
+        preserve_case: bool = try_parse_bool(fd.get("preserve_case"), False)
+        time_series: bool = try_parse_bool(fd.get("time_series"), False)
+        valid = fd.get("valid")
+        _default_raw = fd.get("default")
+        default = (
+            try_literal_eval(_default_raw)
+            if _type != "string" and isinstance(_default_raw, str)
+            else _default_raw
+        )
 
-        def __map_field(f: v1.Field) -> v2.Field:
-            fd: dict[str, Any] = {k: try_parse_bool(v) for k, v in dict(f).items()}
-
-            _name: str = fd["name"]
-            _type: str | None = fd.get("type")
-            shape_str: str | None = fd.get("shape") or None
-            description: str | None = fd.get("description") or None
-            longname: str | None = fd.get("longname") or None
-            optional: bool = _to_bool(fd.get("optional"), False)
-            developmode: bool = _to_bool(fd.get("developmode"), False)
-            netcdf: bool = _to_bool(fd.get("netcdf"), False)
-            tagged: bool = _to_bool(fd.get("tagged"), False)
-            preserve_case: bool = _to_bool(fd.get("preserve_case"), False)
-            time_series: bool = _to_bool(fd.get("time_series"), False)
-            valid = fd.get("valid")
-            _default_raw = fd.get("default")
-            default = (
-                try_literal_eval(_default_raw)
-                if _type != "string" and isinstance(_default_raw, str)
-                else _default_raw
-            )
-
-            _COL_FK_RE = re.compile(r"^([A-Za-z_]\w*)\(([A-Za-z_]\w*)\)$")
-
-            def _parse_shape(s: str) -> list[str]:
-                result = []
-                s_clean = s.strip()
-                if s_clean.startswith("(") and s_clean.endswith(")"):
-                    s_clean = s_clean[1:-1]
-                for elem in (x.strip() for x in s_clean.split(",") if x.strip()):
-                    if ";" in elem:
-                        result.append("ncpl")
-                    elif (
-                        elem in ("any1d", "unknown") or elem.startswith("<") or elem.startswith(">")
-                    ):
-                        pass
-                    elif m := _COL_FK_RE.fullmatch(elem):
-                        col_name = m.group(1)
-                        block_name = next(
-                            (
-                                fi["block"]
-                                for fi in fields.values(multi=True)
-                                if fi["name"] == col_name
-                                and fi["type"] == "integer"
-                                and fi.get("in_record", False)
-                            ),
-                            None,
-                        )
-                        if block_name:
-                            result.append(f"{block_name}.{elem}")
-                    else:
-                        provider = next(
-                            (
-                                fi["name"]
-                                for fi in fields.values(multi=True)
-                                if fi["type"] == "string"
-                                and (fi.get("shape") or "").strip() in (f"({elem})", elem)
-                            ),
-                            None,
-                        )
-                        result.append(provider if provider else elem)
-                return result
-
-            def _to_scalar() -> v2.Scalar:
-                assert _type is not None
-                if _type == "keyword":
-                    return v2.Keyword(
-                        name=_name,
-                        longname=longname,
-                        description=description,
-                        optional=optional,
-                        default=default,
-                        developmode=developmode,
-                        netcdf=netcdf,
-                    )
-                if _type == "string":
-                    return v2.String(
-                        name=_name,
-                        longname=longname,
-                        description=description,
-                        optional=optional,
-                        default=default,
-                        developmode=developmode,
-                        netcdf=netcdf,
-                        tagged=tagged,
-                        valid=valid.split()
-                        if isinstance(valid, str) and valid
-                        else (list(valid) if valid else None),
-                        case_sensitive=preserve_case,
-                        time_series=time_series,
-                    )
-                if _type == "integer":
-                    v = (
-                        [int(x) for x in valid.split()]
-                        if isinstance(valid, str) and valid
-                        else ([int(x) for x in valid] if valid else None)
-                    )
-                    return v2.Integer(
-                        name=_name,
-                        longname=longname,
-                        description=description,
-                        optional=optional,
-                        default=default,
-                        developmode=developmode,
-                        netcdf=netcdf,
-                        tagged=tagged,
-                        valid=v,
-                        time_series=time_series,
-                    )
-                if _type in ("double", "double precision"):
-                    return v2.Double(
-                        name=_name,
-                        longname=longname,
-                        description=description,
-                        optional=optional,
-                        default=default,
-                        developmode=developmode,
-                        netcdf=netcdf,
-                        tagged=tagged,
-                        time_series=time_series,
-                    )
-                raise TypeError(f"Unsupported scalar type: {_type!r}")
-
-            def _row_field() -> v2.Record | v2.Union:
-                item_names = (_type or "").split()[1:]
-                if not item_names:
-                    raise ValueError(f"Missing list item definition: {_type!r}")
-
-                item_types = [
-                    fi["type"]
-                    for fi in fields.values(multi=True)
-                    if fi["name"] in item_names and fi.get("in_record", False)
-                ]
-
-                if (
-                    len(item_names) == 1
-                    and item_types
-                    and (
-                        (item_types[0] or "").startswith("record")
-                        or (item_types[0] or "").startswith("keystring")
-                    )
-                ):
-                    mapped = __map_field(next(iter(fields.getlist(item_names[0]))))
-                    if isinstance(mapped, (v2.Record, v2.Union)):
-                        return mapped
-                    raise TypeError(
-                        f"Expected Record or Union for list item, got {type(mapped).__name__}"
-                    )
-
-                if all(t in v1.SCALAR_TYPES for t in item_types):
-                    rec_fields = _record_fields()
-                    return v2.Record(
-                        name=_name,
-                        description=(
-                            (description or "").replace("is the list of", "is the record of")
-                            or None
+        def _parse_shape(s: str) -> list[str]:
+            result = []
+            s_clean = s.strip()
+            if s_clean.startswith("(") and s_clean.endswith(")"):
+                s_clean = s_clean[1:-1]
+            for elem in (x.strip() for x in s_clean.split(",") if x.strip()):
+                if ";" in elem:
+                    result.append("ncpl")
+                elif elem in ("any1d", "unknown") or elem.startswith("<") or elem.startswith(">"):
+                    pass
+                elif m := _COL_FK_RE.fullmatch(elem):
+                    col_name = m.group(1)
+                    block_name = next(
+                        (
+                            fi["block"]
+                            for fi in fields.values(multi=True)
+                            if fi["name"] == col_name
+                            and fi["type"] == "integer"
+                            and fi.get("in_record", False)
                         ),
-                        fields=rec_fields,
+                        None,
                     )
+                    if block_name:
+                        result.append(f"{block_name}.{elem}")
+                else:
+                    provider = next(
+                        (
+                            fi["name"]
+                            for fi in fields.values(multi=True)
+                            if fi["type"] == "string"
+                            and (fi.get("shape") or "").strip() in (f"({elem})", elem)
+                        ),
+                        None,
+                    )
+                    result.append(provider if provider else elem)
+            return result
 
-                children = {
-                    fi["name"]: __map_field(fi)
-                    for fi in fields.values(multi=True)
-                    if fi["name"] in item_names and fi.get("in_record", False)
-                }
-                first = next(iter(children.values()))
-                if len(children) == 1 and isinstance(first, v2.Union):
-                    return first
-                return v2.Record(
-                    name=_name,
-                    description=(
-                        (description or "").replace("is the list of", "is the record of") or None
-                    ),
-                    fields=children,  # type: ignore[arg-type]
-                )
-
-            def _union_fields() -> dict:
-                names = (_type or "").split()[1:]
-                return {
-                    fi["name"]: __map_field(fi)
-                    for fi in fields.values(multi=True)
-                    if fi["name"] in names and fi.get("in_record", False)
-                }
-
-            def _record_fields() -> dict:
-                names = (_type or "").split()[1:]
-                result = {}
-                for rname in names:
-                    matches = [
-                        fi
-                        for fi in fields.values(multi=True)
-                        if fi["name"] == rname and fi.get("in_record", False)
-                    ]
-                    if matches:
-                        result[rname] = __map_field(matches[0])
-                return result
-
-            if _type is None:
-                raise ValueError(f"Missing type for v1 field: {_name!r}")
-
-            if _type.startswith("recarray"):
-                item = _row_field()
-                list_shape = _parse_list_shape(shape_str) if shape_str else []
-                return v2.List(
+        def _to_scalar() -> v2.Scalar:
+            assert _type is not None
+            if _type == "keyword":
+                return v2.Keyword(
                     name=_name,
                     longname=longname,
                     description=description,
@@ -880,139 +735,238 @@ def v1_to_v2(dfn: v1.Dfn) -> v2.Component:
                     default=default,
                     developmode=developmode,
                     netcdf=netcdf,
-                    item=item,
-                    shape=list_shape,
                 )
-
-            if _type.startswith("keystring"):
-                arms = _union_fields()
-                return v2.Union(
+            if _type == "string":
+                return v2.String(
                     name=_name,
                     longname=longname,
                     description=description,
                     optional=optional,
                     default=default,
                     developmode=developmode,
-                    arms=arms,  # type: ignore[arg-type]
+                    netcdf=netcdf,
+                    tagged=tagged,
+                    valid=_parse_valid(valid),
+                    case_sensitive=preserve_case,
+                    time_series=time_series,
+                )
+            if _type == "integer":
+                return v2.Integer(
+                    name=_name,
+                    longname=longname,
+                    description=description,
+                    optional=optional,
+                    default=default,
+                    developmode=developmode,
+                    netcdf=netcdf,
+                    tagged=tagged,
+                    valid=_parse_valid(valid, int),
+                    time_series=time_series,
+                )
+            if _type in ("double", "double precision"):
+                return v2.Double(
+                    name=_name,
+                    longname=longname,
+                    description=description,
+                    optional=optional,
+                    default=default,
+                    developmode=developmode,
+                    netcdf=netcdf,
+                    tagged=tagged,
+                    time_series=time_series,
+                )
+            raise TypeError(f"Unsupported scalar type: {_type!r}")
+
+        def _row_field() -> v2.Record | v2.Union:
+            item_names = (_type or "").split()[1:]
+            if not item_names:
+                raise ValueError(f"Missing list item definition: {_type!r}")
+
+            item_types = [
+                fi["type"]
+                for fi in fields.values(multi=True)
+                if fi["name"] in item_names and fi.get("in_record", False)
+            ]
+
+            if (
+                len(item_names) == 1
+                and item_types
+                and (
+                    (item_types[0] or "").startswith("record")
+                    or (item_types[0] or "").startswith("keystring")
+                )
+            ):
+                mapped = _map_field(next(iter(fields.getlist(item_names[0]))))
+                if isinstance(mapped, (v2.Record, v2.Union)):
+                    return mapped
+                raise TypeError(
+                    f"Expected Record or Union for list item, got {type(mapped).__name__}"
                 )
 
-            if _type.startswith("record"):
-                subnames = (_type or "").split()[1:]
-                # Detect filerecord: a subfield named 'filein' or 'fileout' with type keyword
-                file_mode: str | None = None
-                for sname in subnames:
-                    if sname in ("filein", "fileout"):
-                        m = next(
-                            (
-                                fi
-                                for fi in fields.values(multi=True)
-                                if fi["name"] == sname
-                                and try_parse_bool(fi.get("in_record", False))
-                            ),
-                            None,
-                        )
-                        if m and (m.get("type") or "").strip() == "keyword":
-                            file_mode = sname
-                            break
-
-                if file_mode:
-                    # Filerecord pattern: <tag_kw> <filein|fileout> <path_string>
-                    # In v2: drop the mode keyword and the untagged path string; promote
-                    # the tag keyword to a File field (tagged=True, name=tag keyword name).
-                    # Find the untagged string (the path value) so we can skip it.
-                    path_field_name: str | None = None
-                    for sname in subnames:
-                        if sname == file_mode:
-                            continue
-                        m_s = next(
-                            (
-                                fi
-                                for fi in fields.values(multi=True)
-                                if fi["name"] == sname
-                                and try_parse_bool(fi.get("in_record", False))
-                            ),
-                            None,
-                        )
-                        if (
-                            m_s
-                            and (m_s.get("type") or "").strip() == "string"
-                            and not _to_bool(m_s.get("tagged"), True)
-                        ):
-                            path_field_name = sname
-                            break
-
-                    rec_fields = {}
-                    for rname in subnames:
-                        if rname in (file_mode, path_field_name):
-                            continue  # drop mode keyword and path string
-                        m = next(
-                            (
-                                fi
-                                for fi in fields.values(multi=True)
-                                if fi["name"] == rname
-                                and try_parse_bool(fi.get("in_record", False))
-                                and not (fi.get("type") or "").startswith("record")
-                            ),
-                            None,
-                        )
-                        if m is None:
-                            continue
-                        ftype = (m.get("type") or "").strip()
-                        if ftype == "keyword":
-                            # Tag keyword becomes the File field (tagged=True, name=keyword name)
-                            rec_fields[rname] = v2.File(
-                                name=rname,
-                                longname=m.get("longname") or None,
-                                description=m.get("description") or None,
-                                optional=_to_bool(m.get("optional"), False),
-                                developmode=_to_bool(m.get("developmode"), False),
-                                netcdf=_to_bool(m.get("netcdf"), False),
-                                tagged=True,
-                                mode=file_mode,  # type: ignore[arg-type]
-                            )
-                        else:
-                            rec_fields[rname] = __map_field(m)  # type: ignore
-                else:
-                    rec_fields = _record_fields()
-
+            if all(t in v1.SCALAR_TYPES for t in item_types):
+                rec_fields = _subfield_map()
                 return v2.Record(
                     name=_name,
-                    longname=longname,
-                    description=description,
-                    optional=optional,
-                    default=default,
-                    developmode=developmode,
-                    fields=rec_fields,  # type: ignore[arg-type]
+                    description=(
+                        (description or "").replace("is the list of", "is the record of") or None
+                    ),
+                    fields=rec_fields,
                 )
 
-            if shape_str is not None:
-                dtype_map: dict[str, Literal["keyword", "integer", "double", "string"]] = {
-                    "double precision": "double",
-                    "double": "double",
-                    "integer": "integer",
-                    "string": "string",
-                    "keyword": "keyword",
-                }
-                dtype = dtype_map.get(_type)
-                if dtype is not None:
-                    if dtype == "string":
-                        if shape_str.strip() != "lenbigline":
-                            return v2.Array(
-                                name=_name,
-                                longname=longname,
-                                description=description,
-                                optional=optional,
-                                default=default,
-                                developmode=developmode,
-                                netcdf=netcdf,
-                                time_series=time_series,
-                                dtype="string",
-                                shape=[],
-                            )
-                        # lenbigline is a character-length constraint (v1 overloading),
-                        # not an array dimension; fall through to _to_scalar() below.
+            children = {
+                fi["name"]: _map_field(fi)
+                for fi in fields.values(multi=True)
+                if fi["name"] in item_names and fi.get("in_record", False)
+            }
+            first = next(iter(children.values()))
+            if len(children) == 1 and isinstance(first, v2.Union):
+                return first
+            return v2.Record(
+                name=_name,
+                description=(
+                    (description or "").replace("is the list of", "is the record of") or None
+                ),
+                fields=children,  # type: ignore[arg-type]
+            )
+
+        def _subfield_map() -> dict:
+            result = {}
+            for rname in (_type or "").split()[1:]:
+                for fi in fields.values(multi=True):
+                    if fi["name"] == rname and fi.get("in_record", False):
+                        result[rname] = _map_field(fi)
+                        break
+            return result
+
+        if _type is None:
+            raise ValueError(f"Missing type for v1 field: {_name!r}")
+
+        if _type.startswith("recarray"):
+            item = _row_field()
+            list_shape = _parse_list_shape(shape_str) if shape_str else []
+            return v2.List(
+                name=_name,
+                longname=longname,
+                description=description,
+                optional=optional,
+                default=default,
+                developmode=developmode,
+                netcdf=netcdf,
+                item=item,
+                shape=list_shape,
+            )
+
+        if _type.startswith("keystring"):
+            arms = _subfield_map()
+            return v2.Union(
+                name=_name,
+                longname=longname,
+                description=description,
+                optional=optional,
+                default=default,
+                developmode=developmode,
+                arms=arms,  # type: ignore[arg-type]
+            )
+
+        if _type.startswith("record"):
+            subnames = (_type or "").split()[1:]
+            # Detect filerecord: a subfield named 'filein' or 'fileout' with type keyword
+            file_mode: str | None = None
+            for sname in subnames:
+                if sname in ("filein", "fileout"):
+                    m = next(
+                        (
+                            fi
+                            for fi in fields.values(multi=True)
+                            if fi["name"] == sname and try_parse_bool(fi.get("in_record", False))
+                        ),
+                        None,
+                    )
+                    if m and (m.get("type") or "").strip() == "keyword":
+                        file_mode = sname
+                        break
+
+            if file_mode:
+                # Filerecord pattern: <tag_kw> <filein|fileout> <path_string>
+                # In v2: drop the mode keyword and the untagged path string; promote
+                # the tag keyword to a File field (tagged=True, name=tag keyword name).
+                # Find the untagged string (the path value) so we can skip it.
+                path_field_name: str | None = None
+                for sname in subnames:
+                    if sname == file_mode:
+                        continue
+                    m_s = next(
+                        (
+                            fi
+                            for fi in fields.values(multi=True)
+                            if fi["name"] == sname and try_parse_bool(fi.get("in_record", False))
+                        ),
+                        None,
+                    )
+                    if (
+                        m_s
+                        and (m_s.get("type") or "").strip() == "string"
+                        and not try_parse_bool(m_s.get("tagged"), True)
+                    ):
+                        path_field_name = sname
+                        break
+
+                rec_fields = {}
+                for rname in subnames:
+                    if rname in (file_mode, path_field_name):
+                        continue  # drop mode keyword and path string
+                    m = next(
+                        (
+                            fi
+                            for fi in fields.values(multi=True)
+                            if fi["name"] == rname
+                            and try_parse_bool(fi.get("in_record", False))
+                            and not (fi.get("type") or "").startswith("record")
+                        ),
+                        None,
+                    )
+                    if m is None:
+                        continue
+                    ftype = (m.get("type") or "").strip()
+                    if ftype == "keyword":
+                        # Tag keyword becomes the File field (tagged=True, name=keyword name)
+                        rec_fields[rname] = v2.File(
+                            name=rname,
+                            longname=m.get("longname") or None,
+                            description=m.get("description") or None,
+                            optional=try_parse_bool(m.get("optional"), False),
+                            developmode=try_parse_bool(m.get("developmode"), False),
+                            netcdf=try_parse_bool(m.get("netcdf"), False),
+                            tagged=True,
+                            mode=file_mode,  # type: ignore[arg-type]
+                        )
                     else:
-                        parsed_shape = _parse_shape(shape_str)
+                        rec_fields[rname] = _map_field(m)  # type: ignore
+            else:
+                rec_fields = _subfield_map()
+
+            return v2.Record(
+                name=_name,
+                longname=longname,
+                description=description,
+                optional=optional,
+                default=default,
+                developmode=developmode,
+                fields=rec_fields,  # type: ignore[arg-type]
+            )
+
+        if shape_str is not None:
+            dtype_map: dict[str, Literal["keyword", "integer", "double", "string"]] = {
+                "double precision": "double",
+                "double": "double",
+                "integer": "integer",
+                "string": "string",
+                "keyword": "keyword",
+            }
+            dtype = dtype_map.get(_type)
+            if dtype is not None:
+                if dtype == "string":
+                    if shape_str.strip() != "lenbigline":
                         return v2.Array(
                             name=_name,
                             longname=longname,
@@ -1022,13 +976,27 @@ def v1_to_v2(dfn: v1.Dfn) -> v2.Component:
                             developmode=developmode,
                             netcdf=netcdf,
                             time_series=time_series,
-                            dtype=dtype,
-                            shape=parsed_shape,
+                            dtype="string",
+                            shape=[],
                         )
+                    # lenbigline is a character-length constraint (v1 overloading),
+                    # not an array dimension; fall through to _to_scalar() below.
+                else:
+                    parsed_shape = _parse_shape(shape_str)
+                    return v2.Array(
+                        name=_name,
+                        longname=longname,
+                        description=description,
+                        optional=optional,
+                        default=default,
+                        developmode=developmode,
+                        netcdf=netcdf,
+                        time_series=time_series,
+                        dtype=dtype,
+                        shape=parsed_shape,
+                    )
 
-            return _to_scalar()
-
-        return __map_field(field)
+        return _to_scalar()
 
     name = dfn["name"]
     blocks: dict[str, v2.Block] = {}
