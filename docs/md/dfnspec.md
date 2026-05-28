@@ -141,7 +141,7 @@ Parent relationships are defined bottom-up with attribute `parent`:
 
 #### `dims`
 
-`{string: Dim} (default: {})`. Named dimensions available for use in array and list shape expressions. Each entry is either field-backed (`field`: the name of an integer or self-sizing array field in this component) or derived (`expr`: an arithmetic expression over other dims), plus a `scope` that controls visibility to other components. See [Dimensions](#dimensions).
+`{string: Dim} (default: {})`. Named dimensions available for use in array and list shape expressions. Each entry has a `value` expression and a `scope` that controls visibility to other components. See [Dimensions](#dimensions).
 
 ### Component types
 
@@ -471,30 +471,35 @@ A **non-empty `shape`** (exactly one element) names a declared dimension that bo
 
 ### Dimensions
 
-Dimensions may be declared by a component with a `dims` map. Each entry in `dims` consists of a **source** (a field or an expression combining other dimension fields) and a **scope**:
+Dimensions may be declared by a component with a `dims` map. Each entry in `dims` has a `value` expression and a `scope`:
 
 ```yaml
 dims:
   nlay:
-    field: nlay        # backed by a sibling integer field 'nlay'
+    value: nlay                  # backed by integer field 'nlay'
     scope: model
   nodes:
-    expr: "nlay * nrow * ncol"   # derived from other dims
+    value: "nlay * nrow * ncol"  # derived from other dims
     scope: model
   nper:
-    field: nper
+    value: nper
     scope: simulation
+  auxiliary:
+    value: "len(auxiliary)"      # backed by self-sizing array field 'auxiliary'
+    scope: component
 ```
 
 Dimensions may be used in the `shape` expression of `list` and `array` fields.
 
 #### Dimension sources
 
-The `field` and `expr` attributes define dimension sources. These attributes are mutually exclusive, distinguishing **explicit dimensions** from **derived dimensions**.
+The `value` attribute defines the dimension source as a Python expression. Three forms are distinguished:
 
-Explicit dimensions are most straightforwardly defined with an `integer` field, directly indicating the size of the dimension. Self-sizing `array` fields may also may serve as explicit dimension sources; a self-sizing array dimension is effectively a dynamic dimension size, indicating "the same size as this array".
+- **Bare identifier** `nlay` — backed by an integer field of that name in this component. The dimension takes the runtime value of that field.
+- **`len(name)`** — backed by a self-sizing array field of that name. The dimension equals the runtime length of the array.
+- **Arithmetic expression** `nlay * nrow * ncol` — derived from other dims. May not use bare field names; all operands must be declared dimensions.
 
-A dimension with an `expr` attribute rather than `field` is a derived dimension. Shape expressions use Python-like syntax and may contain several kinds of reference, resolved in the order presented below:
+Shape expressions use Python-like syntax and may contain several kinds of reference, resolved in the order presented below:
 
 - **Local dimension**: an explicit or derived dimension in this component, resolved in dependency order.
 - **Inherited dimension**: a dimension inherited from another component, per scoping rules (see below).
@@ -508,20 +513,23 @@ Canonical examples of dimensions:
 ```yaml
 dims:
   # sim-tdis
-  nper: {field: nper, scope: simulation}
+  nper: {value: nper, scope: simulation}
 
   # gwf-dis
-  nlay: {field: nlay, scope: model}
-  nrow: {field: nrow, scope: model}
-  ncol: {field: ncol, scope: model}
-  ncpl: {expr: "nrow * ncol", scope: model}
-  nodes: {expr: "nlay * nrow * ncol", scope: model}
-  ncelldim: {expr: "3", scope: model}
+  nlay: {value: nlay, scope: model}
+  nrow: {value: nrow, scope: model}
+  ncol: {value: ncol, scope: model}
+  ncpl: {value: "nrow * ncol", scope: model}
+  nodes: {value: "nlay * nrow * ncol", scope: model}
+  ncelldim: {value: "3", scope: model}
 
   # gwf-disv
-  ncpl: {field: ncpl, scope: model}
-  nodes: {expr: "nlay * ncpl", scope: model}
-  ncelldim: {expr: "2", scope: model}
+  ncpl: {value: ncpl, scope: model}
+  nodes: {value: "nlay * ncpl", scope: model}
+  ncelldim: {value: "2", scope: model}
+
+  # any package with an auxiliary array
+  auxiliary: {value: "len(auxiliary)"}
 ```
 
 An inline array may have its size determined by an integer subfield in the same record, or if the record it is within is the item type of a list, by a column in another list.

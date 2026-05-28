@@ -18,6 +18,7 @@ from modflow_devtools.dfns.schema import (
     String,
     _names_in_expr,
     _resolve_derived_dims,
+    _validate_len_call,
     _validate_shape_element,
     _validate_sum_call,
 )
@@ -57,8 +58,8 @@ def test_shape_expr_cyclic_resolution():
         name="bad",
         blocks=None,
         dims={
-            "a": Dim(expr="b + 1", scope="component"),
-            "b": Dim(expr="a + 1", scope="component"),
+            "a": Dim(value="b + 1", scope="component"),
+            "b": Dim(value="a + 1", scope="component"),
         },
     )
     with pytest.raises(ValueError, match="Cycle in"):
@@ -69,7 +70,7 @@ def test_shape_expr_unknown_operand():
     pkg = Package(
         name="bad",
         blocks=None,
-        dims={"nodes": Dim(expr="ghost_dim * 2", scope="component")},
+        dims={"nodes": Dim(value="ghost_dim * 2", scope="component")},
     )
     with pytest.raises(ValueError, match="not a known dimension"):
         Dfns(components={"bad": pkg})
@@ -88,7 +89,7 @@ def test_resolve_derived_dims_sum_expr():
     pkg = Package(
         name="test",
         blocks=pkg.blocks,
-        dims={"total_conn": Dim(expr="sum(packagedata.nlakeconn)", scope="component")},
+        dims={"total_conn": Dim(value="sum(packagedata.nlakeconn)", scope="component")},
     )
     order = _resolve_derived_dims(pkg, set())
     assert order == ["total_conn"]
@@ -104,8 +105,8 @@ def test_resolve_derived_dims_cycle_error():
         name="test",
         blocks=None,
         dims={
-            "a": Dim(expr="b + 1", scope="component"),
-            "b": Dim(expr="a + 1", scope="component"),
+            "a": Dim(value="b + 1", scope="component"),
+            "b": Dim(value="a + 1", scope="component"),
         },
     )
     with pytest.raises(ValueError, match="Cycle in"):
@@ -116,7 +117,7 @@ def test_resolve_derived_dims_unknown_operand_error():
     pkg = Package(
         name="test",
         blocks=None,
-        dims={"nodes": Dim(expr="mystery_dim * 2", scope="component")},
+        dims={"nodes": Dim(value="mystery_dim * 2", scope="component")},
     )
     with pytest.raises(ValueError, match="not a known dimension"):
         _resolve_derived_dims(pkg, set())
@@ -126,7 +127,7 @@ def test_resolve_derived_dims_invalid_expression_error():
     pkg = Package(
         name="test",
         blocks=None,
-        dims={"nodes": Dim(expr="nlay * (", scope="component")},
+        dims={"nodes": Dim(value="nlay * (", scope="component")},
     )
     with pytest.raises(ValueError, match="Invalid"):
         _resolve_derived_dims(pkg, set())
@@ -172,6 +173,74 @@ def test_validate_sum_expr():
         _validate_sum_call(call, pkg, "sum(packagedata.nosuchcol)")
 
 
+def _make_len_call(expr: str):
+    tree = ast.parse(expr, mode="eval")
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Call):
+            return node
+    raise AssertionError("No Call node found")
+
+
+def test_validate_len_call():
+    arr = Array(name="auxiliary", dtype="string", shape=[])
+    block = Block(name="options", fields={"auxiliary": arr})
+    pkg = Package(name="test", blocks={"options": block})
+
+    call = _make_len_call("len(auxiliary)")
+    _validate_len_call(call, pkg, "len(auxiliary)")  # no error
+
+    # too many arguments
+    with pytest.raises(ValueError, match="exactly one argument"):
+        bad = ast.parse("len(a, b)", mode="eval").body  # type: ignore[attr-defined]
+        _validate_len_call(bad, pkg, "len(a, b)")
+
+    # non-name argument
+    with pytest.raises(ValueError, match="field name"):
+        bad = ast.parse("len(a.b)", mode="eval").body  # type: ignore[attr-defined]
+        _validate_len_call(bad, pkg, "len(a.b)")
+
+
+def test_names_in_expr_excludes_len_internals():
+    assert _names_in_expr("len(auxiliary)") == set()
+
+
+def test_names_in_expr_len_and_arithmetic():
+    assert _names_in_expr("len(auxiliary) + nlay") == {"nlay"}
+
+
+def test_dim_value_len_form():
+    arr = Array(name="auxiliary", dtype="string", shape=[])
+    block = Block(name="options", fields={"auxiliary": arr})
+    pkg = Package(
+        name="test",
+        blocks={"options": block},
+        dims={"auxiliary": Dim(value="len(auxiliary)", scope="component")},
+    )
+    Dfns(components={"test": pkg})  # no error
+
+
+def test_dim_value_integer_field_not_found():
+    pkg = Package(
+        name="test",
+        blocks=None,
+        dims={"nlay": Dim(value="nlay", scope="component")},
+    )
+    with pytest.raises(ValueError, match="not found in component"):
+        Dfns(components={"test": pkg})
+
+
+def test_dim_value_array_field_requires_len():
+    arr = Array(name="auxiliary", dtype="string", shape=[])
+    block = Block(name="options", fields={"auxiliary": arr})
+    pkg = Package(
+        name="test",
+        blocks={"options": block},
+        dims={"auxiliary": Dim(value="auxiliary", scope="component")},
+    )
+    with pytest.raises(ValueError, match="use len\\(auxiliary\\)"):
+        Dfns(components={"test": pkg})
+
+
 def _dim_block(*names: str) -> Block:
     return Block(
         name="dimensions",
@@ -181,9 +250,9 @@ def _dim_block(*names: str) -> Block:
 
 def _make_shape_validation_ctx(dim_names: set[str], derived: dict | None = None):
     """Return (array, component, known_dims) for shape element tests."""
-    dims: dict[str, Dim] = {n: Dim(field=n, scope="component") for n in dim_names}
+    dims: dict[str, Dim] = {n: Dim(value=n, scope="component") for n in dim_names}
     if derived:
-        dims.update({n: Dim(expr=e, scope="component") for n, e in derived.items()})
+        dims.update({n: Dim(value=e, scope="component") for n, e in derived.items()})
     blocks = {"dimensions": _dim_block(*dim_names)} if dim_names else None
     pkg = Package(name="test", blocks=blocks, dims=dims or None)
     gwf = Model(name="gwf-nam", blocks=None)
@@ -204,7 +273,7 @@ def test_validate_shape_element_inherited_dim():
         name="gwf-dis",
         parent="gwf-nam",
         blocks=None,
-        dims={"nodes": Dim(expr="42", scope="model")},
+        dims={"nodes": Dim(value="42", scope="model")},
     )
     test_pkg = Package(name="gwf-test", parent="gwf-nam", blocks=None)
     gwf = Model(name="gwf-nam", blocks=None)
@@ -388,9 +457,9 @@ def test_local_dims():
         name="gwf-dis",
         blocks={"dimensions": block},
         dims={
-            "nlay": Dim(field="nlay", scope="model"),
-            "nrow": Dim(field="nrow", scope="model"),
-            "ncol": Dim(field="ncol", scope="model"),
+            "nlay": Dim(value="nlay", scope="model"),
+            "nrow": Dim(value="nrow", scope="model"),
+            "ncol": Dim(value="ncol", scope="model"),
         },
     )
     spec = Dfns(components={"gwf-dis": pkg})
@@ -405,7 +474,7 @@ def test_local_dims():
     pkg3 = Package(
         name="test",
         blocks=None,
-        dims={"nodes": Dim(expr="42", scope="component")},
+        dims={"nodes": Dim(value="42", scope="component")},
     )
     spec3 = Dfns(components={"test": pkg3})
     assert spec3.local_dims("test") == {"nodes"}
@@ -417,24 +486,24 @@ def test_resolve_derived_dims():
         name="test",
         blocks={"dimensions": block},
         dims={
-            "nlay": Dim(field="nlay", scope="component"),
-            "nrow": Dim(field="nrow", scope="component"),
-            "ncol": Dim(field="ncol", scope="component"),
-            "nodes": Dim(expr="nlay * nrow * ncol", scope="component"),
+            "nlay": Dim(value="nlay", scope="component"),
+            "nrow": Dim(value="nrow", scope="component"),
+            "ncol": Dim(value="ncol", scope="component"),
+            "nodes": Dim(value="nlay * nrow * ncol", scope="component"),
         },
     )
     order = _resolve_derived_dims(pkg, {"nlay", "nrow", "ncol"})
-    assert order == ["nodes"]
+    assert order[-1] == "nodes"  # nodes depends on the three field-backed dims
 
     pkg = Package(
         name="test",
         blocks={"dimensions": block},
         dims={
-            "nlay": Dim(field="nlay", scope="component"),
-            "nrow": Dim(field="nrow", scope="component"),
-            "ncol": Dim(field="ncol", scope="component"),
-            "nodes": Dim(expr="nlay * nrow * ncol", scope="component"),
-            "nodouble": Dim(expr="nodes * 2", scope="component"),
+            "nlay": Dim(value="nlay", scope="component"),
+            "nrow": Dim(value="nrow", scope="component"),
+            "ncol": Dim(value="ncol", scope="component"),
+            "nodes": Dim(value="nlay * nrow * ncol", scope="component"),
+            "nodouble": Dim(value="nodes * 2", scope="component"),
         },
     )
     order = _resolve_derived_dims(pkg, {"nlay", "nrow", "ncol"})
@@ -443,7 +512,7 @@ def test_resolve_derived_dims():
     pkg = Package(
         name="test",
         blocks=None,
-        dims={"derived": Dim(expr="nodes + 1", scope="component")},
+        dims={"derived": Dim(value="nodes + 1", scope="component")},
     )
     order = _resolve_derived_dims(pkg, {"nodes"})
     assert order == ["derived"]
@@ -455,10 +524,10 @@ def test_dim_validation():
         name="gwf-dis",
         blocks={"dimensions": block},
         dims={
-            "nlay": Dim(field="nlay", scope="model"),
-            "nrow": Dim(field="nrow", scope="model"),
-            "ncol": Dim(field="ncol", scope="model"),
-            "nodes": Dim(expr="nlay * nrow * ncol", scope="model"),
+            "nlay": Dim(value="nlay", scope="model"),
+            "nrow": Dim(value="nrow", scope="model"),
+            "ncol": Dim(value="ncol", scope="model"),
+            "nodes": Dim(value="nlay * nrow * ncol", scope="model"),
         },
     )
     spec = Dfns(components={"gwf-dis": pkg})
@@ -475,9 +544,9 @@ def test_local_dims_model_scoped():
         name="gwf-dis",
         blocks={"dimensions": block},
         dims={
-            "nlay": Dim(field="nlay", scope="model"),
-            "nrow": Dim(field="nrow", scope="model"),
-            "ncol": Dim(field="ncol", scope="model"),
+            "nlay": Dim(value="nlay", scope="model"),
+            "nrow": Dim(value="nrow", scope="model"),
+            "ncol": Dim(value="ncol", scope="model"),
         },
     )
     spec = Dfns(components={"gwf-dis": pkg})
@@ -491,10 +560,10 @@ def test_inherited_dims():
         parent="gwf-nam",
         blocks={"dimensions": dis_block},
         dims={
-            "nlay": Dim(field="nlay", scope="model"),
-            "nrow": Dim(field="nrow", scope="model"),
-            "ncol": Dim(field="ncol", scope="model"),
-            "nodes": Dim(expr="nlay * nrow * ncol", scope="model"),
+            "nlay": Dim(value="nlay", scope="model"),
+            "nrow": Dim(value="nrow", scope="model"),
+            "ncol": Dim(value="ncol", scope="model"),
+            "nodes": Dim(value="nlay * nrow * ncol", scope="model"),
         },
     )
     chd = _pkg("gwf-chd", parent="gwf-nam", blocks=None)
@@ -513,8 +582,8 @@ def test_inherited_dims():
         parent="gwf-nam",
         blocks={"dimensions": disv_block},
         dims={
-            "nlay": Dim(field="nlay", scope="model"),
-            "ncpl": Dim(field="ncpl", scope="model"),
+            "nlay": Dim(value="nlay", scope="model"),
+            "ncpl": Dim(value="ncpl", scope="model"),
         },
     )
     chd = _pkg("gwf-chd", parent="gwf-nam", blocks=None)
@@ -531,8 +600,8 @@ def test_inherited_dims():
         parent="gwf-nam",
         blocks={"dimensions": disu_block},
         dims={
-            "nodes": Dim(field="nodes", scope="model"),
-            "nja": Dim(field="nja", scope="model"),
+            "nodes": Dim(value="nodes", scope="model"),
+            "nja": Dim(value="nja", scope="model"),
         },
     )
     chd = _pkg("gwf-chd", parent="gwf-nam", blocks=None)
@@ -551,16 +620,16 @@ def test_inherited_dims_excludes_own():
         parent="gwf-nam",
         blocks={"dimensions": dis_block},
         dims={
-            "nlay": Dim(field="nlay", scope="model"),
-            "nrow": Dim(field="nrow", scope="model"),
-            "ncol": Dim(field="ncol", scope="model"),
+            "nlay": Dim(value="nlay", scope="model"),
+            "nrow": Dim(value="nrow", scope="model"),
+            "ncol": Dim(value="ncol", scope="model"),
         },
     )
     chd = Package(
         name="gwf-chd",
         parent="gwf-nam",
         blocks={"dimensions": _dim_block("secret_dim")},
-        dims={"secret_dim": Dim(field="secret_dim", scope="model")},
+        dims={"secret_dim": Dim(value="secret_dim", scope="model")},
     )
     gwf = Model(name="gwf-nam", blocks=None)
     spec = Dfns(components={"gwf-nam": gwf, "gwf-dis": dis, "gwf-chd": chd})
@@ -578,10 +647,10 @@ def _dis_dfns() -> Dfns:
         parent="gwf-nam",
         blocks={"dimensions": dis_block},
         dims={
-            "nlay": Dim(field="nlay", scope="model"),
-            "nrow": Dim(field="nrow", scope="model"),
-            "ncol": Dim(field="ncol", scope="model"),
-            "nodes": Dim(expr="nlay * nrow * ncol", scope="model"),
+            "nlay": Dim(value="nlay", scope="model"),
+            "nrow": Dim(value="nrow", scope="model"),
+            "ncol": Dim(value="ncol", scope="model"),
+            "nodes": Dim(value="nlay * nrow * ncol", scope="model"),
         },
     )
     return Dfns(components={"gwf-nam": gwf, "gwf-dis": dis})
@@ -601,10 +670,10 @@ def test_dims_includes_derived():
         parent="gwf-nam",
         blocks={"dimensions": dis_block},
         dims={
-            "nlay": Dim(field="nlay", scope="model"),
-            "nrow": Dim(field="nrow", scope="model"),
-            "ncol": Dim(field="ncol", scope="model"),
-            "nodes": Dim(expr="nlay * nrow * ncol", scope="model"),
+            "nlay": Dim(value="nlay", scope="model"),
+            "nrow": Dim(value="nrow", scope="model"),
+            "ncol": Dim(value="ncol", scope="model"),
+            "nodes": Dim(value="nlay * nrow * ncol", scope="model"),
         },
     )
     spec = Dfns(components={"gwf-nam": gwf, "gwf-dis": dis})
@@ -630,9 +699,9 @@ def test_top_level_array():
         parent="gwf-nam",
         blocks={"dimensions": dis_block, "griddata": grid_block},
         dims={
-            "nlay": Dim(field="nlay", scope="model"),
-            "nrow": Dim(field="nrow", scope="model"),
-            "ncol": Dim(field="ncol", scope="model"),
+            "nlay": Dim(value="nlay", scope="model"),
+            "nrow": Dim(value="nrow", scope="model"),
+            "ncol": Dim(value="ncol", scope="model"),
         },
     )
     gwf = Model(name="gwf-nam", blocks=None)
@@ -650,9 +719,9 @@ def test_array_in_record():
         parent="gwf-nam",
         blocks={"dimensions": dis_block, "options": opt_block},
         dims={
-            "nlay": Dim(field="nlay", scope="model"),
-            "nrow": Dim(field="nrow", scope="model"),
-            "ncol": Dim(field="ncol", scope="model"),
+            "nlay": Dim(value="nlay", scope="model"),
+            "nrow": Dim(value="nrow", scope="model"),
+            "ncol": Dim(value="ncol", scope="model"),
         },
     )
     gwf = Model(name="gwf-nam", blocks=None)
@@ -690,9 +759,9 @@ def test_invalid_array_shape():
         parent="gwf-nam",
         blocks={"dimensions": dis_block, "griddata": grid_block},
         dims={
-            "nlay": Dim(field="nlay", scope="model"),
-            "nrow": Dim(field="nrow", scope="model"),
-            "ncol": Dim(field="ncol", scope="model"),
+            "nlay": Dim(value="nlay", scope="model"),
+            "nrow": Dim(value="nrow", scope="model"),
+            "ncol": Dim(value="ncol", scope="model"),
         },
     )
     gwf = Model(name="gwf-nam", blocks=None)
@@ -709,10 +778,10 @@ def test_array_shape_resolves_via_derived_dim():
         parent="gwf-nam",
         blocks={"dimensions": dis_block, "griddata": grid_block},
         dims={
-            "nlay": Dim(field="nlay", scope="model"),
-            "nrow": Dim(field="nrow", scope="model"),
-            "ncol": Dim(field="ncol", scope="model"),
-            "nodes": Dim(expr="nlay * nrow * ncol", scope="model"),
+            "nlay": Dim(value="nlay", scope="model"),
+            "nrow": Dim(value="nrow", scope="model"),
+            "ncol": Dim(value="ncol", scope="model"),
+            "nodes": Dim(value="nlay * nrow * ncol", scope="model"),
         },
     )
     gwf = Model(name="gwf-nam", blocks=None)
@@ -727,10 +796,10 @@ def test_array_shape_resolves_sibling_dims():
         parent="gwf-nam",
         blocks={"dimensions": dis_block},
         dims={
-            "nlay": Dim(field="nlay", scope="model"),
-            "nrow": Dim(field="nrow", scope="model"),
-            "ncol": Dim(field="ncol", scope="model"),
-            "nodes": Dim(expr="nlay * nrow * ncol", scope="model"),
+            "nlay": Dim(value="nlay", scope="model"),
+            "nrow": Dim(value="nrow", scope="model"),
+            "ncol": Dim(value="ncol", scope="model"),
+            "nodes": Dim(value="nlay * nrow * ncol", scope="model"),
         },
     )
     chd_arr = Array(name="head", dtype="double", shape=["nlay", "nodes"])

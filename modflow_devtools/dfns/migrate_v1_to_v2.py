@@ -117,23 +117,23 @@ def _build_explicit_dims(
     scope = _scope_for(parent)
     for fname, field in dim_block.fields.items():
         if isinstance(field, v2.Integer):
-            dims[fname] = v2.Dim(field=fname, scope=scope)
+            dims[fname] = v2.Dim(value=fname, scope=scope)
 
     if scope == "model":
         has = set(dims.keys())
         if {"nlay", "nrow", "ncol"} <= has:
-            dims["ncpl"] = v2.Dim(expr="nrow * ncol", scope="model")
-            dims["nodes"] = v2.Dim(expr="nlay * nrow * ncol", scope="model")
-            dims["ncelldim"] = v2.Dim(expr="3", scope="model")
+            dims["ncpl"] = v2.Dim(value="nrow * ncol", scope="model")
+            dims["nodes"] = v2.Dim(value="nlay * nrow * ncol", scope="model")
+            dims["ncelldim"] = v2.Dim(value="3", scope="model")
         elif {"nlay", "ncpl"} <= has:
-            dims["nodes"] = v2.Dim(expr="nlay * ncpl", scope="model")
-            dims["ncelldim"] = v2.Dim(expr="2", scope="model")
+            dims["nodes"] = v2.Dim(value="nlay * ncpl", scope="model")
+            dims["ncelldim"] = v2.Dim(value="2", scope="model")
         elif {"nrow", "ncol"} <= has:
-            dims["ncpl"] = v2.Dim(expr="nrow * ncol", scope="model")
-            dims["nodes"] = v2.Dim(expr="nrow * ncol", scope="model")
-            dims["ncelldim"] = v2.Dim(expr="2", scope="model")
+            dims["ncpl"] = v2.Dim(value="nrow * ncol", scope="model")
+            dims["nodes"] = v2.Dim(value="nrow * ncol", scope="model")
+            dims["ncelldim"] = v2.Dim(value="2", scope="model")
         elif "nodes" in has:
-            dims["ncelldim"] = v2.Dim(expr="1", scope="model")
+            dims["ncelldim"] = v2.Dim(value="1", scope="model")
 
     return dims
 
@@ -199,7 +199,7 @@ def _resolve_dimensions(
         _scan(block.fields)
 
     array_dim_names = self_sizing & shape_refs
-    array_dims = {n: v2.Dim(field=n, scope="component") for n in array_dim_names}
+    array_dims = {n: v2.Dim(value=f"len({n})", scope="component") for n in array_dim_names}
     return blocks, array_dims
 
 

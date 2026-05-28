@@ -155,23 +155,27 @@ List.model_rebuild()
 
 
 def _names_in_expr(expr: str) -> set[str]:
-    """Return Name identifiers from expr, excluding those inside sum() calls."""
+    """Return Name identifiers from expr, excluding those inside sum() or len() calls."""
     try:
         tree = ast.parse(expr, mode="eval")
     except SyntaxError as e:
         raise ValueError(f"Invalid expression {expr!r}: {e}") from e
 
-    sum_interior_ids: set[int] = set()
+    excluded_ids: set[int] = set()
     for node in ast.walk(tree):
-        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == "sum":
+        if (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Name)
+            and node.func.id in ("sum", "len")
+        ):
             for child in ast.walk(node):
                 if child is not node:
-                    sum_interior_ids.add(id(child))
+                    excluded_ids.add(id(child))
 
     return {
         node.id
         for node in ast.walk(tree)
-        if isinstance(node, ast.Name) and id(node) not in sum_interior_ids
+        if isinstance(node, ast.Name) and id(node) not in excluded_ids
     }
 
 
@@ -223,22 +227,25 @@ def _validate_sum_call(call: ast.Call, component: "ComponentBase", expr: str) ->
         )
 
 
+def _validate_len_call(call: ast.Call, component: "ComponentBase", expr: str) -> None:
+    """Validate a len(field_name) call in a dims value expression."""
+    if len(call.args) != 1:
+        raise ValueError(f"len() in dims must have exactly one argument in {expr!r}")
+    if not isinstance(call.args[0], ast.Name):
+        raise ValueError(f"len() argument must be a field name in {expr!r}")
+
+
 class Dim(BaseModel):
-    """A named dimension, either backed by a field or derived from an expression."""
+    """A named dimension backed by a field reference or derived from an expression.
 
-    field: str | None = None  # name of the field that provides this dimension
-    expr: str | None = None  # derivation expression, e.g. "nlay * nrow * ncol"
+    ``value`` is always a Python expression string:
+      - bare identifier ``nlay``         → integer field reference
+      - ``len(auxiliary)``               → self-sizing array field reference
+      - anything else, e.g. ``nlay * ncol`` → derived arithmetic expression
+    """
+
+    value: str
     scope: Literal["component", "model", "simulation"] = "component"
-
-    @model_validator(mode="after")
-    def _check_exclusive(self) -> "Dim":
-        if (self.field is None) == (self.expr is None):
-            raise ValueError("Dim must have exactly one of 'field' or 'expr'")
-        return self
-
-    @property
-    def is_derived(self) -> bool:
-        return self.expr is not None
 
 
 def _parents_as_set(parent: "str | list[str] | None") -> set[str]:
@@ -276,43 +283,55 @@ def _can_share_model(
 
 def _resolve_derived_dims(component: "ComponentBase", known_dims: set[str]) -> list[str]:
     """
-    Validate derived dims expressions and return their names in topological order.
-    Raises ValueError on cycles or unresolvable operands.
+    Validate all dim value expressions and return dim names in topological order.
+    Raises ValueError on cycles, unresolvable operands, or invalid field references.
 
     ``known_dims`` is the full set of dim names visible to this component;
     pass ``spec.dims(name)`` or an explicit set in tests.
     """
-    derived = {n: d for n, d in (component.dims or {}).items() if d.is_derived}
-    if not derived:
+    all_dims = component.dims or {}
+    if not all_dims:
         return []
 
-    derived_names = set(derived.keys())
+    local_dim_names = set(all_dims.keys())
     deps: dict[str, set[str]] = {}
 
-    for name, dim_def in derived.items():
-        expr = dim_def.expr
-        assert expr is not None
+    for name, dim_def in all_dims.items():
+        value = dim_def.value
         try:
-            tree = ast.parse(expr, mode="eval")
+            tree = ast.parse(value, mode="eval")
         except SyntaxError as e:
-            raise ValueError(f"Invalid dims {name!r}: {expr!r}: {e}") from e
+            raise ValueError(f"Invalid dims {name!r}: {value!r}: {e}") from e
 
         for node in ast.walk(tree):
-            if (
-                isinstance(node, ast.Call)
-                and isinstance(node.func, ast.Name)
-                and node.func.id == "sum"
-            ):
-                _validate_sum_call(node, component, expr)
+            if isinstance(node, ast.Call) and isinstance(node.func, ast.Name):
+                if node.func.id == "len":
+                    _validate_len_call(node, component, value)
+                elif node.func.id == "sum":
+                    _validate_sum_call(node, component, value)
 
-        operands = _names_in_expr(expr)
-        for op in operands:
-            if op not in known_dims and op not in derived_names:
-                raise ValueError(f"dims {name!r} operand {op!r} is not a known dimension")
-        deps[name] = operands & derived_names
+        if _DIM_RE.fullmatch(value):
+            # Bare identifier: must name an Integer field in this component
+            field = component.fields.get(value)
+            if field is None:
+                raise ValueError(f"dims {name!r}: field {value!r} not found in component")
+            if not isinstance(field, Integer):
+                raise ValueError(
+                    f"dims {name!r}: field {value!r} is {type(field).__name__}, "
+                    f"must be Integer (use len({value}) for array fields)"
+                )
+            deps[name] = set()
+        elif _LEN_CALL_RE.fullmatch(value):
+            deps[name] = set()
+        else:
+            operands = _names_in_expr(value)
+            for op in operands:
+                if op not in known_dims and op not in local_dim_names:
+                    raise ValueError(f"dims {name!r} operand {op!r} is not a known dimension")
+            deps[name] = operands & local_dim_names - {name}
 
-    in_degree = dict.fromkeys(derived_names, 0)
-    dependents: dict[str, set[str]] = {n: set() for n in derived_names}
+    in_degree = dict.fromkeys(local_dim_names, 0)
+    dependents: dict[str, set[str]] = {n: set() for n in local_dim_names}
     for name, dep_set in deps.items():
         for dep in dep_set:
             in_degree[name] += 1
@@ -328,7 +347,7 @@ def _resolve_derived_dims(component: "ComponentBase", known_dims: set[str]) -> l
             if in_degree[dependent] == 0:
                 queue.append(dependent)
 
-    if len(order) != len(derived_names):
+    if len(order) != len(local_dim_names):
         cyclic = {n for n, d in in_degree.items() if d > 0}
         raise ValueError(f"Cycle in dims: {cyclic}")
 
@@ -434,6 +453,7 @@ Component = Annotated[
 ]
 
 _DIM_RE = re.compile(r"^[A-Za-z_]\w*$")
+_LEN_CALL_RE = re.compile(r"^len\([A-Za-z_]\w*\)$")
 _LOOKUP_RE = re.compile(r"^(?:([\w-]+)\.)?(\w+)\.(\w+)\((\w+)\)$")
 _BOUND_RE = re.compile(r"^[<>]=?")
 _ARITH_RE = re.compile(r"^([A-Za-z_]\w*)\s*[+-]\s*\d+$")
@@ -864,7 +884,7 @@ class Dfns(BaseModel):
     @model_validator(mode="after")
     def _validate_relations(self) -> "Dfns":
         for name, component in self.components.items():
-            if component.dims and any(d.is_derived for d in component.dims.values()):
+            if component.dims:
                 _resolve_derived_dims(component, self.dims(name))
         for name, component in self.components.items():
             _validate_fk_fields(component, self)
