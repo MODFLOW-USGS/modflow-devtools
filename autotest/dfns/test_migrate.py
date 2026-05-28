@@ -52,7 +52,7 @@ def v2(request, dfn_dir, module_tmpdir):
 
 def test_migrate_v1_1(v1_1, snapshot):
     out, fmt = v1_1
-    files = list(out.glob(f"*.{fmt}"))
+    files = sorted(out.glob(f"*.{fmt}"))
     assert files
     for p in files:
         data = _load(p, fmt)
@@ -63,7 +63,7 @@ def test_migrate_v1_1(v1_1, snapshot):
 
 def test_migrate_v2(v2, snapshot):
     out, fmt = v2
-    files = list(out.glob(f"*.{fmt}"))
+    files = sorted(out.glob(f"*.{fmt}"))
     assert files
     for p in files:
         data = _load(p, fmt)
