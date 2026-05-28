@@ -48,6 +48,18 @@ def test_names_in_expr_excludes_sum_func_name_itself():
     assert "sum" not in names
 
 
+def test_names_in_expr_excludes_builtin_func_name():
+    assert _names_in_expr("abs(nlay)") == {"nlay"}
+    assert _names_in_expr("min(nlay, ncol)") == {"nlay", "ncol"}
+    assert _names_in_expr("round(nlay)") == {"nlay"}
+
+
+def test_names_in_expr_excludes_qualified_func_name():
+    # math.floor(nlay): 'math' is a Name inside the Attribute func, not a dim ref
+    assert _names_in_expr("math.floor(nlay)") == {"nlay"}
+    assert _names_in_expr("math.ceil(nrow * 2)") == {"nrow"}
+
+
 def test_names_in_expr_invalid_syntax():
     with pytest.raises(ValueError, match="Invalid expression"):
         _names_in_expr("nlay * (")

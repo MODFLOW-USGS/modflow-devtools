@@ -155,7 +155,12 @@ List.model_rebuild()
 
 
 def _names_in_expr(expr: str) -> set[str]:
-    """Return Name identifiers from expr, excluding those inside sum() or len() calls."""
+    """Return dim-reference Name identifiers from expr.
+
+    Excluded from the result:
+    - Names in function-call position (never a dim ref, e.g. ``abs``, ``math``)
+    - Arguments of ``sum()`` and ``len()`` calls (domain-specific, handled separately)
+    """
     try:
         tree = ast.parse(expr, mode="eval")
     except SyntaxError as e:
@@ -163,14 +168,15 @@ def _names_in_expr(expr: str) -> set[str]:
 
     excluded_ids: set[int] = set()
     for node in ast.walk(tree):
-        if (
-            isinstance(node, ast.Call)
-            and isinstance(node.func, ast.Name)
-            and node.func.id in ("sum", "len")
-        ):
-            for child in ast.walk(node):
-                if child is not node:
-                    excluded_ids.add(id(child))
+        if isinstance(node, ast.Call):
+            # Function name/path is never a dim ref
+            for child in ast.walk(node.func):
+                excluded_ids.add(id(child))
+            # sum() and len() have domain-specific arguments; exclude those too
+            if isinstance(node.func, ast.Name) and node.func.id in ("sum", "len"):
+                for arg in node.args:
+                    for child in ast.walk(arg):
+                        excluded_ids.add(id(child))
 
     return {
         node.id
