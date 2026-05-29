@@ -32,6 +32,9 @@ python -m modflow_devtools.dfns sync
 # Force re-download even if already cached
 python -m modflow_devtools.dfns sync --force
 
+# Add (and sync) a specific release
+python -m modflow_devtools.dfns add MODFLOW-ORG/modflow6@6.7.0
+
 # Show sync status
 python -m modflow_devtools.dfns info
 
