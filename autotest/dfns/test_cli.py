@@ -221,9 +221,6 @@ def test_roundtrip(cache_root, capsys):
         assert "Not cached" in capsys.readouterr().out
 
 
-# ── add ──────────────────────────────────────────────────────────────────────
-
-
 def test_add_writes_user_config(cache_root, user_config, capsys):
     release_id = "MODFLOW-ORG/modflow6@6.6.0"
 
@@ -318,3 +315,73 @@ def test_add_error_returns_nonzero(cache_root, user_config, capsys):
 
     assert result != 0
     assert "network down" in capsys.readouterr().err
+
+
+def test_migrate_forwards_args(tmp_path):
+    """CLI forwards -i, -o, -s, -f to migrate()."""
+    input_dir = tmp_path / "input"
+    output_dir = tmp_path / "output"
+    input_dir.mkdir()
+
+    with patch("modflow_devtools.dfns.__main__.migrate") as mock_migrate:
+        result = main(
+            ["migrate", "-i", str(input_dir), "-o", str(output_dir), "-s", "2", "-f", "toml"]
+        )
+
+    assert result == 0
+    mock_migrate.assert_called_once_with(str(input_dir), str(output_dir), "2", "toml")
+
+
+def test_migrate_default_format_is_yaml(tmp_path):
+    """--format defaults to 'yaml' when not specified."""
+    input_dir = tmp_path / "input"
+    output_dir = tmp_path / "output"
+    input_dir.mkdir()
+
+    with patch("modflow_devtools.dfns.__main__.migrate") as mock_migrate:
+        main(["migrate", "-i", str(input_dir), "-o", str(output_dir), "-s", "2"])
+
+    mock_migrate.assert_called_once_with(str(input_dir), str(output_dir), "2", "yaml")
+
+
+@pytest.mark.parametrize("schema_version", ["1.1", "1.2", "2"])
+def test_migrate_schema_versions(tmp_path, schema_version):
+    """--schema-version is forwarded correctly for each supported version."""
+    input_dir = tmp_path / "input"
+    output_dir = tmp_path / "output"
+    input_dir.mkdir()
+
+    with patch("modflow_devtools.dfns.__main__.migrate") as mock_migrate:
+        result = main(
+            ["migrate", "-i", str(input_dir), "-o", str(output_dir), "-s", schema_version]
+        )
+
+    assert result == 0
+    mock_migrate.assert_called_once_with(str(input_dir), str(output_dir), schema_version, "yaml")
+
+
+@pytest.mark.parametrize("fmt", ["yaml", "toml", "json"])
+def test_migrate_output_formats(tmp_path, fmt):
+    """--format is forwarded correctly for each supported format."""
+    input_dir = tmp_path / "input"
+    output_dir = tmp_path / "output"
+    input_dir.mkdir()
+
+    with patch("modflow_devtools.dfns.__main__.migrate") as mock_migrate:
+        result = main(
+            ["migrate", "-i", str(input_dir), "-o", str(output_dir), "-s", "2", "-f", fmt]
+        )
+
+    assert result == 0
+    mock_migrate.assert_called_once_with(str(input_dir), str(output_dir), "2", fmt)
+
+
+def test_migrate_error_returns_nonzero(tmp_path, capsys):
+    """Exceptions from migrate() produce a nonzero exit code and print to stderr."""
+    with patch(
+        "modflow_devtools.dfns.__main__.migrate", side_effect=ValueError("bad schema version")
+    ):
+        result = main(["migrate", "-i", str(tmp_path), "-o", str(tmp_path / "out"), "-s", "99"])
+
+    assert result != 0
+    assert "bad schema version" in capsys.readouterr().err

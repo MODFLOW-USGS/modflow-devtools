@@ -22,7 +22,43 @@ pyaml.add_representer(
 )
 
 
-def _serialize_safe(data: Any) -> Any:
+def _add_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
+    parser.add_argument(
+        "--input",
+        "-i",
+        type=str,
+        help="Input file or directory containing DFN files.",
+    )
+    parser.add_argument(
+        "--output",
+        "-o",
+        help="Output directory.",
+    )
+    parser.add_argument(
+        "--schema-version",
+        "-s",
+        help="Target schema version.",
+    )
+    parser.add_argument(
+        "--format",
+        "-f",
+        default="yaml",
+        choices=["yaml", "toml", "json"],
+        help="Output format (default: yaml).",
+    )
+    return parser
+
+
+def _make_parser() -> argparse.ArgumentParser:
+    return _add_args(
+        argparse.ArgumentParser(
+            description="Migrate DFN files' schema version and serialize to YAML, TOML, or JSON.",
+            formatter_class=argparse.RawDescriptionHelpFormatter,
+        )
+    )
+
+
+def _serialize_safe(data: Any, drop_name: bool = True) -> Any:
     """Recursively coerce non-native types to primitives suitable for serialization."""
 
     if isinstance(data, BaseModel):
@@ -37,10 +73,10 @@ def _serialize_safe(data: Any) -> Any:
         # strip name from field dict; name is the dict key in the block's fields.
         # this prevents redundancy in the serialized DFN files but requires name
         # to be inferred and attached again to the field at deserialization time.
-        if "name" in result and "type" in result:
+        if drop_name and "name" in result and "type" in result:
             del result["name"]
         return result
-    if isinstance(data, list):
+    if isinstance(data, (list, tuple)):
         return [_serialize_safe(v) for v in data]
     if isinstance(data, (str, int, float, bool)) or data is None:
         return data
@@ -93,57 +129,36 @@ def migrate(
     outdir = Path(outdir).expanduser().absolute()
     outdir.mkdir(exist_ok=True, parents=True)
 
-    if schema_version in ["1.1"]:
+    if schema_version in ["1.1", "1.2"]:
         from modflow_devtools.dfn import Dfn
 
         if inpath.is_file():
             with inpath.open() as f:
-                dfns = {inpath.stem: Dfn.load(f, name=inpath.stem)}  # type: ignore
+                dfns = {inpath.stem: Dfn.load(f, name=inpath.stem, schema_version=schema_version)}  # type: ignore
         else:
-            dfns = Dfn.load_all(inpath)  # type: ignore
-        dfns = {
-            dfn_name: {**remap(dfn, visit=drop_none_or_empty), "schema_version": schema_version}
-            for dfn_name, dfn in dfns.items()
-        }
-    elif schema_version in ["2", "2.0", "2.0.0"]:
+            dfns = Dfn.load_all(inpath, schema_version=schema_version)  # type: ignore
+        dfns = {dfn_name: remap(dfn, visit=drop_none_or_empty) for dfn_name, dfn in dfns.items()}
+        for dfn_name, dfn in dfns.items():
+            _write(
+                _scalars_first(_serialize_safe(dfn, drop_name=False)),
+                outdir / f"{dfn_name}.{fmt}",
+                fmt,
+            )
+    elif schema_version in ["2"]:
         from modflow_devtools.dfns import Dfns
 
         dfns = Dfns.load(inpath).components
+        for dfn_name, dfn in dfns.items():
+            _write(_scalars_first(_serialize_safe(dfn)), outdir / f"{dfn_name}.{fmt}", fmt)
     else:
-        raise ValueError(f"Unsupported schema version: {schema_version}")
-
-    for dfn_name, dfn in dfns.items():
-        _write(_scalars_first(_serialize_safe(dfn)), outdir / f"{dfn_name}.{fmt}", fmt)
+        raise ValueError(
+            f"Unsupported schema version {schema_version}, supported "
+            "schema versions are: '1.1', '1.2', '2'"
+        )
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Migrate DFN files' schema version and serialize to YAML, TOML, or JSON.",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-    )
-    parser.add_argument(
-        "--input",
-        "-i",
-        type=str,
-        help="Input file or directory containing DFN files.",
-    )
-    parser.add_argument(
-        "--output",
-        "-o",
-        help="Output directory.",
-    )
-    parser.add_argument(
-        "--schema-version",
-        "-s",
-        help="Target schema version.",
-    )
-    parser.add_argument(
-        "--format",
-        "-f",
-        default="yaml",
-        choices=["yaml", "toml", "json"],
-        help="Output format (default: yaml).",
-    )
+    parser = _make_parser()
     args = parser.parse_args()
     migrate(
         inpath=args.input,

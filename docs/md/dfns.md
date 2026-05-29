@@ -50,7 +50,7 @@ python -m modflow_devtools.dfns.migrate -i <dfn path> -o <output path> -s <schem
 
 The migration tool may be used on directories or individual files.
 
-Supported schema versions are currently "1.1" (deprecated) and "2" (or "2.0" or "2.0.0"). Note that schema version 2 is still under development, and may change without warning.
+Supported schema versions are currently "1.1", "1.2", and "2". Note that schema version 2 is under active development, and may change without warning. Versions 1.1 and 1.2 were early prototypes.
 
 The default serialization format is YAML. Use `--format` / `-f` to select `yaml` (default), `toml`, or `json`.
 

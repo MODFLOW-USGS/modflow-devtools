@@ -5,7 +5,6 @@ from os import PathLike
 from pathlib import Path
 from typing import Annotated, Any, Literal
 
-import tomli
 from boltons.dictutils import OMD
 from pydantic import (
     BaseModel,
@@ -908,17 +907,9 @@ class Dfns(BaseModel):
     @classmethod
     def load(cls, path: str | PathLike) -> "Dfns":
         """Load a directory of definition files."""
-        import json
 
-        import yaml
-
-        from modflow_devtools.dfn import schema as v1
-        from modflow_devtools.dfns.migrate_v1_to_v2 import v1_to_v2
-
-        dfns: dict = {}
-        path = Path(path).expanduser().resolve()
         exclude = {"common", "flopy"}
-
+        path = Path(path).expanduser().resolve()
         dfn_paths = {p.stem: p for p in path.glob("*.dfn") if p.stem not in exclude}
         toml_paths = {p.stem: p for p in path.glob("*.toml") if p.stem not in exclude}
         yaml_paths = {
@@ -929,22 +920,31 @@ class Dfns(BaseModel):
         }
         json_paths = {p.stem: p for p in path.glob("*.json") if p.stem not in exclude}
 
+        dfns: dict = {}
         if dfn_paths:
-            dfns = v1.resolve_parents(v1.load_all(path))
-            dfns = {n: v1_to_v2(d) for n, d in dfns.items()}
+            from modflow_devtools.dfn import schema as v1
+            from modflow_devtools.dfns.migrate_to_v2 import to_v2
+
+            dfns = {n: to_v2(d) for n, d in v1.Dfn.load_all(path, schema_version="1.1").items()}  # type: ignore[attr-defined]
         elif toml_paths:
+            import tomli
+
             for toml_path in toml_paths.values():
                 with toml_path.open("rb") as f:
                     dfn = tomli.load(f)
                 _inject_names(dfn)
                 dfns[dfn["name"]] = dfn
         elif yaml_paths:
+            import yaml
+
             for yaml_path in yaml_paths.values():
                 with yaml_path.open() as f:
                     dfn = yaml.safe_load(f)
                 _inject_names(dfn)
                 dfns[dfn["name"]] = dfn
         elif json_paths:
+            import json
+
             for json_path in json_paths.values():
                 with json_path.open() as f:
                     dfn = json.load(f)

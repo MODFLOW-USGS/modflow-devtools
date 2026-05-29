@@ -17,7 +17,7 @@ _schema_id = "https://raw.githubusercontent.com/MODFLOW-ORG/modflow-devtools/mai
 
 
 def generate() -> dict:
-    ta = TypeAdapter(Component)
+    ta: TypeAdapter[Component] = TypeAdapter(Component)
     schema = ta.json_schema(mode="validation")
     return {
         "$schema": "https://json-schema.org/draft/2020-12/schema",

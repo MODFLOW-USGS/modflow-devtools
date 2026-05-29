@@ -11,7 +11,19 @@ import argparse
 import shutil
 import sys
 
+from modflow_devtools.dfns.migrate import _add_args as _add_migrate_args
+from modflow_devtools.dfns.migrate import migrate
 from modflow_devtools.dfns.registry import RemoteDfnRegistry, add_to_user_config
+
+
+def cmd_migrate(args: argparse.Namespace) -> int:
+    """Migrate DFN files to a new schema version."""
+    try:
+        migrate(args.input, args.output, args.schema_version, args.format)
+    except Exception as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 1
+    return 0
 
 
 def cmd_sync(args: argparse.Namespace) -> int:
@@ -106,6 +118,12 @@ def main(argv: list[str] | None = None) -> int:
     )
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
+    # migrate
+    migrate_parser = subparsers.add_parser(
+        "migrate", help="Migrate DFN files to a new schema version"
+    )
+    _add_migrate_args(migrate_parser)
+
     # add
     add_parser = subparsers.add_parser("add", help="Add a DFN release to user config")
     add_parser.add_argument(
@@ -139,6 +157,8 @@ def main(argv: list[str] | None = None) -> int:
         parser.print_help()
         return 0
 
+    elif args.command == "migrate":
+        return cmd_migrate(args)
     elif args.command == "add":
         return cmd_add(args)
     elif args.command == "sync":

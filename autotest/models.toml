@@ -1,0 +1,11 @@
+schema_version = "1.0"
+
+[files."mf6examples.zip"]
+url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
+
+[files."models.zip"]
+url = "https://github.com/username/my-models/releases/download/v1.0.0/models.zip"
+
+[models]
+
+[examples]

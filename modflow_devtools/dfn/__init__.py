@@ -10,11 +10,10 @@ from modflow_devtools.dfn.schema import (
     Field,
     Fields,
     FieldType,
-    FormatVersion,
     Reader,
     Ref,
+    SchemaVersion,
     Sln,
-    get_fields,
 )
 from modflow_devtools.download import download_and_unzip
 
@@ -28,13 +27,12 @@ __all__ = [
     "Field",
     "FieldType",
     "Fields",
-    "FormatVersion",
     "Reader",
     "Ref",
+    "SchemaVersion",
     "Sln",
     "fetch_dfns",
     "get_dfns",
-    "get_fields",
 ]
 
 

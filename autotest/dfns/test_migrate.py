@@ -43,6 +43,14 @@ def v1_1(request, dfn_dir, module_tmpdir):
 
 
 @pytest.fixture(scope="module", params=FORMATS)
+def v1_2(request, dfn_dir, module_tmpdir):
+    fmt = request.param
+    out = module_tmpdir / f"v1_2-{fmt}"
+    migrate(dfn_dir, out, schema_version="1.2", fmt=fmt)
+    return out, fmt
+
+
+@pytest.fixture(scope="module", params=FORMATS)
 def v2(request, dfn_dir, module_tmpdir):
     fmt = request.param
     out = module_tmpdir / f"v2-{fmt}"
@@ -58,6 +66,17 @@ def test_migrate_v1_1(v1_1, snapshot):
         data = _load(p, fmt)
         assert data["name"] == p.stem
         assert data["schema_version"] == "1.1"
+        assert snapshot == p.read_text()
+
+
+def test_migrate_v1_2(v1_2, snapshot):
+    out, fmt = v1_2
+    files = sorted(out.glob(f"*.{fmt}"))
+    assert files
+    for p in files:
+        data = _load(p, fmt)
+        assert data["name"] == p.stem
+        assert data["schema_version"] == "1.2"
         assert snapshot == p.read_text()
 
 
