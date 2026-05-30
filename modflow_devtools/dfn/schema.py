@@ -22,9 +22,15 @@ from boltons.dictutils import OMD
 SchemaVersion = Literal["1", "2.0.0.dev0", "2.0.0.dev1"]
 """DFN format version number."""
 
+FormatVersion = SchemaVersion
+"""Deprecated alias for SchemaVersion."""
+
 
 FileFormat = Literal["dfn", "toml", "yaml", "json"]
 """DFN serialization format."""
+
+DfnFormat = FileFormat
+"""Deprecated alias for FileFormat."""
 
 
 FieldType = Literal[
@@ -228,6 +234,12 @@ class Dfn(TypedDict):
         # the point of the OMD is to losslessly handle duplicate variable names
         return OMD(fields), comments
 
+    @staticmethod  # type: ignore[misc]
+    def _load_v1_flat(f, common: dict | None = None) -> tuple[OMD, list[str]]:
+        """Deprecated alias for load_dfn."""
+        warn("'_load_v1_flat' is deprecated, use 'load_dfn' instead", DeprecationWarning)
+        return Dfn.load_dfn(f, common=common)
+
     @classmethod  # type: ignore[misc]
     def load(
         cls,
@@ -271,8 +283,17 @@ class Dfn(TypedDict):
         return cls(**data)
 
     @staticmethod  # type: ignore[misc]
-    def load_all(dfndir: str | PathLike, schema_version: str = "2.0.0.dev0") -> Dfns:
+    def load_all(
+        dfndir: str | PathLike,
+        schema_version: str = "2.0.0.dev0",
+        version: "int | str | None" = None,
+    ) -> Dfns:
         """Load component definitions from a directory."""
+
+        if version is not None:
+            warn("'version' is deprecated, use 'schema_version' instead", DeprecationWarning)
+            _version_map = {1: "1", 2: "2.0.0.dev0"}
+            schema_version = _version_map.get(version, str(version))  # type: ignore[arg-type]
 
         dfndir = Path(dfndir).expanduser().resolve().absolute()
 
@@ -340,3 +361,12 @@ class Dfn(TypedDict):
                 )
 
         return dfns
+
+
+def get_fields(dfn: Dfn) -> OMD:
+    """Combined map of fields from all blocks (flat, top-level only)."""
+    items = []
+    for block in (dfn.get("blocks") or {}).values():
+        for f in block.values():
+            items.append((f["name"], f))
+    return OMD(items)
