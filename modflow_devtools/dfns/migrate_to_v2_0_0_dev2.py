@@ -221,7 +221,7 @@ def _resolve_dimensions(
     # array has shape (nodes) and never references 'auxiliary' by name in a shape.
     if "auxiliary" in self_sizing:
         array_dim_names.add("auxiliary")
-    array_dims = {n: v2.Dim(value=f"len({n})", scope="component") for n in array_dim_names}
+    array_dims = {n: v2.Dim(value=f"len({n})", scope="component") for n in sorted(array_dim_names)}
     return blocks, array_dims
 
 
