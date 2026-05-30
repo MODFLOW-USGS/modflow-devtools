@@ -1,0 +1,7 @@
+{
+  "type": "package",
+  "schema_version": "2",
+  "name": "exg-gwfgwt",
+  "parent": "sim-nam",
+  "subtype": "exchange"
+}

@@ -925,7 +925,16 @@ class Dfns(BaseModel):
             from modflow_devtools.dfn import schema as v1
             from modflow_devtools.dfns.migrate_to_v2 import to_v2
 
-            dfns = {n: to_v2(d) for n, d in v1.Dfn.load_all(path, schema_version="1.1").items()}  # type: ignore[attr-defined]
+            common_path = path / "common.dfn"
+            common = None
+            if common_path.is_file():
+                with common_path.open() as f:
+                    common, _ = v1.Dfn.load_dfn(f)  # type: ignore[attr-defined]
+
+            for stem, dfn_path in dfn_paths.items():
+                with dfn_path.open() as f:
+                    fields, meta = v1.Dfn.load_dfn(f, common=common)  # type: ignore[attr-defined]
+                dfns[stem] = to_v2(name=stem, fields=fields, meta=meta)
         elif toml_paths:
             import tomli
 

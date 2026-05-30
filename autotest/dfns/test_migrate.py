@@ -66,7 +66,7 @@ def test_migrate_v1_1(v1_1, snapshot):
         data = _load(p, fmt)
         assert data["name"] == p.stem
         assert data["schema_version"] == "1.1"
-        assert snapshot == p.read_text()
+        assert snapshot(name=p.stem) == p.read_text()
 
 
 def test_migrate_v1_2(v1_2, snapshot):
@@ -77,7 +77,7 @@ def test_migrate_v1_2(v1_2, snapshot):
         data = _load(p, fmt)
         assert data["name"] == p.stem
         assert data["schema_version"] == "1.2"
-        assert snapshot == p.read_text()
+        assert snapshot(name=p.stem) == p.read_text()
 
 
 def test_migrate_v2(v2, snapshot):
@@ -88,4 +88,4 @@ def test_migrate_v2(v2, snapshot):
         data = _load(p, fmt)
         assert data["name"] == p.stem
         assert data["schema_version"] == "2"
-        assert snapshot == p.read_text()
+        assert snapshot(name=p.stem) == p.read_text()

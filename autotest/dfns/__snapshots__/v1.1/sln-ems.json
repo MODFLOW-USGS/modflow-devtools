@@ -1,0 +1,10 @@
+{
+  "name": "sln-ems",
+  "advanced": false,
+  "multi": false,
+  "schema_version": "1.1",
+  "sln": {
+    "abbr": "ems",
+    "pattern": "*"
+  }
+}

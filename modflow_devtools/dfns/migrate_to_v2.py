@@ -657,7 +657,7 @@ def _fix_prt_fmi(component: v2.Component) -> v2.Component:
     return component.model_copy(update={"blocks": new_blocks})
 
 
-def _has_grid_dependent_shapes(dfn: v1.Dfn) -> bool:
+def _has_grid_dependent_shapes(fields: OMD) -> bool:
     """Return True if any field uses a semicolon grid-type-dependent shape or references
     ncelldim."""
 
@@ -665,72 +665,40 @@ def _has_grid_dependent_shapes(dfn: v1.Dfn) -> bool:
         shape = str(f.get("shape") or "")
         if ";" in shape or "ncelldim" in shape:
             return True
-        item = f.get("item")
-        if isinstance(item, dict):
-            for nested in (item.get("fields") or {}).values():
-                if isinstance(nested, dict) and _field_has_grid_shape(nested):
-                    return True
         return False
 
-    fields = get_fields(dfn)
     for field in fields.values():
         if _field_has_grid_shape(field):
             return True
     return False
 
 
-def get_fields(dfn: v1.Dfn) -> OMD:
-    # Combined map of fields from all blocks (flat, top-level only)
-
-    blocks: Mapping[str, Any]
-    if dfn["schema_version"] == "1.1":
-        blocks = {bn: b for bn, b in dfn.items() if bn not in v1.Dfn.__annotations__}
-    elif dfn["schema_version"] == "1.2":
-        blocks = dfn["blocks"] or {}
-    else:
-        raise ValueError("Expected schema version 1.1 or 1.2")
-
-    items = []
-    for block in blocks.values():
-        for f in block.values():
-            if isinstance(f, dict):
-                items.append((f["name"], f))
-
-    return OMD(items)
-
-
-def infer_parent(dfn: v1.Dfn) -> str | None:
+def infer_parent(name: str, fields: OMD) -> str | None:
     """Infer a component's parent using naming conventions."""
-    if dfn["name"] == "sim-nam":
+    if name == "sim-nam":
         return None
-    if dfn["name"].endswith("-nam"):
+    if name.endswith("-nam"):
         return "sim-nam"
-    if dfn["name"].startswith(("exg-", "sln-")):
+    if name.startswith(("exg-", "sln-")):
         return "sim-nam"
-    if dfn["name"].startswith("utl-"):
+    if name.startswith("utl-"):
         # Grid-dependent shapes (semicolon notation) mean the utility must be
         # model-attached, not simulation-level.
-        if _has_grid_dependent_shapes(dfn):
+        if _has_grid_dependent_shapes(fields):
             return "package"
         return "sim-nam"
-    if "-" in dfn["name"]:
-        mdl = dfn["name"].split("-")[0]
+    if "-" in name:
+        mdl = name.split("-")[0]
         return f"{mdl}-nam"
     return None
 
 
-def resolve_parent(dfn: v1.Dfn) -> v1.Dfn:
-    """Infer and set a component's parent using naming conventions."""
-    if dfn["parent"] is None:
-        dfn["parent"] = infer_parent(dfn)
-    return dfn
+def to_v2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
+    """Map a component definition from the raw v1 schema to v2."""
 
+    from modflow_devtools.dfn.migrate_to_v1_1 import is_advanced_package, is_multi_package
 
-def to_v2(dfn: v1.Dfn) -> v2.Component:
-    """Map a component definition from the v1.1 or v1.2 schema to v2."""
-
-    dfn["parent"] = infer_parent(dfn)
-    fields = get_fields(dfn)
+    parent = infer_parent(name, fields)
 
     def _map_field(f: v1.Field) -> v2.Field:
         _name: str = f["name"]
@@ -907,16 +875,7 @@ def to_v2(dfn: v1.Dfn) -> v2.Component:
             raise ValueError(f"Missing type for v1 field: {_name!r}")
 
         if _type.startswith("recarray"):
-            if "item" in f:
-                # v1.1 structured format: item is already built
-                mapped = _map_field(f["item"])
-                if not isinstance(mapped, (v2.Record, v2.Union)):
-                    raise TypeError(
-                        f"Expected Record or Union for list item, got {type(mapped).__name__}"
-                    )
-                item = mapped
-            else:
-                item = _row_field()
+            item = _row_field()
             list_shape = _parse_list_shape(shape_str) if shape_str else []
             return v2.List(
                 name=_name,
@@ -931,11 +890,7 @@ def to_v2(dfn: v1.Dfn) -> v2.Component:
             )
 
         if _type.startswith("keystring"):
-            if "choices" in f:
-                # v1.1 structured format: choices are already built
-                arms = {k: _map_field(v) for k, v in f["choices"].items()}
-            else:
-                arms = _subfield_map()
+            arms = _subfield_map()
             return v2.Union(
                 name=_name,
                 longname=longname,
@@ -949,118 +904,78 @@ def to_v2(dfn: v1.Dfn) -> v2.Component:
         if _type.startswith("record"):
             subnames = (_type or "").split()[1:]
 
-            if not subnames and "fields" in f:
-                # v1.1 structured format: sub-fields are already built in f["fields"]
-                v1_1_fields: Mapping[str, v1.Field] = f["fields"]
-                # Detect filerecord: look for a 'filein' or 'fileout' keyword sub-field
-                file_mode_v1_1: str | None = next(
-                    (
-                        k
-                        for k, sf in v1_1_fields.items()
-                        if k in ("filein", "fileout") and sf["type"].strip() == "keyword"
-                    ),
-                    None,
-                )
-                if file_mode_v1_1:
-                    # Filerecord: drop mode keyword + path string, promote tag kw to File
-                    path_field_name_v1_1: str | None = next(
-                        (k for k, sf in v1_1_fields.items() if sf["type"].strip() == "string"),
+            # Detect filerecord from type string sub-field names
+            file_mode: str | None = None
+            for sname in subnames:
+                if sname in ("filein", "fileout"):
+                    m = next(
+                        (
+                            fi
+                            for fi in fields.values(multi=True)
+                            if fi["name"] == sname and try_parse_bool(fi.get("in_record", False))
+                        ),
                         None,
                     )
-                    rec_fields: dict[str, v2.Field] = {}
-                    for sname, sf in v1_1_fields.items():
-                        if sname in (file_mode_v1_1, path_field_name_v1_1):
-                            continue
-                        if sf["type"].strip() == "keyword":
-                            rec_fields[sname] = v2.File(
-                                name=sname,
-                                longname=sf.get("longname") or None,
-                                description=sf.get("description") or None,
-                                optional=try_parse_bool(sf.get("optional"), False),
-                                developmode=try_parse_bool(sf.get("developmode"), False),
-                                netcdf=try_parse_bool(sf.get("netcdf"), False),
-                                tagged=True,
-                                mode=file_mode_v1_1,  # type: ignore[arg-type]
-                            )
-                        else:
-                            rec_fields[sname] = _map_field(sf)
-                else:
-                    rec_fields = {k: _map_field(sf) for k, sf in v1_1_fields.items()}
-            else:
-                # Raw v1 format: detect filerecord from type string sub-field names
-                file_mode: str | None = None
+                    if m and (m.get("type") or "").strip() == "keyword":
+                        file_mode = sname
+                        break
+
+            if file_mode:
+                # Filerecord pattern: <tag_kw> <filein|fileout> <path_string>
+                # In v2: drop the mode keyword and the untagged path string; promote
+                # the tag keyword to a File field (tagged=True, name=tag keyword name).
+                path_field_name: str | None = None
                 for sname in subnames:
-                    if sname in ("filein", "fileout"):
-                        m = next(
-                            (
-                                fi
-                                for fi in fields.values(multi=True)
-                                if fi["name"] == sname
-                                and try_parse_bool(fi.get("in_record", False))
-                            ),
-                            None,
-                        )
-                        if m and (m.get("type") or "").strip() == "keyword":
-                            file_mode = sname
-                            break
+                    if sname == file_mode:
+                        continue
+                    m_s = next(
+                        (
+                            fi
+                            for fi in fields.values(multi=True)
+                            if fi["name"] == sname and try_parse_bool(fi.get("in_record", False))
+                        ),
+                        None,
+                    )
+                    if (
+                        m_s
+                        and (m_s.get("type") or "").strip() == "string"
+                        and not try_parse_bool(m_s.get("tagged"), True)
+                    ):
+                        path_field_name = sname
+                        break
 
-                if file_mode:
-                    # Filerecord pattern: <tag_kw> <filein|fileout> <path_string>
-                    # In v2: drop the mode keyword and the untagged path string; promote
-                    # the tag keyword to a File field (tagged=True, name=tag keyword name).
-                    path_field_name: str | None = None
-                    for sname in subnames:
-                        if sname == file_mode:
-                            continue
-                        m_s = next(
-                            (
-                                fi
-                                for fi in fields.values(multi=True)
-                                if fi["name"] == sname
-                                and try_parse_bool(fi.get("in_record", False))
-                            ),
-                            None,
+                rec_fields: dict[str, v2.Field] = {}
+                for rname in subnames:
+                    if rname in (file_mode, path_field_name):
+                        continue  # drop mode keyword and path string
+                    m = next(
+                        (
+                            fi
+                            for fi in fields.values(multi=True)
+                            if fi["name"] == rname
+                            and try_parse_bool(fi.get("in_record", False))
+                            and not (fi.get("type") or "").startswith("record")
+                        ),
+                        None,
+                    )
+                    if m is None:
+                        continue
+                    ftype = (m.get("type") or "").strip()
+                    if ftype == "keyword":
+                        rec_fields[rname] = v2.File(
+                            name=rname,
+                            longname=m.get("longname") or None,
+                            description=m.get("description") or None,
+                            optional=try_parse_bool(m.get("optional"), False),
+                            developmode=try_parse_bool(m.get("developmode"), False),
+                            netcdf=try_parse_bool(m.get("netcdf"), False),
+                            tagged=True,
+                            mode=file_mode,  # type: ignore[arg-type]
                         )
-                        if (
-                            m_s
-                            and (m_s.get("type") or "").strip() == "string"
-                            and not try_parse_bool(m_s.get("tagged"), True)
-                        ):
-                            path_field_name = sname
-                            break
-
-                    rec_fields = {}
-                    for rname in subnames:
-                        if rname in (file_mode, path_field_name):
-                            continue  # drop mode keyword and path string
-                        m = next(
-                            (
-                                fi
-                                for fi in fields.values(multi=True)
-                                if fi["name"] == rname
-                                and try_parse_bool(fi.get("in_record", False))
-                                and not (fi.get("type") or "").startswith("record")
-                            ),
-                            None,
-                        )
-                        if m is None:
-                            continue
-                        ftype = (m.get("type") or "").strip()
-                        if ftype == "keyword":
-                            rec_fields[rname] = v2.File(
-                                name=rname,
-                                longname=m.get("longname") or None,
-                                description=m.get("description") or None,
-                                optional=try_parse_bool(m.get("optional"), False),
-                                developmode=try_parse_bool(m.get("developmode"), False),
-                                netcdf=try_parse_bool(m.get("netcdf"), False),
-                                tagged=True,
-                                mode=file_mode,  # type: ignore[arg-type]
-                            )
-                        else:
-                            rec_fields[rname] = _map_field(m)  # type: ignore
-                else:
-                    rec_fields = _subfield_map()
+                    else:
+                        rec_fields[rname] = _map_field(m)  # type: ignore
+            else:
+                rec_fields = _subfield_map()
 
             return v2.Record(
                 name=_name,
@@ -1115,7 +1030,6 @@ def to_v2(dfn: v1.Dfn) -> v2.Component:
 
         return _to_scalar()
 
-    name = dfn["name"]
     blocks: dict[str, v2.Block] = {}
 
     for field in fields.values(multi=True):
@@ -1125,20 +1039,18 @@ def to_v2(dfn: v1.Dfn) -> v2.Component:
         blocks.setdefault(field["block"], v2.Block(name=field["block"], fields={})).fields[
             field["name"]
         ] = v2_field
-        blocks[field["block"]].repeats = field.get("block_variable", False)
+        blocks[field["block"]].repeats = try_parse_bool(field.get("block_variable"), False)
 
     blocks, array_dims = _resolve_dimensions(blocks)
     blocks = _resolve_relations(blocks)
     raw_dim_names = _raw_dim_names(blocks)
     blocks = _normalize_n_prefix_shapes(blocks, raw_dim_names)
-    explicit_dims = _build_explicit_dims(dfn["parent"], blocks)
+    explicit_dims = _build_explicit_dims(parent, blocks)
     known_dims = set(explicit_dims) | set(array_dims)
     blocks = _sanitize_list_shapes(blocks, known_dims)
     blocks = _fill_period_list_shapes(blocks, explicit_dims)
     blocks = _fill_named_list_shapes(blocks, explicit_dims)
-    blocks, derived_dims = _infer_list_shape_dims(
-        blocks, fields, _scope_for(dfn["parent"]), known_dims
-    )
+    blocks, derived_dims = _infer_list_shape_dims(blocks, fields, _scope_for(parent), known_dims)
     blocks = _wrap_oc_period_records(blocks)
     blocks = _collapse_sto_keywords(blocks)
     blocks = _patch_oc_rtype(name, blocks)
@@ -1147,7 +1059,7 @@ def to_v2(dfn: v1.Dfn) -> v2.Component:
     d: dict[str, Any] = {
         "schema_version": "2",
         "name": name,
-        "parent": dfn["parent"],
+        "parent": parent,
         "blocks": blocks or None,
         "dims": dims,
     }
@@ -1169,11 +1081,11 @@ def to_v2(dfn: v1.Dfn) -> v2.Component:
         # Transport-side advanced packages (gwt-lkt, gwe-lke, etc.) pair with a
         # GWF advanced package via flow_package_name but lack the v1
         # "package-type advanced-stress-package" header.
-        is_advanced = dfn["advanced"] or any(
+        is_advanced = is_advanced_package(meta) or any(
             f["name"] == "flow_package_name" for f in fields.values(multi=True)
         )
         subtype = "advanced" if is_advanced else "stress" if is_stress_pkg else None
-    pkg = v2.Package(**d, subtype=subtype, multi=dfn["multi"])
+    pkg = v2.Package(**d, subtype=subtype, multi=is_multi_package(meta))
     if name == "prt-fmi":
         return _fix_prt_fmi(pkg)
     return pkg

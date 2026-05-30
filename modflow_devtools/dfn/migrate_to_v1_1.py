@@ -1,5 +1,3 @@
-# type: ignore
-
 from itertools import groupby
 from typing import Any
 from warnings import warn

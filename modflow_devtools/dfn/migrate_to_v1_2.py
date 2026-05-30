@@ -1,5 +1,3 @@
-# type: ignore
-
 from itertools import groupby
 
 from boltons.dictutils import OMD
