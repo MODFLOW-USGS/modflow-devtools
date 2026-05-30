@@ -1,4 +1,5 @@
 from itertools import groupby
+from typing import Any, cast
 
 from boltons.dictutils import OMD
 from boltons.iterutils import remap
@@ -21,9 +22,9 @@ def map_period_block(block: Fields) -> Fields:
 
     block = dict(block)
     fields = list(block.values())
-    if fields[0]["type"] == "list":
+    if cast(str, fields[0]["type"]) == "list":
         assert len(fields) == 1
-        recarray_name = fields[0].name
+        recarray_name = fields[0]["name"]
         block.pop(recarray_name, None)
         item = next(iter((fields[0]["children"] or {}).values()))
         columns = dict(item["children"] or {})
@@ -52,20 +53,32 @@ def _map_field(fields: OMD, field: Field) -> Field:
     # stay a string except default values, which we'll
     # try to parse as arbitrary literals below, and at
     # some point types, once we introduce type hinting
-    _field = {
+    _attrs: dict[str, Any] = {
         k: v.strip().lower() == "true"
         if isinstance(v, str) and v.strip().lower() in ("true", "false")
         else v
         for k, v in field.items()
     }
-    _name = _field.pop("name")
-    _type = _field.pop("type", None)
-    shape = _field.pop("shape", None)
+    _name = _attrs.pop("name")
+    _type = _attrs.pop("type", None)
+    shape = _attrs.pop("shape", None)
     shape = None if shape == "" else shape
-    block = _field.pop("block", None)
-    default = _field.pop("default_value", None)
+    block = _attrs.pop("block", None)
+    default = _attrs.pop("default_value", None)
     default = try_literal_eval(default) if _type != "string" else default
-    description = _field.pop("description", "")
+    description = _attrs.pop("description", "")
+
+    # Build the result dict before defining closures so that closures
+    # capture the full field dict (matching the old behaviour where they
+    # captured _field after its reassignment to the Field constructor result).
+    _field: dict[str, Any] = {
+        "name": _name,
+        "shape": shape,
+        "block": block,
+        "description": description,
+        "default": default,
+        **_attrs,
+    }
 
     def _row_field() -> Field:
         """Parse a table's record (row) field"""
@@ -88,15 +101,16 @@ def _map_field(fields: OMD, field: Field) -> Field:
         # implicit record with all scalar fields
         if all(t in SCALAR_TYPES for t in item_types):
             children = _record_fields()
-            return Field(
-                **{
+            return cast(
+                Field,
+                {
                     **_field,
                     "name": _name,
                     "type": "record",
                     "block": block,
                     "children": children,
                     "description": description.replace("is the list of", "is the record of"),
-                }
+                },
             )
 
         # implicit record with composite fields
@@ -110,15 +124,16 @@ def _map_field(fields: OMD, field: Field) -> Field:
             raise ValueError(f"Missing type for field: {first['name']}")
         single = len(children) == 1
         item_type = "keystring" if single and "keystring" in first["type"] else "record"
-        return Field(
-            **{
+        return cast(
+            Field,
+            {
                 "name": first["name"] if single else _name,
                 "type": item_type,
                 "block": block,
-                "children": first.children if single else children,
+                "children": first["children"] if single else children,
                 "description": description.replace("is the list of", f"is the {item_type} of"),
                 **_field,
-            }
+            },
         )
 
     def _union_fields() -> Fields:
@@ -146,17 +161,6 @@ def _map_field(fields: OMD, field: Field) -> Field:
                 result[name] = _map_field(fields, matching[0])
         return result
 
-    _field = Field(
-        **{
-            "name": _name,
-            "shape": shape,
-            "block": block,
-            "description": description,
-            "default": default,
-            **_field,
-        }
-    )
-
     if _type.startswith("recarray"):
         child = _row_field()
         _field["children"] = {child["name"]: child}
@@ -183,12 +187,12 @@ def _map_field(fields: OMD, field: Field) -> Field:
         }
         _field["type"] = type_map.get(_type, _type)
 
-    return _field
+    return cast(Field, _field)
 
 
 def to_v1_2(name: str, fields: OMD, meta: list[str]) -> Dfn:
-    blocks = {
-        block_name: {field["name"]: _map_field(fields, Field(**field)) for field in block}
+    blocks: dict[str, Fields] = {
+        block_name: {field["name"]: _map_field(fields, cast(Field, field)) for field in block}
         for block_name, block in groupby(fields.values(multi=True), lambda field: field["block"])
     }
 

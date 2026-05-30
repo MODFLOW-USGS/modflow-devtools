@@ -1,11 +1,11 @@
 from itertools import groupby
-from typing import Any
+from typing import Any, cast
 from warnings import warn
 
 from boltons.dictutils import OMD
 
 from modflow_devtools.dfn import SCALAR_TYPES
-from modflow_devtools.dfn.schema import Dfn, Field, Fields, Ref, Sln
+from modflow_devtools.dfn.schema import Dfn, Field, Fields, FieldType, Ref, Sln
 from modflow_devtools.misc import try_literal_eval
 
 
@@ -82,7 +82,7 @@ def try_parse_solution(comments: list[str]) -> Sln | None:
 
 
 def try_parse_flopy_subpackage(fields: dict, comments: list[str]) -> Ref | None:
-    def _rest():
+    def _rest() -> dict[str, str | None] | None:
         line = next(
             iter(
                 line
@@ -114,7 +114,14 @@ def try_parse_flopy_subpackage(fields: dict, comments: list[str]) -> Ref | None:
     parent = try_parse_parent(comments)
     rest = _rest()
     if parent and rest:
-        return Ref(parent=parent, **rest)
+        return Ref(
+            parent=parent,
+            key=cast(str, rest["key"]),
+            val=cast(str, rest["val"]),
+            abbr=cast(str, rest["abbr"]),
+            param=cast(str, rest["param"]),
+            description=rest["description"],
+        )
     return None
 
 
@@ -215,7 +222,9 @@ def to_v1_1(name: str, fields: OMD, meta: list[str], refs: dict | None = None) -
                 }
                 first = next(iter(record_fields.values()))
                 single = len(record_fields) == 1
-                item_type = "keystring" if single and "keystring" in first["type"] else "record"
+                item_type: FieldType = (
+                    "keystring" if single and "keystring" in first["type"] else "record"
+                )
                 return Field(
                     name=first["name"] if single else _name,
                     type=item_type,
@@ -246,14 +255,17 @@ def to_v1_1(name: str, fields: OMD, meta: list[str], refs: dict | None = None) -
                     and not v["type"].startswith("record")
                 }
 
-            var_ = Field(
-                name=_name,
-                shape=shape,
-                block=block,
-                description=description,
-                default=default,
-                reader=reader,
-                **field,
+            var_: Field = cast(
+                Field,
+                {
+                    "name": _name,
+                    "shape": shape,
+                    "block": block,
+                    "description": description,
+                    "default": default,
+                    "reader": reader,
+                    **field,
+                },
             )
 
             if _type.startswith("recarray"):
@@ -290,14 +302,14 @@ def to_v1_1(name: str, fields: OMD, meta: list[str], refs: dict | None = None) -
                         f"{ref['abbr']} package documentation for more information."
                     ),
                     default=None,
-                    ref=ref,
+                    ref=ref,  # type: ignore[typeddict-unknown-key]
                     reader=reader,
                     **field,
                 )
 
             return var_
 
-        return dict(sorted(_load(var).items(), key=field_attr_sort_key))
+        return cast(Field, dict(sorted(_load(var).items(), key=field_attr_sort_key)))
 
     # load top-level fields. nested fields load recursively
     fields_toplvl = {
@@ -316,7 +328,7 @@ def to_v1_1(name: str, fields: OMD, meta: list[str], refs: dict | None = None) -
     transient_index_vars = fields.getlist("iper")
     for transient_index in transient_index_vars:
         transient_block = transient_index["block"]
-        blocks[transient_block]["transient_block"] = True
+        cast(dict[str, Any], blocks[transient_block])["transient_block"] = True
 
     return Dfn(
         name=name,
@@ -328,5 +340,5 @@ def to_v1_1(name: str, fields: OMD, meta: list[str], refs: dict | None = None) -
         ref=try_parse_flopy_subpackage(fields_toplvl, meta),
         subcomponents=try_parse_mf6_subpackages(meta),
         # blocks as top-level attributes
-        **blocks,
+        **cast(dict[str, Any], blocks),  # type: ignore[typeddict-item]
     )
