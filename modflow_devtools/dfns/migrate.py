@@ -129,7 +129,7 @@ def migrate(
     outdir = Path(outdir).expanduser().absolute()
     outdir.mkdir(exist_ok=True, parents=True)
 
-    if schema_version in ["1.1", "1.2"]:
+    if schema_version in ["2.0.0.dev0", "2.0.0.dev1"]:
         from modflow_devtools.dfn import Dfn
 
         if inpath.is_file():
@@ -144,7 +144,7 @@ def migrate(
                 outdir / f"{dfn_name}.{fmt}",
                 fmt,
             )
-    elif schema_version in ["2"]:
+    elif schema_version == "2.0.0.dev2":
         from modflow_devtools.dfns import Dfns
 
         dfns = Dfns.load(inpath).components
@@ -153,7 +153,7 @@ def migrate(
     else:
         raise ValueError(
             f"Unsupported schema version {schema_version}, supported "
-            "schema versions are: '1.1', '1.2', '2'"
+            "schema versions are: '2.0.0.dev0', '2.0.0.dev1', '2.0.0.dev2'"
         )
 
 

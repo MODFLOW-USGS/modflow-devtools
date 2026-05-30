@@ -30,24 +30,24 @@ def test_load(dfn_dir):
         assert dfn["continue"]["block"] == "options"
 
         f.seek(0)
-        dfn = Dfn.load(f, name=name)  # defaults to v1.1
+        dfn = Dfn.load(f, name=name)  # defaults to 2.0.0.dev0
         assert any(dfn)
         assert dfn["name"] == name
-        assert dfn["schema_version"] == "1.1"
+        assert dfn["schema_version"] == "2.0.0.dev0"
         assert dfn["options"]["continue"]["block"] == "options"
 
         f.seek(0)
-        dfn = Dfn.load(f, name=name, schema_version="1.1")
+        dfn = Dfn.load(f, name=name, schema_version="2.0.0.dev0")
         assert any(dfn)
         assert dfn["name"] == name
-        assert dfn["schema_version"] == "1.1"
+        assert dfn["schema_version"] == "2.0.0.dev0"
         assert dfn["options"]["continue"]["block"] == "options"
 
         f.seek(0)
-        dfn = Dfn.load(f, name=name, schema_version="1.2")
+        dfn = Dfn.load(f, name=name, schema_version="2.0.0.dev1")
         assert any(dfn)
         assert dfn["name"] == name
-        assert dfn["schema_version"] == "1.2"
+        assert dfn["schema_version"] == "2.0.0.dev1"
         assert dfn["blocks"]["options"]["continue"]["block"] == "options"
 
 
@@ -58,23 +58,23 @@ def test_load_all(dfn_dir):
     assert any(sim)
     assert sim["continue"]["block"] == "options"
 
-    dfns = Dfn.load_all(dfn_dir)  # defaults to v1.1
+    dfns = Dfn.load_all(dfn_dir)  # defaults to 2.0.0.dev0
     assert len(dfns) > 1
     sim = dfns["sim-nam"]
     assert any(sim)
-    assert sim["schema_version"] == "1.1"
+    assert sim["schema_version"] == "2.0.0.dev0"
     assert sim["options"]["continue"]["block"] == "options"
 
-    dfns = Dfn.load_all(dfn_dir, schema_version="1.1")
+    dfns = Dfn.load_all(dfn_dir, schema_version="2.0.0.dev0")
     assert len(dfns) > 1
     sim = dfns["sim-nam"]
     assert any(sim)
-    assert sim["schema_version"] == "1.1"
+    assert sim["schema_version"] == "2.0.0.dev0"
     assert sim["options"]["continue"]["block"] == "options"
 
-    dfns = Dfn.load_all(dfn_dir, schema_version="1.2")
+    dfns = Dfn.load_all(dfn_dir, schema_version="2.0.0.dev1")
     assert len(dfns) == 1
     sim = dfns["sim-nam"]
     assert any(sim)
-    assert sim["schema_version"] == "1.2"
+    assert sim["schema_version"] == "2.0.0.dev1"
     assert sim["blocks"]["options"]["continue"]["block"] == "options"

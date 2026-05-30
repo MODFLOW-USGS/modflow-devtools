@@ -1,0 +1,39 @@
+name: gwt-ic
+advanced: false
+multi: false
+schema_version: 2.0.0.dev0
+options:
+  export_array_ascii:
+    block: options
+    type: keyword
+    reader: urword
+    optional: true
+    longname: export array variables to layered ascii files.
+    description: keyword that specifies input griddata arrays should be written to layered ascii output
+      files.
+    mf6internal: export_ascii
+  export_array_netcdf:
+    block: options
+    type: keyword
+    reader: urword
+    optional: true
+    longname: export array variables to netcdf output files.
+    description: keyword that specifies input gridded arrays should be written to the model output NetCDF
+      file with attributes that support using the generated file as a MODFLOW 6 simulation input.  This
+      option only has an effect when an output model NetCDF file is configured and the simulation is run
+      in VALIDATE mode, otherwise it is ignored.
+    mf6internal: export_nc
+    extended: true
+griddata:
+  strt:
+    block: griddata
+    type: double precision
+    shape: (nodes)
+    default: 0.0
+    reader: readarray
+    longname: starting concentration
+    description: is the initial (starting) concentration---that is, concentration at the beginning of
+      the GWT Model simulation.  STRT must be specified for all GWT Model simulations. One value is read
+      for every model cell.
+    layered: true
+    netcdf: true

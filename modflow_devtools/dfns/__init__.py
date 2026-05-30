@@ -6,6 +6,7 @@ from modflow_devtools.dfn import FieldType, fetch_dfns
 from modflow_devtools.dfns.migrate import migrate
 from modflow_devtools.dfns.registry import DfnRegistry, LocalDfnRegistry, RemoteDfnRegistry
 from modflow_devtools.dfns.schema import (
+    CURRENT_SCHEMA_VERSION,
     Array,
     Block,
     Blocks,
@@ -39,6 +40,7 @@ warnings.warn(
 )
 
 __all__ = [
+    "CURRENT_SCHEMA_VERSION",
     "Array",
     "Block",
     "Blocks",

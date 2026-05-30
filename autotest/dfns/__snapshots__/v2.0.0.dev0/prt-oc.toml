@@ -1,0 +1,176 @@
+name = "prt-oc"
+advanced = false
+multi = false
+schema_version = "2.0.0.dev0"
+
+[options.budget_filerecord]
+block = "options"
+type = "record budget fileout budgetfile"
+reader = "urword"
+optional = true
+tagged = true
+mf6internal = "budfilerec"
+
+[options.budgetcsv_filerecord]
+block = "options"
+type = "record budgetcsv fileout budgetcsvfile"
+reader = "urword"
+optional = true
+tagged = true
+mf6internal = "budcsvfilerec"
+
+[options.track_filerecord]
+block = "options"
+type = "record track fileout trackfile"
+reader = "urword"
+optional = true
+tagged = true
+mf6internal = "trackfilerec"
+
+[options.trackcsv_filerecord]
+block = "options"
+type = "record trackcsv fileout trackcsvfile"
+reader = "urword"
+optional = true
+tagged = true
+mf6internal = "trackcsvfilerec"
+
+[options.track_release]
+block = "options"
+type = "keyword"
+reader = "urword"
+optional = true
+longname = "track release"
+description = "keyword to indicate that particle tracking output is to be written when a particle is released"
+
+[options.track_exit]
+block = "options"
+type = "keyword"
+reader = "urword"
+optional = true
+longname = "track domain exits"
+description = "keyword to indicate that particle tracking output is to be written when a particle exits a grid feature (e.g. model, cell)"
+
+[options.track_subfeature_exit]
+block = "options"
+type = "keyword"
+reader = "urword"
+optional = true
+longname = "track cell exits"
+description = "keyword to indicate that particle tracking output is to be written when a particle exits a sub-grid-scale feature. Such features are considered implementation details of the tracking algorithm employed for particular grid types, and reporting for exit events from such features is disabled by default."
+mf6internal = "track_subf_exit"
+
+[options.track_timestep]
+block = "options"
+type = "keyword"
+reader = "urword"
+optional = true
+longname = "track timestep ends"
+description = "keyword to indicate that particle tracking output is to be written at the end of each time step"
+
+[options.track_terminate]
+block = "options"
+type = "keyword"
+reader = "urword"
+optional = true
+longname = "track termination"
+description = "keyword to indicate that particle tracking output is to be written when a particle terminates for any reason"
+
+[options.track_weaksink]
+block = "options"
+type = "keyword"
+reader = "urword"
+optional = true
+longname = "track weaksink exits"
+description = "keyword to indicate that particle tracking output is to be written when a particle exits a weak sink (a cell which removes some but not all inflow from adjacent cells)"
+
+[options.track_usertime]
+block = "options"
+type = "keyword"
+reader = "urword"
+optional = true
+longname = "track user-specified times"
+description = "keyword to indicate that particle tracking output is to be written at user-specified times, provided as double precision values in the TRACKTIMES block."
+
+[options.track_dropped]
+block = "options"
+type = "keyword"
+reader = "urword"
+optional = true
+longname = "track drops to water table"
+description = "keyword to indicate that particle tracking output is to be written when a particle is dropped to the water table via DRY_TRACKING_METHOD DROP."
+
+[options.track_timesrecord]
+block = "options"
+type = "record track_times times"
+reader = "urword"
+optional = true
+tagged = true
+mf6internal = "ttimesrec"
+removed = "6.6.0"
+
+[options.track_timesfilerecord]
+block = "options"
+type = "record track_timesfile timesfile"
+reader = "urword"
+optional = true
+tagged = true
+mf6internal = "ttimesfilerec"
+removed = "6.6.0"
+
+[options.dev_dump_event_trace]
+block = "options"
+type = "keyword"
+reader = "urword"
+optional = true
+longname = "print particle tracking events"
+description = "print a verbose particle tracking event trace to standard output"
+mf6internal = "dev_dump_evtrace"
+
+[dimensions.ntracktimes]
+block = "dimensions"
+type = "integer"
+reader = "urword"
+optional = true
+longname = "number of particle tracking times"
+description = "is the number of user-specified particle tracking times in the TRACKTIMES block."
+
+[tracktimes.tracktimes]
+block = "tracktimes"
+type = "recarray"
+shape = "(ntracktimes)"
+reader = "urword"
+optional = true
+
+[tracktimes.tracktimes.item]
+type = "record"
+block = "tracktimes"
+reader = "urword"
+optional = true
+
+[tracktimes.tracktimes.item.fields.time]
+block = "tracktimes"
+type = "double precision"
+reader = "urword"
+optional = false
+longname = "release time"
+description = "real value that defines the tracking time with respect to the simulation start time."
+tagged = false
+in_record = true
+
+[period]
+transient_block = true
+
+[period.saverecord]
+block = "period"
+type = "record save rtype ocsetting"
+reader = "urword"
+optional = true
+tagged = false
+
+[period.printrecord]
+block = "period"
+type = "record print rtype ocsetting"
+reader = "urword"
+optional = true
+tagged = false

@@ -19,7 +19,7 @@ from warnings import warn
 
 from boltons.dictutils import OMD
 
-SchemaVersion = Literal["1", "1.1"]
+SchemaVersion = Literal["1", "2.0.0.dev0", "2.0.0.dev1"]
 """DFN format version number."""
 
 
@@ -233,7 +233,7 @@ class Dfn(TypedDict):
         cls,
         f,
         name: str | None = None,
-        schema_version: SchemaVersion = "1.1",
+        schema_version: SchemaVersion = "2.0.0.dev0",
         version: SchemaVersion | None = None,
         **kwargs,
     ) -> "Dfn":
@@ -254,24 +254,24 @@ class Dfn(TypedDict):
         match str(schema_version):
             case "1":
                 data = fields
-            case "1.1":
-                from modflow_devtools.dfn.migrate_to_v1_1 import to_v1_1
+            case "2.0.0.dev0":
+                from modflow_devtools.dfn.migrate_to_v2_0_0_dev0 import to_v2_0_0_dev0
 
-                data = to_v1_1(name=name, fields=fields, meta=meta, refs=refs)
-            case "1.2":
-                from modflow_devtools.dfn.migrate_to_v1_2 import to_v1_2
+                data = to_v2_0_0_dev0(name=name, fields=fields, meta=meta, refs=refs)
+            case "2.0.0.dev1":
+                from modflow_devtools.dfn.migrate_to_v2_0_0_dev1 import to_v2_0_0_dev1
 
-                data = to_v1_2(name=name, fields=fields, meta=meta)
+                data = to_v2_0_0_dev1(name=name, fields=fields, meta=meta)
             case _:
                 raise ValueError(
                     f"Unsupported schema version '{schema_version!r}' requested, "
-                    "supported schema versions are: '1', '1.1', '1.2'"
+                    "supported schema versions are: '1', '2.0.0.dev0', '2.0.0.dev1'"
                 )
 
         return cls(**data)
 
     @staticmethod  # type: ignore[misc]
-    def load_all(dfndir: str | PathLike, schema_version: str = "1.1") -> Dfns:
+    def load_all(dfndir: str | PathLike, schema_version: str = "2.0.0.dev0") -> Dfns:
         """Load component definitions from a directory."""
 
         dfndir = Path(dfndir).expanduser().resolve().absolute()
@@ -298,13 +298,15 @@ class Dfn(TypedDict):
                         dfns[path.stem] = Dfn.load(
                             f, name=path.stem, schema_version="1", common=common
                         )
-            case "1.1":
+            case "2.0.0.dev0":
                 # load subpackages first so we can pass
                 # their references in to other packages
                 subpkgs = {}
                 for path in dfn_paths:
                     with path.open() as f:
-                        dfn = Dfn.load(f, name=path.stem, common=common, schema_version="1.1")
+                        dfn = Dfn.load(
+                            f, name=path.stem, common=common, schema_version="2.0.0.dev0"
+                        )
                         ref = dfn.get("ref", None)
                         if ref:
                             subpkgs[ref["key"]] = ref
@@ -313,24 +315,28 @@ class Dfn(TypedDict):
                 for path in dfn_paths:
                     with path.open() as f:
                         dfns[path.stem] = Dfn.load(
-                            f, name=path.stem, schema_version="1.1", common=common, refs=subpkgs
+                            f,
+                            name=path.stem,
+                            schema_version="2.0.0.dev0",
+                            common=common,
+                            refs=subpkgs,
                         )
-            case "1.2":
-                from modflow_devtools.dfn.migrate_to_v1_2 import to_tree
+            case "2.0.0.dev1":
+                from modflow_devtools.dfn.migrate_to_v2_0_0_dev1 import to_tree
 
                 for path in dfn_paths:
                     with path.open() as f:
                         dfns[path.stem] = Dfn.load(
-                            f, name=path.stem, schema_version="1.2", common=common
+                            f, name=path.stem, schema_version="2.0.0.dev1", common=common
                         )
 
-                # v1.2 is a tree not a flat dict like v1.1
+                # 2.0.0.dev1 is a tree not a flat dict like 2.0.0.dev0
                 root = to_tree(dfns)
                 dfns = {root["name"]: root}
             case _:
                 raise ValueError(
                     f"Unsupported schema version '{schema_version!r}' requested, "
-                    "supported schema versions are: '1', '1.1', '1.2'"
+                    "supported schema versions are: '1', '2.0.0.dev0', '2.0.0.dev1'"
                 )
 
         return dfns

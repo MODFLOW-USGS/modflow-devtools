@@ -1,0 +1,56 @@
+{
+  "name": "gwf-oc",
+  "advanced": false,
+  "multi": false,
+  "schema_version": "2.0.0.dev0",
+  "options": {
+    "budget_filerecord": {
+      "block": "options",
+      "type": "record budget fileout budgetfile",
+      "reader": "urword",
+      "optional": true,
+      "tagged": true,
+      "mf6internal": "budfilerec"
+    },
+    "budgetcsv_filerecord": {
+      "block": "options",
+      "type": "record budgetcsv fileout budgetcsvfile",
+      "reader": "urword",
+      "optional": true,
+      "tagged": true,
+      "mf6internal": "budcsvfilerec"
+    },
+    "head_filerecord": {
+      "block": "options",
+      "type": "record head fileout headfile",
+      "reader": "urword",
+      "optional": true,
+      "tagged": true,
+      "mf6internal": "headfilerec"
+    },
+    "headprintrecord": {
+      "block": "options",
+      "type": "record head print_format formatrecord",
+      "reader": "urword",
+      "optional": true,
+      "mf6internal": "headprintrec"
+    }
+  },
+  "period": {
+    "transient_block": true,
+    "saverecord": {
+      "block": "period",
+      "type": "record save rtype ocsetting",
+      "reader": "urword",
+      "optional": true,
+      "tagged": false
+    },
+    "printrecord": {
+      "block": "period",
+      "type": "record print rtype ocsetting",
+      "reader": "urword",
+      "optional": true,
+      "tagged": false
+    }
+  }
+}

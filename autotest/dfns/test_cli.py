@@ -325,11 +325,21 @@ def test_migrate_forwards_args(tmp_path):
 
     with patch("modflow_devtools.dfns.__main__.migrate") as mock_migrate:
         result = main(
-            ["migrate", "-i", str(input_dir), "-o", str(output_dir), "-s", "2", "-f", "toml"]
+            [
+                "migrate",
+                "-i",
+                str(input_dir),
+                "-o",
+                str(output_dir),
+                "-s",
+                "2.0.0.dev2",
+                "-f",
+                "toml",
+            ]
         )
 
     assert result == 0
-    mock_migrate.assert_called_once_with(str(input_dir), str(output_dir), "2", "toml")
+    mock_migrate.assert_called_once_with(str(input_dir), str(output_dir), "2.0.0.dev2", "toml")
 
 
 def test_migrate_default_format_is_yaml(tmp_path):
@@ -339,12 +349,12 @@ def test_migrate_default_format_is_yaml(tmp_path):
     input_dir.mkdir()
 
     with patch("modflow_devtools.dfns.__main__.migrate") as mock_migrate:
-        main(["migrate", "-i", str(input_dir), "-o", str(output_dir), "-s", "2"])
+        main(["migrate", "-i", str(input_dir), "-o", str(output_dir), "-s", "2.0.0.dev2"])
 
-    mock_migrate.assert_called_once_with(str(input_dir), str(output_dir), "2", "yaml")
+    mock_migrate.assert_called_once_with(str(input_dir), str(output_dir), "2.0.0.dev2", "yaml")
 
 
-@pytest.mark.parametrize("schema_version", ["1.1", "1.2", "2"])
+@pytest.mark.parametrize("schema_version", ["2.0.0.dev0", "2.0.0.dev1", "2.0.0.dev2"])
 def test_migrate_schema_versions(tmp_path, schema_version):
     """--schema-version is forwarded correctly for each supported version."""
     input_dir = tmp_path / "input"
@@ -369,11 +379,11 @@ def test_migrate_output_formats(tmp_path, fmt):
 
     with patch("modflow_devtools.dfns.__main__.migrate") as mock_migrate:
         result = main(
-            ["migrate", "-i", str(input_dir), "-o", str(output_dir), "-s", "2", "-f", fmt]
+            ["migrate", "-i", str(input_dir), "-o", str(output_dir), "-s", "2.0.0.dev2", "-f", fmt]
         )
 
     assert result == 0
-    mock_migrate.assert_called_once_with(str(input_dir), str(output_dir), "2", fmt)
+    mock_migrate.assert_called_once_with(str(input_dir), str(output_dir), "2.0.0.dev2", fmt)
 
 
 def test_migrate_error_returns_nonzero(tmp_path, capsys):

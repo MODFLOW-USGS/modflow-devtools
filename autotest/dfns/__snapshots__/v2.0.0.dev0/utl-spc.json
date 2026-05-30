@@ -1,0 +1,107 @@
+{
+  "name": "utl-spc",
+  "advanced": false,
+  "multi": true,
+  "schema_version": "2.0.0.dev0",
+  "fkeys": {
+    "ts_filerecord": {
+      "parent": "parent_package",
+      "key": "ts_filerecord",
+      "val": "timeseries",
+      "abbr": "ts",
+      "param": "timeseries",
+      "description": "xxx"
+    }
+  },
+  "options": {
+    "print_input": {
+      "block": "options",
+      "type": "keyword",
+      "reader": "urword",
+      "optional": true,
+      "longname": "print input to listing file",
+      "description": "keyword to indicate that the list of spc information will be written to the listing file immediately after it is read."
+    },
+    "timeseries": {
+      "block": "options",
+      "type": "record ts6 filein ts6_filename",
+      "reader": "urword",
+      "optional": true,
+      "description": "Contains data for the ts package. Data can be passed as a dictionary to the ts package with variable names as keys and package data as values. Data for the timeseries variable is also acceptable. See ts package documentation for more information.",
+      "tagged": true,
+      "ref": {
+        "parent": "parent_package",
+        "key": "ts_filerecord",
+        "val": "timeseries",
+        "abbr": "ts",
+        "param": "timeseries",
+        "description": "xxx"
+      }
+    }
+  },
+  "dimensions": {
+    "maxbound": {
+      "block": "dimensions",
+      "type": "integer",
+      "reader": "urword",
+      "optional": false,
+      "longname": "maximum number of ssm entries",
+      "description": "integer value specifying the maximum number of spc cells that will be specified for use during any stress period."
+    }
+  },
+  "period": {
+    "transient_block": true,
+    "perioddata": {
+      "block": "period",
+      "type": "recarray",
+      "reader": "urword",
+      "item": {
+        "type": "record",
+        "block": "period",
+        "reader": "urword",
+        "fields": {
+          "bndno": {
+            "block": "period",
+            "type": "integer",
+            "reader": "urword",
+            "longname": "bound number for this entry",
+            "description": "integer value that defines the boundary package feature number associated with the specified PERIOD data on the line. BNDNO must be greater than zero and less than or equal to MAXBOUND.",
+            "tagged": false,
+            "in_record": true,
+            "numeric_index": true
+          },
+          "spcsetting": {
+            "block": "period",
+            "type": "keystring",
+            "reader": "urword",
+            "description": "line of information that is parsed into a keyword and values.  Keyword values that can be used to start the SPCSETTING string include: CONCENTRATION and TEMPERATURE.",
+            "tagged": false,
+            "in_record": true,
+            "choices": {
+              "concentration": {
+                "block": "period",
+                "type": "double precision",
+                "reader": "urword",
+                "longname": "boundary concentration",
+                "description": "is the boundary concentration. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value. By default, the CONCENTRATION for each boundary feature is zero.",
+                "tagged": true,
+                "in_record": true,
+                "time_series": true
+              },
+              "temperature": {
+                "block": "period",
+                "type": "double precision",
+                "reader": "urword",
+                "longname": "boundary temperature",
+                "description": "is the user-supplied boundary temperature. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value. By default, the TEMPERATURE for each boundary feature is zero.",
+                "tagged": true,
+                "in_record": true,
+                "time_series": true
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

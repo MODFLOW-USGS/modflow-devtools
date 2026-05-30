@@ -35,57 +35,57 @@ def dfn_dir(module_tmpdir):
 
 
 @pytest.fixture(scope="module", params=FORMATS)
-def v1_1(request, dfn_dir, module_tmpdir):
+def dev0(request, dfn_dir, module_tmpdir):
     fmt = request.param
-    out = module_tmpdir / f"v1_1-{fmt}"
-    migrate(dfn_dir, out, schema_version="1.1", fmt=fmt)
+    out = module_tmpdir / f"dev0-{fmt}"
+    migrate(dfn_dir, out, schema_version="2.0.0.dev0", fmt=fmt)
     return out, fmt
 
 
 @pytest.fixture(scope="module", params=FORMATS)
-def v1_2(request, dfn_dir, module_tmpdir):
+def dev1(request, dfn_dir, module_tmpdir):
     fmt = request.param
-    out = module_tmpdir / f"v1_2-{fmt}"
-    migrate(dfn_dir, out, schema_version="1.2", fmt=fmt)
+    out = module_tmpdir / f"dev1-{fmt}"
+    migrate(dfn_dir, out, schema_version="2.0.0.dev1", fmt=fmt)
     return out, fmt
 
 
 @pytest.fixture(scope="module", params=FORMATS)
-def v2(request, dfn_dir, module_tmpdir):
+def dev2(request, dfn_dir, module_tmpdir):
     fmt = request.param
-    out = module_tmpdir / f"v2-{fmt}"
-    migrate(dfn_dir, out, schema_version="2", fmt=fmt)
+    out = module_tmpdir / f"dev2-{fmt}"
+    migrate(dfn_dir, out, schema_version="2.0.0.dev2", fmt=fmt)
     return out, fmt
 
 
-def test_migrate_v1_1(v1_1, snapshot):
-    out, fmt = v1_1
+def test_migrate_v2_0_0_dev0(dev0, snapshot):
+    out, fmt = dev0
     files = sorted(out.glob(f"*.{fmt}"))
     assert files
     for p in files:
         data = _load(p, fmt)
         assert data["name"] == p.stem
-        assert data["schema_version"] == "1.1"
+        assert data["schema_version"] == "2.0.0.dev0"
         assert snapshot(name=p.stem) == p.read_text()
 
 
-def test_migrate_v1_2(v1_2, snapshot):
-    out, fmt = v1_2
+def test_migrate_v2_0_0_dev1(dev1, snapshot):
+    out, fmt = dev1
     files = sorted(out.glob(f"*.{fmt}"))
     assert files
     for p in files:
         data = _load(p, fmt)
         assert data["name"] == p.stem
-        assert data["schema_version"] == "1.2"
+        assert data["schema_version"] == "2.0.0.dev1"
         assert snapshot(name=p.stem) == p.read_text()
 
 
-def test_migrate_v2(v2, snapshot):
-    out, fmt = v2
+def test_migrate_v2_0_0_dev2(dev2, snapshot):
+    out, fmt = dev2
     files = sorted(out.glob(f"*.{fmt}"))
     assert files
     for p in files:
         data = _load(p, fmt)
         assert data["name"] == p.stem
-        assert data["schema_version"] == "2"
+        assert data["schema_version"] == "2.0.0.dev2"
         assert snapshot(name=p.stem) == p.read_text()

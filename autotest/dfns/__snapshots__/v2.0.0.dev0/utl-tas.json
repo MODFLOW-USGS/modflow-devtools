@@ -1,0 +1,52 @@
+{
+  "name": "utl-tas",
+  "advanced": false,
+  "multi": true,
+  "schema_version": "2.0.0.dev0",
+  "ref": {
+    "parent": "parent_package",
+    "key": "tas_filerecord",
+    "val": "timearrayseries",
+    "abbr": "tas",
+    "param": "tas_array"
+  },
+  "attributes": {
+    "time_series_namerecord": {
+      "block": "attributes",
+      "type": "record name time_series_name",
+      "reader": "urword",
+      "optional": false,
+      "description": "xxx",
+      "tagged": false
+    },
+    "interpolation_methodrecord": {
+      "block": "attributes",
+      "type": "record method interpolation_method",
+      "reader": "urword",
+      "optional": true,
+      "description": "xxx",
+      "tagged": false
+    },
+    "sfacrecord": {
+      "block": "attributes",
+      "type": "record sfac sfacval",
+      "reader": "urword",
+      "optional": true,
+      "description": "xxx",
+      "tagged": true
+    }
+  },
+  "time": {
+    "tas_array": {
+      "block": "time",
+      "type": "double precision",
+      "shape": "(unknown)",
+      "reader": "readarray",
+      "optional": false,
+      "description": "An array of numeric, floating-point values, or a constant value, readable by the U2DREL array-reading utility.",
+      "tagged": false,
+      "just_data": true,
+      "repeating": true
+    }
+  }
+}

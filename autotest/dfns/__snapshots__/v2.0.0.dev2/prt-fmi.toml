@@ -1,0 +1,28 @@
+type = "package"
+schema_version = "2.0.0.dev2"
+name = "prt-fmi"
+parent = "prt-nam"
+
+[blocks.options.fields.save_flows]
+type = "keyword"
+longname = "save cell-by-cell flows to budget file"
+description = "keyword to indicate that FMI flow terms will be written to the file specified with 'BUDGET FILEOUT' in Output Control."
+optional = true
+
+[blocks.packagedata.fields.gwfhead]
+type = "file"
+longname = "gwf head file"
+optional = true
+mode = "filein"
+
+[blocks.packagedata.fields.gwfbudget]
+type = "file"
+longname = "gwf budget file"
+optional = true
+mode = "filein"
+
+[blocks.packagedata.fields.gwfgrid]
+type = "file"
+longname = "gwf grid file"
+optional = true
+mode = "filein"

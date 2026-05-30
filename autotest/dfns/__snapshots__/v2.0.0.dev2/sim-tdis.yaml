@@ -1,0 +1,76 @@
+type: package
+schema_version: 2.0.0.dev2
+name: sim-tdis
+parent: sim-nam
+subtype: stress
+dims:
+  nper:
+    value: nper
+    scope: simulation
+blocks:
+  options:
+    fields:
+      time_units:
+        type: string
+        longname: time unit
+        description: is the time units of the simulation.  This is a text string that is used as a label
+          within model output files.  Values for time_units may be 'unknown',  'seconds', 'minutes', 'hours',
+          'days', or 'years'.  The default time unit is 'unknown'.
+        optional: true
+        tagged: false
+      start_date_time:
+        type: string
+        longname: starting date and time
+        description: is the starting date and time of the simulation.  This is a text string that is used
+          as a label within the simulation list file.  The value has no effect on the simulation.  The
+          recommended format for the starting date and time is described at https://www.w3.org/TR/NOTE-datetime.
+        optional: true
+        tagged: false
+      ats_filerecord:
+        type: record
+        optional: true
+        fields:
+          ats6:
+            type: file
+            longname: ats keyword
+            description: keyword to specify that record corresponds to an adaptive time step (ATS) input
+              file.  The behavior of ATS and a description of the input file is provided separately.
+            mode: filein
+  dimensions:
+    fields:
+      nper:
+        type: integer
+        longname: number of stress periods
+        description: is the number of stress periods for the simulation.
+        default: 1
+        tagged: false
+  perioddata:
+    fields:
+      perioddata:
+        type: list
+        longname: stress period time information
+        default:
+          - - 1.0
+            - 1
+            - 1.0
+        item:
+          type: record
+          fields:
+            perlen:
+              type: double
+              longname: length of stress period
+              description: is the length of a stress period.
+              tagged: false
+            nstp:
+              type: integer
+              longname: number of time steps
+              description: is the number of time steps in a stress period.
+              tagged: false
+            tsmult:
+              type: double
+              longname: number of time steps
+              description: is the multiplier for the length of successive time steps. The length of a
+                time step is calculated by multiplying the length of the previous time step by TSMULT.
+                The length of the first time step, $Delta t_1$, is related to PERLEN, NSTP, and TSMULT
+                by the relation $Delta t_1= perlen frac{tsmult - 1}{tsmult^{nstp}-1}$.
+              tagged: false

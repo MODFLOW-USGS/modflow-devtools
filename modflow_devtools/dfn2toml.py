@@ -26,7 +26,7 @@ def _strip_field_name(data):
 def convert(indir: str | PathLike, outdir: str | PathLike) -> None:
     outdir = Path(outdir)
     outdir.mkdir(parents=True, exist_ok=True)
-    for dfn in Dfn.load_all(Path(indir), schema_version="1.1").values():  # type: ignore
+    for dfn in Dfn.load_all(Path(indir), schema_version="2.0.0.dev0").values():  # type: ignore
         with (outdir / f"{dfn['name']}.toml").open("wb") as f:
             data = remap(dfn, visit=drop_none_or_empty)
             tomli_w.dump(_strip_field_name(data), f)

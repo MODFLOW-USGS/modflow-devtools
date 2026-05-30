@@ -1,0 +1,68 @@
+name = "utl-laktab"
+advanced = false
+multi = true
+schema_version = "2.0.0.dev0"
+
+[dimensions.nrow]
+block = "dimensions"
+type = "integer"
+reader = "urword"
+optional = false
+longname = "number of table rows"
+description = "integer value specifying the number of rows in the lake table. There must be NROW rows of data in the TABLE block."
+
+[dimensions.ncol]
+block = "dimensions"
+type = "integer"
+reader = "urword"
+optional = false
+longname = "number of table columns"
+description = "integer value specifying the number of columns in the lake table. There must be NCOL columns of data in the TABLE block. For lakes with HORIZONTAL and/or VERTICAL CTYPE connections, NCOL must be equal to 3. For lakes with EMBEDDEDH or EMBEDDEDV CTYPE connections, NCOL must be equal to 4."
+
+[table.table]
+block = "table"
+type = "recarray"
+shape = "(nrow)"
+reader = "urword"
+
+[table.table.item]
+type = "record"
+block = "table"
+reader = "urword"
+
+[table.table.item.fields.stage]
+block = "table"
+type = "double precision"
+reader = "urword"
+longname = "lake stage"
+description = "real value that defines the stage corresponding to the remaining data on the line."
+tagged = false
+in_record = true
+
+[table.table.item.fields.volume]
+block = "table"
+type = "double precision"
+reader = "urword"
+longname = "lake volume"
+description = "real value that defines the lake volume corresponding to the stage specified on the line."
+tagged = false
+in_record = true
+
+[table.table.item.fields.sarea]
+block = "table"
+type = "double precision"
+reader = "urword"
+longname = "lake surface area"
+description = "real value that defines the lake surface area corresponding to the stage specified on the line."
+tagged = false
+in_record = true
+
+[table.table.item.fields.barea]
+block = "table"
+type = "double precision"
+reader = "urword"
+optional = true
+longname = "lake-GWF exchange area"
+description = "real value that defines the lake-GWF exchange area corresponding to the stage specified on the line. BAREA is only specified if the CLAKTYPE for the lake is EMBEDDEDH or EMBEDDEDV."
+tagged = false
+in_record = true

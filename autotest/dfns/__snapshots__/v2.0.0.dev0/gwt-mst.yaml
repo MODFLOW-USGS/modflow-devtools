@@ -1,0 +1,150 @@
+name: gwt-mst
+advanced: false
+multi: false
+schema_version: 2.0.0.dev0
+options:
+  save_flows:
+    block: options
+    type: keyword
+    reader: urword
+    optional: true
+    longname: save calculated flows to budget file
+    description: keyword to indicate that MST flow terms will be written to the file specified with 'BUDGET
+      FILEOUT' in Output Control.
+  first_order_decay:
+    block: options
+    type: keyword
+    reader: urword
+    optional: true
+    longname: activate first-order decay
+    description: is a text keyword to indicate that first-order decay will occur.  Use of this keyword
+      requires that DECAY and DECAY_SORBED (if sorption is active) are specified in the GRIDDATA block.
+    mf6internal: order1_decay
+  zero_order_decay:
+    block: options
+    type: keyword
+    reader: urword
+    optional: true
+    longname: activate zero-order decay
+    description: is a text keyword to indicate that zero-order decay will occur.  Use of this keyword
+      requires that DECAY and DECAY_SORBED (if sorption is active) are specified in the GRIDDATA block.
+    mf6internal: order0_decay
+  sorption:
+    block: options
+    type: string
+    reader: urword
+    optional: true
+    longname: activate sorption
+    description: is a text keyword to indicate that sorption will be activated.  Valid sorption options
+      include LINEAR, FREUNDLICH, and LANGMUIR.  Use of this keyword requires that BULK_DENSITY and DISTCOEF
+      are specified in the GRIDDATA block.  If sorption is specified as FREUNDLICH or LANGMUIR then SP2
+      is also required in the GRIDDATA block.
+    valid: linear freundlich langmuir
+  sorbate_filerecord:
+    block: options
+    type: record sorbate fileout sorbatefile
+    reader: urword
+    optional: true
+    tagged: true
+    mf6internal: sorbate_rec
+  export_array_ascii:
+    block: options
+    type: keyword
+    reader: urword
+    optional: true
+    longname: export array variables to layered ascii files.
+    description: keyword that specifies input griddata arrays should be written to layered ascii output
+      files.
+    mf6internal: export_ascii
+  export_array_netcdf:
+    block: options
+    type: keyword
+    reader: urword
+    optional: true
+    longname: export array variables to netcdf output files.
+    description: keyword that specifies input gridded arrays should be written to the model output NetCDF
+      file with attributes that support using the generated file as a MODFLOW 6 simulation input.  This
+      option only has an effect when an output model NetCDF file is configured and the simulation is run
+      in VALIDATE mode, otherwise it is ignored.
+    mf6internal: export_nc
+    extended: true
+griddata:
+  porosity:
+    block: griddata
+    type: double precision
+    shape: (nodes)
+    reader: readarray
+    longname: porosity
+    description: is the mobile domain porosity, defined as the mobile domain pore volume per mobile domain
+      volume.  Additional information on porosity within the context of mobile and immobile domain transport
+      simulations is included in the MODFLOW 6 Supplemental Technical Information document.
+    layered: true
+    netcdf: true
+  decay:
+    block: griddata
+    type: double precision
+    shape: (nodes)
+    reader: readarray
+    optional: true
+    longname: aqueous phase decay rate coefficient
+    description: is the rate coefficient for first or zero-order decay for the aqueous phase of the mobile
+      domain.  A negative value indicates solute production.  The dimensions of decay for first-order
+      decay is one over time.  The dimensions of decay for zero-order decay is mass per length cubed per
+      time.  decay will have no effect on simulation results unless either first- or zero-order decay
+      is specified in the options block.
+    layered: true
+    netcdf: true
+  decay_sorbed:
+    block: griddata
+    type: double precision
+    shape: (nodes)
+    reader: readarray
+    optional: true
+    longname: sorbed phase decay rate coefficient
+    description: is the rate coefficient for first or zero-order decay for the sorbed phase of the mobile
+      domain.  A negative value indicates solute production.  The dimensions of decay_sorbed for first-order
+      decay is one over time.  The dimensions of decay_sorbed for zero-order decay is mass of solute per
+      mass of aquifer per time.  If decay_sorbed is not specified and both decay and sorption are active,
+      then the program will terminate with an error.  decay_sorbed will have no effect on simulation results
+      unless the SORPTION keyword and either first- or zero-order decay are specified in the options block.
+    layered: true
+    netcdf: true
+  bulk_density:
+    block: griddata
+    type: double precision
+    shape: (nodes)
+    reader: readarray
+    optional: true
+    longname: bulk density
+    description: is the bulk density of the aquifer in mass per length cubed.  bulk_density is not required
+      unless the SORPTION keyword is specified.  Bulk density is defined as the mobile domain solid mass
+      per mobile domain volume.  Additional information on bulk density is included in the MODFLOW 6 Supplemental
+      Technical Information document.
+    layered: true
+    netcdf: true
+  distcoef:
+    block: griddata
+    type: double precision
+    shape: (nodes)
+    reader: readarray
+    optional: true
+    longname: distribution coefficient
+    description: is the distribution coefficient for the equilibrium-controlled linear sorption isotherm
+      in dimensions of length cubed per mass.  If the Freunchlich isotherm is specified, then discoef
+      is the Freundlich constant.  If the Langmuir isotherm is specified, then distcoef is the Langmuir
+      constant.  distcoef is not required unless the SORPTION keyword is specified.
+    layered: true
+    netcdf: true
+  sp2:
+    block: griddata
+    type: double precision
+    shape: (nodes)
+    reader: readarray
+    optional: true
+    longname: second sorption parameter
+    description: is the exponent for the Freundlich isotherm and the sorption capacity for the Langmuir
+      isotherm.  sp2 is not required unless the SORPTION keyword is specified in the options block.  If
+      the SORPTION keyword is not specified in the options block, sp2 will have no effect on simulation
+      results.
+    layered: true
+    netcdf: true

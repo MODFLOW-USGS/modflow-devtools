@@ -1,0 +1,55 @@
+name = "prt-fmi"
+advanced = false
+multi = false
+schema_version = "2.0.0.dev0"
+
+[options.save_flows]
+block = "options"
+type = "keyword"
+reader = "urword"
+optional = true
+longname = "save cell-by-cell flows to budget file"
+description = "keyword to indicate that FMI flow terms will be written to the file specified with 'BUDGET FILEOUT' in Output Control."
+
+[packagedata.packagedata]
+block = "packagedata"
+type = "recarray"
+reader = "urword"
+optional = true
+longname = "flowtype list"
+
+[packagedata.packagedata.item]
+type = "record"
+block = "packagedata"
+reader = "urword"
+optional = true
+longname = "flowtype list"
+
+[packagedata.packagedata.item.fields.flowtype]
+block = "packagedata"
+type = "string"
+reader = "urword"
+longname = "flow type"
+description = "is the word GWFBUDGET, GWFHEAD, or GWFGRID.  If GWFBUDGET is specified, then the corresponding file must be a budget file.  If GWFHEAD is specified, the file must be a head file.  If GWFGRID is specified, the file must be a binary grid file."
+in_record = true
+tagged = false
+
+[packagedata.packagedata.item.fields.filein]
+block = "packagedata"
+type = "keyword"
+reader = "urword"
+optional = false
+longname = "file keyword"
+description = "keyword to specify that an input filename is expected next."
+in_record = true
+tagged = true
+
+[packagedata.packagedata.item.fields.fname]
+block = "packagedata"
+type = "string"
+reader = "urword"
+longname = "file name"
+description = "is the name of the file containing flows.  The path to the file should be included if the file is not located in the folder where the program was run."
+in_record = true
+preserve_case = true
+tagged = false

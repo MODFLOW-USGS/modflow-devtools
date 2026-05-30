@@ -1,0 +1,73 @@
+name: gwf-hfb
+advanced: false
+multi: false
+schema_version: 2.0.0.dev0
+options:
+  print_input:
+    block: options
+    type: keyword
+    reader: urword
+    optional: true
+    longname: model print input to listing file
+    description: keyword to indicate that the list of hydraulic flow barriers will be written to the listing
+      file immediately after it is read.
+dimensions:
+  maxhfb:
+    block: dimensions
+    type: integer
+    reader: urword
+    optional: false
+    longname: maximum number of barriers
+    description: integer value specifying the maximum number of hydraulic flow barriers that will be entered
+      in this input file.  The value of MAXHFB is used to allocate memory for the hydraulic flow barriers.
+    mf6internal: maxbound
+period:
+  transient_block: true
+  stress_period_data:
+    block: period
+    type: recarray
+    shape: (maxhfb)
+    reader: urword
+    mf6internal: spd
+    item:
+      type: record
+      block: period
+      reader: urword
+      mf6internal: spd
+      fields:
+        cellid1:
+          block: period
+          type: integer
+          shape: (ncelldim)
+          reader: urword
+          longname: first cell adjacent to barrier
+          description: identifier for the first cell.  For a structured grid that uses the DIS input file,
+            CELLID1 is the layer, row, and column numbers of the cell.   For a grid that uses the DISV
+            input file, CELLID1 is the layer number and CELL2D number for the two cells.  If the model
+            uses the unstructured discretization (DISU) input file, then CELLID1 is the node number for
+            the cell.  The barrier is located between cells designated as CELLID1 and CELLID2.  The program
+            will terminate with an error if CELLID1 and CELLID2 are not horizontally or vertically adjacent.
+          tagged: false
+          in_record: true
+        cellid2:
+          block: period
+          type: integer
+          shape: (ncelldim)
+          reader: urword
+          longname: second cell adjacent to barrier
+          description: identifier for the second cell. See CELLID1 for description of how to specify.
+          tagged: false
+          in_record: true
+        hydchr:
+          block: period
+          type: double precision
+          reader: urword
+          longname: barrier hydraulic characteristic
+          description: is the hydraulic characteristic of the hydraulic-flow barrier. The hydraulic characteristic
+            is the barrier hydraulic conductivity divided by the width of the hydraulic-flow barrier.
+            If the hydraulic characteristic is negative, then the absolute value of HYDCHR acts as a multiplier
+            to the conductance between the two model cells specified as containing the barrier. For example,
+            if the value for HYDCHR was specified as -1.5, the conductance calculated for the two cells
+            would be multiplied by 1.5.
+          tagged: false
+          in_record: true

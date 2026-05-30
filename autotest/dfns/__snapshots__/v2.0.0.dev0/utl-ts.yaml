@@ -1,0 +1,104 @@
+name: utl-ts
+advanced: false
+multi: true
+schema_version: 2.0.0.dev0
+ref:
+  parent: parent_package
+  key: ts_filerecord
+  val: timeseries
+  abbr: ts
+  param: timeseries
+  description: xxx
+attributes:
+  time_series_namerecord:
+    block: attributes
+    type: record names time_series_names
+    reader: urword
+    optional: false
+    description: xxx
+    tagged: false
+  interpolation_methodrecord:
+    block: attributes
+    type: record methods interpolation_method
+    reader: urword
+    optional: true
+    description: xxx
+    tagged: false
+  interpolation_methodrecord_single:
+    block: attributes
+    type: record method interpolation_method_single
+    reader: urword
+    optional: true
+    description: xxx
+    tagged: false
+  method:
+    block: attributes
+    type: keyword
+    reader: urword
+    optional: false
+    description: ' xxx'
+  interpolation_method_single:
+    block: attributes
+    type: string
+    reader: urword
+    optional: false
+    description: Interpolation method, which is either STEPWISE or LINEAR.
+    valid: stepwise linear linearend
+    tagged: false
+  sfacrecord:
+    block: attributes
+    type: record sfacs sfacval
+    reader: urword
+    optional: true
+    description: xxx
+    tagged: true
+  sfacrecord_single:
+    block: attributes
+    type: record sfac sfacval
+    reader: urword
+    optional: true
+    description: xxx
+    tagged: true
+  sfac:
+    block: attributes
+    type: keyword
+    reader: urword
+    optional: false
+    description: ' xxx'
+    tagged: false
+timeseries:
+  timeseries:
+    block: timeseries
+    type: recarray
+    reader: urword
+    optional: false
+    description: xxx
+    tagged: true
+    item:
+      type: record
+      block: timeseries
+      description: xxx
+      reader: urword
+      tagged: true
+      optional: false
+      fields:
+        ts_time:
+          block: timeseries
+          type: double precision
+          reader: urword
+          optional: false
+          description: A numeric time relative to the start of the simulation, in the time unit used in
+            the simulation. Times must be strictly increasing.
+          tagged: false
+          repeating: false
+          in_record: true
+        ts_array:
+          block: timeseries
+          type: double precision
+          shape: (time_series_names)
+          reader: urword
+          optional: false
+          description: A 2-D array of numeric, floating-point values, or a constant value, readable by
+            the U2DREL array-reading utility.
+          tagged: false
+          in_record: true

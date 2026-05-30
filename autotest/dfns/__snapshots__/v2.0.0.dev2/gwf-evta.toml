@@ -1,0 +1,135 @@
+type = "package"
+schema_version = "2.0.0.dev2"
+name = "gwf-evta"
+parent = "gwf-nam"
+multi = true
+subtype = "stress"
+
+[dims.auxiliary]
+value = "len(auxiliary)"
+
+[blocks.options.fields.readasarrays]
+type = "keyword"
+longname = "use array-based input"
+description = "indicates that array-based input will be used for the Evapotranspiration Package.  This keyword must be specified to use array-based input.  When READASARRAYS is specified, values must be provided for every cell within a model layer, even those cells that have an IDOMAIN value less than one.  Values assigned to cells with IDOMAIN values less than one are not used and have no effect on simulation results."
+default = "true"
+
+[blocks.options.fields.fixed_cell]
+type = "keyword"
+longname = "if cell is dry do not apply evapotranspiration to underlying cell"
+description = "indicates that evapotranspiration will not be reassigned to a cell underlying the cell specified in the list if the specified cell is inactive."
+optional = true
+
+[blocks.options.fields.auxiliary]
+type = "array"
+longname = "keyword to specify aux variables"
+description = "defines an array of one or more auxiliary variable names.  There is no limit on the number of auxiliary variables that can be provided on this line; however, lists of information provided in subsequent blocks must have a column of data for each auxiliary variable name defined here.   The number of auxiliary variables detected on this line determines the value for naux.  Comments cannot be provided anywhere on this line as they will be interpreted as auxiliary variable names.  Auxiliary variables may not be used by the package, but they will be available for use by other parts of the program.  The program will terminate with an error if auxiliary variables are specified on more than one line in the options block."
+optional = true
+dtype = "string"
+
+[blocks.options.fields.auxmultname]
+type = "string"
+longname = "name of auxiliary variable for multiplier"
+description = "name of auxiliary variable to be used as multiplier of evapotranspiration rate."
+optional = true
+tagged = false
+
+[blocks.options.fields.print_input]
+type = "keyword"
+longname = "print input to listing file"
+description = "keyword to indicate that the list of evapotranspiration information will be written to the listing file immediately after it is read."
+optional = true
+
+[blocks.options.fields.print_flows]
+type = "keyword"
+longname = "print evapotranspiration rates to listing file"
+description = "keyword to indicate that the list of evapotranspiration flow rates will be printed to the listing file for every stress period time step in which 'BUDGET PRINT' is specified in Output Control.  If there is no Output Control option and 'PRINT_FLOWS' is specified, then flow rates are printed for the last time step of each stress period."
+optional = true
+
+[blocks.options.fields.save_flows]
+type = "keyword"
+longname = "save EVTA flows to budget file"
+description = "keyword to indicate that evapotranspiration flow terms will be written to the file specified with 'BUDGET FILEOUT' in Output Control."
+optional = true
+
+[blocks.options.fields.tas_filerecord]
+type = "record"
+optional = true
+
+[blocks.options.fields.tas_filerecord.fields.tas6]
+type = "file"
+longname = "head keyword"
+description = "keyword to specify that record corresponds to a time-array-series file."
+mode = "filein"
+
+[blocks.options.fields.obs_filerecord]
+type = "record"
+optional = true
+
+[blocks.options.fields.obs_filerecord.fields.obs6]
+type = "file"
+longname = "obs keyword"
+description = "keyword to specify that record corresponds to an observations file."
+mode = "filein"
+
+[blocks.options.fields.export_array_netcdf]
+type = "keyword"
+longname = "export array variables to netcdf output files."
+description = "keyword that specifies input gridded arrays should be written to the model output NetCDF file with attributes that support using the generated file as a MODFLOW 6 simulation input.  This option only has an effect when an output model NetCDF file is configured and the simulation is run in VALIDATE mode, otherwise it is ignored."
+optional = true
+
+[blocks.period.fields.ievt]
+type = "array"
+longname = "layer number for evapotranspiration"
+description = "IEVT is the layer number that defines the layer in each vertical column where evapotranspiration is applied. If IEVT is omitted, evapotranspiration by default is applied to cells in layer 1.  If IEVT is specified, it must be specified as the first variable in the PERIOD block or MODFLOW will terminate with an error."
+optional = true
+netcdf = true
+dtype = "integer"
+shape = [
+    "ncpl",
+]
+
+[blocks.period.fields.surface]
+type = "array"
+longname = "evapotranspiration surface"
+description = "is the elevation of the ET surface ($L$)."
+default = 0.0
+netcdf = true
+dtype = "double"
+shape = [
+    "ncpl",
+]
+
+[blocks.period.fields.rate]
+type = "array"
+longname = "evapotranspiration rate"
+description = "is the maximum ET flux rate ($LT^{-1}$)."
+default = 0.001
+netcdf = true
+dtype = "double"
+time_series = true
+shape = [
+    "ncpl",
+]
+
+[blocks.period.fields.depth]
+type = "array"
+longname = "extinction depth"
+description = "is the ET extinction depth ($L$)."
+default = 1.0
+netcdf = true
+dtype = "double"
+shape = [
+    "ncpl",
+]
+
+[blocks.period.fields.aux]
+type = "array"
+longname = "evapotranspiration auxiliary variable iaux"
+description = "is an array of values for auxiliary variable AUX(IAUX), where iaux is a value from 1 to NAUX, and AUX(IAUX) must be listed as part of the auxiliary variables.  A separate array can be specified for each auxiliary variable.  If an array is not specified for an auxiliary variable, then a value of zero is assigned.  If the value specified here for the auxiliary variable is the same as auxmultname, then the evapotranspiration rate will be multiplied by this array."
+netcdf = true
+dtype = "double"
+time_series = true
+shape = [
+    "ncpl",
+]

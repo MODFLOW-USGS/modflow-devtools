@@ -1,0 +1,192 @@
+name = "gwt-ist"
+advanced = false
+multi = true
+schema_version = "2.0.0.dev0"
+
+[options.save_flows]
+block = "options"
+type = "keyword"
+reader = "urword"
+optional = true
+longname = "save calculated flows to budget file"
+description = "keyword to indicate that IST flow terms will be written to the file specified with 'BUDGET FILEOUT' in Output Control."
+
+[options.budget_filerecord]
+block = "options"
+type = "record budget fileout budgetfile"
+reader = "urword"
+optional = true
+tagged = true
+mf6internal = "budfilerec"
+
+[options.budgetcsv_filerecord]
+block = "options"
+type = "record budgetcsv fileout budgetcsvfile"
+reader = "urword"
+optional = true
+tagged = true
+mf6internal = "budcsvfilerec"
+
+[options.sorption]
+block = "options"
+type = "string"
+reader = "urword"
+optional = true
+longname = "activate sorption"
+description = "is a text keyword to indicate that sorption will be activated.  Valid sorption options include LINEAR, FREUNDLICH, and LANGMUIR.  Use of this keyword requires that BULK_DENSITY and DISTCOEF are specified in the GRIDDATA block.  If sorption is specified as FREUNDLICH or LANGMUIR then SP2 is also required in the GRIDDATA block.  The sorption option must be consistent with the sorption option specified in the MST Package or the program will terminate with an error."
+valid = "linear freundlich langmuir"
+
+[options.first_order_decay]
+block = "options"
+type = "keyword"
+reader = "urword"
+optional = true
+longname = "activate first-order decay"
+description = "is a text keyword to indicate that first-order decay will occur.  Use of this keyword requires that DECAY and DECAY_SORBED (if sorption is active) are specified in the GRIDDATA block."
+mf6internal = "order1_decay"
+
+[options.zero_order_decay]
+block = "options"
+type = "keyword"
+reader = "urword"
+optional = true
+longname = "activate zero-order decay"
+description = "is a text keyword to indicate that zero-order decay will occur.  Use of this keyword requires that DECAY and DECAY_SORBED (if sorption is active) are specified in the GRIDDATA block."
+mf6internal = "order0_decay"
+
+[options.cim_filerecord]
+block = "options"
+type = "record cim fileout cimfile"
+reader = "urword"
+optional = true
+tagged = true
+mf6internal = "cimfilerec"
+
+[options.cimprintrecord]
+block = "options"
+type = "record cim print_format formatrecord"
+reader = "urword"
+optional = true
+
+[options.sorbate_filerecord]
+block = "options"
+type = "record sorbate fileout sorbatefile"
+reader = "urword"
+optional = true
+tagged = true
+mf6internal = "sorbatefilerec"
+
+[options.export_array_ascii]
+block = "options"
+type = "keyword"
+reader = "urword"
+optional = true
+longname = "export array variables to layered ascii files."
+description = "keyword that specifies input griddata arrays should be written to layered ascii output files."
+mf6internal = "export_ascii"
+
+[options.export_array_netcdf]
+block = "options"
+type = "keyword"
+reader = "urword"
+optional = true
+longname = "export array variables to netcdf output files."
+description = "keyword that specifies input gridded arrays should be written to the model output NetCDF file with attributes that support using the generated file as a MODFLOW 6 simulation input.  This option only has an effect when an output model NetCDF file is configured and the simulation is run in VALIDATE mode, otherwise it is ignored."
+mf6internal = "export_nc"
+extended = true
+
+[griddata.porosity]
+block = "griddata"
+type = "double precision"
+shape = "(nodes)"
+reader = "readarray"
+longname = "porosity of the immobile domain"
+description = "porosity of the immobile domain specified as the immobile domain pore volume per immobile domain volume."
+layered = true
+netcdf = true
+
+[griddata.volfrac]
+block = "griddata"
+type = "double precision"
+shape = "(nodes)"
+reader = "readarray"
+longname = "volume fraction of this immobile domain"
+description = "fraction of the cell volume that consists of this immobile domain.  The sum of all immobile domain volume fractions must be less than one."
+layered = true
+netcdf = true
+
+[griddata.zetaim]
+block = "griddata"
+type = "double precision"
+shape = "(nodes)"
+reader = "readarray"
+longname = "mass transfer rate coefficient between the mobile and immobile domains"
+description = "mass transfer rate coefficient between the mobile and immobile domains, in dimensions of per time."
+layered = true
+netcdf = true
+
+[griddata.cim]
+block = "griddata"
+type = "double precision"
+shape = "(nodes)"
+reader = "readarray"
+optional = true
+longname = "initial concentration of the immobile domain"
+description = "initial concentration of the immobile domain in mass per length cubed.  If CIM is not specified, then it is assumed to be zero."
+layered = true
+netcdf = true
+
+[griddata.decay]
+block = "griddata"
+type = "double precision"
+shape = "(nodes)"
+reader = "readarray"
+optional = true
+longname = "first rate coefficient"
+description = "is the rate coefficient for first or zero-order decay for the aqueous phase of the immobile domain.  A negative value indicates solute production.  The dimensions of decay for first-order decay is one over time.  The dimensions of decay for zero-order decay is mass per length cubed per time.  Decay will have no effect on simulation results unless either first- or zero-order decay is specified in the options block."
+layered = true
+netcdf = true
+
+[griddata.decay_sorbed]
+block = "griddata"
+type = "double precision"
+shape = "(nodes)"
+reader = "readarray"
+optional = true
+longname = "second rate coefficient"
+description = "is the rate coefficient for first or zero-order decay for the sorbed phase of the immobile domain.  A negative value indicates solute production.  The dimensions of decay_sorbed for first-order decay is one over time.  The dimensions of decay_sorbed for zero-order decay is mass of solute per mass of aquifer per time.  If decay_sorbed is not specified and both decay and sorption are active, then the program will terminate with an error.  decay_sorbed will have no effect on simulation results unless the SORPTION keyword and either first- or zero-order decay are specified in the options block."
+layered = true
+netcdf = true
+
+[griddata.bulk_density]
+block = "griddata"
+type = "double precision"
+shape = "(nodes)"
+reader = "readarray"
+optional = true
+longname = "bulk density"
+description = "is the bulk density of this immobile domain in mass per length cubed.  Bulk density is defined as the immobile domain solid mass per volume of the immobile domain.  bulk_density is not required unless the SORPTION keyword is specified in the options block.  If the SORPTION keyword is not specified in the options block, bulk_density will have no effect on simulation results."
+layered = true
+netcdf = true
+
+[griddata.distcoef]
+block = "griddata"
+type = "double precision"
+shape = "(nodes)"
+reader = "readarray"
+optional = true
+longname = "distribution coefficient"
+description = "is the distribution coefficient for the equilibrium-controlled linear sorption isotherm in dimensions of length cubed per mass.  distcoef is not required unless the SORPTION keyword is specified in the options block.  If the SORPTION keyword is not specified in the options block, distcoef will have no effect on simulation results."
+layered = true
+netcdf = true
+
+[griddata.sp2]
+block = "griddata"
+type = "double precision"
+shape = "(nodes)"
+reader = "readarray"
+optional = true
+longname = "second sorption parameter"
+description = "is the exponent for the Freundlich isotherm and the sorption capacity for the Langmuir isotherm.  sp2 is not required unless the SORPTION keyword is specified in the options block and sorption is specified as FREUNDLICH or LANGMUIR. If the SORPTION keyword is not specified in the options block, or if sorption is specified as LINEAR, sp2 will have no effect on simulation results."
+layered = true
+netcdf = true

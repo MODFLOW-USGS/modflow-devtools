@@ -1,0 +1,64 @@
+{
+  "name": "olf-oc",
+  "advanced": false,
+  "multi": false,
+  "schema_version": "2.0.0.dev0",
+  "options": {
+    "budget_filerecord": {
+      "block": "options",
+      "type": "record budget fileout budgetfile",
+      "reader": "urword",
+      "optional": true,
+      "tagged": true,
+      "mf6internal": "budfilerec"
+    },
+    "budgetcsv_filerecord": {
+      "block": "options",
+      "type": "record budgetcsv fileout budgetcsvfile",
+      "reader": "urword",
+      "optional": true,
+      "tagged": true,
+      "mf6internal": "budcsvfilerec"
+    },
+    "qoutflow_filerecord": {
+      "block": "options",
+      "type": "record qoutflow fileout qoutflowfile",
+      "reader": "urword",
+      "optional": true,
+      "tagged": true,
+      "mf6internal": "qoutfilerec"
+    },
+    "stage_filerecord": {
+      "block": "options",
+      "type": "record stage fileout stagefile",
+      "reader": "urword",
+      "optional": true,
+      "tagged": true,
+      "mf6internal": "stagefilerec"
+    },
+    "qoutflowprintrecord": {
+      "block": "options",
+      "type": "record qoutflow print_format formatrecord",
+      "reader": "urword",
+      "optional": true,
+      "mf6internal": "qoutprintrec"
+    }
+  },
+  "period": {
+    "transient_block": true,
+    "saverecord": {
+      "block": "period",
+      "type": "record save rtype ocsetting",
+      "reader": "urword",
+      "optional": true,
+      "tagged": false
+    },
+    "printrecord": {
+      "block": "period",
+      "type": "record print rtype ocsetting",
+      "reader": "urword",
+      "optional": true,
+      "tagged": false
+    }
+  }
+}

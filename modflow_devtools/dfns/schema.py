@@ -17,6 +17,8 @@ from pydantic import (
     Field as PydanticField,
 )
 
+CURRENT_SCHEMA_VERSION = "2.0.0.dev2"
+
 
 class FieldBase(BaseModel):
     name: str
@@ -825,7 +827,7 @@ class Dfns(BaseModel):
         for c in self.components.values():
             if c.schema_version is not None:
                 return c.schema_version
-        return "2"
+        return CURRENT_SCHEMA_VERSION
 
     @property
     def root(self) -> "Simulation | None":
@@ -923,7 +925,7 @@ class Dfns(BaseModel):
         dfns: dict = {}
         if dfn_paths:
             from modflow_devtools.dfn import schema as v1
-            from modflow_devtools.dfns.migrate_to_v2 import to_v2
+            from modflow_devtools.dfns.migrate_to_v2_0_0_dev2 import to_v2_0_0_dev2
 
             common_path = path / "common.dfn"
             common = None
@@ -934,7 +936,7 @@ class Dfns(BaseModel):
             for stem, dfn_path in dfn_paths.items():
                 with dfn_path.open() as f:
                     fields, meta = v1.Dfn.load_dfn(f, common=common)  # type: ignore[attr-defined]
-                dfns[stem] = to_v2(name=stem, fields=fields, meta=meta)
+                dfns[stem] = to_v2_0_0_dev2(name=stem, fields=fields, meta=meta)
         elif toml_paths:
             import tomli
 

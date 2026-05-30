@@ -1,0 +1,5 @@
+type: package
+schema_version: 2.0.0.dev2
+name: exg-gwfprt
+parent: sim-nam
+subtype: exchange

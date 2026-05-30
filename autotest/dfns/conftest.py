@@ -13,18 +13,17 @@ PROJ_ROOT = Path(__file__).parents[1]
 
 
 class DfnSnapshotExtension(SingleFileSnapshotExtension):
-    """One snapshot file per component per version: __snapshots__/v1.1/chf-cdb.yaml"""
+    """One snapshot file per component per version: __snapshots__/v2.0.0.dev2/chf-cdb.yaml"""
 
     _write_mode = WriteMode.TEXT
     _file_extension = ""
 
     @classmethod
     def _version_from_testname(cls, testname: str) -> str:
-        m = re.search(r"_v(\d+)(?:_(\d+))?\[", testname)
-        if not m:
-            return "unknown"
-        major, minor = m.group(1), m.group(2)
-        return f"v{major}.{minor}" if minor else f"v{major}"
+        m = re.search(r"_v(\d+)_(\d+)_(\d+)_dev(\d+)\[", testname)
+        if m:
+            return f"v{m.group(1)}.{m.group(2)}.{m.group(3)}.dev{m.group(4)}"
+        return "unknown"
 
     @classmethod
     def _fmt_from_testname(cls, testname: str) -> str:

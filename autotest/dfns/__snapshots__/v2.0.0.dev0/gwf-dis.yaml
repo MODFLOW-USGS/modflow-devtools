@@ -1,0 +1,193 @@
+name: gwf-dis
+advanced: false
+multi: false
+schema_version: 2.0.0.dev0
+fkeys:
+  ncf_filerecord:
+    parent: parent_package
+    key: ncf_filerecord
+    val: packagedata
+    abbr: ncf
+    param: packagedata
+subcomponents:
+  - utl-ncf
+options:
+  length_units:
+    block: options
+    type: string
+    reader: urword
+    optional: true
+    longname: model length units
+    description: is the length units used for this model.  Values can be 'FEET', 'METERS', or 'CENTIMETERS'.  If
+      not specified, the default is 'UNKNOWN'.
+  nogrb:
+    block: options
+    type: keyword
+    reader: urword
+    optional: true
+    longname: do not write binary grid file
+    description: keyword to deactivate writing of the binary grid file.
+  grb_filerecord:
+    block: options
+    type: record grb6 fileout grb6_filename
+    reader: urword
+    optional: true
+    tagged: true
+  xorigin:
+    block: options
+    type: double precision
+    reader: urword
+    optional: true
+    longname: x-position of the model grid origin
+    description: x-position of the lower-left corner of the model grid.  A default value of zero is assigned
+      if not specified.  The value for XORIGIN does not affect the model simulation, but it is written
+      to the binary grid file so that postprocessors can locate the grid in space.
+  yorigin:
+    block: options
+    type: double precision
+    reader: urword
+    optional: true
+    longname: y-position of the model grid origin
+    description: y-position of the lower-left corner of the model grid.  If not specified, then a default
+      value equal to zero is used.  The value for YORIGIN does not affect the model simulation, but it
+      is written to the binary grid file so that postprocessors can locate the grid in space.
+  angrot:
+    block: options
+    type: double precision
+    reader: urword
+    optional: true
+    longname: rotation angle
+    description: counter-clockwise rotation angle (in degrees) of the lower-left corner of the model grid.  If
+      not specified, then a default value of 0.0 is assigned.  The value for ANGROT does not affect the
+      model simulation, but it is written to the binary grid file so that postprocessors can locate the
+      grid in space.
+  export_array_ascii:
+    block: options
+    type: keyword
+    reader: urword
+    optional: true
+    longname: export array variables to layered ascii files.
+    description: keyword that specifies input griddata arrays should be written to layered ascii output
+      files.
+    mf6internal: export_ascii
+  export_array_netcdf:
+    block: options
+    type: keyword
+    reader: urword
+    optional: true
+    longname: export array variables to netcdf output files.
+    description: keyword that specifies input gridded arrays should be written to the model output NetCDF
+      file with attributes that support using the generated file as a MODFLOW 6 simulation input.  This
+      option only has an effect when an output model NetCDF file is configured and the simulation is run
+      in VALIDATE mode, otherwise it is ignored.
+    mf6internal: export_nc
+    extended: true
+  crs:
+    block: options
+    type: string
+    shape: lenbigline
+    reader: urword
+    optional: true
+    longname: CRS user input string
+    description: is a real-world coordinate reference system (CRS) for the model, for example, an EPSG
+      integer code (e.g. 26915), authority string (i.e. epsg:26915), or Open Geospatial Consortium Well-Known
+      Text (WKT) specification. Limited to 5000 characters. The entry for CRS does not affect the model
+      simulation, but it is written to the binary grid file so that postprocessors can locate the grid
+      in space.
+    preserve_case: true
+    developmode: true
+  packagedata:
+    block: options
+    type: record ncf6 filein ncf6_filename
+    reader: urword
+    optional: true
+    description: Contains data for the ncf package. Data can be passed as a dictionary to the ncf package
+      with variable names as keys and package data as values. Data for the packagedata variable is also
+      acceptable. See ncf package documentation for more information.
+    tagged: true
+    ref:
+      parent: parent_package
+      key: ncf_filerecord
+      val: packagedata
+      abbr: ncf
+      param: packagedata
+dimensions:
+  nlay:
+    block: dimensions
+    type: integer
+    default: 1
+    reader: urword
+    optional: false
+    longname: number of layers
+    description: is the number of layers in the model grid.
+  nrow:
+    block: dimensions
+    type: integer
+    default: 2
+    reader: urword
+    optional: false
+    longname: number of rows
+    description: is the number of rows in the model grid.
+  ncol:
+    block: dimensions
+    type: integer
+    default: 2
+    reader: urword
+    optional: false
+    longname: number of columns
+    description: is the number of columns in the model grid.
+griddata:
+  delr:
+    block: griddata
+    type: double precision
+    shape: (ncol)
+    default: 1.0
+    reader: readarray
+    longname: spacing along a row
+    description: is the column spacing in the row direction.
+    netcdf: true
+  delc:
+    block: griddata
+    type: double precision
+    shape: (nrow)
+    default: 1.0
+    reader: readarray
+    longname: spacing along a column
+    description: is the row spacing in the column direction.
+    netcdf: true
+  top:
+    block: griddata
+    type: double precision
+    shape: (ncol, nrow)
+    default: 1.0
+    reader: readarray
+    longname: cell top elevation
+    description: is the top elevation for each cell in the top model layer.
+    netcdf: true
+  botm:
+    block: griddata
+    type: double precision
+    shape: (ncol, nrow, nlay)
+    default: 0.0
+    reader: readarray
+    longname: cell bottom elevation
+    description: is the bottom elevation for each cell.
+    layered: true
+    netcdf: true
+  idomain:
+    block: griddata
+    type: integer
+    shape: (ncol, nrow, nlay)
+    reader: readarray
+    optional: true
+    longname: idomain existence array
+    description: is an optional array that characterizes the existence status of a cell.  If the IDOMAIN
+      array is not specified, then all model cells exist within the solution.  If the IDOMAIN value for
+      a cell is 0, the cell does not exist in the simulation.  Input and output values will be read and
+      written for the cell, but internal to the program, the cell is excluded from the solution.  If the
+      IDOMAIN value for a cell is 1 or greater, the cell exists in the simulation.  If the IDOMAIN value
+      for a cell is -1, the cell does not exist in the simulation.  Furthermore, the first existing cell
+      above will be connected to the first existing cell below.  This type of cell is referred to as a
+      'vertical pass through' cell.
+    layered: true
+    netcdf: true

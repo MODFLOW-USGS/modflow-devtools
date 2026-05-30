@@ -1,0 +1,511 @@
+name: gwf-csub
+advanced: false
+multi: false
+schema_version: 2.0.0.dev0
+fkeys:
+  ts_filerecord:
+    parent: parent_package
+    key: ts_filerecord
+    val: timeseries
+    abbr: ts
+    param: timeseries
+    description: xxx
+  obs_filerecord:
+    parent: parent_model_or_package
+    key: obs_filerecord
+    val: observations
+    abbr: obs
+    param: continuous
+options:
+  boundnames:
+    block: options
+    type: keyword
+    reader: urword
+    optional: true
+    description: keyword to indicate that boundary names may be provided with the list of CSUB cells.
+  print_input:
+    block: options
+    type: keyword
+    reader: urword
+    optional: true
+    longname: print input to listing file
+    description: keyword to indicate that the list of CSUB information will be written to the listing
+      file immediately after it is read.
+  save_flows:
+    block: options
+    type: keyword
+    reader: urword
+    optional: true
+    longname: keyword to save CSUB flows
+    description: keyword to indicate that cell-by-cell flow terms will be written to the file specified
+      with 'BUDGET SAVE FILE' in Output Control.
+  gammaw:
+    block: options
+    type: double precision
+    default: 9806.65
+    reader: urword
+    optional: true
+    longname: unit weight of water
+    description: unit weight of water. For freshwater, GAMMAW is 9806.65 Newtons/cubic meters or 62.48
+      lb/cubic foot in SI and English units, respectively. By default, GAMMAW is 9806.65 Newtons/cubic
+      meters.
+  beta:
+    block: options
+    type: double precision
+    default: 4.6512e-10
+    reader: urword
+    optional: true
+    longname: compressibility of water
+    description: compressibility of water. Typical values of BETA are 4.6512e-10 1/Pa or 2.2270e-8 lb/square
+      foot in SI and English units, respectively. By default, BETA is 4.6512e-10 1/Pa.
+  head_based:
+    block: options
+    type: keyword
+    reader: urword
+    optional: true
+    longname: keyword to indicate the head-based formulation will be used
+    description: keyword to indicate the head-based formulation will be used to simulate coarse-grained
+      aquifer materials and no-delay and delay interbeds. Specifying HEAD_BASED also specifies the INITIAL_PRECONSOLIDATION_HEAD
+      option.
+  initial_preconsolidation_head:
+    block: options
+    type: keyword
+    reader: urword
+    optional: true
+    longname: keyword to indicate that preconsolidation heads will be specified
+    description: keyword to indicate that preconsolidation heads will be specified for no-delay and delay
+      interbeds in the PACKAGEDATA block. If the SPECIFIED_INITIAL_INTERBED_STATE option is specified
+      in the OPTIONS block, user-specified preconsolidation heads in the PACKAGEDATA block are absolute
+      values. Otherwise, user-specified preconsolidation heads in the PACKAGEDATA block are relative to
+      steady-state or initial heads.
+    mf6internal: precon_head
+  ndelaycells:
+    block: options
+    type: integer
+    reader: urword
+    optional: true
+    longname: number of interbed cell nodes
+    description: number of nodes used to discretize delay interbeds. If not specified, then a default
+      value of 19 is assigned.
+  compression_indices:
+    block: options
+    type: keyword
+    reader: urword
+    optional: true
+    longname: keyword to indicate CR and CC are read instead of SSE and SSV
+    description: keyword to indicate that the recompression (CR) and compression (CC) indices are specified
+      instead of the elastic specific storage (SSE) and inelastic specific storage (SSV) coefficients.
+      If not specified, then elastic specific storage (SSE) and inelastic specific storage (SSV) coefficients
+      must be specified.
+    mf6internal: icompress
+  update_material_properties:
+    block: options
+    type: keyword
+    reader: urword
+    optional: true
+    longname: keyword to indicate material properties can change during the simulations
+    description: keyword to indicate that the thickness and void ratio of coarse-grained and interbed
+      sediments (delay and no-delay) will vary during the simulation. If not specified, the thickness
+      and void ratio of coarse-grained and interbed sediments will not vary during the simulation.
+    mf6internal: matprop
+  cell_fraction:
+    block: options
+    type: keyword
+    reader: urword
+    optional: true
+    longname: keyword to indicate cell fraction interbed thickness
+    description: keyword to indicate that the thickness of interbeds will be specified in terms of the
+      fraction of cell thickness. If not specified, interbed thicknness must be specified.
+  specified_initial_interbed_state:
+    block: options
+    type: keyword
+    reader: urword
+    optional: true
+    longname: keyword to indicate that absolute initial states will be specified
+    description: keyword to indicate that absolute preconsolidation stresses (heads) and delay bed heads
+      will be specified for interbeds defined in the PACKAGEDATA block. The SPECIFIED_INITIAL_INTERBED_STATE
+      option is equivalent to specifying the SPECIFIED_INITIAL_PRECONSOLITATION_STRESS and SPECIFIED_INITIAL_DELAY_HEAD.
+      If SPECIFIED_INITIAL_INTERBED_STATE is not specified then preconsolidation stress (head) and delay
+      bed head values specified in the PACKAGEDATA block are relative to simulated values of the first
+      stress period if steady-state or initial stresses and GWF heads if the first stress period is transient.
+    mf6internal: interbed_state
+  specified_initial_preconsolidation_stress:
+    block: options
+    type: keyword
+    reader: urword
+    optional: true
+    longname: keyword to indicate that absolute initial preconsolidation stresses (head) will be specified
+    description: keyword to indicate that absolute preconsolidation stresses (heads) will be specified
+      for interbeds defined in the PACKAGEDATA block. If SPECIFIED_INITIAL_PRECONSOLITATION_STRESS and
+      SPECIFIED_INITIAL_INTERBED_STATE are not specified then preconsolidation stress (head) values specified
+      in the PACKAGEDATA block are relative to simulated values if the first stress period is steady-state
+      or initial stresses (heads) if the first stress period is transient.
+    mf6internal: precon_stress
+  specified_initial_delay_head:
+    block: options
+    type: keyword
+    reader: urword
+    optional: true
+    longname: keyword to indicate that absolute initial delay bed heads will be specified
+    description: keyword to indicate that absolute initial delay bed head will be specified for interbeds
+      defined in the PACKAGEDATA block. If SPECIFIED_INITIAL_DELAY_HEAD and SPECIFIED_INITIAL_INTERBED_STATE
+      are not specified then delay bed head values specified in the PACKAGEDATA block are relative to
+      simulated values if the first stress period is steady-state or initial GWF heads if the first stress
+      period is transient.
+    mf6internal: delay_head
+  effective_stress_lag:
+    block: options
+    type: keyword
+    reader: urword
+    optional: true
+    longname: keyword to indicate that specific storage will be calculate using the effective stress from
+      the previous time step
+    description: keyword to indicate the effective stress from the previous time step will be used to
+      calculate specific storage values. This option can 1) help with convergence in models with thin
+      cells and water table elevations close to land surface; 2) is identical to the approach used in
+      the SUBWT package for MODFLOW-2005; and 3) is only used if the effective-stress formulation is being
+      used. By default, current effective stress values are used to calculate specific storage values.
+    mf6internal: stress_lag
+  strainib_filerecord:
+    block: options
+    type: record strain_csv_interbed fileout interbedstrain_filename
+    reader: urword
+    optional: true
+    tagged: true
+    mf6internal: strainibfr
+  straincg_filerecord:
+    block: options
+    type: record strain_csv_coarse fileout coarsestrain_filename
+    reader: urword
+    optional: true
+    tagged: true
+    mf6internal: straincgfr
+  compaction_filerecord:
+    block: options
+    type: record compaction fileout compaction_filename
+    reader: urword
+    optional: true
+    tagged: true
+    mf6internal: cmpfr
+  compaction_elastic_filerecord:
+    block: options
+    type: record compaction_elastic fileout elastic_compaction_filename
+    reader: urword
+    optional: true
+    tagged: true
+    mf6internal: cmpelasticfr
+  compaction_inelastic_filerecord:
+    block: options
+    type: record compaction_inelastic fileout inelastic_compaction_filename
+    reader: urword
+    optional: true
+    tagged: true
+    mf6internal: cmpinelasticfr
+  compaction_interbed_filerecord:
+    block: options
+    type: record compaction_interbed fileout interbed_compaction_filename
+    reader: urword
+    optional: true
+    tagged: true
+    mf6internal: cmpinterbedfr
+  compaction_coarse_filerecord:
+    block: options
+    type: record compaction_coarse fileout coarse_compaction_filename
+    reader: urword
+    optional: true
+    tagged: true
+    mf6internal: cmpcoarsefr
+  zdisplacement_filerecord:
+    block: options
+    type: record zdisplacement fileout zdisplacement_filename
+    reader: urword
+    optional: true
+    tagged: true
+    mf6internal: zdispfr
+  package_convergence_filerecord:
+    block: options
+    type: record package_convergence fileout package_convergence_filename
+    reader: urword
+    optional: true
+    tagged: true
+    mf6internal: pkgconvergefr
+  timeseries:
+    block: options
+    type: record ts6 filein ts6_filename
+    reader: urword
+    optional: true
+    description: Contains data for the ts package. Data can be passed as a dictionary to the ts package
+      with variable names as keys and package data as values. Data for the timeseries variable is also
+      acceptable. See ts package documentation for more information.
+    tagged: true
+    ref:
+      parent: parent_package
+      key: ts_filerecord
+      val: timeseries
+      abbr: ts
+      param: timeseries
+      description: xxx
+  observations:
+    block: options
+    type: record obs6 filein obs6_filename
+    reader: urword
+    optional: true
+    description: Contains data for the obs package. Data can be passed as a dictionary to the obs package
+      with variable names as keys and package data as values. Data for the observations variable is also
+      acceptable. See obs package documentation for more information.
+    tagged: true
+    ref:
+      parent: parent_model_or_package
+      key: obs_filerecord
+      val: observations
+      abbr: obs
+      param: continuous
+dimensions:
+  ninterbeds:
+    block: dimensions
+    type: integer
+    reader: urword
+    optional: false
+    longname: number of CSUB interbed systems
+    description: is the number of CSUB interbed systems.  More than 1 CSUB interbed systems can be assigned
+      to a GWF cell; however, only 1 GWF cell can be assigned to a single CSUB interbed system.
+  maxsig0:
+    block: dimensions
+    type: integer
+    reader: urword
+    optional: true
+    longname: maximum number of stress offset cells
+    description: is the maximum number of cells that can have a specified stress offset.  More than 1
+      stress offset can be assigned to a GWF cell. By default, MAXSIG0 is 0.
+    mf6internal: maxbound
+griddata:
+  cg_ske_cr:
+    block: griddata
+    type: double precision
+    shape: (nodes)
+    default: 1.0e-05
+    reader: readarray
+    longname: elastic coarse specific storage
+    description: is the initial elastic coarse-grained material specific storage or recompression index.
+      The recompression index is specified if COMPRESSION_INDICES is specified in the OPTIONS block.  Specified
+      or calculated elastic coarse-grained material specific storage values are not adjusted from initial
+      values if HEAD_BASED is specified in the OPTIONS block.
+    layered: true
+    netcdf: true
+  cg_theta:
+    block: griddata
+    type: double precision
+    shape: (nodes)
+    default: 0.2
+    reader: readarray
+    longname: initial coarse-grained material porosity
+    description: is the initial porosity of coarse-grained materials.
+    layered: true
+    netcdf: true
+  sgm:
+    block: griddata
+    type: double precision
+    shape: (nodes)
+    reader: readarray
+    optional: true
+    longname: specific gravity of moist sediments
+    description: is the specific gravity of moist or unsaturated sediments.  If not specified, then a
+      default value of 1.7 is assigned.
+    layered: true
+    netcdf: true
+  sgs:
+    block: griddata
+    type: double precision
+    shape: (nodes)
+    reader: readarray
+    optional: true
+    longname: specific gravity of saturated sediments
+    description: is the specific gravity of saturated sediments. If not specified, then a default value
+      of 2.0 is assigned.
+    layered: true
+    netcdf: true
+packagedata:
+  packagedata:
+    block: packagedata
+    type: recarray
+    shape: (ninterbeds)
+    reader: urword
+    optional: true
+    item:
+      type: record
+      block: packagedata
+      reader: urword
+      optional: true
+      fields:
+        icsubno:
+          block: packagedata
+          type: integer
+          reader: urword
+          longname: CSUB id number for this entry
+          description: integer value that defines the CSUB interbed number associated with the specified
+            PACKAGEDATA data on the line. CSUBNO must be greater than zero and less than or equal to NINTERBEDS.  CSUB
+            information must be specified for every CSUB cell or the program will terminate with an error.  The
+            program will also terminate with an error if information for a CSUB interbed number is specified
+            more than once.
+          tagged: false
+          in_record: true
+          numeric_index: true
+        cellid:
+          block: period
+          type: integer
+          shape: (ncelldim)
+          reader: urword
+          longname: cell identifier
+          description: is the cell identifier, and depends on the type of grid that is used for the simulation.  For
+            a structured grid that uses the DIS input file, CELLID is the layer, row, and column.   For
+            a grid that uses the DISV input file, CELLID is the layer and CELL2D number.  If the model
+            uses the unstructured discretization (DISU) input file, CELLID is the node number for the
+            cell.
+          tagged: false
+          in_record: true
+        cdelay:
+          block: packagedata
+          type: string
+          reader: urword
+          longname: delay type
+          description: 'character string that defines the subsidence delay type for the interbed. Possible
+            subsidence package CDELAY strings include: NODELAY--character keyword to indicate that delay
+            will not be simulated in the interbed.  DELAY--character keyword to indicate that delay will
+            be simulated in the interbed.'
+          tagged: false
+          in_record: true
+        pcs0:
+          block: packagedata
+          type: double precision
+          reader: urword
+          longname: initial stress
+          description: is the initial offset from the calculated initial effective stress or initial preconsolidation
+            stress in the interbed, in units of height of a column of water. PCS0 is the initial preconsolidation
+            stress if SPECIFIED_INITIAL_INTERBED_STATE or SPECIFIED_INITIAL_PRECONSOLIDATION_STRESS are
+            specified in the OPTIONS block. If HEAD_BASED is specified in the OPTIONS block, PCS0 is the
+            initial offset from the calculated initial head or initial preconsolidation head in the CSUB
+            interbed and the initial preconsolidation stress is calculated from the calculated initial
+            effective stress or calculated initial geostatic stress, respectively.
+          tagged: false
+          in_record: true
+        thick_frac:
+          block: packagedata
+          type: double precision
+          reader: urword
+          longname: interbed thickness or cell fraction
+          description: is the interbed thickness or cell fraction of the interbed. Interbed thickness
+            is specified as a fraction of the cell thickness if CELL_FRACTION is specified in the OPTIONS
+            block.
+          tagged: false
+          in_record: true
+        rnb:
+          block: packagedata
+          type: double precision
+          reader: urword
+          longname: delay interbed material factor
+          description: is the interbed material factor equivalent number of interbeds in the interbed
+            system represented by the interbed. RNB must be greater than or equal to 1 if CDELAY is DELAY.
+            Otherwise, RNB can be any value.
+          tagged: false
+          in_record: true
+        ssv_cc:
+          block: packagedata
+          type: double precision
+          reader: urword
+          longname: initial interbed inelastic specific storage
+          description: is the initial inelastic specific storage or compression index of the interbed.
+            The compression index is specified if COMPRESSION_INDICES is specified in the OPTIONS block.
+            Specified or calculated interbed inelastic specific storage values are not adjusted from initial
+            values if HEAD_BASED is specified in the OPTIONS block.
+          tagged: false
+          in_record: true
+        sse_cr:
+          block: packagedata
+          type: double precision
+          reader: urword
+          longname: initial interbed elastic specific storage
+          description: is the initial elastic coarse-grained material specific storage or recompression
+            index of the interbed. The recompression index is specified if COMPRESSION_INDICES is specified
+            in the OPTIONS block. Specified or calculated interbed elastic specific storage values are
+            not adjusted from initial values if HEAD_BASED is specified in the OPTIONS block.
+          tagged: false
+          in_record: true
+        theta:
+          block: packagedata
+          type: double precision
+          default: 0.2
+          reader: urword
+          longname: initial interbed porosity
+          description: is the initial porosity of the interbed.
+          tagged: false
+          in_record: true
+        kv:
+          block: packagedata
+          type: double precision
+          reader: urword
+          longname: delay interbed vertical hydraulic conductivity
+          description: is the vertical hydraulic conductivity of the delay interbed. KV must be greater
+            than 0 if CDELAY is DELAY. Otherwise, KV can be any value.
+          tagged: false
+          in_record: true
+        h0:
+          block: packagedata
+          type: double precision
+          reader: urword
+          longname: initial delay interbed head
+          description: is the initial offset from the head in cell cellid or the initial head in the delay
+            interbed. H0 is the initial head in the delay bed if SPECIFIED_INITIAL_INTERBED_STATE or SPECIFIED_INITIAL_DELAY_HEAD
+            are specified in the OPTIONS block. H0 can be any value if CDELAY is NODELAY.
+          tagged: false
+          in_record: true
+        boundname:
+          block: packagedata
+          type: string
+          reader: urword
+          optional: true
+          longname: interbed name
+          description: name of the CSUB cell.  BOUNDNAME is an ASCII character variable that can contain
+            as many as 40 characters.  If BOUNDNAME contains spaces in it, then the entire name must be
+            enclosed within single quotes.
+          tagged: false
+          in_record: true
+period:
+  transient_block: true
+  stress_period_data:
+    block: period
+    type: recarray
+    shape: (maxsig0)
+    reader: urword
+    mf6internal: spd
+    item:
+      type: record
+      block: period
+      reader: urword
+      mf6internal: spd
+      fields:
+        cellid:
+          block: period
+          type: integer
+          shape: (ncelldim)
+          reader: urword
+          longname: cell identifier
+          description: is the cell identifier, and depends on the type of grid that is used for the simulation.  For
+            a structured grid that uses the DIS input file, CELLID is the layer, row, and column.   For
+            a grid that uses the DISV input file, CELLID is the layer and CELL2D number.  If the model
+            uses the unstructured discretization (DISU) input file, CELLID is the node number for the
+            cell.
+          tagged: false
+          in_record: true
+        sig0:
+          block: period
+          type: double precision
+          reader: urword
+          longname: geostatic stress offset
+          description: is the stress offset for the cell. SIG0 is added to the calculated geostatic stress
+            for the cell. SIG0 is specified only if MAXSIG0 is specified to be greater than 0 in the DIMENSIONS
+            block. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input'
+            section), values can be obtained from a time series by entering the time-series name in place
+            of a numeric value.
+          tagged: false
+          in_record: true
+          time_series: true

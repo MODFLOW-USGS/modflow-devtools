@@ -1,0 +1,316 @@
+name: gwt-lkt
+advanced: false
+multi: true
+schema_version: 2.0.0.dev0
+fkeys:
+  ts_filerecord:
+    parent: parent_package
+    key: ts_filerecord
+    val: timeseries
+    abbr: ts
+    param: timeseries
+    description: xxx
+  obs_filerecord:
+    parent: parent_model_or_package
+    key: obs_filerecord
+    val: observations
+    abbr: obs
+    param: continuous
+options:
+  flow_package_name:
+    block: options
+    type: string
+    reader: urword
+    optional: true
+    longname: keyword to specify name of corresponding flow package
+    description: keyword to specify the name of the corresponding flow package.  If not specified, then
+      the corresponding flow package must have the same name as this advanced transport package (the name
+      associated with this package in the GWT name file).
+  auxiliary:
+    block: options
+    type: string
+    shape: (naux)
+    reader: urword
+    optional: true
+    longname: keyword to specify aux variables
+    description: defines an array of one or more auxiliary variable names.  There is no limit on the number
+      of auxiliary variables that can be provided on this line; however, lists of information provided
+      in subsequent blocks must have a column of data for each auxiliary variable name defined here.   The
+      number of auxiliary variables detected on this line determines the value for naux.  Comments cannot
+      be provided anywhere on this line as they will be interpreted as auxiliary variable names.  Auxiliary
+      variables may not be used by the package, but they will be available for use by other parts of the
+      program.  The program will terminate with an error if auxiliary variables are specified on more
+      than one line in the options block.
+  flow_package_auxiliary_name:
+    block: options
+    type: string
+    reader: urword
+    optional: true
+    longname: keyword to specify name of concentration auxiliary variable in flow package
+    description: keyword to specify the name of an auxiliary variable in the corresponding flow package.  If
+      specified, then the simulated concentrations from this advanced transport package will be copied
+      into the auxiliary variable specified with this name.  Note that the flow package must have an auxiliary
+      variable with this name or the program will terminate with an error.  If the flows for this advanced
+      transport package are read from a file, then this option will have no effect.
+  boundnames:
+    block: options
+    type: keyword
+    reader: urword
+    optional: true
+    description: keyword to indicate that boundary names may be provided with the list of lake cells.
+  print_input:
+    block: options
+    type: keyword
+    reader: urword
+    optional: true
+    longname: print input to listing file
+    description: keyword to indicate that the list of lake information will be written to the listing
+      file immediately after it is read.
+  print_concentration:
+    block: options
+    type: keyword
+    reader: urword
+    optional: true
+    longname: print calculated stages to listing file
+    description: keyword to indicate that the list of lake {#2} will be printed to the listing file for
+      every stress period in which 'CONCENTRATION PRINT' is specified in Output Control.  If there is
+      no Output Control option and PRINT_{#3} is specified, then {#2} are printed for the last time step
+      of each stress period.
+  print_flows:
+    block: options
+    type: keyword
+    reader: urword
+    optional: true
+    longname: print calculated flows to listing file
+    description: keyword to indicate that the list of lake flow rates will be printed to the listing file
+      for every stress period time step in which 'BUDGET PRINT' is specified in Output Control.  If there
+      is no Output Control option and 'PRINT_FLOWS' is specified, then flow rates are printed for the
+      last time step of each stress period.
+  save_flows:
+    block: options
+    type: keyword
+    reader: urword
+    optional: true
+    longname: save lake flows to budget file
+    description: keyword to indicate that lake flow terms will be written to the file specified with 'BUDGET
+      FILEOUT' in Output Control.
+  concentration_filerecord:
+    block: options
+    type: record concentration fileout concfile
+    reader: urword
+    optional: true
+    tagged: true
+  budget_filerecord:
+    block: options
+    type: record budget fileout budgetfile
+    reader: urword
+    optional: true
+    tagged: true
+  budgetcsv_filerecord:
+    block: options
+    type: record budgetcsv fileout budgetcsvfile
+    reader: urword
+    optional: true
+    tagged: true
+  timeseries:
+    block: options
+    type: record ts6 filein ts6_filename
+    reader: urword
+    optional: true
+    description: Contains data for the ts package. Data can be passed as a dictionary to the ts package
+      with variable names as keys and package data as values. Data for the timeseries variable is also
+      acceptable. See ts package documentation for more information.
+    tagged: true
+    ref:
+      parent: parent_package
+      key: ts_filerecord
+      val: timeseries
+      abbr: ts
+      param: timeseries
+      description: xxx
+  observations:
+    block: options
+    type: record obs6 filein obs6_filename
+    reader: urword
+    optional: true
+    description: Contains data for the obs package. Data can be passed as a dictionary to the obs package
+      with variable names as keys and package data as values. Data for the observations variable is also
+      acceptable. See obs package documentation for more information.
+    tagged: true
+    ref:
+      parent: parent_model_or_package
+      key: obs_filerecord
+      val: observations
+      abbr: obs
+      param: continuous
+packagedata:
+  packagedata:
+    block: packagedata
+    type: recarray
+    shape: (maxbound)
+    reader: urword
+    item:
+      type: record
+      block: packagedata
+      reader: urword
+      fields:
+        ifno:
+          block: period
+          type: integer
+          reader: urword
+          longname: lake number for this entry
+          description: integer value that defines the feature (lake) number associated with the specified
+            PERIOD data on the line. IFNO must be greater than zero and less than or equal to NLAKES.
+          tagged: false
+          in_record: true
+          numeric_index: true
+        strt:
+          block: packagedata
+          type: double precision
+          reader: urword
+          longname: starting lake concentration
+          description: real value that defines the starting concentration for the lake.
+          tagged: false
+          in_record: true
+        aux:
+          block: packagedata
+          type: double precision
+          shape: (naux)
+          reader: urword
+          optional: true
+          longname: auxiliary variables
+          description: represents the values of the auxiliary variables for each lake. The values of auxiliary
+            variables must be present for each lake. The values must be specified in the order of the
+            auxiliary variables specified in the OPTIONS block.  If the package supports time series and
+            the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section),
+            values can be obtained from a time series by entering the time-series name in place of a numeric
+            value.
+          in_record: true
+          tagged: false
+          time_series: true
+        boundname:
+          block: packagedata
+          type: string
+          reader: urword
+          optional: true
+          longname: lake name
+          description: name of the lake cell.  BOUNDNAME is an ASCII character variable that can contain
+            as many as 40 characters.  If BOUNDNAME contains spaces in it, then the entire name must be
+            enclosed within single quotes.
+          tagged: false
+          in_record: true
+period:
+  transient_block: true
+  lakeperioddata:
+    block: period
+    type: recarray
+    reader: urword
+    item:
+      type: record
+      block: period
+      reader: urword
+      fields:
+        ifno:
+          block: period
+          type: integer
+          reader: urword
+          longname: lake number for this entry
+          description: integer value that defines the feature (lake) number associated with the specified
+            PERIOD data on the line. IFNO must be greater than zero and less than or equal to NLAKES.
+          tagged: false
+          in_record: true
+          numeric_index: true
+        laksetting:
+          block: period
+          type: keystring
+          reader: urword
+          description: 'line of information that is parsed into a keyword and values.  Keyword values
+            that can be used to start the LAKSETTING string include: STATUS, CONCENTRATION, RAINFALL,
+            EVAPORATION, RUNOFF, EXT-INFLOW, and AUXILIARY.  These settings are used to assign the concentration
+            of associated with the corresponding flow terms.  Concentrations cannot be specified for all
+            flow terms.  For example, the Lake Package supports a ''WITHDRAWAL'' flow term.  If this withdrawal
+            term is active, then water will be withdrawn from the lake at the calculated concentration
+            of the lake.'
+          tagged: false
+          in_record: true
+          choices:
+            concentration:
+              block: period
+              type: string
+              reader: urword
+              longname: lake concentration
+              description: real or character value that defines the concentration for the lake. The specified
+                CONCENTRATION is only applied if the lake is a constant concentration lake. If the Options
+                block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values
+                can be obtained from a time series by entering the time-series name in place of a numeric
+                value.
+              tagged: true
+              in_record: true
+              time_series: true
+            status:
+              block: period
+              type: string
+              reader: urword
+              longname: lake concentration status
+              description: keyword option to define lake status.  STATUS can be ACTIVE, INACTIVE, or CONSTANT.
+                By default, STATUS is ACTIVE, which means that concentration will be calculated for the
+                lake.  If a lake is inactive, then there will be no solute mass fluxes into or out of
+                the lake and the inactive value will be written for the lake concentration.  If a lake
+                is constant, then the concentration for the lake will be fixed at the user specified value.
+              tagged: true
+              in_record: true
+            rainfall:
+              block: period
+              type: string
+              reader: urword
+              longname: rainfall concentration
+              description: real or character value that defines the rainfall solute concentration $(ML^{-3})$
+                for the lake. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable
+                Input' section), values can be obtained from a time series by entering the time-series
+                name in place of a numeric value.
+              tagged: true
+              in_record: true
+              time_series: true
+            evaporation:
+              block: period
+              type: string
+              reader: urword
+              longname: evaporation concentration
+              description: real or character value that defines the concentration of evaporated water
+                $(ML^{-3})$ for the lake. If this concentration value is larger than the simulated concentration
+                in the lake, then the evaporated water will be removed at the same concentration as the
+                lake.  If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input'
+                section), values can be obtained from a time series by entering the time-series name in
+                place of a numeric value.
+              tagged: true
+              in_record: true
+              time_series: true
+            runoff:
+              block: period
+              type: string
+              reader: urword
+              longname: runoff concentration
+              description: real or character value that defines the concentration of runoff $(ML^{-3})$
+                for the lake. Value must be greater than or equal to zero. If the Options block includes
+                a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained
+                from a time series by entering the time-series name in place of a numeric value.
+              tagged: true
+              in_record: true
+              time_series: true
+            ext-inflow:
+              block: period
+              type: string
+              reader: urword
+              longname: ext-inflow concentration
+              description: real or character value that defines the concentration of external inflow $(ML^{-3})$
+                for the lake. Value must be greater than or equal to zero. If the Options block includes
+                a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained
+                from a time series by entering the time-series name in place of a numeric value.
+              tagged: true
+              in_record: true
+              time_series: true
+            auxiliaryrecord:
+              block: period
+              type: record auxiliary auxname auxval
+              reader: urword
+              in_record: true

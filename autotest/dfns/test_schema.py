@@ -61,25 +61,25 @@ def _pkg(name: str, blocks=None, dims=None, parent=None, **kw) -> Package:
 def test_schema_version():
     pkg = _pkg("gwf-chd")
     spec = Dfns(components={"gwf-chd": pkg})
-    assert spec.schema_version == "2"  # default
+    assert spec.schema_version == "2.0.0.dev2"  # default
 
-    pkg = Package(name="gwf-chd", schema_version="2")
+    pkg = Package(name="gwf-chd", schema_version="2.0.0.dev2")
     spec = Dfns(components={"gwf-chd": pkg})
-    assert spec.schema_version == "2"
+    assert spec.schema_version == "2.0.0.dev2"
 
 
 def test_schema_version_inconsistency():
-    pkg1 = Package(name="gwf-chd", schema_version="2")
+    pkg1 = Package(name="gwf-chd", schema_version="2.0.0.dev2")
     pkg2 = Package(name="gwf-wel", schema_version="3")
     with pytest.raises(ValueError, match="schema_version"):
         Dfns(components={"gwf-chd": pkg1, "gwf-wel": pkg2})
 
 
 def test_schema_version_consistency_null_ignored():
-    pkg1 = Package(name="gwf-chd", schema_version="2")
+    pkg1 = Package(name="gwf-chd", schema_version="2.0.0.dev2")
     pkg2 = Package(name="gwf-wel", schema_version=None)
     spec = Dfns(components={"gwf-chd": pkg1, "gwf-wel": pkg2})
-    assert spec.schema_version == "2"
+    assert spec.schema_version == "2.0.0.dev2"
 
 
 def test_children_of():
@@ -100,7 +100,7 @@ def test_children_of_empty():
 
 def test_load(dfn_dir):
     spec = Dfns.load(dfn_dir)
-    assert spec.schema_version == "2"
+    assert spec.schema_version == "2.0.0.dev2"
     assert spec.root is not None
     assert spec.root.name == "sim-nam"
     assert len(spec.components) > 100
