@@ -912,15 +912,15 @@ class Dfns(BaseModel):
 
         exclude = {"common", "flopy"}
         path = Path(path).expanduser().resolve()
-        dfn_paths = {p.stem: p for p in path.glob("*.dfn") if p.stem not in exclude}
-        toml_paths = {p.stem: p for p in path.glob("*.toml") if p.stem not in exclude}
+        dfn_paths = {p.stem: p for p in sorted(path.glob("*.dfn")) if p.stem not in exclude}
+        toml_paths = {p.stem: p for p in sorted(path.glob("*.toml")) if p.stem not in exclude}
         yaml_paths = {
             p.stem: p
             for ext in ("*.yaml", "*.yml")
-            for p in path.glob(ext)
+            for p in sorted(path.glob(ext))
             if p.stem not in exclude
         }
-        json_paths = {p.stem: p for p in path.glob("*.json") if p.stem not in exclude}
+        json_paths = {p.stem: p for p in sorted(path.glob("*.json")) if p.stem not in exclude}
 
         dfns: dict = {}
         if dfn_paths:

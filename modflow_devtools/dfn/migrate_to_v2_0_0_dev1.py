@@ -267,7 +267,7 @@ def to_tree(dfns: Dfns) -> Dfn:
         node = dfns[node_name]
         children = {name: dfn for name, dfn in dfns.items() if dfn.get("parent", None) == node_name}
         if any(children):
-            node["children"] = {name: _build_tree(name) for name in children.keys()}
+            node["children"] = {name: _build_tree(name) for name in sorted(children.keys())}
         return node
 
     return _build_tree(next(iter(roots.keys())))

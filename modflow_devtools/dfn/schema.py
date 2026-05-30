@@ -277,7 +277,7 @@ class Dfn(TypedDict):
         dfndir = Path(dfndir).expanduser().resolve().absolute()
 
         exclude = {"common", "flopy"}
-        dfn_paths: list[Path] = [p for p in dfndir.glob("*.dfn") if p.stem not in exclude]
+        dfn_paths: list[Path] = sorted(p for p in dfndir.glob("*.dfn") if p.stem not in exclude)
         dfns: Dfns = {}
 
         if not dfn_paths:
