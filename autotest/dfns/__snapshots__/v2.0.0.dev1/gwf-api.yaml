@@ -70,29 +70,6 @@ blocks:
           optional: false
           longname: obs6 input filename
           type: string
-    obs6:
-      block: options
-      description: keyword to specify that record corresponds to an observations file.
-      reader: urword
-      optional: false
-      longname: obs keyword
-      type: keyword
-    filein:
-      block: options
-      description: keyword to specify that an input filename is expected next.
-      reader: urword
-      optional: false
-      longname: file keyword
-      type: keyword
-    obs6_filename:
-      block: options
-      description: name of input file to define observations for the api boundary package. See the 'Observation
-        utility' section for instructions for preparing observation input files. Table {#2} lists observation
-        type(s) supported by the api boundary package.
-      reader: urword
-      optional: false
-      longname: obs6 input filename
-      type: string
     mover:
       block: options
       description: keyword to indicate that this instance of the api boundary Package can be used with

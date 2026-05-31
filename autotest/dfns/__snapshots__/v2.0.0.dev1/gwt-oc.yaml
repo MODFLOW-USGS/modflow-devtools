@@ -33,27 +33,6 @@ blocks:
           optional: false
           longname: file keyword
           type: string
-    budget:
-      block: options
-      description: keyword to specify that record corresponds to the budget.
-      reader: urword
-      optional: false
-      longname: budget keyword
-      type: keyword
-    fileout:
-      block: options
-      description: keyword to specify that an output filename is expected next.
-      reader: urword
-      optional: false
-      longname: file keyword
-      type: keyword
-    budgetfile:
-      block: options
-      description: name of the output file to write budget information.
-      reader: urword
-      optional: false
-      longname: file keyword
-      type: string
     budgetcsv_filerecord:
       block: options
       reader: urword
@@ -83,21 +62,6 @@ blocks:
           optional: false
           longname: file keyword
           type: string
-    budgetcsv:
-      block: options
-      description: keyword to specify that record corresponds to the budget CSV.
-      reader: urword
-      optional: false
-      longname: budget keyword
-      type: keyword
-    budgetcsvfile:
-      block: options
-      description: name of the comma-separated value (CSV) output file to write budget summary information.  A
-        budget summary record will be written to this file for each time step of the simulation.
-      reader: urword
-      optional: false
-      longname: file keyword
-      type: string
     concentration_filerecord:
       block: options
       reader: urword
@@ -127,21 +91,6 @@ blocks:
           longname: file keyword
           mf6internal: concfile
           type: string
-    concentration:
-      block: options
-      description: keyword to specify that record corresponds to concentration.
-      reader: urword
-      optional: false
-      longname: concentration keyword
-      type: keyword
-    concentrationfile:
-      block: options
-      description: name of the output file to write conc information.
-      reader: urword
-      optional: false
-      longname: file keyword
-      mf6internal: concfile
-      type: string
     concentrationprintrecord:
       block: options
       reader: urword
@@ -163,83 +112,7 @@ blocks:
           optional: false
           longname: keyword to indicate that a print format follows
           type: keyword
-    print_format:
-      block: options
-      description: keyword to specify format for printing to the listing file.
-      reader: urword
-      optional: false
-      longname: keyword to indicate that a print format follows
-      type: keyword
-    formatrecord:
-      block: options
-      reader: urword
-      optional: false
-      type: record
-      children:
-        columns:
-          block: options
-          description: number of columns for writing data.
-          reader: urword
-          longname: number of columns
-          type: integer
-        width:
-          block: options
-          description: width for writing each number.
-          reader: urword
-          longname: width for each number
-          type: integer
-        digits:
-          block: options
-          description: number of digits to use for writing a number.
-          reader: urword
-          longname: number of digits
-          type: integer
-        format:
-          block: options
-          description: write format can be EXPONENTIAL, FIXED, GENERAL, or SCIENTIFIC.
-          reader: urword
-          optional: false
-          longname: write format
-          type: string
-    columns:
-      block: options
-      description: number of columns for writing data.
-      reader: urword
-      longname: number of columns
-      type: integer
-    width:
-      block: options
-      description: width for writing each number.
-      reader: urword
-      longname: width for each number
-      type: integer
-    digits:
-      block: options
-      description: number of digits to use for writing a number.
-      reader: urword
-      longname: number of digits
-      type: integer
-    format:
-      block: options
-      description: write format can be EXPONENTIAL, FIXED, GENERAL, or SCIENTIFIC.
-      reader: urword
-      optional: false
-      longname: write format
-      type: string
   period:
-    iper:
-      shape: (nper)
-      block: period
-      description: integer value specifying the starting stress period number for which the data specified
-        in the PERIOD block apply.  IPER must be less than or equal to NPER in the TDIS Package and greater
-        than zero.  The IPER value assigned to a stress period block must be greater than the IPER value
-        assigned for the previous PERIOD block.  The information specified in the PERIOD block will continue
-        to apply for all subsequent stress periods, unless the program encounters another PERIOD block.
-      block_variable: true
-      reader: urword
-      optional: false
-      longname: stress period number
-      type: integer
     saverecord:
       shape: (nper)
       block: period
@@ -297,14 +170,6 @@ blocks:
                 with other keywords to print or save results for multiple time steps.
               reader: urword
               type: integer
-    save:
-      shape: (nper)
-      block: period
-      description: keyword to indicate that information will be saved this stress period.
-      reader: urword
-      optional: false
-      longname: keyword to save
-      type: keyword
     printrecord:
       shape: (nper)
       block: period
@@ -362,90 +227,3 @@ blocks:
                 with other keywords to print or save results for multiple time steps.
               reader: urword
               type: integer
-    print:
-      shape: (nper)
-      block: period
-      description: keyword to indicate that information will be printed this stress period.
-      reader: urword
-      optional: false
-      longname: keyword to save
-      type: keyword
-    rtype:
-      shape: (nper)
-      block: period
-      description: type of information to save or print.  Can be BUDGET or CONCENTRATION.
-      reader: urword
-      optional: false
-      longname: record type
-      type: string
-    ocsetting:
-      shape: (nper)
-      block: period
-      description: specifies the steps for which the data will be saved.
-      reader: urword
-      type: union
-      children:
-        all:
-          block: period
-          description: keyword to indicate save for all time steps in period.
-          reader: urword
-          type: keyword
-        first:
-          block: period
-          description: keyword to indicate save for first step in period. This keyword may be used in
-            conjunction with other keywords to print or save results for multiple time steps.
-          reader: urword
-          type: keyword
-        last:
-          block: period
-          description: keyword to indicate save for last step in period. This keyword may be used in conjunction
-            with other keywords to print or save results for multiple time steps.
-          reader: urword
-          type: keyword
-        frequency:
-          block: period
-          description: save at the specified time step frequency. This keyword may be used in conjunction
-            with other keywords to print or save results for multiple time steps.
-          reader: urword
-          type: integer
-        steps:
-          shape: (<nstp)
-          block: period
-          description: save for each step specified in STEPS. This keyword may be used in conjunction
-            with other keywords to print or save results for multiple time steps.
-          reader: urword
-          type: integer
-    all:
-      shape: (nper)
-      block: period
-      description: keyword to indicate save for all time steps in period.
-      reader: urword
-      type: keyword
-    first:
-      shape: (nper)
-      block: period
-      description: keyword to indicate save for first step in period. This keyword may be used in conjunction
-        with other keywords to print or save results for multiple time steps.
-      reader: urword
-      type: keyword
-    last:
-      shape: (nper)
-      block: period
-      description: keyword to indicate save for last step in period. This keyword may be used in conjunction
-        with other keywords to print or save results for multiple time steps.
-      reader: urword
-      type: keyword
-    frequency:
-      shape: (nper)
-      block: period
-      description: save at the specified time step frequency. This keyword may be used in conjunction
-        with other keywords to print or save results for multiple time steps.
-      reader: urword
-      type: integer
-    steps:
-      shape: (nper, <nstp)
-      block: period
-      description: save for each step specified in STEPS. This keyword may be used in conjunction with
-        other keywords to print or save results for multiple time steps.
-      reader: urword
-      type: integer

@@ -31,21 +31,6 @@
           }
         }
       },
-      "name": {
-        "block": "attributes",
-        "description": "xxx",
-        "reader": "urword",
-        "optional": false,
-        "type": "keyword"
-      },
-      "time_series_name": {
-        "shape": "(any1d)",
-        "block": "attributes",
-        "description": "Name by which a package references a particular time-array series. The name must be unique among all time-array series used in a package.",
-        "reader": "urword",
-        "optional": false,
-        "type": "string"
-      },
       "interpolation_methodrecord": {
         "block": "attributes",
         "description": "xxx",
@@ -70,21 +55,6 @@
           }
         }
       },
-      "method": {
-        "block": "attributes",
-        "description": " xxx",
-        "reader": "urword",
-        "optional": false,
-        "type": "keyword"
-      },
-      "interpolation_method": {
-        "block": "attributes",
-        "description": "Interpolation method, which is either STEPWISE or LINEAR.",
-        "valid": "stepwise linear linearend",
-        "reader": "urword",
-        "optional": false,
-        "type": "string"
-      },
       "sfacrecord": {
         "block": "attributes",
         "description": "xxx",
@@ -108,32 +78,9 @@
             "type": "double"
           }
         }
-      },
-      "sfac": {
-        "block": "attributes",
-        "description": " xxx",
-        "reader": "urword",
-        "optional": false,
-        "type": "keyword"
-      },
-      "sfacval": {
-        "shape": "time_series_name",
-        "block": "attributes",
-        "description": "Scale factor, which will multiply all array values in time series. SFAC is an optional attribute; if omitted, SFAC = 1.0.",
-        "reader": "urword",
-        "optional": false,
-        "type": "double"
       }
     },
     "time": {
-      "time_from_model_start": {
-        "block": "time",
-        "description": "A numeric time relative to the start of the simulation, in the time unit used in the simulation. Times must be strictly increasing.",
-        "block_variable": true,
-        "reader": "urword",
-        "optional": false,
-        "type": "double"
-      },
       "tas_array": {
         "shape": "(unknown)",
         "block": "time",

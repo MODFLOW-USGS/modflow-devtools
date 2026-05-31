@@ -73,28 +73,145 @@ options:
       FILEOUT' in Output Control.
   wc_filerecord:
     block: options
-    type: record water_content fileout wcfile
+    type: record
     reader: urword
     optional: true
     tagged: true
+    fields:
+      water_content:
+        block: options
+        type: keyword
+        reader: urword
+        optional: false
+        longname: water_content keyword
+        description: keyword to specify that record corresponds to unsaturated zone water contents.
+        in_record: true
+        tagged: true
+      wcfile:
+        block: options
+        type: string
+        reader: urword
+        optional: false
+        longname: file keyword
+        description: name of the binary output file to write water content information.
+        preserve_case: true
+        in_record: true
+        tagged: false
+      fileout:
+        block: options
+        type: keyword
+        reader: urword
+        optional: false
+        longname: file keyword
+        description: keyword to specify that an output filename is expected next.
+        in_record: true
+        tagged: true
   budget_filerecord:
     block: options
-    type: record budget fileout budgetfile
+    type: record
     reader: urword
     optional: true
     tagged: true
+    fields:
+      budget:
+        block: options
+        type: keyword
+        reader: urword
+        optional: false
+        longname: budget keyword
+        description: keyword to specify that record corresponds to the budget.
+        in_record: true
+        tagged: true
+      fileout:
+        block: options
+        type: keyword
+        reader: urword
+        optional: false
+        longname: file keyword
+        description: keyword to specify that an output filename is expected next.
+        in_record: true
+        tagged: true
+      budgetfile:
+        block: options
+        type: string
+        reader: urword
+        optional: false
+        longname: file keyword
+        description: name of the binary output file to write budget information.
+        preserve_case: true
+        in_record: true
+        tagged: false
   budgetcsv_filerecord:
     block: options
-    type: record budgetcsv fileout budgetcsvfile
+    type: record
     reader: urword
     optional: true
     tagged: true
+    fields:
+      fileout:
+        block: options
+        type: keyword
+        reader: urword
+        optional: false
+        longname: file keyword
+        description: keyword to specify that an output filename is expected next.
+        in_record: true
+        tagged: true
+      budgetcsv:
+        block: options
+        type: keyword
+        reader: urword
+        optional: false
+        longname: budget keyword
+        description: keyword to specify that record corresponds to the budget CSV.
+        in_record: true
+        tagged: true
+      budgetcsvfile:
+        block: options
+        type: string
+        reader: urword
+        optional: false
+        longname: file keyword
+        description: name of the comma-separated value (CSV) output file to write budget summary information.  A
+          budget summary record will be written to this file for each time step of the simulation.
+        preserve_case: true
+        in_record: true
+        tagged: false
   package_convergence_filerecord:
     block: options
-    type: record package_convergence fileout package_convergence_filename
+    type: record
     reader: urword
     optional: true
     tagged: true
+    fields:
+      fileout:
+        block: options
+        type: keyword
+        reader: urword
+        optional: false
+        longname: file keyword
+        description: keyword to specify that an output filename is expected next.
+        in_record: true
+        tagged: true
+      package_convergence:
+        block: options
+        type: keyword
+        reader: urword
+        optional: false
+        longname: package_convergence keyword
+        description: keyword to specify that record corresponds to the package convergence comma spaced
+          values file.
+        in_record: true
+        tagged: true
+      package_convergence_filename:
+        block: options
+        type: string
+        reader: urword
+        optional: false
+        longname: file keyword
+        description: name of the comma spaced values output file to write package convergence information.
+        in_record: true
+        tagged: false
   timeseries:
     block: options
     type: record ts6 filein ts6_filename

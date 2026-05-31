@@ -98,29 +98,6 @@ blocks:
           optional: false
           longname: obs6 input filename
           type: string
-    obs6:
-      block: options
-      description: keyword to specify that record corresponds to an observations file.
-      reader: urword
-      optional: false
-      longname: obs keyword
-      type: keyword
-    filein:
-      block: options
-      description: keyword to specify that an input filename is expected next.
-      reader: urword
-      optional: false
-      longname: file keyword
-      type: keyword
-    obs6_filename:
-      block: options
-      description: name of input file to define observations for the CHD package. See the 'Observation
-        utility' section for instructions for preparing observation input files. Table {#2} lists observation
-        type(s) supported by the CHD package.
-      reader: urword
-      optional: false
-      longname: obs6 input filename
-      type: string
     export_array_netcdf:
       block: options
       description: keyword that specifies input gridded arrays should be written to the model output NetCDF
@@ -151,19 +128,6 @@ blocks:
       longname: maximum number of constant head cells in any stress period
       type: integer
   period:
-    iper:
-      shape: (nper)
-      block: period
-      description: integer value specifying the starting stress period number for which the data specified
-        in the PERIOD block apply.  IPER must be less than or equal to NPER in the TDIS Package and greater
-        than zero.  The IPER value assigned to a stress period block must be greater than the IPER value
-        assigned for the previous PERIOD block.  The information specified in the PERIOD block will continue
-        to apply for all subsequent stress periods, unless the program encounters another PERIOD block.
-      block_variable: true
-      reader: urword
-      optional: false
-      longname: stress period number
-      type: integer
     head:
       shape: (nper, nodes)
       block: period

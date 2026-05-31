@@ -68,31 +68,154 @@ description = "keyword to indicate that lake flow terms will be written to the f
 
 [options.stage_filerecord]
 block = "options"
-type = "record stage fileout stagefile"
+type = "record"
 reader = "urword"
 optional = true
+tagged = true
+
+[options.stage_filerecord.fields.stage]
+block = "period"
+type = "string"
+reader = "urword"
+longname = "lake stage"
+description = "real or character value that defines the stage for the lake. The specified STAGE is only applied if the lake is a constant stage lake. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
+tagged = true
+in_record = true
+time_series = true
+
+[options.stage_filerecord.fields.stagefile]
+block = "options"
+type = "string"
+reader = "urword"
+optional = false
+longname = "file keyword"
+description = "name of the binary output file to write stage information."
+preserve_case = true
+in_record = true
+tagged = false
+
+[options.stage_filerecord.fields.fileout]
+block = "options"
+type = "keyword"
+reader = "urword"
+optional = false
+longname = "file keyword"
+description = "keyword to specify that an output filename is expected next."
+in_record = true
 tagged = true
 
 [options.budget_filerecord]
 block = "options"
-type = "record budget fileout budgetfile"
+type = "record"
 reader = "urword"
 optional = true
 tagged = true
+
+[options.budget_filerecord.fields.budget]
+block = "options"
+type = "keyword"
+reader = "urword"
+optional = false
+longname = "budget keyword"
+description = "keyword to specify that record corresponds to the budget."
+in_record = true
+tagged = true
+
+[options.budget_filerecord.fields.fileout]
+block = "options"
+type = "keyword"
+reader = "urword"
+optional = false
+longname = "file keyword"
+description = "keyword to specify that an output filename is expected next."
+in_record = true
+tagged = true
+
+[options.budget_filerecord.fields.budgetfile]
+block = "options"
+type = "string"
+reader = "urword"
+optional = false
+longname = "file keyword"
+description = "name of the binary output file to write budget information."
+preserve_case = true
+in_record = true
+tagged = false
 
 [options.budgetcsv_filerecord]
 block = "options"
-type = "record budgetcsv fileout budgetcsvfile"
+type = "record"
 reader = "urword"
 optional = true
 tagged = true
 
+[options.budgetcsv_filerecord.fields.fileout]
+block = "options"
+type = "keyword"
+reader = "urword"
+optional = false
+longname = "file keyword"
+description = "keyword to specify that an output filename is expected next."
+in_record = true
+tagged = true
+
+[options.budgetcsv_filerecord.fields.budgetcsv]
+block = "options"
+type = "keyword"
+reader = "urword"
+optional = false
+longname = "budget keyword"
+description = "keyword to specify that record corresponds to the budget CSV."
+in_record = true
+tagged = true
+
+[options.budgetcsv_filerecord.fields.budgetcsvfile]
+block = "options"
+type = "string"
+reader = "urword"
+optional = false
+longname = "file keyword"
+description = "name of the comma-separated value (CSV) output file to write budget summary information.  A budget summary record will be written to this file for each time step of the simulation."
+preserve_case = true
+in_record = true
+tagged = false
+
 [options.package_convergence_filerecord]
 block = "options"
-type = "record package_convergence fileout package_convergence_filename"
+type = "record"
 reader = "urword"
 optional = true
 tagged = true
+
+[options.package_convergence_filerecord.fields.fileout]
+block = "options"
+type = "keyword"
+reader = "urword"
+optional = false
+longname = "file keyword"
+description = "keyword to specify that an output filename is expected next."
+in_record = true
+tagged = true
+
+[options.package_convergence_filerecord.fields.package_convergence]
+block = "options"
+type = "keyword"
+reader = "urword"
+optional = false
+longname = "package_convergence keyword"
+description = "keyword to specify that record corresponds to the package convergence comma spaced values file."
+in_record = true
+tagged = true
+
+[options.package_convergence_filerecord.fields.package_convergence_filename]
+block = "options"
+type = "string"
+reader = "urword"
+optional = false
+longname = "file keyword"
+description = "name of the comma spaced values output file to write package convergence information."
+in_record = true
+tagged = false
 
 [options.timeseries]
 block = "options"
@@ -647,6 +770,31 @@ time_series = true
 
 [period.perioddata.item.fields.laksetting.choices.auxiliaryrecord]
 block = "period"
-type = "record auxiliary auxname auxval"
+type = "record"
 reader = "urword"
 in_record = true
+
+[period.perioddata.item.fields.laksetting.choices.auxiliaryrecord.fields.auxiliary]
+block = "period"
+type = "keyword"
+reader = "urword"
+description = "keyword for specifying auxiliary variable."
+in_record = true
+
+[period.perioddata.item.fields.laksetting.choices.auxiliaryrecord.fields.auxname]
+block = "period"
+type = "string"
+reader = "urword"
+description = "name for the auxiliary variable to be assigned AUXVAL.  AUXNAME must match one of the auxiliary variable names defined in the OPTIONS block. If AUXNAME does not match one of the auxiliary variable names defined in the OPTIONS block the data are ignored."
+tagged = false
+in_record = true
+
+[period.perioddata.item.fields.laksetting.choices.auxiliaryrecord.fields.auxval]
+block = "period"
+type = "double precision"
+reader = "urword"
+longname = "auxiliary variable value"
+description = "value for the auxiliary variable. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
+tagged = false
+in_record = true
+time_series = true

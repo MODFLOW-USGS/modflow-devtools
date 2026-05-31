@@ -57,24 +57,6 @@ deprecated = "6.1.1"
 longname = "file keyword"
 type = "string"
 
-[blocks.options.csv_output]
-block = "options"
-description = "keyword to specify that the record corresponds to the comma separated values solver convergence output.  The CSV_OUTPUT option has been deprecated and split into the CSV_OUTER_OUTPUT and CSV_INNER_OUTPUT options.  Starting with MODFLOW 6 version 6.1.1 if the CSV_OUTPUT option is specified, then it is treated as the CSV_OUTER_OUTPUT option."
-reader = "urword"
-optional = false
-deprecated = "6.1.1"
-longname = "budget keyword"
-type = "keyword"
-
-[blocks.options.csvfile]
-block = "options"
-description = "name of the ascii comma separated values output file to write solver convergence information. If PRINT_OPTION is NONE or SUMMARY, comma separated values output includes maximum head change convergence information at the end of each outer iteration for each time step. If PRINT_OPTION is ALL, comma separated values output includes maximum head change and maximum residual convergence information for the solution and each model (if the solution includes more than one model) and linear acceleration information for each inner iteration."
-reader = "urword"
-optional = false
-deprecated = "6.1.1"
-longname = "file keyword"
-type = "string"
-
 [blocks.options.csv_outer_output_filerecord]
 block = "options"
 reader = "urword"
@@ -98,30 +80,6 @@ longname = "file keyword"
 type = "keyword"
 
 [blocks.options.csv_outer_output_filerecord.children.outer_csvfile]
-block = "options"
-description = "name of the ascii comma separated values output file to write maximum dependent-variable (for example, head) change convergence information at the end of each outer iteration for each time step."
-reader = "urword"
-optional = false
-longname = "file keyword"
-type = "string"
-
-[blocks.options.csv_outer_output]
-block = "options"
-description = "keyword to specify that the record corresponds to the comma separated values outer iteration convergence output."
-reader = "urword"
-optional = false
-longname = "budget keyword"
-type = "keyword"
-
-[blocks.options.fileout]
-block = "options"
-description = "keyword to specify that an output filename is expected next."
-reader = "urword"
-optional = false
-longname = "file keyword"
-type = "keyword"
-
-[blocks.options.outer_csvfile]
 block = "options"
 description = "name of the ascii comma separated values output file to write maximum dependent-variable (for example, head) change convergence information at the end of each outer iteration for each time step."
 reader = "urword"
@@ -159,22 +117,6 @@ optional = false
 longname = "file keyword"
 type = "string"
 
-[blocks.options.csv_inner_output]
-block = "options"
-description = "keyword to specify that the record corresponds to the comma separated values solver convergence output."
-reader = "urword"
-optional = false
-longname = "budget keyword"
-type = "keyword"
-
-[blocks.options.inner_csvfile]
-block = "options"
-description = "name of the ascii comma separated values output file to write solver convergence information. Comma separated values output includes maximum dependent-variable (for example, head) change and maximum residual convergence information for the solution and each model (if the solution includes more than one model) and linear acceleration information for each inner iteration."
-reader = "urword"
-optional = false
-longname = "file keyword"
-type = "string"
-
 [blocks.options.no_ptcrecord]
 block = "options"
 reader = "urword"
@@ -191,22 +133,6 @@ longname = "no pseudo-transient continuation"
 type = "keyword"
 
 [blocks.options.no_ptcrecord.children.no_ptc_option]
-block = "options"
-description = "is an optional keyword that is used to define options for disabling pseudo-transient continuation (PTC). FIRST is an optional keyword to disable PTC for the first stress period, if steady-state and one or more model is using the Newton-Raphson formulation. ALL is an optional keyword to disable PTC for all steady-state stress periods for models using the Newton-Raphson formulation. If NO_PTC_OPTION is not specified, the NO_PTC ALL option is used."
-reader = "urword"
-optional = true
-longname = "no pseudo-transient continuation option"
-type = "string"
-
-[blocks.options.no_ptc]
-block = "options"
-description = "is a flag that is used to disable pseudo-transient continuation (PTC). Option only applies to steady-state stress periods for models using the Newton-Raphson formulation. For many problems, PTC can significantly improve convergence behavior for steady-state simulations, and for this reason it is active by default.  In some cases, however, PTC can worsen the convergence behavior, especially when the initial conditions are similar to the solution.  When the initial conditions are similar to, or exactly the same as, the solution and convergence is slow, then the NO_PTC FIRST option should be used to deactivate PTC for the first stress period.  The NO_PTC ALL option should also be used in order to compare convergence behavior with other MODFLOW versions, as PTC is only available in MODFLOW 6."
-reader = "urword"
-optional = false
-longname = "no pseudo-transient continuation"
-type = "keyword"
-
-[blocks.options.no_ptc_option]
 block = "options"
 description = "is an optional keyword that is used to define options for disabling pseudo-transient continuation (PTC). FIRST is an optional keyword to disable PTC for the first stress period, if steady-state and one or more model is using the Newton-Raphson formulation. ALL is an optional keyword to disable PTC for all steady-state stress periods for models using the Newton-Raphson formulation. If NO_PTC_OPTION is not specified, the NO_PTC ALL option is used."
 reader = "urword"
@@ -369,22 +295,6 @@ longname = "flow residual tolerance"
 type = "double"
 
 [blocks.linear.rcloserecord.children.rclose_option]
-block = "linear"
-description = "an optional keyword that defines the specific flow residual criterion used.  STRICT--an optional keyword that is used to specify that INNER_RCLOSE represents a infinity-Norm (absolute convergence criteria) and that the dependent-variable (for example, head) and flow convergence criteria must be met on the first inner iteration (this criteria is equivalent to the criteria used by the MODFLOW-2005 PCG package~citep{hill1990preconditioned}). L2NORM_RCLOSE--an optional keyword that is used to specify that INNER_RCLOSE represents a L-2 Norm closure criteria instead of a infinity-Norm (absolute convergence criteria). When L2NORM_RCLOSE is specified, a reasonable initial INNER_RCLOSE value is 0.1 times the number of active cells when meters and seconds are the defined mf length and time.  RELATIVE_RCLOSE--an optional keyword that is used to specify that INNER_RCLOSE represents a relative L-2 Norm reduction closure criteria instead of a infinity-Norm (absolute convergence criteria). When RELATIVE_RCLOSE is specified, a reasonable initial INNER_RCLOSE value is $1.0 times 10^{-4}$ and convergence is achieved for a given inner (linear) iteration when $Delta h le$ INNER_DVCLOSE and the current L-2 Norm is $le$ the product of the RELATIVE_RCLOSE and the initial L-2 Norm for the current inner (linear) iteration. If RCLOSE_OPTION is not specified, an absolute residual (infinity-norm) criterion is used."
-reader = "urword"
-optional = true
-longname = "flow residual tolerance"
-type = "string"
-
-[blocks.linear.inner_rclose]
-block = "linear"
-description = "real value that defines the flow residual tolerance for convergence of the IMS linear solver and specific flow residual criteria used. This value represents the maximum allowable residual at any single node.  Value is in units of length cubed per time, and must be consistent with mf length and time units. Usually a value of $1.0 times 10^{-1}$ is sufficient for the flow-residual criteria when meters and seconds are the defined mf length and time."
-reader = "urword"
-optional = false
-longname = "flow residual tolerance"
-type = "double"
-
-[blocks.linear.rclose_option]
 block = "linear"
 description = "an optional keyword that defines the specific flow residual criterion used.  STRICT--an optional keyword that is used to specify that INNER_RCLOSE represents a infinity-Norm (absolute convergence criteria) and that the dependent-variable (for example, head) and flow convergence criteria must be met on the first inner iteration (this criteria is equivalent to the criteria used by the MODFLOW-2005 PCG package~citep{hill1990preconditioned}). L2NORM_RCLOSE--an optional keyword that is used to specify that INNER_RCLOSE represents a L-2 Norm closure criteria instead of a infinity-Norm (absolute convergence criteria). When L2NORM_RCLOSE is specified, a reasonable initial INNER_RCLOSE value is 0.1 times the number of active cells when meters and seconds are the defined mf length and time.  RELATIVE_RCLOSE--an optional keyword that is used to specify that INNER_RCLOSE represents a relative L-2 Norm reduction closure criteria instead of a infinity-Norm (absolute convergence criteria). When RELATIVE_RCLOSE is specified, a reasonable initial INNER_RCLOSE value is $1.0 times 10^{-4}$ and convergence is achieved for a given inner (linear) iteration when $Delta h le$ INNER_DVCLOSE and the current L-2 Norm is $le$ the product of the RELATIVE_RCLOSE and the initial L-2 Norm for the current inner (linear) iteration. If RCLOSE_OPTION is not specified, an absolute residual (infinity-norm) criterion is used."
 reader = "urword"

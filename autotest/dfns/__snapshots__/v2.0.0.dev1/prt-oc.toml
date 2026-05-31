@@ -35,30 +35,6 @@ optional = false
 longname = "file keyword"
 type = "string"
 
-[blocks.options.budget]
-block = "options"
-description = "keyword to specify that record corresponds to the budget."
-reader = "urword"
-optional = false
-longname = "budget keyword"
-type = "keyword"
-
-[blocks.options.fileout]
-block = "options"
-description = "keyword to specify that an output filename is expected next."
-reader = "urword"
-optional = false
-longname = "file keyword"
-type = "keyword"
-
-[blocks.options.budgetfile]
-block = "options"
-description = "name of the output file to write budget information."
-reader = "urword"
-optional = false
-longname = "file keyword"
-type = "string"
-
 [blocks.options.budgetcsv_filerecord]
 block = "options"
 reader = "urword"
@@ -83,22 +59,6 @@ longname = "file keyword"
 type = "keyword"
 
 [blocks.options.budgetcsv_filerecord.children.budgetcsvfile]
-block = "options"
-description = "name of the comma-separated value (CSV) output file to write budget summary information.  A budget summary record will be written to this file for each time step of the simulation."
-reader = "urword"
-optional = false
-longname = "file keyword"
-type = "string"
-
-[blocks.options.budgetcsv]
-block = "options"
-description = "keyword to specify that record corresponds to the budget CSV."
-reader = "urword"
-optional = false
-longname = "budget keyword"
-type = "keyword"
-
-[blocks.options.budgetcsvfile]
 block = "options"
 description = "name of the comma-separated value (CSV) output file to write budget summary information.  A budget summary record will be written to this file for each time step of the simulation."
 reader = "urword"
@@ -137,22 +97,6 @@ optional = false
 longname = "file keyword"
 type = "string"
 
-[blocks.options.track]
-block = "options"
-description = "keyword to specify that record corresponds to a binary track file.  Each PRT Model's OC Package may have only one binary track output file."
-reader = "urword"
-optional = false
-longname = "track keyword"
-type = "keyword"
-
-[blocks.options.trackfile]
-block = "options"
-description = "name of the binary output file to write tracking information."
-reader = "urword"
-optional = false
-longname = "file keyword"
-type = "string"
-
 [blocks.options.trackcsv_filerecord]
 block = "options"
 reader = "urword"
@@ -177,22 +121,6 @@ longname = "file keyword"
 type = "keyword"
 
 [blocks.options.trackcsv_filerecord.children.trackcsvfile]
-block = "options"
-description = "name of the comma-separated value (CSV) file to write tracking information."
-reader = "urword"
-optional = false
-longname = "file keyword"
-type = "string"
-
-[blocks.options.trackcsv]
-block = "options"
-description = "keyword to specify that record corresponds to a CSV track file.  Each PRT Model's OC Package may have only one CSV track file."
-reader = "urword"
-optional = false
-longname = "track keyword"
-type = "keyword"
-
-[blocks.options.trackcsvfile]
 block = "options"
 description = "name of the comma-separated value (CSV) file to write tracking information."
 reader = "urword"
@@ -290,23 +218,6 @@ longname = "tracking times"
 removed = "6.6.0"
 type = "double"
 
-[blocks.options.track_times]
-block = "options"
-description = "keyword indicating tracking times will follow"
-reader = "urword"
-removed = "6.6.0"
-type = "keyword"
-
-[blocks.options.times]
-shape = "(any1d)"
-block = "options"
-description = "times to track, relative to the beginning of the simulation."
-reader = "urword"
-repeating = true
-longname = "tracking times"
-removed = "6.6.0"
-type = "double"
-
 [blocks.options.track_timesfilerecord]
 block = "options"
 reader = "urword"
@@ -323,22 +234,6 @@ removed = "6.6.0"
 type = "keyword"
 
 [blocks.options.track_timesfilerecord.children.timesfile]
-block = "options"
-description = "name of the tracking times file"
-reader = "urword"
-optional = false
-longname = "file keyword"
-removed = "6.6.0"
-type = "string"
-
-[blocks.options.track_timesfile]
-block = "options"
-description = "keyword indicating tracking times file name will follow"
-reader = "urword"
-removed = "6.6.0"
-type = "keyword"
-
-[blocks.options.timesfile]
 block = "options"
 description = "name of the tracking times file"
 reader = "urword"
@@ -385,24 +280,6 @@ reader = "urword"
 optional = false
 longname = "release time"
 type = "double"
-
-[blocks.tracktimes.time]
-block = "tracktimes"
-description = "real value that defines the tracking time with respect to the simulation start time."
-reader = "urword"
-optional = false
-longname = "release time"
-type = "double"
-
-[blocks.period.iper]
-shape = "(nper)"
-block = "period"
-description = "integer value specifying the starting stress period number for which the data specified in the PERIOD block apply.  IPER must be less than or equal to NPER in the TDIS Package and greater than zero.  The IPER value assigned to a stress period block must be greater than the IPER value assigned for the previous PERIOD block.  The information specified in the PERIOD block will continue to apply for all subsequent stress periods, unless the program encounters another PERIOD block."
-block_variable = true
-reader = "urword"
-optional = false
-longname = "stress period number"
-type = "integer"
 
 [blocks.period.saverecord]
 shape = "(nper)"
@@ -464,15 +341,6 @@ description = "save for each step specified in STEPS. This keyword may be used i
 reader = "urword"
 type = "integer"
 
-[blocks.period.save]
-shape = "(nper)"
-block = "period"
-description = "keyword to indicate that information will be saved this stress period."
-reader = "urword"
-optional = false
-longname = "keyword to save"
-type = "keyword"
-
 [blocks.period.printrecord]
 shape = "(nper)"
 block = "period"
@@ -528,97 +396,6 @@ type = "integer"
 
 [blocks.period.printrecord.children.ocsetting.children.steps]
 shape = "(<nstp)"
-block = "period"
-description = "save for each step specified in STEPS. This keyword may be used in conjunction with other keywords to print or save results for multiple time steps."
-reader = "urword"
-type = "integer"
-
-[blocks.period.print]
-shape = "(nper)"
-block = "period"
-description = "keyword to indicate that information will be printed this stress period."
-reader = "urword"
-optional = false
-longname = "keyword to save"
-type = "keyword"
-
-[blocks.period.rtype]
-shape = "(nper)"
-block = "period"
-description = "type of information to save or print.  Can only be BUDGET."
-reader = "urword"
-optional = false
-longname = "record type"
-type = "string"
-
-[blocks.period.ocsetting]
-shape = "(nper)"
-block = "period"
-description = "specifies the steps for which the data will be saved."
-reader = "urword"
-type = "union"
-
-[blocks.period.ocsetting.children.all]
-block = "period"
-description = "keyword to indicate save for all time steps in period."
-reader = "urword"
-type = "keyword"
-
-[blocks.period.ocsetting.children.first]
-block = "period"
-description = "keyword to indicate save for first step in period. This keyword may be used in conjunction with other keywords to print or save results for multiple time steps."
-reader = "urword"
-type = "keyword"
-
-[blocks.period.ocsetting.children.last]
-block = "period"
-description = "keyword to indicate save for last step in period. This keyword may be used in conjunction with other keywords to print or save results for multiple time steps."
-reader = "urword"
-type = "keyword"
-
-[blocks.period.ocsetting.children.frequency]
-block = "period"
-description = "save at the specified time step frequency. This keyword may be used in conjunction with other keywords to print or save results for multiple time steps."
-reader = "urword"
-type = "integer"
-
-[blocks.period.ocsetting.children.steps]
-shape = "(<nstp)"
-block = "period"
-description = "save for each step specified in STEPS. This keyword may be used in conjunction with other keywords to print or save results for multiple time steps."
-reader = "urword"
-type = "integer"
-
-[blocks.period.all]
-shape = "(nper)"
-block = "period"
-description = "keyword to indicate save for all time steps in period."
-reader = "urword"
-type = "keyword"
-
-[blocks.period.first]
-shape = "(nper)"
-block = "period"
-description = "keyword to indicate save for first step in period. This keyword may be used in conjunction with other keywords to print or save results for multiple time steps."
-reader = "urword"
-type = "keyword"
-
-[blocks.period.last]
-shape = "(nper)"
-block = "period"
-description = "keyword to indicate save for last step in period. This keyword may be used in conjunction with other keywords to print or save results for multiple time steps."
-reader = "urword"
-type = "keyword"
-
-[blocks.period.frequency]
-shape = "(nper)"
-block = "period"
-description = "save at the specified time step frequency. This keyword may be used in conjunction with other keywords to print or save results for multiple time steps."
-reader = "urword"
-type = "integer"
-
-[blocks.period.steps]
-shape = "(nper, <nstp)"
 block = "period"
 description = "save for each step specified in STEPS. This keyword may be used in conjunction with other keywords to print or save results for multiple time steps."
 reader = "urword"

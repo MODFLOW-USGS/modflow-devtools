@@ -88,14 +88,6 @@ optional = true
 longname = "xt3d on right-hand side"
 type = "keyword"
 
-[blocks.options.filein]
-block = "options"
-description = "keyword to specify that an input filename is expected next."
-reader = "urword"
-optional = false
-longname = "file keyword"
-type = "keyword"
-
 [blocks.options.mvt_filerecord]
 block = "options"
 reader = "urword"
@@ -126,22 +118,6 @@ optional = false
 longname = "mvt6 input filename"
 type = "string"
 
-[blocks.options.mvt6]
-block = "options"
-description = "keyword to specify that record corresponds to a transport mover file."
-reader = "urword"
-optional = false
-longname = "obs keyword"
-type = "keyword"
-
-[blocks.options.mvt6_filename]
-block = "options"
-description = "is the file name of the transport mover input file to apply to this exchange.  Information for the transport mover are provided in the file provided with these keywords."
-reader = "urword"
-optional = false
-longname = "mvt6 input filename"
-type = "string"
-
 [blocks.options.obs_filerecord]
 block = "options"
 reader = "urword"
@@ -165,22 +141,6 @@ longname = "file keyword"
 type = "keyword"
 
 [blocks.options.obs_filerecord.children.obs6_filename]
-block = "options"
-description = "is the file name of the observations input file for this exchange. See the 'Observation utility' section for instructions for preparing observation input files. Table ref{table:gwt-obstypetable} lists observation type(s) supported by the GWT-GWT package."
-reader = "urword"
-optional = false
-longname = "obs6 input filename"
-type = "string"
-
-[blocks.options.obs6]
-block = "options"
-description = "keyword to specify that record corresponds to an observations file."
-reader = "urword"
-optional = false
-longname = "obs keyword"
-type = "keyword"
-
-[blocks.options.obs6_filename]
 block = "options"
 description = "is the file name of the observations input file for this exchange. See the 'Observation utility' section for instructions for preparing observation input files. Table ref{table:gwt-obstypetable} lists observation type(s) supported by the GWT-GWT package."
 reader = "urword"
@@ -282,74 +242,6 @@ mf6internal = "auxvar"
 type = "double"
 
 [blocks.exchangedata.exchangedata.children.exchangedata.children.boundname]
-block = "exchangedata"
-description = "name of the GWT Exchange cell.  BOUNDNAME is an ASCII character variable that can contain as many as 40 characters.  If BOUNDNAME contains spaces in it, then the entire name must be enclosed within single quotes."
-reader = "urword"
-optional = true
-longname = "exchange boundname"
-type = "string"
-
-[blocks.exchangedata.cellidm1]
-block = "exchangedata"
-description = "is the cellid of the cell in model 1 as specified in the simulation name file. For a structured grid that uses the DIS input file, CELLIDM1 is the layer, row, and column numbers of the cell.   For a grid that uses the DISV input file, CELLIDM1 is the layer number and CELL2D number for the two cells.  If the model uses the unstructured discretization (DISU) input file, then CELLIDM1 is the node number for the cell."
-reader = "urword"
-optional = false
-longname = "cellid of first cell"
-numeric_index = true
-type = "integer"
-
-[blocks.exchangedata.cellidm2]
-block = "exchangedata"
-description = "is the cellid of the cell in model 2 as specified in the simulation name file. For a structured grid that uses the DIS input file, CELLIDM2 is the layer, row, and column numbers of the cell.   For a grid that uses the DISV input file, CELLIDM2 is the layer number and CELL2D number for the two cells.  If the model uses the unstructured discretization (DISU) input file, then CELLIDM2 is the node number for the cell."
-reader = "urword"
-optional = false
-longname = "cellid of second cell"
-numeric_index = true
-type = "integer"
-
-[blocks.exchangedata.ihc]
-block = "exchangedata"
-description = "is an integer flag indicating the direction between node n and all of its m connections. If IHC = 0 then the connection is vertical.  If IHC = 1 then the connection is horizontal. If IHC = 2 then the connection is horizontal for a vertically staggered grid."
-reader = "urword"
-optional = false
-longname = "integer flag for connection type"
-type = "integer"
-
-[blocks.exchangedata.cl1]
-block = "exchangedata"
-description = "is the distance between the center of cell 1 and the its shared face with cell 2."
-reader = "urword"
-optional = false
-longname = "connection distance"
-type = "double"
-
-[blocks.exchangedata.cl2]
-block = "exchangedata"
-description = "is the distance between the center of cell 2 and the its shared face with cell 1."
-reader = "urword"
-optional = false
-longname = "connection distance"
-type = "double"
-
-[blocks.exchangedata.hwva]
-block = "exchangedata"
-description = "is the horizontal width of the flow connection between cell 1 and cell 2 if IHC $>$ 0, or it is the area perpendicular to flow of the vertical connection between cell 1 and cell 2 if IHC = 0."
-reader = "urword"
-optional = false
-longname = "horizontal cell width or area for vertical flow"
-type = "double"
-
-[blocks.exchangedata.aux]
-shape = "(naux)"
-block = "exchangedata"
-description = "represents the values of the auxiliary variables for each GWTGWT Exchange. The values of auxiliary variables must be present for each exchange. The values must be specified in the order of the auxiliary variables specified in the OPTIONS block."
-reader = "urword"
-optional = true
-longname = "auxiliary variables"
-mf6internal = "auxvar"
-type = "double"
-
-[blocks.exchangedata.boundname]
 block = "exchangedata"
 description = "name of the GWT Exchange cell.  BOUNDNAME is an ASCII character variable that can contain as many as 40 characters.  If BOUNDNAME contains spaces in it, then the entire name must be enclosed within single quotes."
 reader = "urword"

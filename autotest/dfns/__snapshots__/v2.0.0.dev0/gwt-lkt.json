@@ -87,24 +87,123 @@
     },
     "concentration_filerecord": {
       "block": "options",
-      "type": "record concentration fileout concfile",
+      "type": "record",
       "reader": "urword",
       "optional": true,
-      "tagged": true
+      "tagged": true,
+      "fields": {
+        "concentration": {
+          "block": "period",
+          "type": "string",
+          "reader": "urword",
+          "longname": "lake concentration",
+          "description": "real or character value that defines the concentration for the lake. The specified CONCENTRATION is only applied if the lake is a constant concentration lake. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value.",
+          "tagged": true,
+          "in_record": true,
+          "time_series": true
+        },
+        "concfile": {
+          "block": "options",
+          "type": "string",
+          "reader": "urword",
+          "optional": false,
+          "longname": "file keyword",
+          "description": "name of the binary output file to write concentration information.",
+          "preserve_case": true,
+          "in_record": true,
+          "tagged": false
+        },
+        "fileout": {
+          "block": "options",
+          "type": "keyword",
+          "reader": "urword",
+          "optional": false,
+          "longname": "file keyword",
+          "description": "keyword to specify that an output filename is expected next.",
+          "in_record": true,
+          "tagged": true
+        }
+      }
     },
     "budget_filerecord": {
       "block": "options",
-      "type": "record budget fileout budgetfile",
+      "type": "record",
       "reader": "urword",
       "optional": true,
-      "tagged": true
+      "tagged": true,
+      "fields": {
+        "budget": {
+          "block": "options",
+          "type": "keyword",
+          "reader": "urword",
+          "optional": false,
+          "longname": "budget keyword",
+          "description": "keyword to specify that record corresponds to the budget.",
+          "in_record": true,
+          "tagged": true
+        },
+        "fileout": {
+          "block": "options",
+          "type": "keyword",
+          "reader": "urword",
+          "optional": false,
+          "longname": "file keyword",
+          "description": "keyword to specify that an output filename is expected next.",
+          "in_record": true,
+          "tagged": true
+        },
+        "budgetfile": {
+          "block": "options",
+          "type": "string",
+          "reader": "urword",
+          "optional": false,
+          "longname": "file keyword",
+          "description": "name of the binary output file to write budget information.",
+          "preserve_case": true,
+          "in_record": true,
+          "tagged": false
+        }
+      }
     },
     "budgetcsv_filerecord": {
       "block": "options",
-      "type": "record budgetcsv fileout budgetcsvfile",
+      "type": "record",
       "reader": "urword",
       "optional": true,
-      "tagged": true
+      "tagged": true,
+      "fields": {
+        "fileout": {
+          "block": "options",
+          "type": "keyword",
+          "reader": "urword",
+          "optional": false,
+          "longname": "file keyword",
+          "description": "keyword to specify that an output filename is expected next.",
+          "in_record": true,
+          "tagged": true
+        },
+        "budgetcsv": {
+          "block": "options",
+          "type": "keyword",
+          "reader": "urword",
+          "optional": false,
+          "longname": "budget keyword",
+          "description": "keyword to specify that record corresponds to the budget CSV.",
+          "in_record": true,
+          "tagged": true
+        },
+        "budgetcsvfile": {
+          "block": "options",
+          "type": "string",
+          "reader": "urword",
+          "optional": false,
+          "longname": "file keyword",
+          "description": "name of the comma-separated value (CSV) output file to write budget summary information.  A budget summary record will be written to this file for each time step of the simulation.",
+          "preserve_case": true,
+          "in_record": true,
+          "tagged": false
+        }
+      }
     },
     "timeseries": {
       "block": "options",
@@ -284,9 +383,36 @@
               },
               "auxiliaryrecord": {
                 "block": "period",
-                "type": "record auxiliary auxname auxval",
+                "type": "record",
                 "reader": "urword",
-                "in_record": true
+                "in_record": true,
+                "fields": {
+                  "auxiliary": {
+                    "block": "period",
+                    "type": "keyword",
+                    "reader": "urword",
+                    "description": "keyword for specifying auxiliary variable.",
+                    "in_record": true
+                  },
+                  "auxname": {
+                    "block": "period",
+                    "type": "string",
+                    "reader": "urword",
+                    "description": "name for the auxiliary variable to be assigned AUXVAL.  AUXNAME must match one of the auxiliary variable names defined in the OPTIONS block. If AUXNAME does not match one of the auxiliary variable names defined in the OPTIONS block the data are ignored.",
+                    "tagged": false,
+                    "in_record": true
+                  },
+                  "auxval": {
+                    "block": "period",
+                    "type": "double precision",
+                    "reader": "urword",
+                    "longname": "auxiliary variable value",
+                    "description": "value for the auxiliary variable. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value.",
+                    "tagged": false,
+                    "in_record": true,
+                    "time_series": true
+                  }
+                }
               }
             }
           }

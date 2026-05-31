@@ -98,22 +98,6 @@ optional = false
 longname = "file keyword"
 type = "string"
 
-[blocks.options.temperature]
-block = "options"
-description = "keyword to specify that record corresponds to temperature."
-reader = "urword"
-optional = false
-longname = "stage keyword"
-type = "keyword"
-
-[blocks.options.tempfile]
-block = "options"
-description = "name of the binary output file to write temperature information."
-reader = "urword"
-optional = false
-longname = "file keyword"
-type = "string"
-
 [blocks.options.budget_filerecord]
 block = "options"
 reader = "urword"
@@ -137,30 +121,6 @@ longname = "file keyword"
 type = "keyword"
 
 [blocks.options.budget_filerecord.children.budgetfile]
-block = "options"
-description = "name of the binary output file to write budget information."
-reader = "urword"
-optional = false
-longname = "file keyword"
-type = "string"
-
-[blocks.options.budget]
-block = "options"
-description = "keyword to specify that record corresponds to the budget."
-reader = "urword"
-optional = false
-longname = "budget keyword"
-type = "keyword"
-
-[blocks.options.fileout]
-block = "options"
-description = "keyword to specify that an output filename is expected next."
-reader = "urword"
-optional = false
-longname = "file keyword"
-type = "keyword"
-
-[blocks.options.budgetfile]
 block = "options"
 description = "name of the binary output file to write budget information."
 reader = "urword"
@@ -198,22 +158,6 @@ optional = false
 longname = "file keyword"
 type = "string"
 
-[blocks.options.budgetcsv]
-block = "options"
-description = "keyword to specify that record corresponds to the budget CSV."
-reader = "urword"
-optional = false
-longname = "budget keyword"
-type = "keyword"
-
-[blocks.options.budgetcsvfile]
-block = "options"
-description = "name of the comma-separated value (CSV) output file to write budget summary information.  A budget summary record will be written to this file for each time step of the simulation."
-reader = "urword"
-optional = false
-longname = "file keyword"
-type = "string"
-
 [blocks.options.ts_filerecord]
 block = "options"
 reader = "urword"
@@ -244,30 +188,6 @@ optional = false
 longname = "file name of time series information"
 type = "string"
 
-[blocks.options.ts6]
-block = "options"
-description = "keyword to specify that record corresponds to a time-series file."
-reader = "urword"
-optional = false
-longname = "head keyword"
-type = "keyword"
-
-[blocks.options.filein]
-block = "options"
-description = "keyword to specify that an input filename is expected next."
-reader = "urword"
-optional = false
-longname = "file keyword"
-type = "keyword"
-
-[blocks.options.ts6_filename]
-block = "options"
-description = "defines a time-series file defining time series that can be used to assign time-varying values. See the 'Time-Variable Input' section for instructions on using the time-series capability."
-reader = "urword"
-optional = false
-longname = "file name of time series information"
-type = "string"
-
 [blocks.options.obs_filerecord]
 block = "options"
 reader = "urword"
@@ -291,22 +211,6 @@ longname = "file keyword"
 type = "keyword"
 
 [blocks.options.obs_filerecord.children.obs6_filename]
-block = "options"
-description = "name of input file to define observations for the LKE package. See the 'Observation utility' section for instructions for preparing observation input files. Table {#2} lists observation type(s) supported by the LKE package."
-reader = "urword"
-optional = false
-longname = "obs6 input filename"
-type = "string"
-
-[blocks.options.obs6]
-block = "options"
-description = "keyword to specify that record corresponds to an observations file."
-reader = "urword"
-optional = false
-longname = "obs keyword"
-type = "keyword"
-
-[blocks.options.obs6_filename]
 block = "options"
 description = "name of input file to define observations for the LKE package. See the 'Observation utility' section for instructions for preparing observation input files. Table {#2} lists observation type(s) supported by the LKE package."
 reader = "urword"
@@ -372,160 +276,6 @@ reader = "urword"
 optional = true
 longname = "lake name"
 type = "string"
-
-[blocks.packagedata.lakeno]
-block = "packagedata"
-description = "integer value that defines the lake number associated with the specified PACKAGEDATA data on the line. LAKENO must be greater than zero and less than or equal to NLAKES. Lake information must be specified for every lake or the program will terminate with an error.  The program will also terminate with an error if information for a lake is specified more than once."
-reader = "urword"
-longname = "lake number for this entry"
-numeric_index = true
-type = "integer"
-
-[blocks.packagedata.strt]
-block = "packagedata"
-description = "real value that defines the starting temperature for the lake."
-reader = "urword"
-longname = "starting lake temperature"
-type = "double"
-
-[blocks.packagedata.ktf]
-block = "packagedata"
-description = "is the thermal conductivity of the material between the aquifer cell and the lake. The thickness of the material is defined by the variable RBTHCND."
-reader = "urword"
-longname = "boundary thermal conductivity"
-type = "double"
-
-[blocks.packagedata.rbthcnd]
-block = "packagedata"
-description = "real value that defines the thickness of the lakebed material through which conduction occurs.  Must be greater than 0."
-reader = "urword"
-longname = "streambed thickness"
-type = "double"
-
-[blocks.packagedata.aux]
-shape = "(naux)"
-block = "packagedata"
-description = "represents the values of the auxiliary variables for each lake. The values of auxiliary variables must be present for each lake. The values must be specified in the order of the auxiliary variables specified in the OPTIONS block.  If the package supports time series and the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
-reader = "urword"
-time_series = true
-optional = true
-longname = "auxiliary variables"
-type = "double"
-
-[blocks.packagedata.boundname]
-block = "packagedata"
-description = "name of the lake cell.  BOUNDNAME is an ASCII character variable that can contain as many as 40 characters.  If BOUNDNAME contains spaces in it, then the entire name must be enclosed within single quotes."
-reader = "urword"
-optional = true
-longname = "lake name"
-type = "string"
-
-[blocks.period.iper]
-shape = "(nper)"
-block = "period"
-description = "integer value specifying the starting stress period number for which the data specified in the PERIOD block apply.  IPER must be less than or equal to NPER in the TDIS Package and greater than zero.  The IPER value assigned to a stress period block must be greater than the IPER value assigned for the previous PERIOD block.  The information specified in the PERIOD block will continue to apply for all subsequent stress periods, unless the program encounters another PERIOD block."
-block_variable = true
-reader = "urword"
-optional = false
-longname = "stress period number"
-type = "integer"
-
-[blocks.period.lakeperioddata]
-shape = "(nper)"
-block = "period"
-reader = "urword"
-type = "list"
-
-[blocks.period.lakeperioddata.children.lakeperioddata]
-type = "record"
-block = "period"
-reader = "urword"
-
-[blocks.period.lakeperioddata.children.lakeperioddata.children.lakeno]
-block = "period"
-description = "integer value that defines the lake number associated with the specified PERIOD data on the line. LAKENO must be greater than zero and less than or equal to NLAKES."
-reader = "urword"
-longname = "lake number for this entry"
-numeric_index = true
-type = "integer"
-
-[blocks.period.lakeperioddata.children.lakeperioddata.children.laksetting]
-block = "period"
-description = "line of information that is parsed into a keyword and values.  Keyword values that can be used to start the LAKSETTING string include: STATUS, TEMPERATURE, RAINFALL, EVAPORATION, RUNOFF, and AUXILIARY.  These settings are used to assign the temperature associated with the corresponding flow terms.  Temperatures cannot be specified for all flow terms.  For example, the Lake Package supports a 'WITHDRAWAL' flow term.  If this withdrawal term is active, then water will be withdrawn from the lake at the calculated temperature of the lake."
-reader = "urword"
-type = "union"
-
-[blocks.period.lakeperioddata.children.lakeperioddata.children.laksetting.children.temperature]
-block = "period"
-description = "real or character value that defines the temperature for the lake. The specified TEMPERATURE is only applied if the lake is a constant temperature lake. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
-time_series = true
-reader = "urword"
-longname = "lake temperature"
-type = "string"
-
-[blocks.period.lakeperioddata.children.lakeperioddata.children.laksetting.children.status]
-block = "period"
-description = "keyword option to define lake status.  STATUS can be ACTIVE, INACTIVE, or CONSTANT. By default, STATUS is ACTIVE, which means that temperature will be calculated for the lake.  If a lake is inactive, then there will be no energy fluxes into or out of the lake and the inactive value will be written for the lake temperature.  If a lake is constant, then the temperature for the lake will be fixed at the user specified value."
-reader = "urword"
-longname = "lake temperature status"
-type = "string"
-
-[blocks.period.lakeperioddata.children.lakeperioddata.children.laksetting.children.rainfall]
-block = "period"
-description = "real or character value that defines the rainfall temperature for the lake. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
-reader = "urword"
-time_series = true
-longname = "rainfall temperature"
-type = "string"
-
-[blocks.period.lakeperioddata.children.lakeperioddata.children.laksetting.children.evaporation]
-block = "period"
-description = "use of the EVAPORATION keyword is allowed in the LKE package; however, the specified value is not currently used in LKE calculations.  Instead, the latent heat of evaporation is multiplied by the simulated evaporation rate for determining the thermal energy lost from a stream reach."
-reader = "urword"
-time_series = true
-longname = "evaporation temperature"
-type = "string"
-
-[blocks.period.lakeperioddata.children.lakeperioddata.children.laksetting.children.runoff]
-block = "period"
-description = "real or character value that defines the temperature of runoff for the lake. Users are free to use whatever temperature scale they want, which might include negative temperatures. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
-reader = "urword"
-time_series = true
-longname = "runoff temperature"
-type = "string"
-
-[blocks.period.lakeperioddata.children.lakeperioddata.children.laksetting.children.ext-inflow]
-block = "period"
-description = "real or character value that defines the temperature of external inflow for the lake.  Users are free to use whatever temperature scale they want, which might include negative temperatures.  If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
-reader = "urword"
-time_series = true
-longname = "ext-inflow temperature"
-type = "string"
-
-[blocks.period.lakeperioddata.children.lakeperioddata.children.laksetting.children.auxiliaryrecord]
-block = "period"
-reader = "urword"
-type = "record"
-
-[blocks.period.lakeperioddata.children.lakeperioddata.children.laksetting.children.auxiliaryrecord.children.auxiliary]
-block = "period"
-description = "keyword for specifying auxiliary variable."
-reader = "urword"
-type = "keyword"
-
-[blocks.period.lakeperioddata.children.lakeperioddata.children.laksetting.children.auxiliaryrecord.children.auxname]
-block = "period"
-description = "name for the auxiliary variable to be assigned AUXVAL.  AUXNAME must match one of the auxiliary variable names defined in the OPTIONS block. If AUXNAME does not match one of the auxiliary variable names defined in the OPTIONS block the data are ignored."
-reader = "urword"
-type = "string"
-
-[blocks.period.lakeperioddata.children.lakeperioddata.children.laksetting.children.auxiliaryrecord.children.auxval]
-block = "period"
-description = "value for the auxiliary variable. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
-reader = "urword"
-time_series = true
-longname = "auxiliary variable value"
-type = "double"
 
 [blocks.period.lakeno]
 shape = "(nper)"
@@ -608,108 +358,6 @@ reader = "urword"
 type = "string"
 
 [blocks.period.laksetting.children.auxiliaryrecord.children.auxval]
-block = "period"
-description = "value for the auxiliary variable. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
-reader = "urword"
-time_series = true
-longname = "auxiliary variable value"
-type = "double"
-
-[blocks.period.status]
-shape = "(nper)"
-block = "period"
-description = "keyword option to define lake status.  STATUS can be ACTIVE, INACTIVE, or CONSTANT. By default, STATUS is ACTIVE, which means that temperature will be calculated for the lake.  If a lake is inactive, then there will be no energy fluxes into or out of the lake and the inactive value will be written for the lake temperature.  If a lake is constant, then the temperature for the lake will be fixed at the user specified value."
-reader = "urword"
-longname = "lake temperature status"
-type = "string"
-
-[blocks.period.temperature]
-shape = "(nper)"
-block = "period"
-description = "real or character value that defines the temperature for the lake. The specified TEMPERATURE is only applied if the lake is a constant temperature lake. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
-time_series = true
-reader = "urword"
-longname = "lake temperature"
-type = "string"
-
-[blocks.period.rainfall]
-shape = "(nper)"
-block = "period"
-description = "real or character value that defines the rainfall temperature for the lake. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
-reader = "urword"
-time_series = true
-longname = "rainfall temperature"
-type = "string"
-
-[blocks.period.evaporation]
-shape = "(nper)"
-block = "period"
-description = "use of the EVAPORATION keyword is allowed in the LKE package; however, the specified value is not currently used in LKE calculations.  Instead, the latent heat of evaporation is multiplied by the simulated evaporation rate for determining the thermal energy lost from a stream reach."
-reader = "urword"
-time_series = true
-longname = "evaporation temperature"
-type = "string"
-
-[blocks.period.runoff]
-shape = "(nper)"
-block = "period"
-description = "real or character value that defines the temperature of runoff for the lake. Users are free to use whatever temperature scale they want, which might include negative temperatures. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
-reader = "urword"
-time_series = true
-longname = "runoff temperature"
-type = "string"
-
-[blocks.period.ext-inflow]
-shape = "(nper)"
-block = "period"
-description = "real or character value that defines the temperature of external inflow for the lake.  Users are free to use whatever temperature scale they want, which might include negative temperatures.  If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
-reader = "urword"
-time_series = true
-longname = "ext-inflow temperature"
-type = "string"
-
-[blocks.period.auxiliaryrecord]
-shape = "(nper)"
-block = "period"
-reader = "urword"
-type = "record"
-
-[blocks.period.auxiliaryrecord.children.auxiliary]
-block = "period"
-description = "keyword for specifying auxiliary variable."
-reader = "urword"
-type = "keyword"
-
-[blocks.period.auxiliaryrecord.children.auxname]
-block = "period"
-description = "name for the auxiliary variable to be assigned AUXVAL.  AUXNAME must match one of the auxiliary variable names defined in the OPTIONS block. If AUXNAME does not match one of the auxiliary variable names defined in the OPTIONS block the data are ignored."
-reader = "urword"
-type = "string"
-
-[blocks.period.auxiliaryrecord.children.auxval]
-block = "period"
-description = "value for the auxiliary variable. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
-reader = "urword"
-time_series = true
-longname = "auxiliary variable value"
-type = "double"
-
-[blocks.period.auxiliary]
-shape = "(nper)"
-block = "period"
-description = "keyword for specifying auxiliary variable."
-reader = "urword"
-type = "keyword"
-
-[blocks.period.auxname]
-shape = "(nper)"
-block = "period"
-description = "name for the auxiliary variable to be assigned AUXVAL.  AUXNAME must match one of the auxiliary variable names defined in the OPTIONS block. If AUXNAME does not match one of the auxiliary variable names defined in the OPTIONS block the data are ignored."
-reader = "urword"
-type = "string"
-
-[blocks.period.auxval]
-shape = "(nper)"
 block = "period"
 description = "value for the auxiliary variable. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
 reader = "urword"

@@ -63,30 +63,6 @@ optional = false
 longname = "file name of TVS information"
 type = "string"
 
-[blocks.options.tvs6]
-block = "options"
-description = "keyword to specify that record corresponds to a time-varying storage (TVS) file.  The behavior of TVS and a description of the input file is provided separately."
-reader = "urword"
-optional = false
-longname = "tvs keyword"
-type = "keyword"
-
-[blocks.options.filein]
-block = "options"
-description = "keyword to specify that an input filename is expected next."
-reader = "urword"
-optional = false
-longname = "file keyword"
-type = "keyword"
-
-[blocks.options.tvs6_filename]
-block = "options"
-description = "defines a time-varying storage (TVS) input file.  Records in the TVS file can be used to change specific storage and specific yield properties at specified times or stress periods."
-reader = "urword"
-optional = false
-longname = "file name of TVS information"
-type = "string"
-
 [blocks.options.export_array_ascii]
 block = "options"
 description = "keyword that specifies input grid arrays, which already support the layered keyword, should be written to layered ascii output files."
@@ -159,16 +135,6 @@ netcdf = true
 optional = false
 longname = "specific yield"
 type = "double"
-
-[blocks.period.iper]
-shape = "(nper)"
-block = "period"
-description = "integer value specifying the starting stress period number for which the data specified in the PERIOD block apply.  IPER must be less than or equal to NPER in the TDIS Package and greater than zero.  The IPER value assigned to a stress period block must be greater than the IPER value assigned for the previous PERIOD block.  The information specified in the PERIOD block will continue to apply for all subsequent stress periods, unless the program encounters another PERIOD block."
-block_variable = true
-reader = "urword"
-optional = false
-longname = "stress period number"
-type = "integer"
 
 [blocks.period.steady-state]
 shape = "(nper)"

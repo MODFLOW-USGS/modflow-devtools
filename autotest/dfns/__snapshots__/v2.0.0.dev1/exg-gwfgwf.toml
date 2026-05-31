@@ -79,21 +79,6 @@ optional = true
 longname = "keyword to activate DEWATERED option"
 type = "keyword"
 
-[blocks.options.variablecv]
-block = "options"
-description = "keyword to indicate that the vertical conductance will be calculated using the saturated thickness and properties of the overlying cell and the thickness and properties of the underlying cell.  If the DEWATERED keyword is also specified, then the vertical conductance is calculated using only the saturated thickness and properties of the overlying cell if the head in the underlying cell is below its top.  If these keywords are not specified, then the default condition is to calculate the vertical conductance at the start of the simulation using the initial head and the cell properties.  The vertical conductance remains constant for the entire simulation."
-reader = "urword"
-longname = "keyword to activate VARIABLECV option"
-type = "keyword"
-
-[blocks.options.dewatered]
-block = "options"
-description = "If the DEWATERED keyword is specified, then the vertical conductance is calculated using only the saturated thickness and properties of the overlying cell if the head in the underlying cell is below its top."
-reader = "urword"
-optional = true
-longname = "keyword to activate DEWATERED option"
-type = "keyword"
-
 [blocks.options.newton]
 block = "options"
 description = "keyword that activates the Newton-Raphson formulation for groundwater flow between connected, convertible groundwater cells. Cells will not dry when this option is used."
@@ -140,30 +125,6 @@ optional = false
 longname = "gnc6 input filename"
 type = "string"
 
-[blocks.options.filein]
-block = "options"
-description = "keyword to specify that an input filename is expected next."
-reader = "urword"
-optional = false
-longname = "file keyword"
-type = "keyword"
-
-[blocks.options.gnc6]
-block = "options"
-description = "keyword to specify that record corresponds to a ghost-node correction file."
-reader = "urword"
-optional = false
-longname = "gnc6 keyword"
-type = "keyword"
-
-[blocks.options.gnc6_filename]
-block = "options"
-description = "is the file name for ghost node correction input file.  Information for the ghost nodes are provided in the file provided with these keywords.  The format for specifying the ghost nodes is the same as described for the GNC Package of the GWF Model.  This includes specifying OPTIONS, DIMENSIONS, and GNCDATA blocks.  The order of the ghost nodes must follow the same order as the order of the cells in the EXCHANGEDATA block.  For the GNCDATA, noden and all of the nodej values are assumed to be located in model 1, and nodem is assumed to be in model 2."
-reader = "urword"
-optional = false
-longname = "gnc6 input filename"
-type = "string"
-
 [blocks.options.mvr_filerecord]
 block = "options"
 reader = "urword"
@@ -194,22 +155,6 @@ optional = false
 longname = "mvr6 input filename"
 type = "string"
 
-[blocks.options.mvr6]
-block = "options"
-description = "keyword to specify that record corresponds to a mover file."
-reader = "urword"
-optional = false
-longname = "obs keyword"
-type = "keyword"
-
-[blocks.options.mvr6_filename]
-block = "options"
-description = "is the file name of the water mover input file to apply to this exchange.  Information for the water mover are provided in the file provided with these keywords.  The format for specifying the water mover information is the same as described for the Water Mover (MVR) Package of the GWF Model, with two exceptions.  First, in the PACKAGES block, the model name must be included as a separate string before each package.  Second, the appropriate model name must be included before package name 1 and package name 2 in the BEGIN PERIOD block.  This allows providers and receivers to be located in both models listed as part of this exchange."
-reader = "urword"
-optional = false
-longname = "mvr6 input filename"
-type = "string"
-
 [blocks.options.obs_filerecord]
 block = "options"
 reader = "urword"
@@ -233,22 +178,6 @@ longname = "file keyword"
 type = "keyword"
 
 [blocks.options.obs_filerecord.children.obs6_filename]
-block = "options"
-description = "is the file name of the observations input file for this exchange. See the 'Observation utility' section for instructions for preparing observation input files. Table ref{table:gwf-obstypetable} lists observation type(s) supported by the GWF-GWF package."
-reader = "urword"
-optional = false
-longname = "obs6 input filename"
-type = "string"
-
-[blocks.options.obs6]
-block = "options"
-description = "keyword to specify that record corresponds to an observations file."
-reader = "urword"
-optional = false
-longname = "obs keyword"
-type = "keyword"
-
-[blocks.options.obs6_filename]
 block = "options"
 description = "is the file name of the observations input file for this exchange. See the 'Observation utility' section for instructions for preparing observation input files. Table ref{table:gwf-obstypetable} lists observation type(s) supported by the GWF-GWF package."
 reader = "urword"
@@ -350,74 +279,6 @@ mf6internal = "auxvar"
 type = "double"
 
 [blocks.exchangedata.exchangedata.children.exchangedata.children.boundname]
-block = "exchangedata"
-description = "name of the GWF Exchange cell.  BOUNDNAME is an ASCII character variable that can contain as many as 40 characters.  If BOUNDNAME contains spaces in it, then the entire name must be enclosed within single quotes."
-reader = "urword"
-optional = true
-longname = "exchange boundname"
-type = "string"
-
-[blocks.exchangedata.cellidm1]
-block = "exchangedata"
-description = "is the cellid of the cell in model 1 as specified in the simulation name file. For a structured grid that uses the DIS input file, CELLIDM1 is the layer, row, and column numbers of the cell.   For a grid that uses the DISV input file, CELLIDM1 is the layer number and CELL2D number for the two cells.  If the model uses the unstructured discretization (DISU) input file, then CELLIDM1 is the node number for the cell."
-reader = "urword"
-optional = false
-longname = "cellid of first cell"
-numeric_index = true
-type = "integer"
-
-[blocks.exchangedata.cellidm2]
-block = "exchangedata"
-description = "is the cellid of the cell in model 2 as specified in the simulation name file. For a structured grid that uses the DIS input file, CELLIDM2 is the layer, row, and column numbers of the cell.   For a grid that uses the DISV input file, CELLIDM2 is the layer number and CELL2D number for the two cells.  If the model uses the unstructured discretization (DISU) input file, then CELLIDM2 is the node number for the cell."
-reader = "urword"
-optional = false
-longname = "cellid of second cell"
-numeric_index = true
-type = "integer"
-
-[blocks.exchangedata.ihc]
-block = "exchangedata"
-description = "is an integer flag indicating the direction between node n and all of its m connections. If IHC = 0 then the connection is vertical.  If IHC = 1 then the connection is horizontal. If IHC = 2 then the connection is horizontal for a vertically staggered grid."
-reader = "urword"
-optional = false
-longname = "integer flag for connection type"
-type = "integer"
-
-[blocks.exchangedata.cl1]
-block = "exchangedata"
-description = "is the distance between the center of cell 1 and the its shared face with cell 2."
-reader = "urword"
-optional = false
-longname = "connection distance"
-type = "double"
-
-[blocks.exchangedata.cl2]
-block = "exchangedata"
-description = "is the distance between the center of cell 2 and the its shared face with cell 1."
-reader = "urword"
-optional = false
-longname = "connection distance"
-type = "double"
-
-[blocks.exchangedata.hwva]
-block = "exchangedata"
-description = "is the horizontal width of the flow connection between cell 1 and cell 2 if IHC $>$ 0, or it is the area perpendicular to flow of the vertical connection between cell 1 and cell 2 if IHC = 0."
-reader = "urword"
-optional = false
-longname = "horizontal cell width or area for vertical flow"
-type = "double"
-
-[blocks.exchangedata.aux]
-shape = "(naux)"
-block = "exchangedata"
-description = "represents the values of the auxiliary variables for each GWFGWF Exchange. The values of auxiliary variables must be present for each exchange. The values must be specified in the order of the auxiliary variables specified in the OPTIONS block."
-reader = "urword"
-optional = true
-longname = "auxiliary variables"
-mf6internal = "auxvar"
-type = "double"
-
-[blocks.exchangedata.boundname]
 block = "exchangedata"
 description = "name of the GWF Exchange cell.  BOUNDNAME is an ASCII character variable that can contain as many as 40 characters.  If BOUNDNAME contains spaces in it, then the entire name must be enclosed within single quotes."
 reader = "urword"

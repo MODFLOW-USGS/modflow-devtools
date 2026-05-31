@@ -33,27 +33,6 @@ blocks:
           optional: false
           longname: file keyword
           type: string
-    budget:
-      block: options
-      description: keyword to specify that record corresponds to the budget.
-      reader: urword
-      optional: false
-      longname: budget keyword
-      type: keyword
-    fileout:
-      block: options
-      description: keyword to specify that an output filename is expected next.
-      reader: urword
-      optional: false
-      longname: file keyword
-      type: keyword
-    budgetfile:
-      block: options
-      description: name of the output file to write budget information.
-      reader: urword
-      optional: false
-      longname: file keyword
-      type: string
     budgetcsv_filerecord:
       block: options
       reader: urword
@@ -83,21 +62,6 @@ blocks:
           optional: false
           longname: file keyword
           type: string
-    budgetcsv:
-      block: options
-      description: keyword to specify that record corresponds to the budget CSV.
-      reader: urword
-      optional: false
-      longname: budget keyword
-      type: keyword
-    budgetcsvfile:
-      block: options
-      description: name of the comma-separated value (CSV) output file to write budget summary information.  A
-        budget summary record will be written to this file for each time step of the simulation.
-      reader: urword
-      optional: false
-      longname: file keyword
-      type: string
     track_filerecord:
       block: options
       reader: urword
@@ -127,21 +91,6 @@ blocks:
           optional: false
           longname: file keyword
           type: string
-    track:
-      block: options
-      description: keyword to specify that record corresponds to a binary track file.  Each PRT Model's
-        OC Package may have only one binary track output file.
-      reader: urword
-      optional: false
-      longname: track keyword
-      type: keyword
-    trackfile:
-      block: options
-      description: name of the binary output file to write tracking information.
-      reader: urword
-      optional: false
-      longname: file keyword
-      type: string
     trackcsv_filerecord:
       block: options
       reader: urword
@@ -171,21 +120,6 @@ blocks:
           optional: false
           longname: file keyword
           type: string
-    trackcsv:
-      block: options
-      description: keyword to specify that record corresponds to a CSV track file.  Each PRT Model's OC
-        Package may have only one CSV track file.
-      reader: urword
-      optional: false
-      longname: track keyword
-      type: keyword
-    trackcsvfile:
-      block: options
-      description: name of the comma-separated value (CSV) file to write tracking information.
-      reader: urword
-      optional: false
-      longname: file keyword
-      type: string
     track_release:
       block: options
       description: keyword to indicate that particle tracking output is to be written when a particle
@@ -276,21 +210,6 @@ blocks:
           longname: tracking times
           removed: 6.6.0
           type: double
-    track_times:
-      block: options
-      description: keyword indicating tracking times will follow
-      reader: urword
-      removed: 6.6.0
-      type: keyword
-    times:
-      shape: (any1d)
-      block: options
-      description: times to track, relative to the beginning of the simulation.
-      reader: urword
-      repeating: true
-      longname: tracking times
-      removed: 6.6.0
-      type: double
     track_timesfilerecord:
       block: options
       reader: urword
@@ -313,20 +232,6 @@ blocks:
           longname: file keyword
           removed: 6.6.0
           type: string
-    track_timesfile:
-      block: options
-      description: keyword indicating tracking times file name will follow
-      reader: urword
-      removed: 6.6.0
-      type: keyword
-    timesfile:
-      block: options
-      description: name of the tracking times file
-      reader: urword
-      optional: false
-      longname: file keyword
-      removed: 6.6.0
-      type: string
     dev_dump_event_trace:
       block: options
       description: print a verbose particle tracking event trace to standard output
@@ -366,27 +271,7 @@ blocks:
               optional: false
               longname: release time
               type: double
-    time:
-      block: tracktimes
-      description: real value that defines the tracking time with respect to the simulation start time.
-      reader: urword
-      optional: false
-      longname: release time
-      type: double
   period:
-    iper:
-      shape: (nper)
-      block: period
-      description: integer value specifying the starting stress period number for which the data specified
-        in the PERIOD block apply.  IPER must be less than or equal to NPER in the TDIS Package and greater
-        than zero.  The IPER value assigned to a stress period block must be greater than the IPER value
-        assigned for the previous PERIOD block.  The information specified in the PERIOD block will continue
-        to apply for all subsequent stress periods, unless the program encounters another PERIOD block.
-      block_variable: true
-      reader: urword
-      optional: false
-      longname: stress period number
-      type: integer
     saverecord:
       shape: (nper)
       block: period
@@ -444,14 +329,6 @@ blocks:
                 with other keywords to print or save results for multiple time steps.
               reader: urword
               type: integer
-    save:
-      shape: (nper)
-      block: period
-      description: keyword to indicate that information will be saved this stress period.
-      reader: urword
-      optional: false
-      longname: keyword to save
-      type: keyword
     printrecord:
       shape: (nper)
       block: period
@@ -509,90 +386,3 @@ blocks:
                 with other keywords to print or save results for multiple time steps.
               reader: urword
               type: integer
-    print:
-      shape: (nper)
-      block: period
-      description: keyword to indicate that information will be printed this stress period.
-      reader: urword
-      optional: false
-      longname: keyword to save
-      type: keyword
-    rtype:
-      shape: (nper)
-      block: period
-      description: type of information to save or print.  Can only be BUDGET.
-      reader: urword
-      optional: false
-      longname: record type
-      type: string
-    ocsetting:
-      shape: (nper)
-      block: period
-      description: specifies the steps for which the data will be saved.
-      reader: urword
-      type: union
-      children:
-        all:
-          block: period
-          description: keyword to indicate save for all time steps in period.
-          reader: urword
-          type: keyword
-        first:
-          block: period
-          description: keyword to indicate save for first step in period. This keyword may be used in
-            conjunction with other keywords to print or save results for multiple time steps.
-          reader: urword
-          type: keyword
-        last:
-          block: period
-          description: keyword to indicate save for last step in period. This keyword may be used in conjunction
-            with other keywords to print or save results for multiple time steps.
-          reader: urword
-          type: keyword
-        frequency:
-          block: period
-          description: save at the specified time step frequency. This keyword may be used in conjunction
-            with other keywords to print or save results for multiple time steps.
-          reader: urword
-          type: integer
-        steps:
-          shape: (<nstp)
-          block: period
-          description: save for each step specified in STEPS. This keyword may be used in conjunction
-            with other keywords to print or save results for multiple time steps.
-          reader: urword
-          type: integer
-    all:
-      shape: (nper)
-      block: period
-      description: keyword to indicate save for all time steps in period.
-      reader: urword
-      type: keyword
-    first:
-      shape: (nper)
-      block: period
-      description: keyword to indicate save for first step in period. This keyword may be used in conjunction
-        with other keywords to print or save results for multiple time steps.
-      reader: urword
-      type: keyword
-    last:
-      shape: (nper)
-      block: period
-      description: keyword to indicate save for last step in period. This keyword may be used in conjunction
-        with other keywords to print or save results for multiple time steps.
-      reader: urword
-      type: keyword
-    frequency:
-      shape: (nper)
-      block: period
-      description: save at the specified time step frequency. This keyword may be used in conjunction
-        with other keywords to print or save results for multiple time steps.
-      reader: urword
-      type: integer
-    steps:
-      shape: (nper, <nstp)
-      block: period
-      description: save for each step specified in STEPS. This keyword may be used in conjunction with
-        other keywords to print or save results for multiple time steps.
-      reader: urword
-      type: integer

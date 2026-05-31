@@ -80,11 +80,43 @@ mf6internal = "flowred"
 
 [options.afrcsv_filerecord]
 block = "options"
-type = "record auto_flow_reduce_csv fileout afrcsvfile"
+type = "record"
 reader = "urword"
 optional = true
 tagged = true
 mf6internal = "afrcsv_rec"
+
+[options.afrcsv_filerecord.fields.auto_flow_reduce_csv]
+block = "options"
+type = "keyword"
+reader = "urword"
+optional = false
+longname = "budget keyword"
+description = "keyword to specify that record corresponds to the AUTO_FLOW_REDUCE output option in which a new record is written for each well and for each time step in which the user-requested extraction rate is reduced by the program."
+in_record = true
+tagged = true
+mf6internal = "afrcsv"
+
+[options.afrcsv_filerecord.fields.fileout]
+block = "options"
+type = "keyword"
+reader = "urword"
+optional = false
+longname = "file keyword"
+description = "keyword to specify that an output filename is expected next."
+in_record = true
+tagged = true
+
+[options.afrcsv_filerecord.fields.afrcsvfile]
+block = "options"
+type = "string"
+reader = "urword"
+optional = false
+longname = "file keyword"
+description = "name of the comma-separated value (CSV) output file to write information about well extraction rates that have been reduced by the program.  Entries are only written if the extraction rates are reduced."
+preserve_case = true
+in_record = true
+tagged = false
 
 [options.flow_reduction_length]
 block = "options"

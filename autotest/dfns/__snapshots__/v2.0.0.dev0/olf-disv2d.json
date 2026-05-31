@@ -22,10 +22,43 @@
     },
     "grb_filerecord": {
       "block": "options",
-      "type": "record grb6 fileout grb6_filename",
+      "type": "record",
       "reader": "urword",
       "optional": true,
-      "tagged": true
+      "tagged": true,
+      "fields": {
+        "grb6": {
+          "block": "options",
+          "type": "keyword",
+          "reader": "urword",
+          "optional": false,
+          "longname": "grb keyword",
+          "description": "keyword to specify that record corresponds to a binary grid file.",
+          "in_record": true,
+          "tagged": true
+        },
+        "fileout": {
+          "block": "options",
+          "type": "keyword",
+          "reader": "urword",
+          "optional": false,
+          "longname": "file keyword",
+          "description": "keyword to specify that an output filename is expected next.",
+          "in_record": true,
+          "tagged": true
+        },
+        "grb6_filename": {
+          "block": "options",
+          "type": "string",
+          "reader": "urword",
+          "optional": false,
+          "longname": "file name of GRB information",
+          "description": "defines a binary grid output file. If this option is not provided, the output file will have the same name as the discretization input file, plus extension '.grb'.",
+          "preserve_case": true,
+          "in_record": true,
+          "tagged": false
+        }
+      }
     },
     "xorigin": {
       "block": "options",

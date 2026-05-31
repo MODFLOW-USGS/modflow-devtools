@@ -78,11 +78,28 @@ valid = "harmonic logarithmic amt-lmk"
 
 [options.cvoptions]
 block = "options"
-type = "record variablecv dewatered"
+type = "record"
 reader = "urword"
 optional = true
 longname = "vertical conductance options"
 description = "none"
+
+[options.cvoptions.fields.variablecv]
+block = "options"
+type = "keyword"
+reader = "urword"
+longname = "keyword to activate VARIABLECV option"
+description = "keyword to indicate that the vertical conductance will be calculated using the saturated thickness and properties of the overlying cell and the thickness and properties of the underlying cell.  If the DEWATERED keyword is also specified, then the vertical conductance is calculated using only the saturated thickness and properties of the overlying cell if the head in the underlying cell is below its top.  If these keywords are not specified, then the default condition is to calculate the vertical conductance at the start of the simulation using the initial head and the cell properties.  The vertical conductance remains constant for the entire simulation."
+in_record = true
+
+[options.cvoptions.fields.dewatered]
+block = "options"
+type = "keyword"
+reader = "urword"
+optional = true
+longname = "keyword to activate DEWATERED option"
+description = "If the DEWATERED keyword is specified, then the vertical conductance is calculated using only the saturated thickness and properties of the overlying cell if the head in the underlying cell is below its top."
+in_record = true
 
 [options.newton]
 block = "options"

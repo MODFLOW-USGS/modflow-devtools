@@ -71,24 +71,123 @@
     },
     "head_filerecord": {
       "block": "options",
-      "type": "record head fileout headfile",
+      "type": "record",
       "reader": "urword",
       "optional": true,
-      "tagged": true
+      "tagged": true,
+      "fields": {
+        "head": {
+          "block": "options",
+          "type": "keyword",
+          "reader": "urword",
+          "optional": false,
+          "longname": "head keyword",
+          "description": "keyword to specify that record corresponds to head.",
+          "in_record": true,
+          "tagged": true
+        },
+        "headfile": {
+          "block": "options",
+          "type": "string",
+          "reader": "urword",
+          "optional": false,
+          "longname": "file keyword",
+          "description": "name of the binary output file to write head information.",
+          "preserve_case": true,
+          "in_record": true,
+          "tagged": false
+        },
+        "fileout": {
+          "block": "options",
+          "type": "keyword",
+          "reader": "urword",
+          "optional": false,
+          "longname": "file keyword",
+          "description": "keyword to specify that an output filename is expected next.",
+          "in_record": true,
+          "tagged": true
+        }
+      }
     },
     "budget_filerecord": {
       "block": "options",
-      "type": "record budget fileout budgetfile",
+      "type": "record",
       "reader": "urword",
       "optional": true,
-      "tagged": true
+      "tagged": true,
+      "fields": {
+        "budget": {
+          "block": "options",
+          "type": "keyword",
+          "reader": "urword",
+          "optional": false,
+          "longname": "budget keyword",
+          "description": "keyword to specify that record corresponds to the budget.",
+          "in_record": true,
+          "tagged": true
+        },
+        "fileout": {
+          "block": "options",
+          "type": "keyword",
+          "reader": "urword",
+          "optional": false,
+          "longname": "file keyword",
+          "description": "keyword to specify that an output filename is expected next.",
+          "in_record": true,
+          "tagged": true
+        },
+        "budgetfile": {
+          "block": "options",
+          "type": "string",
+          "reader": "urword",
+          "optional": false,
+          "longname": "file keyword",
+          "description": "name of the binary output file to write budget information.",
+          "preserve_case": true,
+          "in_record": true,
+          "tagged": false
+        }
+      }
     },
     "budgetcsv_filerecord": {
       "block": "options",
-      "type": "record budgetcsv fileout budgetcsvfile",
+      "type": "record",
       "reader": "urword",
       "optional": true,
-      "tagged": true
+      "tagged": true,
+      "fields": {
+        "fileout": {
+          "block": "options",
+          "type": "keyword",
+          "reader": "urword",
+          "optional": false,
+          "longname": "file keyword",
+          "description": "keyword to specify that an output filename is expected next.",
+          "in_record": true,
+          "tagged": true
+        },
+        "budgetcsv": {
+          "block": "options",
+          "type": "keyword",
+          "reader": "urword",
+          "optional": false,
+          "longname": "budget keyword",
+          "description": "keyword to specify that record corresponds to the budget CSV.",
+          "in_record": true,
+          "tagged": true
+        },
+        "budgetcsvfile": {
+          "block": "options",
+          "type": "string",
+          "reader": "urword",
+          "optional": false,
+          "longname": "file keyword",
+          "description": "name of the comma-separated value (CSV) output file to write budget summary information.  A budget summary record will be written to this file for each time step of the simulation.",
+          "preserve_case": true,
+          "in_record": true,
+          "tagged": false
+        }
+      }
     },
     "no_well_storage": {
       "block": "options",
@@ -132,10 +231,43 @@
     },
     "mfrcsv_filerecord": {
       "block": "options",
-      "type": "record maw_flow_reduce_csv fileout mfrcsvfile",
+      "type": "record",
       "reader": "urword",
       "optional": true,
-      "tagged": true
+      "tagged": true,
+      "fields": {
+        "fileout": {
+          "block": "options",
+          "type": "keyword",
+          "reader": "urword",
+          "optional": false,
+          "longname": "file keyword",
+          "description": "keyword to specify that an output filename is expected next.",
+          "in_record": true,
+          "tagged": true
+        },
+        "maw_flow_reduce_csv": {
+          "block": "options",
+          "type": "keyword",
+          "reader": "urword",
+          "optional": false,
+          "longname": "budget keyword",
+          "description": "keyword to specify that record corresponds to the output option in which a new record is written for each multi-aquifer well and for each time step in which the user-requested extraction or injection rate is reduced by the program.",
+          "in_record": true,
+          "tagged": true
+        },
+        "mfrcsvfile": {
+          "block": "options",
+          "type": "string",
+          "reader": "urword",
+          "optional": false,
+          "longname": "file keyword",
+          "description": "name of the comma-separated value (CSV) output file to write information about multi-aquifer well extraction or injection rates that have been reduced by the program. Entries are only written if the extraction or injection rates are reduced.",
+          "preserve_case": true,
+          "in_record": true,
+          "tagged": false
+        }
+      }
     },
     "timeseries": {
       "block": "options",
@@ -399,9 +531,46 @@
               },
               "flowing_wellrecord": {
                 "block": "period",
-                "type": "record flowing_well fwelev fwcond fwrlen",
+                "type": "record",
                 "reader": "urword",
-                "in_record": true
+                "in_record": true,
+                "fields": {
+                  "flowing_well": {
+                    "block": "period",
+                    "type": "keyword",
+                    "reader": "urword",
+                    "longname": "well is a flowing well",
+                    "description": "keyword to indicate the well is a flowing well.  The FLOWING_WELL option can be used to simulate flowing wells when the simulated well head exceeds the specified drainage elevation.",
+                    "in_record": true
+                  },
+                  "fwelev": {
+                    "block": "period",
+                    "type": "double precision",
+                    "reader": "urword",
+                    "longname": "flowing well elevation",
+                    "description": "elevation used to determine whether or not the well is flowing.",
+                    "tagged": false,
+                    "in_record": true
+                  },
+                  "fwcond": {
+                    "block": "period",
+                    "type": "double precision",
+                    "reader": "urword",
+                    "longname": "well flowing well conductance",
+                    "description": "conductance used to calculate the discharge of a free flowing well.  Flow occurs when the head in the well is above the well top elevation (FWELEV).",
+                    "tagged": false,
+                    "in_record": true
+                  },
+                  "fwrlen": {
+                    "block": "period",
+                    "type": "double precision",
+                    "reader": "urword",
+                    "longname": "flowing well reduction length",
+                    "description": "length used to reduce the conductance of the flowing well.  When the head in the well drops below the well top plus the reduction length, then the conductance is reduced.  This reduction length can be used to improve the stability of simulations with flowing wells so that there is not an abrupt change in flowing well rates.",
+                    "tagged": false,
+                    "in_record": true
+                  }
+                }
               },
               "rate": {
                 "block": "period",
@@ -434,21 +603,103 @@
               },
               "shutoffrecord": {
                 "block": "period",
-                "type": "record shut_off minrate maxrate",
+                "type": "record",
                 "reader": "urword",
-                "in_record": true
+                "in_record": true,
+                "fields": {
+                  "shut_off": {
+                    "block": "period",
+                    "type": "keyword",
+                    "reader": "urword",
+                    "longname": "shut off well",
+                    "description": "keyword for activating well shut off capability.  Subsequent values define the minimum and maximum pumping rate that a well must exceed to shutoff or reactivate a well, respectively, during a stress period. SHUT_OFF is only applied to injection wells (RATE$<0$) and if HEAD_LIMIT is specified (not set to `OFF').  If HEAD_LIMIT is specified, SHUT_OFF can be deactivated by specifying a minimum value equal to zero. The SHUT_OFF option is based on the SHUT_OFF functionality available in the MNW2~citep{konikow2009} package for MODFLOW-2005. The SHUT_OFF option has been included to facilitate backward compatibility with previous versions of MODFLOW but use of the RATE_SCALING option instead of the SHUT_OFF option is recommended. By default, SHUT_OFF is not used.",
+                    "in_record": true
+                  },
+                  "minrate": {
+                    "block": "period",
+                    "type": "double precision",
+                    "reader": "urword",
+                    "longname": "minimum shutoff rate",
+                    "description": "is the minimum rate that a well must exceed to shutoff a well during a stress period. The well will shut down during a time step if the flow rate to the well from the aquifer is less than MINRATE. If a well is shut down during a time step, reactivation of the well cannot occur until the next time step to reduce oscillations. MINRATE must be less than maxrate.",
+                    "tagged": false,
+                    "in_record": true
+                  },
+                  "maxrate": {
+                    "block": "period",
+                    "type": "double precision",
+                    "reader": "urword",
+                    "longname": "maximum shutoff rate",
+                    "description": "is the maximum rate that a well must exceed to reactivate a well during a stress period. The well will reactivate during a timestep if the well was shutdown during the previous time step and the flow rate to the well from the aquifer exceeds maxrate. Reactivation of the well cannot occur until the next time step if a well is shutdown to reduce oscillations. maxrate must be greater than MINRATE.",
+                    "tagged": false,
+                    "in_record": true
+                  }
+                }
               },
               "rate_scalingrecord": {
                 "block": "period",
-                "type": "record rate_scaling pump_elevation scaling_length",
+                "type": "record",
                 "reader": "urword",
-                "in_record": true
+                "in_record": true,
+                "fields": {
+                  "rate_scaling": {
+                    "block": "period",
+                    "type": "keyword",
+                    "reader": "urword",
+                    "longname": "rate scaling",
+                    "description": "activate rate scaling.  If RATE_SCALING is specified, both PUMP_ELEVATION and SCALING_LENGTH must be specified. RATE_SCALING cannot be used with HEAD_LIMIT.  RATE_SCALING can be used for extraction or injection wells.  For extraction wells, the extraction rate will start to decrease once the head in the well lowers to a level equal to the pump elevation plus the scaling length.  If the head in the well drops below the pump elevation, then the extraction rate is calculated to be zero.  For an injection well, the injection rate will begin to decrease once the head in the well rises above the specified pump elevation.  If the head in the well rises above the pump elevation plus the scaling length, then the injection rate will be set to zero.",
+                    "in_record": true
+                  },
+                  "pump_elevation": {
+                    "block": "period",
+                    "type": "double precision",
+                    "reader": "urword",
+                    "longname": "pump elevation",
+                    "description": "is the elevation of the multi-aquifer well pump (PUMP_ELEVATION).  PUMP_ELEVATION should not be less than the bottom elevation (BOTTOM) of the multi-aquifer well.",
+                    "tagged": false,
+                    "in_record": true
+                  },
+                  "scaling_length": {
+                    "block": "period",
+                    "type": "double precision",
+                    "reader": "urword",
+                    "description": "height above the pump elevation (SCALING_LENGTH).  If the simulated well head is below this elevation (pump elevation plus the scaling length), then the pumping rate is reduced.",
+                    "tagged": false,
+                    "in_record": true
+                  }
+                }
               },
               "auxiliaryrecord": {
                 "block": "period",
-                "type": "record auxiliary auxname auxval",
+                "type": "record",
                 "reader": "urword",
-                "in_record": true
+                "in_record": true,
+                "fields": {
+                  "auxiliary": {
+                    "block": "period",
+                    "type": "keyword",
+                    "reader": "urword",
+                    "description": "keyword for specifying auxiliary variable.",
+                    "in_record": true
+                  },
+                  "auxname": {
+                    "block": "period",
+                    "type": "string",
+                    "reader": "urword",
+                    "description": "name for the auxiliary variable to be assigned AUXVAL.  AUXNAME must match one of the auxiliary variable names defined in the OPTIONS block. If AUXNAME does not match one of the auxiliary variable names defined in the OPTIONS block the data are ignored.",
+                    "tagged": false,
+                    "in_record": true
+                  },
+                  "auxval": {
+                    "block": "period",
+                    "type": "double precision",
+                    "reader": "urword",
+                    "longname": "auxiliary variable value",
+                    "description": "value for the auxiliary variable. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value.",
+                    "tagged": false,
+                    "in_record": true,
+                    "time_series": true
+                  }
+                }
               }
             }
           }

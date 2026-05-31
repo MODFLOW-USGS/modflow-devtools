@@ -87,32 +87,6 @@ longname = "file name of time series information"
 extended = true
 type = "string"
 
-[blocks.options.hpc6]
-block = "options"
-description = "keyword to specify that record corresponds to a hpc file."
-reader = "urword"
-optional = false
-longname = "head keyword"
-extended = true
-type = "keyword"
-
-[blocks.options.filein]
-block = "options"
-description = "keyword to specify that an input filename is expected next."
-reader = "urword"
-optional = false
-longname = "file keyword"
-type = "keyword"
-
-[blocks.options.hpc6_filename]
-block = "options"
-description = "name of input file to define HPC file settings for the HPC package. See the 'HPC File' section for instructions for preparing HPC input files."
-reader = "urword"
-optional = false
-longname = "file name of time series information"
-extended = true
-type = "string"
-
 [blocks.timing.tdis6]
 block = "timing"
 description = "is the name of the Temporal Discretization (TDIS) Input File."
@@ -149,27 +123,6 @@ longname = "file name for model name file"
 type = "string"
 
 [blocks.models.models.children.models.children.mname]
-block = "models"
-description = "is the user-assigned name of the model.  The model name cannot exceed 16 characters and must not have blanks within the name.  The model name is case insensitive; any lowercase letters are converted and stored as upper case letters."
-reader = "urword"
-longname = "name of model"
-type = "string"
-
-[blocks.models.mtype]
-block = "models"
-description = "is the type of model to add to simulation."
-reader = "urword"
-longname = "model type"
-type = "string"
-
-[blocks.models.mfname]
-block = "models"
-description = "is the file name of the model name file."
-reader = "urword"
-longname = "file name for model name file"
-type = "string"
-
-[blocks.models.mname]
 block = "models"
 description = "is the user-assigned name of the model.  The model name cannot exceed 16 characters and must not have blanks within the name.  The model name is case insensitive; any lowercase letters are converted and stored as upper case letters."
 reader = "urword"
@@ -218,41 +171,6 @@ reader = "urword"
 longname = "name of model B"
 type = "string"
 
-[blocks.exchanges.exgtype]
-block = "exchanges"
-description = "is the exchange type."
-reader = "urword"
-longname = "exchange type"
-type = "string"
-
-[blocks.exchanges.exgfile]
-block = "exchanges"
-description = "is the input file for the exchange."
-reader = "urword"
-longname = "input file for exchange"
-type = "string"
-
-[blocks.exchanges.exgmnamea]
-block = "exchanges"
-description = "is the name of the first model that is part of this exchange."
-reader = "urword"
-longname = "name of model A"
-type = "string"
-
-[blocks.exchanges.exgmnameb]
-block = "exchanges"
-description = "is the name of the second model that is part of this exchange."
-reader = "urword"
-longname = "name of model B"
-type = "string"
-
-[blocks.solutiongroup.group_num]
-block = "solutiongroup"
-description = "is the group number of the solution group.  Solution groups must be numbered sequentially, starting with group number one."
-block_variable = true
-reader = "urword"
-type = "integer"
-
 [blocks.solutiongroup.mxiter]
 block = "solutiongroup"
 description = "is the maximum number of outer iterations for this solution group.  The default value is 1.  If there is only one solution in the solution group, then MXITER must be 1."
@@ -291,29 +209,6 @@ longname = "file name for solution input"
 type = "string"
 
 [blocks.solutiongroup.solutiongroup.children.solutiongroup.children.slnmnames]
-shape = "(any1d)"
-block = "solutiongroup"
-description = "is the array of model names to add to this solution.  The number of model names is determined by the number of model names the user provides on this line."
-reader = "urword"
-longname = "array of model names in this solution"
-type = "string"
-
-[blocks.solutiongroup.slntype]
-block = "solutiongroup"
-description = "is the type of solution.  The Integrated Model Solution (IMS6) and Explicit Model Solution (EMS6) are the only supported options in this version."
-valid = "ims6 ems6"
-reader = "urword"
-longname = "type of solution"
-type = "string"
-
-[blocks.solutiongroup.slnfname]
-block = "solutiongroup"
-description = "name of file containing solution input."
-reader = "urword"
-longname = "file name for solution input"
-type = "string"
-
-[blocks.solutiongroup.slnmnames]
 shape = "(any1d)"
 block = "solutiongroup"
 description = "is the array of model names to add to this solution.  The number of model names is determined by the number of model names the user provides on this line."

@@ -40,11 +40,42 @@ valid = "linear freundlich langmuir"
 
 [options.sorbate_filerecord]
 block = "options"
-type = "record sorbate fileout sorbatefile"
+type = "record"
 reader = "urword"
 optional = true
 tagged = true
 mf6internal = "sorbate_rec"
+
+[options.sorbate_filerecord.fields.sorbate]
+block = "options"
+type = "keyword"
+reader = "urword"
+optional = false
+longname = "sorbate keyword"
+description = "keyword to specify that record corresponds to sorbate concentration."
+in_record = true
+tagged = true
+
+[options.sorbate_filerecord.fields.fileout]
+block = "options"
+type = "keyword"
+reader = "urword"
+optional = false
+longname = "file keyword"
+description = "keyword to specify that an output filename is expected next."
+in_record = true
+tagged = true
+
+[options.sorbate_filerecord.fields.sorbatefile]
+block = "options"
+type = "string"
+reader = "urword"
+optional = false
+longname = "file keyword"
+description = "name of the output file to write sorbate concentration information.  Sorbate concentrations will be written whenever aqueous concentrations are saved, as determined by settings in the Output Control option."
+preserve_case = true
+in_record = true
+tagged = false
 
 [options.export_array_ascii]
 block = "options"

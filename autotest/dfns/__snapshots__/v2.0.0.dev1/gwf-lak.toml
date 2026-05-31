@@ -82,22 +82,6 @@ optional = false
 longname = "file keyword"
 type = "string"
 
-[blocks.options.stage]
-block = "options"
-description = "keyword to specify that record corresponds to stage."
-reader = "urword"
-optional = false
-longname = "stage keyword"
-type = "keyword"
-
-[blocks.options.stagefile]
-block = "options"
-description = "name of the binary output file to write stage information."
-reader = "urword"
-optional = false
-longname = "file keyword"
-type = "string"
-
 [blocks.options.budget_filerecord]
 block = "options"
 reader = "urword"
@@ -121,30 +105,6 @@ longname = "file keyword"
 type = "keyword"
 
 [blocks.options.budget_filerecord.children.budgetfile]
-block = "options"
-description = "name of the binary output file to write budget information."
-reader = "urword"
-optional = false
-longname = "file keyword"
-type = "string"
-
-[blocks.options.budget]
-block = "options"
-description = "keyword to specify that record corresponds to the budget."
-reader = "urword"
-optional = false
-longname = "budget keyword"
-type = "keyword"
-
-[blocks.options.fileout]
-block = "options"
-description = "keyword to specify that an output filename is expected next."
-reader = "urword"
-optional = false
-longname = "file keyword"
-type = "keyword"
-
-[blocks.options.budgetfile]
 block = "options"
 description = "name of the binary output file to write budget information."
 reader = "urword"
@@ -182,22 +142,6 @@ optional = false
 longname = "file keyword"
 type = "string"
 
-[blocks.options.budgetcsv]
-block = "options"
-description = "keyword to specify that record corresponds to the budget CSV."
-reader = "urword"
-optional = false
-longname = "budget keyword"
-type = "keyword"
-
-[blocks.options.budgetcsvfile]
-block = "options"
-description = "name of the comma-separated value (CSV) output file to write budget summary information.  A budget summary record will be written to this file for each time step of the simulation."
-reader = "urword"
-optional = false
-longname = "file keyword"
-type = "string"
-
 [blocks.options.package_convergence_filerecord]
 block = "options"
 reader = "urword"
@@ -221,22 +165,6 @@ longname = "file keyword"
 type = "keyword"
 
 [blocks.options.package_convergence_filerecord.children.package_convergence_filename]
-block = "options"
-description = "name of the comma spaced values output file to write package convergence information."
-reader = "urword"
-optional = false
-longname = "file keyword"
-type = "string"
-
-[blocks.options.package_convergence]
-block = "options"
-description = "keyword to specify that record corresponds to the package convergence comma spaced values file."
-reader = "urword"
-optional = false
-longname = "package_convergence keyword"
-type = "keyword"
-
-[blocks.options.package_convergence_filename]
 block = "options"
 description = "name of the comma spaced values output file to write package convergence information."
 reader = "urword"
@@ -274,30 +202,6 @@ optional = false
 longname = "file name of time series information"
 type = "string"
 
-[blocks.options.ts6]
-block = "options"
-description = "keyword to specify that record corresponds to a time-series file."
-reader = "urword"
-optional = false
-longname = "head keyword"
-type = "keyword"
-
-[blocks.options.filein]
-block = "options"
-description = "keyword to specify that an input filename is expected next."
-reader = "urword"
-optional = false
-longname = "file keyword"
-type = "keyword"
-
-[blocks.options.ts6_filename]
-block = "options"
-description = "defines a time-series file defining time series that can be used to assign time-varying values. See the 'Time-Variable Input' section for instructions on using the time-series capability."
-reader = "urword"
-optional = false
-longname = "file name of time series information"
-type = "string"
-
 [blocks.options.obs_filerecord]
 block = "options"
 reader = "urword"
@@ -321,22 +225,6 @@ longname = "file keyword"
 type = "keyword"
 
 [blocks.options.obs_filerecord.children.obs6_filename]
-block = "options"
-description = "name of input file to define observations for the LAK package. See the 'Observation utility' section for instructions for preparing observation input files. Table {#2} lists observation type(s) supported by the LAK package."
-reader = "urword"
-optional = false
-longname = "obs6 input filename"
-type = "string"
-
-[blocks.options.obs6]
-block = "options"
-description = "keyword to specify that record corresponds to an observations file."
-reader = "urword"
-optional = false
-longname = "obs keyword"
-type = "keyword"
-
-[blocks.options.obs6_filename]
 block = "options"
 description = "name of input file to define observations for the LAK package. See the 'Observation utility' section for instructions for preparing observation input files. Table {#2} lists observation type(s) supported by the LAK package."
 reader = "urword"
@@ -467,46 +355,6 @@ optional = true
 longname = "well name"
 type = "string"
 
-[blocks.packagedata.ifno]
-block = "packagedata"
-description = "integer value that defines the feature (lake) number associated with the specified PACKAGEDATA data on the line. IFNO must be greater than zero and less than or equal to NLAKES. Lake information must be specified for every lake or the program will terminate with an error.  The program will also terminate with an error if information for a lake is specified more than once."
-reader = "urword"
-longname = "lake number for this entry"
-numeric_index = true
-type = "integer"
-
-[blocks.packagedata.strt]
-block = "packagedata"
-description = "real value that defines the starting stage for the lake."
-reader = "urword"
-longname = "starting lake stage"
-type = "double"
-
-[blocks.packagedata.nlakeconn]
-block = "packagedata"
-description = "integer value that defines the number of GWF cells connected to this (IFNO) lake. There can only be one vertical lake connection to each GWF cell. NLAKECONN must be greater than zero."
-reader = "urword"
-longname = "number of lake connections"
-type = "integer"
-
-[blocks.packagedata.aux]
-shape = "(naux)"
-block = "packagedata"
-description = "represents the values of the auxiliary variables for each lake. The values of auxiliary variables must be present for each lake. The values must be specified in the order of the auxiliary variables specified in the OPTIONS block.  If the package supports time series and the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
-reader = "urword"
-time_series = true
-optional = true
-longname = "auxiliary variables"
-type = "double"
-
-[blocks.packagedata.boundname]
-block = "packagedata"
-description = "name of the lake cell.  BOUNDNAME is an ASCII character variable that can contain as many as 40 characters.  If BOUNDNAME contains spaces in it, then the entire name must be enclosed within single quotes."
-reader = "urword"
-optional = true
-longname = "well name"
-type = "string"
-
 [blocks.connectiondata.connectiondata]
 shape = "(sum(nlakeconn))"
 block = "connectiondata"
@@ -585,72 +433,6 @@ reader = "urword"
 longname = "connection width"
 type = "double"
 
-[blocks.connectiondata.ifno]
-block = "connectiondata"
-description = "integer value that defines the feature (lake) number associated with the specified CONNECTIONDATA data on the line. IFNO must be greater than zero and less than or equal to NLAKES. Lake connection information must be specified for every lake connection to the GWF model (NLAKECONN) or the program will terminate with an error.  The program will also terminate with an error if connection information for a lake connection to the GWF model is specified more than once."
-reader = "urword"
-longname = "lake number for this entry"
-numeric_index = true
-type = "integer"
-
-[blocks.connectiondata.iconn]
-block = "connectiondata"
-description = "integer value that defines the GWF connection number for this lake connection entry. ICONN must be greater than zero and less than or equal to NLAKECONN for lake IFNO."
-reader = "urword"
-longname = "connection number for this entry"
-numeric_index = true
-type = "integer"
-
-[blocks.connectiondata.cellid]
-shape = "(ncelldim)"
-block = "connectiondata"
-description = "is the cell identifier, and depends on the type of grid that is used for the simulation.  For a structured grid that uses the DIS input file, CELLID is the layer, row, and column.   For a grid that uses the DISV input file, CELLID is the layer and CELL2D number.  If the model uses the unstructured discretization (DISU) input file, CELLID is the node number for the cell."
-reader = "urword"
-longname = "cell identifier"
-type = "integer"
-
-[blocks.connectiondata.claktype]
-block = "connectiondata"
-description = "character string that defines the lake-GWF connection type for the lake connection. Possible lake-GWF connection type strings include:  VERTICAL--character keyword to indicate the lake-GWF connection is vertical  and connection conductance calculations use the hydraulic conductivity corresponding to the $K_{33}$ tensor component defined for CELLID in the NPF package. HORIZONTAL--character keyword to indicate the lake-GWF connection is horizontal and connection conductance calculations use the hydraulic conductivity corresponding to the $K_{11}$ tensor component defined for CELLID in the NPF package. EMBEDDEDH--character keyword to indicate the lake-GWF connection is embedded in a single cell and connection conductance calculations use the hydraulic conductivity corresponding to the $K_{11}$ tensor component defined for CELLID in the NPF package. EMBEDDEDV--character keyword to indicate the lake-GWF connection is embedded in a single cell and connection conductance calculations use the hydraulic conductivity corresponding to the $K_{33}$ tensor component defined for CELLID in the NPF package. Embedded lakes can only be connected to a single cell (NLAKECONN = 1) and there must be a lake table associated with each embedded lake."
-reader = "urword"
-longname = "lake connection type"
-type = "string"
-
-[blocks.connectiondata.bedleak]
-block = "connectiondata"
-description = "real value or character string that defines the bed leakance for the lake-GWF connection. BEDLEAK must be greater than or equal to zero, equal to the DNODATA value (3.0E+30), or specified to be NONE. If DNODATA or NONE is specified for BEDLEAK, the lake-GWF connection conductance is solely a function of aquifer properties in the connected GWF cell and lakebed sediments are assumed to be absent. Warning messages will be issued if NONE is specified. Eventually the ability to specify NONE will be deprecated and cause MODFLOW 6 to terminate with an error."
-reader = "urword"
-longname = "bed leakance"
-type = "string"
-
-[blocks.connectiondata.belev]
-block = "connectiondata"
-description = "real value that defines the bottom elevation for a HORIZONTAL lake-GWF connection. Any value can be specified if CLAKTYPE is VERTICAL, EMBEDDEDH, or EMBEDDEDV. If CLAKTYPE is HORIZONTAL and BELEV is not equal to TELEV, BELEV must be greater than or equal to the bottom of the GWF cell CELLID. If BELEV is equal to TELEV, BELEV is reset to the bottom of the GWF cell CELLID."
-reader = "urword"
-longname = "bottom elevation"
-type = "double"
-
-[blocks.connectiondata.telev]
-block = "connectiondata"
-description = "real value that defines the top elevation for a HORIZONTAL lake-GWF connection. Any value can be specified if CLAKTYPE is VERTICAL, EMBEDDEDH, or EMBEDDEDV. If CLAKTYPE is HORIZONTAL and TELEV is not equal to BELEV, TELEV must be less than or equal to the top of the GWF cell CELLID. If TELEV is equal to BELEV, TELEV is reset to the top of the GWF cell CELLID."
-reader = "urword"
-longname = "top elevation"
-type = "double"
-
-[blocks.connectiondata.connlen]
-block = "connectiondata"
-description = "real value that defines the distance between the connected GWF CELLID node and the lake for a HORIZONTAL, EMBEDDEDH, or EMBEDDEDV lake-GWF connection. CONLENN must be greater than zero for a HORIZONTAL, EMBEDDEDH, or EMBEDDEDV lake-GWF connection. Any value can be specified if CLAKTYPE is VERTICAL."
-reader = "urword"
-longname = "connection length"
-type = "double"
-
-[blocks.connectiondata.connwidth]
-block = "connectiondata"
-description = "real value that defines the connection face width for a HORIZONTAL lake-GWF connection. CONNWIDTH must be greater than zero for a HORIZONTAL lake-GWF connection. Any value can be specified if CLAKTYPE is VERTICAL, EMBEDDEDH, or EMBEDDEDV."
-reader = "urword"
-longname = "connection width"
-type = "double"
-
 [blocks.tables.tables]
 shape = "(ntables)"
 block = "tables"
@@ -688,38 +470,6 @@ longname = "file keyword"
 type = "keyword"
 
 [blocks.tables.tables.children.tables.children.tab6_filename]
-block = "tables"
-description = "character string that defines the path and filename for the file containing lake table data for the lake connection. The TAB6_FILENAME file includes the number of entries in the file and the relation between stage, volume, and surface area for each entry in the file. Lake table files for EMBEDDEDH and EMBEDDEDV lake-GWF connections also include lake-GWF exchange area data for each entry in the file. Instructions for creating the TAB6_FILENAME input file are provided in Lake Table Input File section."
-reader = "urword"
-optional = false
-longname = "table file name"
-type = "string"
-
-[blocks.tables.ifno]
-block = "tables"
-description = "integer value that defines the feature (lake) number associated with the specified TABLES data on the line. IFNO must be greater than zero and less than or equal to NLAKES. The program will terminate with an error if table information for a lake is specified more than once or the number of specified tables is less than NTABLES."
-reader = "urword"
-longname = "lake number for this entry"
-numeric_index = true
-type = "integer"
-
-[blocks.tables.tab6]
-block = "tables"
-description = "keyword to specify that record corresponds to a table file."
-reader = "urword"
-optional = false
-longname = "head keyword"
-type = "keyword"
-
-[blocks.tables.filein]
-block = "tables"
-description = "keyword to specify that an input filename is expected next."
-reader = "urword"
-optional = false
-longname = "file keyword"
-type = "keyword"
-
-[blocks.tables.tab6_filename]
 block = "tables"
 description = "character string that defines the path and filename for the file containing lake table data for the lake connection. The TAB6_FILENAME file includes the number of entries in the file and the relation between stage, volume, and surface area for each entry in the file. Lake table files for EMBEDDEDH and EMBEDDEDV lake-GWF connections also include lake-GWF exchange area data for each entry in the file. Instructions for creating the TAB6_FILENAME input file are provided in Lake Table Input File section."
 reader = "urword"
@@ -800,224 +550,6 @@ description = "real value that defines the bed slope for the lake outlet. Any va
 reader = "urword"
 time_series = true
 longname = "bed slope"
-type = "double"
-
-[blocks.outlets.outletno]
-block = "outlets"
-description = "integer value that defines the outlet number associated with the specified OUTLETS data on the line. OUTLETNO must be greater than zero and less than or equal to NOUTLETS. Outlet information must be specified for every outlet or the program will terminate with an error. The program will also terminate with an error if information for a outlet is specified more than once."
-reader = "urword"
-longname = "outlet number for this entry"
-numeric_index = true
-type = "integer"
-
-[blocks.outlets.lakein]
-block = "outlets"
-description = "integer value that defines the lake number that outlet is connected to. LAKEIN must be greater than zero and less than or equal to NLAKES."
-reader = "urword"
-longname = "lake number for upstream lake"
-numeric_index = true
-type = "integer"
-
-[blocks.outlets.lakeout]
-block = "outlets"
-description = "integer value that defines the lake number that outlet discharge from lake outlet OUTLETNO is routed to. LAKEOUT must be greater than or equal to zero and less than or equal to NLAKES. If LAKEOUT is zero, outlet discharge from lake outlet OUTLETNO is discharged to an external boundary."
-reader = "urword"
-longname = "lake number for downstream lake"
-numeric_index = true
-type = "integer"
-
-[blocks.outlets.couttype]
-block = "outlets"
-description = "character string that defines the outlet type for the outlet OUTLETNO. Possible COUTTYPE strings include: SPECIFIED--character keyword to indicate the outlet is defined as a specified flow.  MANNING--character keyword to indicate the outlet is defined using Manning's equation. WEIR--character keyword to indicate the outlet is defined using a sharp weir equation."
-reader = "urword"
-longname = "outlet type"
-type = "string"
-
-[blocks.outlets.invert]
-block = "outlets"
-description = "real value that defines the invert elevation for the lake outlet. Any value can be specified if COUTTYPE is SPECIFIED. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
-reader = "urword"
-time_series = true
-longname = "invert elevation"
-type = "double"
-
-[blocks.outlets.width]
-block = "outlets"
-description = "real value that defines the width of the lake outlet. Any value can be specified if COUTTYPE is SPECIFIED. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
-reader = "urword"
-time_series = true
-longname = "outlet width"
-type = "double"
-
-[blocks.outlets.rough]
-block = "outlets"
-description = "real value that defines the roughness coefficient for the lake outlet. Any value can be specified if COUTTYPE is not MANNING. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
-reader = "urword"
-time_series = true
-longname = "roughness coefficient"
-type = "double"
-
-[blocks.outlets.slope]
-block = "outlets"
-description = "real value that defines the bed slope for the lake outlet. Any value can be specified if COUTTYPE is not MANNING. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
-reader = "urword"
-time_series = true
-longname = "bed slope"
-type = "double"
-
-[blocks.period.iper]
-shape = "(nper)"
-block = "period"
-description = "integer value specifying the starting stress period number for which the data specified in the PERIOD block apply.  IPER must be less than or equal to NPER in the TDIS Package and greater than zero.  The IPER value assigned to a stress period block must be greater than the IPER value assigned for the previous PERIOD block.  The information specified in the PERIOD block will continue to apply for all subsequent stress periods, unless the program encounters another PERIOD block."
-block_variable = true
-reader = "urword"
-optional = false
-longname = "stress period number"
-type = "integer"
-
-[blocks.period.perioddata]
-shape = "(nper)"
-block = "period"
-reader = "urword"
-type = "list"
-
-[blocks.period.perioddata.children.perioddata]
-type = "record"
-block = "period"
-reader = "urword"
-
-[blocks.period.perioddata.children.perioddata.children.number]
-block = "period"
-description = "integer value that defines the lake or outlet number associated with the specified PERIOD data on the line.  NUMBER must be greater than zero and less than or equal to NLAKES for a lake number and less than or equal to NOUTLETS for an outlet number."
-reader = "urword"
-longname = "lake or outlet number for this entry"
-numeric_index = true
-type = "integer"
-
-[blocks.period.perioddata.children.perioddata.children.laksetting]
-block = "period"
-description = "line of information that is parsed into a keyword and values.  Keyword values that can be used to start the LAKSETTING string include both keywords for lake settings and keywords for outlet settings.  Keywords for lake settings include: STATUS, STAGE, RAINFALL, EVAPORATION, RUNOFF, INFLOW, WITHDRAWAL, and AUXILIARY.  Keywords for outlet settings include RATE, INVERT, WIDTH, SLOPE, and ROUGH."
-reader = "urword"
-type = "union"
-
-[blocks.period.perioddata.children.perioddata.children.laksetting.children.stage]
-block = "period"
-description = "real or character value that defines the stage for the lake. The specified STAGE is only applied if the lake is a constant stage lake. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
-time_series = true
-reader = "urword"
-longname = "lake stage"
-type = "string"
-
-[blocks.period.perioddata.children.perioddata.children.laksetting.children.invert]
-block = "period"
-description = "real or character value that defines the invert elevation for the lake outlet. A specified INVERT value is only used for active lakes if COUTTYPE for lake outlet OUTLETNO is not SPECIFIED. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
-reader = "urword"
-time_series = true
-longname = "invert elevation"
-type = "string"
-
-[blocks.period.perioddata.children.perioddata.children.laksetting.children.width]
-block = "period"
-description = "real or character value that defines the width of the lake outlet. A specified WIDTH value is only used for active lakes if COUTTYPE for lake outlet OUTLETNO is not SPECIFIED. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
-reader = "urword"
-time_series = true
-longname = "outlet width"
-type = "string"
-
-[blocks.period.perioddata.children.perioddata.children.laksetting.children.rough]
-block = "period"
-description = "real value that defines the roughness coefficient for the lake outlet. Any value can be specified if COUTTYPE is not MANNING. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
-reader = "urword"
-time_series = true
-longname = "roughness coefficient"
-type = "string"
-
-[blocks.period.perioddata.children.perioddata.children.laksetting.children.slope]
-block = "period"
-description = "real or character value that defines the bed slope for the lake outlet. A specified SLOPE value is only used for active lakes if COUTTYPE for lake outlet OUTLETNO is MANNING. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
-reader = "urword"
-time_series = true
-longname = "bed slope"
-type = "string"
-
-[blocks.period.perioddata.children.perioddata.children.laksetting.children.status]
-block = "period"
-description = "keyword option to define lake status.  STATUS can be ACTIVE, INACTIVE, or CONSTANT. By default, STATUS is ACTIVE."
-reader = "urword"
-longname = "lake status"
-type = "string"
-
-[blocks.period.perioddata.children.perioddata.children.laksetting.children.rainfall]
-block = "period"
-description = "real or character value that defines the rainfall rate $(LT^{-1})$ for the lake. Value must be greater than or equal to zero. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
-reader = "urword"
-time_series = true
-longname = "rainfall rate"
-type = "string"
-
-[blocks.period.perioddata.children.perioddata.children.laksetting.children.evaporation]
-block = "period"
-description = "real or character value that defines the maximum evaporation rate $(LT^{-1})$ for the lake. Value must be greater than or equal to zero. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
-reader = "urword"
-time_series = true
-longname = "evaporation rate"
-type = "string"
-
-[blocks.period.perioddata.children.perioddata.children.laksetting.children.runoff]
-block = "period"
-description = "real or character value that defines the runoff rate $(L^3 T^{-1})$ for the lake. Value must be greater than or equal to zero. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
-reader = "urword"
-time_series = true
-longname = "runoff rate"
-type = "string"
-
-[blocks.period.perioddata.children.perioddata.children.laksetting.children.inflow]
-block = "period"
-description = "real or character value that defines the volumetric inflow rate $(L^3 T^{-1})$ for the lake. Value must be greater than or equal to zero. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value. By default, inflow rates are zero for each lake."
-reader = "urword"
-time_series = true
-longname = "inflow rate"
-type = "string"
-
-[blocks.period.perioddata.children.perioddata.children.laksetting.children.withdrawal]
-block = "period"
-description = "real or character value that defines the maximum withdrawal rate $(L^3 T^{-1})$ for the lake. Value must be greater than or equal to zero. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
-reader = "urword"
-time_series = true
-longname = "maximum withdrawal rate"
-type = "string"
-
-[blocks.period.perioddata.children.perioddata.children.laksetting.children.rate]
-block = "period"
-description = "real or character value that defines the extraction rate for the lake outflow. A positive value indicates inflow and a negative value indicates outflow from the lake. RATE only applies to outlets associated with active lakes (STATUS is ACTIVE). A specified RATE is only applied if COUTTYPE for the OUTLETNO is SPECIFIED. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value. By default, the RATE for each SPECIFIED lake outlet is zero."
-reader = "urword"
-time_series = true
-longname = "extraction rate"
-type = "string"
-
-[blocks.period.perioddata.children.perioddata.children.laksetting.children.auxiliaryrecord]
-block = "period"
-reader = "urword"
-type = "record"
-
-[blocks.period.perioddata.children.perioddata.children.laksetting.children.auxiliaryrecord.children.auxiliary]
-block = "period"
-description = "keyword for specifying auxiliary variable."
-reader = "urword"
-type = "keyword"
-
-[blocks.period.perioddata.children.perioddata.children.laksetting.children.auxiliaryrecord.children.auxname]
-block = "period"
-description = "name for the auxiliary variable to be assigned AUXVAL.  AUXNAME must match one of the auxiliary variable names defined in the OPTIONS block. If AUXNAME does not match one of the auxiliary variable names defined in the OPTIONS block the data are ignored."
-reader = "urword"
-type = "string"
-
-[blocks.period.perioddata.children.perioddata.children.laksetting.children.auxiliaryrecord.children.auxval]
-block = "period"
-description = "value for the auxiliary variable. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
-reader = "urword"
-time_series = true
-longname = "auxiliary variable value"
 type = "double"
 
 [blocks.period.number]
@@ -1149,162 +681,6 @@ reader = "urword"
 type = "string"
 
 [blocks.period.laksetting.children.auxiliaryrecord.children.auxval]
-block = "period"
-description = "value for the auxiliary variable. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
-reader = "urword"
-time_series = true
-longname = "auxiliary variable value"
-type = "double"
-
-[blocks.period.status]
-shape = "(nper)"
-block = "period"
-description = "keyword option to define lake status.  STATUS can be ACTIVE, INACTIVE, or CONSTANT. By default, STATUS is ACTIVE."
-reader = "urword"
-longname = "lake status"
-type = "string"
-
-[blocks.period.stage]
-shape = "(nper)"
-block = "period"
-description = "real or character value that defines the stage for the lake. The specified STAGE is only applied if the lake is a constant stage lake. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
-time_series = true
-reader = "urword"
-longname = "lake stage"
-type = "string"
-
-[blocks.period.rainfall]
-shape = "(nper)"
-block = "period"
-description = "real or character value that defines the rainfall rate $(LT^{-1})$ for the lake. Value must be greater than or equal to zero. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
-reader = "urword"
-time_series = true
-longname = "rainfall rate"
-type = "string"
-
-[blocks.period.evaporation]
-shape = "(nper)"
-block = "period"
-description = "real or character value that defines the maximum evaporation rate $(LT^{-1})$ for the lake. Value must be greater than or equal to zero. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
-reader = "urword"
-time_series = true
-longname = "evaporation rate"
-type = "string"
-
-[blocks.period.runoff]
-shape = "(nper)"
-block = "period"
-description = "real or character value that defines the runoff rate $(L^3 T^{-1})$ for the lake. Value must be greater than or equal to zero. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
-reader = "urword"
-time_series = true
-longname = "runoff rate"
-type = "string"
-
-[blocks.period.inflow]
-shape = "(nper)"
-block = "period"
-description = "real or character value that defines the volumetric inflow rate $(L^3 T^{-1})$ for the lake. Value must be greater than or equal to zero. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value. By default, inflow rates are zero for each lake."
-reader = "urword"
-time_series = true
-longname = "inflow rate"
-type = "string"
-
-[blocks.period.withdrawal]
-shape = "(nper)"
-block = "period"
-description = "real or character value that defines the maximum withdrawal rate $(L^3 T^{-1})$ for the lake. Value must be greater than or equal to zero. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
-reader = "urword"
-time_series = true
-longname = "maximum withdrawal rate"
-type = "string"
-
-[blocks.period.rate]
-shape = "(nper)"
-block = "period"
-description = "real or character value that defines the extraction rate for the lake outflow. A positive value indicates inflow and a negative value indicates outflow from the lake. RATE only applies to outlets associated with active lakes (STATUS is ACTIVE). A specified RATE is only applied if COUTTYPE for the OUTLETNO is SPECIFIED. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value. By default, the RATE for each SPECIFIED lake outlet is zero."
-reader = "urword"
-time_series = true
-longname = "extraction rate"
-type = "string"
-
-[blocks.period.invert]
-shape = "(nper)"
-block = "period"
-description = "real or character value that defines the invert elevation for the lake outlet. A specified INVERT value is only used for active lakes if COUTTYPE for lake outlet OUTLETNO is not SPECIFIED. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
-reader = "urword"
-time_series = true
-longname = "invert elevation"
-type = "string"
-
-[blocks.period.rough]
-shape = "(nper)"
-block = "period"
-description = "real value that defines the roughness coefficient for the lake outlet. Any value can be specified if COUTTYPE is not MANNING. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
-reader = "urword"
-time_series = true
-longname = "roughness coefficient"
-type = "string"
-
-[blocks.period.width]
-shape = "(nper)"
-block = "period"
-description = "real or character value that defines the width of the lake outlet. A specified WIDTH value is only used for active lakes if COUTTYPE for lake outlet OUTLETNO is not SPECIFIED. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
-reader = "urword"
-time_series = true
-longname = "outlet width"
-type = "string"
-
-[blocks.period.slope]
-shape = "(nper)"
-block = "period"
-description = "real or character value that defines the bed slope for the lake outlet. A specified SLOPE value is only used for active lakes if COUTTYPE for lake outlet OUTLETNO is MANNING. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
-reader = "urword"
-time_series = true
-longname = "bed slope"
-type = "string"
-
-[blocks.period.auxiliaryrecord]
-shape = "(nper)"
-block = "period"
-reader = "urword"
-type = "record"
-
-[blocks.period.auxiliaryrecord.children.auxiliary]
-block = "period"
-description = "keyword for specifying auxiliary variable."
-reader = "urword"
-type = "keyword"
-
-[blocks.period.auxiliaryrecord.children.auxname]
-block = "period"
-description = "name for the auxiliary variable to be assigned AUXVAL.  AUXNAME must match one of the auxiliary variable names defined in the OPTIONS block. If AUXNAME does not match one of the auxiliary variable names defined in the OPTIONS block the data are ignored."
-reader = "urword"
-type = "string"
-
-[blocks.period.auxiliaryrecord.children.auxval]
-block = "period"
-description = "value for the auxiliary variable. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
-reader = "urword"
-time_series = true
-longname = "auxiliary variable value"
-type = "double"
-
-[blocks.period.auxiliary]
-shape = "(nper)"
-block = "period"
-description = "keyword for specifying auxiliary variable."
-reader = "urword"
-type = "keyword"
-
-[blocks.period.auxname]
-shape = "(nper)"
-block = "period"
-description = "name for the auxiliary variable to be assigned AUXVAL.  AUXNAME must match one of the auxiliary variable names defined in the OPTIONS block. If AUXNAME does not match one of the auxiliary variable names defined in the OPTIONS block the data are ignored."
-reader = "urword"
-type = "string"
-
-[blocks.period.auxval]
-shape = "(nper)"
 block = "period"
 description = "value for the auxiliary variable. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
 reader = "urword"

@@ -50,30 +50,6 @@ optional = false
 longname = "file name of GRB information"
 type = "string"
 
-[blocks.options.grb6]
-block = "options"
-description = "keyword to specify that record corresponds to a binary grid file."
-reader = "urword"
-optional = false
-longname = "grb keyword"
-type = "keyword"
-
-[blocks.options.fileout]
-block = "options"
-description = "keyword to specify that an output filename is expected next."
-reader = "urword"
-optional = false
-longname = "file keyword"
-type = "keyword"
-
-[blocks.options.grb6_filename]
-block = "options"
-description = "defines a binary grid output file. If this option is not provided, the output file will have the same name as the discretization input file, plus extension '.grb'."
-reader = "urword"
-optional = false
-longname = "file name of GRB information"
-type = "string"
-
 [blocks.options.xorigin]
 block = "options"
 description = "x-position of the lower-left corner of the model grid.  A default value of zero is assigned if not specified.  The value for XORIGIN does not affect the model simulation, but it is written to the binary grid file so that postprocessors can locate the grid in space."

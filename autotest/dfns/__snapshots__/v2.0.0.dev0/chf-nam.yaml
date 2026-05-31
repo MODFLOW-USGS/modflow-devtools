@@ -41,11 +41,30 @@ options:
       with 'BUDGET FILEOUT' in Output Control.
   newtonoptions:
     block: options
-    type: record newton under_relaxation
+    type: record
     reader: urword
     optional: true
     longname: newton keyword and options
     description: none
+    fields:
+      newton:
+        block: options
+        type: keyword
+        reader: urword
+        longname: keyword to activate Newton-Raphson formulation
+        description: keyword that activates the Newton-Raphson formulation for surface water flow between
+          connected reaches and stress packages that support calculation of Newton-Raphson terms.
+        in_record: true
+      under_relaxation:
+        block: options
+        type: keyword
+        reader: urword
+        optional: true
+        longname: keyword to activate Newton-Raphson UNDER_RELAXATION option
+        description: keyword that indicates whether the surface water stage in a reach will be under-relaxed
+          when water levels fall below the bottom of the model below any given cell. By default, Newton-Raphson
+          UNDER_RELAXATION is not applied.
+        in_record: true
 packages:
   packages:
     block: packages

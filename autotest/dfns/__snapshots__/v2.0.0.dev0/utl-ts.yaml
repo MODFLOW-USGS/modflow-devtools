@@ -12,21 +12,58 @@ ref:
 attributes:
   time_series_namerecord:
     block: attributes
-    type: record names time_series_names
+    type: record
     reader: urword
     optional: false
     description: xxx
     tagged: false
+    fields:
+      names:
+        block: attributes
+        type: keyword
+        reader: urword
+        optional: false
+        description: xxx
+        other_names: name
+        in_record: true
+      time_series_names:
+        block: attributes
+        type: string
+        shape: (any1d)
+        reader: urword
+        optional: false
+        description: Name by which a package references a particular time-array series. The name must
+          be unique among all time-array series used in a package.
+        tagged: false
+        in_record: true
   interpolation_methodrecord:
     block: attributes
-    type: record methods interpolation_method
+    type: record
     reader: urword
     optional: true
     description: xxx
     tagged: false
+    fields:
+      methods:
+        block: attributes
+        type: keyword
+        reader: urword
+        optional: false
+        description: ' xxx'
+        in_record: true
+      interpolation_method:
+        block: attributes
+        type: string
+        shape: (time_series_names)
+        reader: urword
+        optional: false
+        description: Interpolation method, which is either STEPWISE or LINEAR.
+        valid: stepwise linear linearend
+        tagged: false
+        in_record: true
   interpolation_methodrecord_single:
     block: attributes
-    type: record method interpolation_method_single
+    type: record
     reader: urword
     optional: true
     description: xxx
@@ -47,18 +84,47 @@ attributes:
     tagged: false
   sfacrecord:
     block: attributes
-    type: record sfacs sfacval
+    type: record
     reader: urword
     optional: true
     description: xxx
     tagged: true
+    fields:
+      sfacs:
+        block: attributes
+        type: keyword
+        reader: urword
+        optional: false
+        description: ' xxx'
+        in_record: true
+      sfacval:
+        block: attributes
+        type: double precision
+        shape: (<time_series_name)
+        reader: urword
+        optional: false
+        description: Scale factor, which will multiply all array values in time series. SFAC is an optional
+          attribute; if omitted, SFAC = 1.0.
+        tagged: false
+        in_record: true
   sfacrecord_single:
     block: attributes
-    type: record sfac sfacval
+    type: record
     reader: urword
     optional: true
     description: xxx
     tagged: true
+    fields:
+      sfacval:
+        block: attributes
+        type: double precision
+        shape: (<time_series_name)
+        reader: urword
+        optional: false
+        description: Scale factor, which will multiply all array values in time series. SFAC is an optional
+          attribute; if omitted, SFAC = 1.0.
+        tagged: false
+        in_record: true
   sfac:
     block: attributes
     type: keyword

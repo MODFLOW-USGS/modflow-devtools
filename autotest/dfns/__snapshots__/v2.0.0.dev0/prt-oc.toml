@@ -5,35 +5,159 @@ schema_version = "2.0.0.dev0"
 
 [options.budget_filerecord]
 block = "options"
-type = "record budget fileout budgetfile"
+type = "record"
 reader = "urword"
 optional = true
 tagged = true
 mf6internal = "budfilerec"
 
+[options.budget_filerecord.fields.budget]
+block = "options"
+type = "keyword"
+reader = "urword"
+optional = false
+longname = "budget keyword"
+description = "keyword to specify that record corresponds to the budget."
+in_record = true
+tagged = true
+
+[options.budget_filerecord.fields.fileout]
+block = "options"
+type = "keyword"
+reader = "urword"
+optional = false
+longname = "file keyword"
+description = "keyword to specify that an output filename is expected next."
+in_record = true
+tagged = true
+
+[options.budget_filerecord.fields.budgetfile]
+block = "options"
+type = "string"
+reader = "urword"
+optional = false
+longname = "file keyword"
+description = "name of the output file to write budget information."
+preserve_case = true
+in_record = true
+tagged = false
+
 [options.budgetcsv_filerecord]
 block = "options"
-type = "record budgetcsv fileout budgetcsvfile"
+type = "record"
 reader = "urword"
 optional = true
 tagged = true
 mf6internal = "budcsvfilerec"
 
+[options.budgetcsv_filerecord.fields.fileout]
+block = "options"
+type = "keyword"
+reader = "urword"
+optional = false
+longname = "file keyword"
+description = "keyword to specify that an output filename is expected next."
+in_record = true
+tagged = true
+
+[options.budgetcsv_filerecord.fields.budgetcsv]
+block = "options"
+type = "keyword"
+reader = "urword"
+optional = false
+longname = "budget keyword"
+description = "keyword to specify that record corresponds to the budget CSV."
+in_record = true
+tagged = true
+
+[options.budgetcsv_filerecord.fields.budgetcsvfile]
+block = "options"
+type = "string"
+reader = "urword"
+optional = false
+longname = "file keyword"
+description = "name of the comma-separated value (CSV) output file to write budget summary information.  A budget summary record will be written to this file for each time step of the simulation."
+preserve_case = true
+in_record = true
+tagged = false
+
 [options.track_filerecord]
 block = "options"
-type = "record track fileout trackfile"
+type = "record"
 reader = "urword"
 optional = true
 tagged = true
 mf6internal = "trackfilerec"
 
+[options.track_filerecord.fields.fileout]
+block = "options"
+type = "keyword"
+reader = "urword"
+optional = false
+longname = "file keyword"
+description = "keyword to specify that an output filename is expected next."
+in_record = true
+tagged = true
+
+[options.track_filerecord.fields.track]
+block = "options"
+type = "keyword"
+reader = "urword"
+optional = false
+longname = "track keyword"
+description = "keyword to specify that record corresponds to a binary track file.  Each PRT Model's OC Package may have only one binary track output file."
+in_record = true
+tagged = true
+
+[options.track_filerecord.fields.trackfile]
+block = "options"
+type = "string"
+reader = "urword"
+optional = false
+longname = "file keyword"
+description = "name of the binary output file to write tracking information."
+preserve_case = true
+in_record = true
+tagged = false
+
 [options.trackcsv_filerecord]
 block = "options"
-type = "record trackcsv fileout trackcsvfile"
+type = "record"
 reader = "urword"
 optional = true
 tagged = true
 mf6internal = "trackcsvfilerec"
+
+[options.trackcsv_filerecord.fields.fileout]
+block = "options"
+type = "keyword"
+reader = "urword"
+optional = false
+longname = "file keyword"
+description = "keyword to specify that an output filename is expected next."
+in_record = true
+tagged = true
+
+[options.trackcsv_filerecord.fields.trackcsv]
+block = "options"
+type = "keyword"
+reader = "urword"
+optional = false
+longname = "track keyword"
+description = "keyword to specify that record corresponds to a CSV track file.  Each PRT Model's OC Package may have only one CSV track file."
+in_record = true
+tagged = true
+
+[options.trackcsv_filerecord.fields.trackcsvfile]
+block = "options"
+type = "string"
+reader = "urword"
+optional = false
+longname = "file keyword"
+description = "name of the comma-separated value (CSV) file to write tracking information."
+preserve_case = true
+in_record = true
+tagged = false
 
 [options.track_release]
 block = "options"
@@ -102,20 +226,62 @@ description = "keyword to indicate that particle tracking output is to be writte
 
 [options.track_timesrecord]
 block = "options"
-type = "record track_times times"
+type = "record"
 reader = "urword"
 optional = true
 tagged = true
 mf6internal = "ttimesrec"
 removed = "6.6.0"
 
+[options.track_timesrecord.fields.track_times]
+block = "options"
+type = "keyword"
+reader = "urword"
+description = "keyword indicating tracking times will follow"
+in_record = true
+tagged = true
+removed = "6.6.0"
+
+[options.track_timesrecord.fields.times]
+block = "options"
+type = "double precision"
+shape = "(any1d)"
+reader = "urword"
+longname = "tracking times"
+description = "times to track, relative to the beginning of the simulation."
+in_record = true
+tagged = false
+repeating = true
+removed = "6.6.0"
+
 [options.track_timesfilerecord]
 block = "options"
-type = "record track_timesfile timesfile"
+type = "record"
 reader = "urword"
 optional = true
 tagged = true
 mf6internal = "ttimesfilerec"
+removed = "6.6.0"
+
+[options.track_timesfilerecord.fields.track_timesfile]
+block = "options"
+type = "keyword"
+reader = "urword"
+description = "keyword indicating tracking times file name will follow"
+in_record = true
+tagged = true
+removed = "6.6.0"
+
+[options.track_timesfilerecord.fields.timesfile]
+block = "options"
+type = "string"
+reader = "urword"
+optional = false
+longname = "file keyword"
+description = "name of the tracking times file"
+preserve_case = true
+in_record = true
+tagged = false
 removed = "6.6.0"
 
 [options.dev_dump_event_trace]
@@ -163,14 +329,146 @@ transient_block = true
 
 [period.saverecord]
 block = "period"
-type = "record save rtype ocsetting"
+type = "record"
 reader = "urword"
 optional = true
 tagged = false
 
+[period.saverecord.fields.save]
+block = "period"
+type = "keyword"
+reader = "urword"
+optional = false
+longname = "keyword to save"
+description = "keyword to indicate that information will be saved this stress period."
+in_record = true
+tagged = true
+
+[period.saverecord.fields.rtype]
+block = "period"
+type = "string"
+reader = "urword"
+optional = false
+longname = "record type"
+description = "type of information to save or print.  Can only be BUDGET."
+in_record = true
+tagged = false
+
+[period.saverecord.fields.ocsetting]
+block = "period"
+type = "keystring"
+reader = "urword"
+description = "specifies the steps for which the data will be saved."
+tagged = false
+in_record = true
+
+[period.saverecord.fields.ocsetting.choices.all]
+block = "period"
+type = "keyword"
+reader = "urword"
+description = "keyword to indicate save for all time steps in period."
+in_record = true
+
+[period.saverecord.fields.ocsetting.choices.first]
+block = "period"
+type = "keyword"
+reader = "urword"
+description = "keyword to indicate save for first step in period. This keyword may be used in conjunction with other keywords to print or save results for multiple time steps."
+in_record = true
+
+[period.saverecord.fields.ocsetting.choices.last]
+block = "period"
+type = "keyword"
+reader = "urword"
+description = "keyword to indicate save for last step in period. This keyword may be used in conjunction with other keywords to print or save results for multiple time steps."
+in_record = true
+
+[period.saverecord.fields.ocsetting.choices.frequency]
+block = "period"
+type = "integer"
+reader = "urword"
+description = "save at the specified time step frequency. This keyword may be used in conjunction with other keywords to print or save results for multiple time steps."
+tagged = true
+in_record = true
+
+[period.saverecord.fields.ocsetting.choices.steps]
+block = "period"
+type = "integer"
+shape = "(<nstp)"
+reader = "urword"
+description = "save for each step specified in STEPS. This keyword may be used in conjunction with other keywords to print or save results for multiple time steps."
+tagged = true
+in_record = true
+
 [period.printrecord]
 block = "period"
-type = "record print rtype ocsetting"
+type = "record"
 reader = "urword"
 optional = true
 tagged = false
+
+[period.printrecord.fields.print]
+block = "period"
+type = "keyword"
+reader = "urword"
+optional = false
+longname = "keyword to save"
+description = "keyword to indicate that information will be printed this stress period."
+in_record = true
+tagged = true
+
+[period.printrecord.fields.rtype]
+block = "period"
+type = "string"
+reader = "urword"
+optional = false
+longname = "record type"
+description = "type of information to save or print.  Can only be BUDGET."
+in_record = true
+tagged = false
+
+[period.printrecord.fields.ocsetting]
+block = "period"
+type = "keystring"
+reader = "urword"
+description = "specifies the steps for which the data will be saved."
+tagged = false
+in_record = true
+
+[period.printrecord.fields.ocsetting.choices.all]
+block = "period"
+type = "keyword"
+reader = "urword"
+description = "keyword to indicate save for all time steps in period."
+in_record = true
+
+[period.printrecord.fields.ocsetting.choices.first]
+block = "period"
+type = "keyword"
+reader = "urword"
+description = "keyword to indicate save for first step in period. This keyword may be used in conjunction with other keywords to print or save results for multiple time steps."
+in_record = true
+
+[period.printrecord.fields.ocsetting.choices.last]
+block = "period"
+type = "keyword"
+reader = "urword"
+description = "keyword to indicate save for last step in period. This keyword may be used in conjunction with other keywords to print or save results for multiple time steps."
+in_record = true
+
+[period.printrecord.fields.ocsetting.choices.frequency]
+block = "period"
+type = "integer"
+reader = "urword"
+description = "save at the specified time step frequency. This keyword may be used in conjunction with other keywords to print or save results for multiple time steps."
+tagged = true
+in_record = true
+
+[period.printrecord.fields.ocsetting.choices.steps]
+block = "period"
+type = "integer"
+shape = "(<nstp)"
+reader = "urword"
+description = "save for each step specified in STEPS. This keyword may be used in conjunction with other keywords to print or save results for multiple time steps."
+tagged = true
+in_record = true

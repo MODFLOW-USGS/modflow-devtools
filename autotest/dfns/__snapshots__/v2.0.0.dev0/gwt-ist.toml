@@ -13,19 +13,81 @@ description = "keyword to indicate that IST flow terms will be written to the fi
 
 [options.budget_filerecord]
 block = "options"
-type = "record budget fileout budgetfile"
+type = "record"
 reader = "urword"
 optional = true
 tagged = true
 mf6internal = "budfilerec"
 
+[options.budget_filerecord.fields.budget]
+block = "options"
+type = "keyword"
+reader = "urword"
+optional = false
+longname = "budget keyword"
+description = "keyword to specify that record corresponds to the budget."
+in_record = true
+tagged = true
+
+[options.budget_filerecord.fields.fileout]
+block = "options"
+type = "keyword"
+reader = "urword"
+optional = false
+longname = "file keyword"
+description = "keyword to specify that an output filename is expected next."
+in_record = true
+tagged = true
+
+[options.budget_filerecord.fields.budgetfile]
+block = "options"
+type = "string"
+reader = "urword"
+optional = false
+longname = "file keyword"
+description = "name of the binary output file to write budget information."
+preserve_case = true
+in_record = true
+tagged = false
+
 [options.budgetcsv_filerecord]
 block = "options"
-type = "record budgetcsv fileout budgetcsvfile"
+type = "record"
 reader = "urword"
 optional = true
 tagged = true
 mf6internal = "budcsvfilerec"
+
+[options.budgetcsv_filerecord.fields.fileout]
+block = "options"
+type = "keyword"
+reader = "urword"
+optional = false
+longname = "file keyword"
+description = "keyword to specify that an output filename is expected next."
+in_record = true
+tagged = true
+
+[options.budgetcsv_filerecord.fields.budgetcsv]
+block = "options"
+type = "keyword"
+reader = "urword"
+optional = false
+longname = "budget keyword"
+description = "keyword to specify that record corresponds to the budget CSV."
+in_record = true
+tagged = true
+
+[options.budgetcsv_filerecord.fields.budgetcsvfile]
+block = "options"
+type = "string"
+reader = "urword"
+optional = false
+longname = "file keyword"
+description = "name of the comma-separated value (CSV) output file to write budget summary information.  A budget summary record will be written to this file for each time step of the simulation."
+preserve_case = true
+in_record = true
+tagged = false
 
 [options.sorption]
 block = "options"
@@ -56,25 +118,109 @@ mf6internal = "order0_decay"
 
 [options.cim_filerecord]
 block = "options"
-type = "record cim fileout cimfile"
+type = "record"
 reader = "urword"
 optional = true
 tagged = true
 mf6internal = "cimfilerec"
 
+[options.cim_filerecord.fields.fileout]
+block = "options"
+type = "keyword"
+reader = "urword"
+optional = false
+longname = "file keyword"
+description = "keyword to specify that an output filename is expected next."
+in_record = true
+tagged = true
+
+[options.cim_filerecord.fields.cim]
+block = "options"
+type = "keyword"
+reader = "urword"
+optional = false
+longname = "cim keyword"
+description = "keyword to specify that record corresponds to immobile concentration."
+in_record = true
+tagged = true
+mf6internal = "cimopt"
+
+[options.cim_filerecord.fields.cimfile]
+block = "options"
+type = "string"
+reader = "urword"
+optional = false
+longname = "file keyword"
+description = "name of the output file to write immobile concentrations.  This file is a binary file that has the same format and structure as a binary head and concentration file.  The value for the text variable written to the file is CIM.  Immobile domain concentrations will be written to this file at the same interval as mobile domain concentrations are saved, as specified in the GWT Model Output Control file."
+preserve_case = true
+in_record = true
+tagged = false
+
 [options.cimprintrecord]
 block = "options"
-type = "record cim print_format formatrecord"
+type = "record"
 reader = "urword"
 optional = true
 
+[options.cimprintrecord.fields.cim]
+block = "options"
+type = "keyword"
+reader = "urword"
+optional = false
+longname = "cim keyword"
+description = "keyword to specify that record corresponds to immobile concentration."
+in_record = true
+tagged = true
+mf6internal = "cimopt"
+
+[options.cimprintrecord.fields.print_format]
+block = "options"
+type = "keyword"
+reader = "urword"
+optional = false
+longname = "keyword to indicate that a print format follows"
+description = "keyword to specify format for printing to the listing file."
+in_record = true
+tagged = true
+
 [options.sorbate_filerecord]
 block = "options"
-type = "record sorbate fileout sorbatefile"
+type = "record"
 reader = "urword"
 optional = true
 tagged = true
 mf6internal = "sorbatefilerec"
+
+[options.sorbate_filerecord.fields.fileout]
+block = "options"
+type = "keyword"
+reader = "urword"
+optional = false
+longname = "file keyword"
+description = "keyword to specify that an output filename is expected next."
+in_record = true
+tagged = true
+
+[options.sorbate_filerecord.fields.sorbate]
+block = "options"
+type = "keyword"
+reader = "urword"
+optional = false
+longname = "sorbate keyword"
+description = "keyword to specify that record corresponds to immobile sorbate concentration."
+in_record = true
+tagged = true
+
+[options.sorbate_filerecord.fields.sorbatefile]
+block = "options"
+type = "string"
+reader = "urword"
+optional = false
+longname = "file keyword"
+description = "name of the output file to write immobile sorbate concentration information.  Immobile sorbate concentrations will be written whenever aqueous immobile concentrations are saved, as determined by settings in the Output Control option."
+preserve_case = true
+in_record = true
+tagged = false
 
 [options.export_array_ascii]
 block = "options"

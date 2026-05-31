@@ -28,22 +28,6 @@ reader = "urword"
 optional = false
 type = "string"
 
-[blocks.attributes.names]
-block = "attributes"
-description = "xxx"
-other_names = "name"
-reader = "urword"
-optional = false
-type = "keyword"
-
-[blocks.attributes.time_series_names]
-shape = "(any1d)"
-block = "attributes"
-description = "Name by which a package references a particular time-array series. The name must be unique among all time-array series used in a package."
-reader = "urword"
-optional = false
-type = "string"
-
 [blocks.attributes.interpolation_methodrecord]
 block = "attributes"
 description = "xxx"
@@ -59,22 +43,6 @@ optional = false
 type = "keyword"
 
 [blocks.attributes.interpolation_methodrecord.children.interpolation_method]
-shape = "(time_series_names)"
-block = "attributes"
-description = "Interpolation method, which is either STEPWISE or LINEAR."
-valid = "stepwise linear linearend"
-reader = "urword"
-optional = false
-type = "string"
-
-[blocks.attributes.methods]
-block = "attributes"
-description = " xxx"
-reader = "urword"
-optional = false
-type = "keyword"
-
-[blocks.attributes.interpolation_method]
 shape = "(time_series_names)"
 block = "attributes"
 description = "Interpolation method, which is either STEPWISE or LINEAR."
@@ -127,21 +95,6 @@ reader = "urword"
 optional = false
 type = "double"
 
-[blocks.attributes.sfacs]
-block = "attributes"
-description = " xxx"
-reader = "urword"
-optional = false
-type = "keyword"
-
-[blocks.attributes.sfacval]
-shape = "(<time_series_name)"
-block = "attributes"
-description = "Scale factor, which will multiply all array values in time series. SFAC is an optional attribute; if omitted, SFAC = 1.0."
-reader = "urword"
-optional = false
-type = "double"
-
 [blocks.attributes.sfacrecord_single]
 block = "attributes"
 description = "xxx"
@@ -187,22 +140,6 @@ repeating = false
 type = "double"
 
 [blocks.timeseries.timeseries.children.timeseries.children.ts_array]
-shape = "(time_series_names)"
-block = "timeseries"
-description = "A 2-D array of numeric, floating-point values, or a constant value, readable by the U2DREL array-reading utility."
-reader = "urword"
-optional = false
-type = "double"
-
-[blocks.timeseries.ts_time]
-block = "timeseries"
-description = "A numeric time relative to the start of the simulation, in the time unit used in the simulation. Times must be strictly increasing."
-reader = "urword"
-optional = false
-repeating = false
-type = "double"
-
-[blocks.timeseries.ts_array]
 shape = "(time_series_names)"
 block = "timeseries"
 description = "A 2-D array of numeric, floating-point values, or a constant value, readable by the U2DREL array-reading utility."

@@ -50,30 +50,6 @@ optional = false
 longname = "file name of GRB information"
 type = "string"
 
-[blocks.options.grb6]
-block = "options"
-description = "keyword to specify that record corresponds to a binary grid file."
-reader = "urword"
-optional = false
-longname = "grb keyword"
-type = "keyword"
-
-[blocks.options.fileout]
-block = "options"
-description = "keyword to specify that an output filename is expected next."
-reader = "urword"
-optional = false
-longname = "file keyword"
-type = "keyword"
-
-[blocks.options.grb6_filename]
-block = "options"
-description = "defines a binary grid output file. If this option is not provided, the output file will have the same name as the discretization input file, plus extension '.grb'."
-reader = "urword"
-optional = false
-longname = "file name of GRB information"
-type = "string"
-
 [blocks.options.xorigin]
 block = "options"
 description = "x-position of the origin used for model grid vertices.  This value should be provided in a real-world coordinate system.  A default value of zero is assigned if not specified.  The value for XORIGIN does not affect the model simulation, but it is written to the binary grid file so that postprocessors can locate the grid in space."
@@ -281,31 +257,6 @@ optional = false
 longname = "y-coordinate for vertex"
 type = "double"
 
-[blocks.vertices.iv]
-block = "vertices"
-description = "is the vertex number.  Records in the VERTICES block must be listed in consecutive order from 1 to NVERT."
-reader = "urword"
-optional = false
-longname = "vertex number"
-numeric_index = true
-type = "integer"
-
-[blocks.vertices.xv]
-block = "vertices"
-description = "is the x-coordinate for the vertex."
-reader = "urword"
-optional = false
-longname = "x-coordinate for vertex"
-type = "double"
-
-[blocks.vertices.yv]
-block = "vertices"
-description = "is the y-coordinate for the vertex."
-reader = "urword"
-optional = false
-longname = "y-coordinate for vertex"
-type = "double"
-
 [blocks.cell2d.cell2d]
 shape = "(nodes)"
 block = "cell2d"
@@ -356,49 +307,6 @@ longname = "number of cell vertices"
 type = "integer"
 
 [blocks.cell2d.cell2d.children.cell2d.children.icvert]
-shape = "(ncvert)"
-block = "cell2d"
-description = "is an array of integer values containing vertex numbers (in the VERTICES block) used to define the cell.  Vertices must be listed in clockwise order."
-reader = "urword"
-optional = false
-longname = "array of vertex numbers"
-numeric_index = true
-type = "integer"
-
-[blocks.cell2d.icell2d]
-block = "cell2d"
-description = "is the cell2d number.  Records in the CELL2D block must be listed in consecutive order from 1 to NODES."
-reader = "urword"
-optional = false
-longname = "cell2d number"
-numeric_index = true
-type = "integer"
-
-[blocks.cell2d.xc]
-block = "cell2d"
-description = "is the x-coordinate for the cell center."
-reader = "urword"
-optional = false
-longname = "x-coordinate for cell center"
-type = "double"
-
-[blocks.cell2d.yc]
-block = "cell2d"
-description = "is the y-coordinate for the cell center."
-reader = "urword"
-optional = false
-longname = "y-coordinate for cell center"
-type = "double"
-
-[blocks.cell2d.ncvert]
-block = "cell2d"
-description = "is the number of vertices required to define the cell.  There may be a different number of vertices for each cell."
-reader = "urword"
-optional = false
-longname = "number of cell vertices"
-type = "integer"
-
-[blocks.cell2d.icvert]
 shape = "(ncvert)"
 block = "cell2d"
 description = "is an array of integer values containing vertex numbers (in the VERTICES block) used to define the cell.  Vertices must be listed in clockwise order."

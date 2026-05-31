@@ -151,75 +151,388 @@
     },
     "strainib_filerecord": {
       "block": "options",
-      "type": "record strain_csv_interbed fileout interbedstrain_filename",
+      "type": "record",
       "reader": "urword",
       "optional": true,
       "tagged": true,
-      "mf6internal": "strainibfr"
+      "mf6internal": "strainibfr",
+      "fields": {
+        "strain_csv_interbed": {
+          "block": "options",
+          "type": "keyword",
+          "reader": "urword",
+          "optional": false,
+          "longname": "budget keyword",
+          "description": "keyword to specify the record that corresponds to final interbed strain output.",
+          "in_record": true,
+          "tagged": true,
+          "mf6internal": "csvinterbed"
+        },
+        "fileout": {
+          "block": "options",
+          "type": "keyword",
+          "reader": "urword",
+          "optional": false,
+          "longname": "file keyword",
+          "description": "keyword to specify that an output filename is expected next.",
+          "in_record": true,
+          "tagged": true
+        },
+        "interbedstrain_filename": {
+          "block": "options",
+          "type": "string",
+          "reader": "urword",
+          "optional": false,
+          "longname": "file keyword",
+          "description": "name of the comma-separated-values output file to write final interbed strain information.",
+          "preserve_case": true,
+          "in_record": true,
+          "tagged": false,
+          "mf6internal": "interbedstrainfn"
+        }
+      }
     },
     "straincg_filerecord": {
       "block": "options",
-      "type": "record strain_csv_coarse fileout coarsestrain_filename",
+      "type": "record",
       "reader": "urword",
       "optional": true,
       "tagged": true,
-      "mf6internal": "straincgfr"
+      "mf6internal": "straincgfr",
+      "fields": {
+        "fileout": {
+          "block": "options",
+          "type": "keyword",
+          "reader": "urword",
+          "optional": false,
+          "longname": "file keyword",
+          "description": "keyword to specify that an output filename is expected next.",
+          "in_record": true,
+          "tagged": true
+        },
+        "strain_csv_coarse": {
+          "block": "options",
+          "type": "keyword",
+          "reader": "urword",
+          "optional": false,
+          "longname": "budget keyword",
+          "description": "keyword to specify the record that corresponds to final coarse-grained material strain output.",
+          "in_record": true,
+          "tagged": true,
+          "mf6internal": "csvcoarse"
+        },
+        "coarsestrain_filename": {
+          "block": "options",
+          "type": "string",
+          "reader": "urword",
+          "optional": false,
+          "longname": "file keyword",
+          "description": "name of the comma-separated-values output file to write final coarse-grained material strain information.",
+          "preserve_case": true,
+          "in_record": true,
+          "tagged": false,
+          "mf6internal": "coarsestrainfn"
+        }
+      }
     },
     "compaction_filerecord": {
       "block": "options",
-      "type": "record compaction fileout compaction_filename",
+      "type": "record",
       "reader": "urword",
       "optional": true,
       "tagged": true,
-      "mf6internal": "cmpfr"
+      "mf6internal": "cmpfr",
+      "fields": {
+        "fileout": {
+          "block": "options",
+          "type": "keyword",
+          "reader": "urword",
+          "optional": false,
+          "longname": "file keyword",
+          "description": "keyword to specify that an output filename is expected next.",
+          "in_record": true,
+          "tagged": true
+        },
+        "compaction": {
+          "block": "options",
+          "type": "keyword",
+          "reader": "urword",
+          "optional": false,
+          "longname": "compaction keyword",
+          "description": "keyword to specify that record corresponds to the compaction.",
+          "in_record": true,
+          "tagged": true
+        },
+        "compaction_filename": {
+          "block": "options",
+          "type": "string",
+          "reader": "urword",
+          "optional": false,
+          "longname": "file keyword",
+          "description": "name of the binary output file to write compaction information.",
+          "preserve_case": true,
+          "in_record": true,
+          "tagged": false,
+          "mf6internal": "cmpfn"
+        }
+      }
     },
     "compaction_elastic_filerecord": {
       "block": "options",
-      "type": "record compaction_elastic fileout elastic_compaction_filename",
+      "type": "record",
       "reader": "urword",
       "optional": true,
       "tagged": true,
-      "mf6internal": "cmpelasticfr"
+      "mf6internal": "cmpelasticfr",
+      "fields": {
+        "fileout": {
+          "block": "options",
+          "type": "keyword",
+          "reader": "urword",
+          "optional": false,
+          "longname": "file keyword",
+          "description": "keyword to specify that an output filename is expected next.",
+          "in_record": true,
+          "tagged": true
+        },
+        "compaction_elastic": {
+          "block": "options",
+          "type": "keyword",
+          "reader": "urword",
+          "optional": false,
+          "longname": "elastic interbed compaction keyword",
+          "description": "keyword to specify that record corresponds to the elastic interbed compaction binary file.",
+          "in_record": true,
+          "tagged": true,
+          "mf6internal": "cmpelastic"
+        },
+        "elastic_compaction_filename": {
+          "block": "options",
+          "type": "string",
+          "reader": "urword",
+          "optional": false,
+          "longname": "file keyword",
+          "description": "name of the binary output file to write elastic interbed compaction information.",
+          "preserve_case": true,
+          "in_record": true,
+          "tagged": false,
+          "mf6internal": "elasticcmpfn"
+        }
+      }
     },
     "compaction_inelastic_filerecord": {
       "block": "options",
-      "type": "record compaction_inelastic fileout inelastic_compaction_filename",
+      "type": "record",
       "reader": "urword",
       "optional": true,
       "tagged": true,
-      "mf6internal": "cmpinelasticfr"
+      "mf6internal": "cmpinelasticfr",
+      "fields": {
+        "fileout": {
+          "block": "options",
+          "type": "keyword",
+          "reader": "urword",
+          "optional": false,
+          "longname": "file keyword",
+          "description": "keyword to specify that an output filename is expected next.",
+          "in_record": true,
+          "tagged": true
+        },
+        "compaction_inelastic": {
+          "block": "options",
+          "type": "keyword",
+          "reader": "urword",
+          "optional": false,
+          "longname": "inelastic interbed compaction keyword",
+          "description": "keyword to specify that record corresponds to the inelastic interbed compaction binary file.",
+          "in_record": true,
+          "tagged": true,
+          "mf6internal": "cmpinelastic"
+        },
+        "inelastic_compaction_filename": {
+          "block": "options",
+          "type": "string",
+          "reader": "urword",
+          "optional": false,
+          "longname": "file keyword",
+          "description": "name of the binary output file to write inelastic interbed compaction information.",
+          "preserve_case": true,
+          "in_record": true,
+          "tagged": false,
+          "mf6internal": "inelasticcmpfn"
+        }
+      }
     },
     "compaction_interbed_filerecord": {
       "block": "options",
-      "type": "record compaction_interbed fileout interbed_compaction_filename",
+      "type": "record",
       "reader": "urword",
       "optional": true,
       "tagged": true,
-      "mf6internal": "cmpinterbedfr"
+      "mf6internal": "cmpinterbedfr",
+      "fields": {
+        "fileout": {
+          "block": "options",
+          "type": "keyword",
+          "reader": "urword",
+          "optional": false,
+          "longname": "file keyword",
+          "description": "keyword to specify that an output filename is expected next.",
+          "in_record": true,
+          "tagged": true
+        },
+        "compaction_interbed": {
+          "block": "options",
+          "type": "keyword",
+          "reader": "urword",
+          "optional": false,
+          "longname": "interbed compaction keyword",
+          "description": "keyword to specify that record corresponds to the interbed compaction binary file.",
+          "in_record": true,
+          "tagged": true,
+          "mf6internal": "cmpinterbed"
+        },
+        "interbed_compaction_filename": {
+          "block": "options",
+          "type": "string",
+          "reader": "urword",
+          "optional": false,
+          "longname": "file keyword",
+          "description": "name of the binary output file to write interbed compaction information.",
+          "preserve_case": true,
+          "in_record": true,
+          "tagged": false,
+          "mf6internal": "interbedcmpfn"
+        }
+      }
     },
     "compaction_coarse_filerecord": {
       "block": "options",
-      "type": "record compaction_coarse fileout coarse_compaction_filename",
+      "type": "record",
       "reader": "urword",
       "optional": true,
       "tagged": true,
-      "mf6internal": "cmpcoarsefr"
+      "mf6internal": "cmpcoarsefr",
+      "fields": {
+        "fileout": {
+          "block": "options",
+          "type": "keyword",
+          "reader": "urword",
+          "optional": false,
+          "longname": "file keyword",
+          "description": "keyword to specify that an output filename is expected next.",
+          "in_record": true,
+          "tagged": true
+        },
+        "compaction_coarse": {
+          "block": "options",
+          "type": "keyword",
+          "reader": "urword",
+          "optional": false,
+          "longname": "coarse compaction keyword",
+          "description": "keyword to specify that record corresponds to the elastic coarse-grained material compaction binary file.",
+          "in_record": true,
+          "tagged": true,
+          "mf6internal": "cmpcoarse"
+        },
+        "coarse_compaction_filename": {
+          "block": "options",
+          "type": "string",
+          "reader": "urword",
+          "optional": false,
+          "longname": "file keyword",
+          "description": "name of the binary output file to write elastic coarse-grained material compaction information.",
+          "preserve_case": true,
+          "in_record": true,
+          "tagged": false,
+          "mf6internal": "cmpcoarsefn"
+        }
+      }
     },
     "zdisplacement_filerecord": {
       "block": "options",
-      "type": "record zdisplacement fileout zdisplacement_filename",
+      "type": "record",
       "reader": "urword",
       "optional": true,
       "tagged": true,
-      "mf6internal": "zdispfr"
+      "mf6internal": "zdispfr",
+      "fields": {
+        "fileout": {
+          "block": "options",
+          "type": "keyword",
+          "reader": "urword",
+          "optional": false,
+          "longname": "file keyword",
+          "description": "keyword to specify that an output filename is expected next.",
+          "in_record": true,
+          "tagged": true
+        },
+        "zdisplacement": {
+          "block": "options",
+          "type": "keyword",
+          "reader": "urword",
+          "optional": false,
+          "longname": "budget keyword",
+          "description": "keyword to specify that record corresponds to the z-displacement binary file.",
+          "in_record": true,
+          "tagged": true
+        },
+        "zdisplacement_filename": {
+          "block": "options",
+          "type": "string",
+          "reader": "urword",
+          "optional": false,
+          "longname": "file keyword",
+          "description": "name of the binary output file to write z-displacement information.",
+          "preserve_case": true,
+          "in_record": true,
+          "tagged": false,
+          "mf6internal": "zdispfn"
+        }
+      }
     },
     "package_convergence_filerecord": {
       "block": "options",
-      "type": "record package_convergence fileout package_convergence_filename",
+      "type": "record",
       "reader": "urword",
       "optional": true,
       "tagged": true,
-      "mf6internal": "pkgconvergefr"
+      "mf6internal": "pkgconvergefr",
+      "fields": {
+        "fileout": {
+          "block": "options",
+          "type": "keyword",
+          "reader": "urword",
+          "optional": false,
+          "longname": "file keyword",
+          "description": "keyword to specify that an output filename is expected next.",
+          "in_record": true,
+          "tagged": true
+        },
+        "package_convergence": {
+          "block": "options",
+          "type": "keyword",
+          "reader": "urword",
+          "optional": false,
+          "longname": "package_convergence keyword",
+          "description": "keyword to specify that record corresponds to the package convergence comma spaced values file. Package convergence data is for delay interbeds. A warning message will be issued if package convergence data is requested but delay interbeds are not included in the package.",
+          "in_record": true,
+          "tagged": true,
+          "mf6internal": "pkgconverge"
+        },
+        "package_convergence_filename": {
+          "block": "options",
+          "type": "string",
+          "reader": "urword",
+          "optional": false,
+          "longname": "file keyword",
+          "description": "name of the comma spaced values output file to write package convergence information.",
+          "preserve_case": true,
+          "in_record": true,
+          "tagged": false,
+          "mf6internal": "pkgconvergefn"
+        }
+      }
     },
     "timeseries": {
       "block": "options",

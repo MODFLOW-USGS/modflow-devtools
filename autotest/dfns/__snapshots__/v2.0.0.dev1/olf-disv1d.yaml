@@ -48,28 +48,6 @@ blocks:
           optional: false
           longname: file name of GRB information
           type: string
-    grb6:
-      block: options
-      description: keyword to specify that record corresponds to a binary grid file.
-      reader: urword
-      optional: false
-      longname: grb keyword
-      type: keyword
-    fileout:
-      block: options
-      description: keyword to specify that an output filename is expected next.
-      reader: urword
-      optional: false
-      longname: file keyword
-      type: keyword
-    grb6_filename:
-      block: options
-      description: defines a binary grid output file. If this option is not provided, the output file
-        will have the same name as the discretization input file, plus extension '.grb'.
-      reader: urword
-      optional: false
-      longname: file name of GRB information
-      type: string
     xorigin:
       block: options
       description: x-position of the origin used for model grid vertices.  This value should be provided
@@ -217,29 +195,6 @@ blocks:
               optional: false
               longname: y-coordinate for vertex
               type: double
-    iv:
-      block: vertices
-      description: is the vertex number.  Records in the VERTICES block must be listed in consecutive
-        order from 1 to NVERT.
-      reader: urword
-      optional: false
-      longname: vertex number
-      numeric_index: true
-      type: integer
-    xv:
-      block: vertices
-      description: is the x-coordinate for the vertex.
-      reader: urword
-      optional: false
-      longname: x-coordinate for vertex
-      type: double
-    yv:
-      block: vertices
-      description: is the y-coordinate for the vertex.
-      reader: urword
-      optional: false
-      longname: y-coordinate for vertex
-      type: double
   cell2d:
     cell2d:
       shape: (nodes)
@@ -297,43 +252,3 @@ blocks:
               longname: number of cell vertices
               numeric_index: true
               type: integer
-    icell2d:
-      block: cell2d
-      description: is the cell2d number.  Records in the cell2d block must be listed in consecutive order
-        from the first to the last.
-      reader: urword
-      optional: false
-      longname: cell2d number
-      numeric_index: true
-      type: integer
-    fdc:
-      block: cell2d
-      description: is the fractional distance to the cell center. FDC is relative to the first vertex
-        in the ICVERT array. In most cases FDC should be 0.5, which would place the center of the line
-        segment that defines the cell. If the value of FDC is 1, the cell center would located at the
-        last vertex. FDC values of 0 and 1 can be used to place the node at either end of the cell which
-        can be useful for cells with boundary conditions.
-      reader: urword
-      optional: false
-      longname: fractional distance to the cell center
-      type: double
-    ncvert:
-      block: cell2d
-      description: is the number of vertices required to define the cell.  There may be a different number
-        of vertices for each cell.
-      reader: urword
-      optional: false
-      longname: number of cell vertices
-      type: integer
-    icvert:
-      shape: (ncvert)
-      block: cell2d
-      description: is an array of integer values containing vertex numbers (in the VERTICES block) used
-        to define the cell.  Vertices must be listed in the order that defines the line representing the
-        cell.  Cells that are connected must share vertices. The bottom elevation of the cell is calculated
-        using the ZV of the first and last vertex point and FDC.
-      reader: urword
-      optional: false
-      longname: number of cell vertices
-      numeric_index: true
-      type: integer

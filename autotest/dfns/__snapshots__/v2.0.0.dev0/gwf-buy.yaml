@@ -23,11 +23,43 @@ options:
       not specified as an option.
   density_filerecord:
     block: options
-    type: record density fileout densityfile
+    type: record
     reader: urword
     optional: true
     tagged: true
     mf6internal: density_fr
+    fields:
+      density:
+        block: options
+        type: keyword
+        reader: urword
+        optional: false
+        longname: density keyword
+        description: keyword to specify that record corresponds to density.
+        in_record: true
+        tagged: true
+      fileout:
+        block: options
+        type: keyword
+        reader: urword
+        optional: false
+        longname: file keyword
+        description: keyword to specify that an output filename is expected next.
+        in_record: true
+        tagged: true
+      densityfile:
+        block: options
+        type: string
+        reader: urword
+        optional: false
+        longname: file keyword
+        description: name of the binary output file to write density information.  The density file has
+          the same format as the head file.  Density values will be written to the density file whenever
+          heads are written to the binary head file.  The settings for controlling head output are contained
+          in the Output Control option.
+        preserve_case: true
+        in_record: true
+        tagged: false
   dev_efh_formulation:
     block: options
     type: keyword

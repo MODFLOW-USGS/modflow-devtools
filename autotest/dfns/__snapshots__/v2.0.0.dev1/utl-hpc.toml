@@ -50,17 +50,3 @@ description = "is the zero-based partition number (also: MPI rank or processor i
 reader = "urword"
 longname = "model rank"
 type = "integer"
-
-[blocks.partitions.mname]
-block = "partitions"
-description = "is the unique model name."
-reader = "urword"
-longname = "model name"
-type = "string"
-
-[blocks.partitions.mrank]
-block = "partitions"
-description = "is the zero-based partition number (also: MPI rank or processor id) to which the model will be assigned."
-reader = "urword"
-longname = "model rank"
-type = "integer"

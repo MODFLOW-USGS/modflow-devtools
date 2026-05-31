@@ -82,22 +82,6 @@ optional = false
 longname = "file keyword"
 type = "string"
 
-[blocks.options.water_content]
-block = "options"
-description = "keyword to specify that record corresponds to unsaturated zone water contents."
-reader = "urword"
-optional = false
-longname = "water_content keyword"
-type = "keyword"
-
-[blocks.options.wcfile]
-block = "options"
-description = "name of the binary output file to write water content information."
-reader = "urword"
-optional = false
-longname = "file keyword"
-type = "string"
-
 [blocks.options.budget_filerecord]
 block = "options"
 reader = "urword"
@@ -121,30 +105,6 @@ longname = "file keyword"
 type = "keyword"
 
 [blocks.options.budget_filerecord.children.budgetfile]
-block = "options"
-description = "name of the binary output file to write budget information."
-reader = "urword"
-optional = false
-longname = "file keyword"
-type = "string"
-
-[blocks.options.budget]
-block = "options"
-description = "keyword to specify that record corresponds to the budget."
-reader = "urword"
-optional = false
-longname = "budget keyword"
-type = "keyword"
-
-[blocks.options.fileout]
-block = "options"
-description = "keyword to specify that an output filename is expected next."
-reader = "urword"
-optional = false
-longname = "file keyword"
-type = "keyword"
-
-[blocks.options.budgetfile]
 block = "options"
 description = "name of the binary output file to write budget information."
 reader = "urword"
@@ -182,22 +142,6 @@ optional = false
 longname = "file keyword"
 type = "string"
 
-[blocks.options.budgetcsv]
-block = "options"
-description = "keyword to specify that record corresponds to the budget CSV."
-reader = "urword"
-optional = false
-longname = "budget keyword"
-type = "keyword"
-
-[blocks.options.budgetcsvfile]
-block = "options"
-description = "name of the comma-separated value (CSV) output file to write budget summary information.  A budget summary record will be written to this file for each time step of the simulation."
-reader = "urword"
-optional = false
-longname = "file keyword"
-type = "string"
-
 [blocks.options.package_convergence_filerecord]
 block = "options"
 reader = "urword"
@@ -221,22 +165,6 @@ longname = "file keyword"
 type = "keyword"
 
 [blocks.options.package_convergence_filerecord.children.package_convergence_filename]
-block = "options"
-description = "name of the comma spaced values output file to write package convergence information."
-reader = "urword"
-optional = false
-longname = "file keyword"
-type = "string"
-
-[blocks.options.package_convergence]
-block = "options"
-description = "keyword to specify that record corresponds to the package convergence comma spaced values file."
-reader = "urword"
-optional = false
-longname = "package_convergence keyword"
-type = "keyword"
-
-[blocks.options.package_convergence_filename]
 block = "options"
 description = "name of the comma spaced values output file to write package convergence information."
 reader = "urword"
@@ -274,30 +202,6 @@ optional = false
 longname = "file name of time series information"
 type = "string"
 
-[blocks.options.ts6]
-block = "options"
-description = "keyword to specify that record corresponds to a time-series file."
-reader = "urword"
-optional = false
-longname = "head keyword"
-type = "keyword"
-
-[blocks.options.filein]
-block = "options"
-description = "keyword to specify that an input filename is expected next."
-reader = "urword"
-optional = false
-longname = "file keyword"
-type = "keyword"
-
-[blocks.options.ts6_filename]
-block = "options"
-description = "defines a time-series file defining time series that can be used to assign time-varying values. See the 'Time-Variable Input' section for instructions on using the time-series capability."
-reader = "urword"
-optional = false
-longname = "file name of time series information"
-type = "string"
-
 [blocks.options.obs_filerecord]
 block = "options"
 reader = "urword"
@@ -321,22 +225,6 @@ longname = "file keyword"
 type = "keyword"
 
 [blocks.options.obs_filerecord.children.obs6_filename]
-block = "options"
-description = "name of input file to define observations for the UZF package. See the 'Observation utility' section for instructions for preparing observation input files. Table {#2} lists observation type(s) supported by the UZF package."
-reader = "urword"
-optional = false
-longname = "obs6 input filename"
-type = "string"
-
-[blocks.options.obs6]
-block = "options"
-description = "keyword to specify that record corresponds to an observations file."
-reader = "urword"
-optional = false
-longname = "obs keyword"
-type = "keyword"
-
-[blocks.options.obs6_filename]
 block = "options"
 description = "name of input file to define observations for the UZF package. See the 'Observation utility' section for instructions for preparing observation input files. Table {#2} lists observation type(s) supported by the UZF package."
 reader = "urword"
@@ -518,188 +406,12 @@ optional = true
 longname = "well name"
 type = "string"
 
-[blocks.packagedata.ifno]
-block = "packagedata"
-description = "integer value that defines the feature (UZF object) number associated with the specified PACKAGEDATA data on the line. IFNO must be greater than zero and less than or equal to NUZFCELLS.  UZF information must be specified for every UZF cell or the program will terminate with an error.  The program will also terminate with an error if information for a UZF cell is specified more than once."
-reader = "urword"
-longname = "uzf id number for this entry"
-numeric_index = true
-type = "integer"
-
-[blocks.packagedata.cellid]
-shape = "(ncelldim)"
-block = "packagedata"
-description = "is the cell identifier, and depends on the type of grid that is used for the simulation.  For a structured grid that uses the DIS input file, CELLID is the layer, row, and column.   For a grid that uses the DISV input file, CELLID is the layer and CELL2D number.  If the model uses the unstructured discretization (DISU) input file, CELLID is the node number for the cell."
-reader = "urword"
-longname = "cell identifier"
-type = "integer"
-
-[blocks.packagedata.landflag]
-block = "packagedata"
-description = "integer value set to one for land surface cells indicating that boundary conditions can be applied and data can be specified in the PERIOD block. A value of 0 specifies a non-land surface cell."
-reader = "urword"
-longname = "land flag"
-type = "integer"
-
-[blocks.packagedata.ivertcon]
-block = "packagedata"
-description = "integer value set to specify underlying UZF cell that receives water flowing to bottom of cell. If unsaturated zone flow reaches the water table before the cell bottom, then water is added to the GWF cell instead of flowing to the underlying UZF cell. A value of 0 indicates the UZF cell is not connected to an underlying UZF cell."
-reader = "urword"
-longname = "vertical connection flag"
-numeric_index = true
-type = "integer"
-
-[blocks.packagedata.surfdep]
-block = "packagedata"
-description = "is the surface depression depth of the UZF cell."
-reader = "urword"
-longname = "surface depression depth"
-type = "double"
-
-[blocks.packagedata.vks]
-block = "packagedata"
-description = "is the saturated vertical hydraulic conductivity of the UZF cell.  This value is used with the Brooks-Corey function and the simulated water content to calculate the partially saturated hydraulic conductivity."
-reader = "urword"
-longname = "vertical saturated hydraulic conductivity"
-type = "double"
-
-[blocks.packagedata.thtr]
-block = "packagedata"
-description = "is the residual (irreducible) water content of the UZF cell.  This residual water is not available to plants and will not drain into underlying aquifer cells."
-reader = "urword"
-longname = "residual water content"
-type = "double"
-
-[blocks.packagedata.thts]
-block = "packagedata"
-description = "is the saturated water content of the UZF cell.  The values for saturated and residual water content should be set in a manner that is consistent with the specific yield value specified in the Storage Package.  The saturated water content must be greater than the residual content."
-reader = "urword"
-longname = "saturated water content"
-type = "double"
-
-[blocks.packagedata.thti]
-block = "packagedata"
-description = "is the initial water content of the UZF cell.  The value must be greater than or equal to the residual water content and less than or equal to the saturated water content."
-reader = "urword"
-longname = "initial water content"
-type = "double"
-
-[blocks.packagedata.eps]
-block = "packagedata"
-description = "is the exponent used in the Brooks-Corey function.  The Brooks-Corey function is used by UZF to calculated hydraulic conductivity under partially saturated conditions as a function of water content and the user-specified saturated hydraulic conductivity."
-reader = "urword"
-longname = "Brooks-Corey exponent"
-type = "double"
-
-[blocks.packagedata.boundname]
-block = "packagedata"
-description = "name of the UZF cell cell.  BOUNDNAME is an ASCII character variable that can contain as many as 40 characters.  If BOUNDNAME contains spaces in it, then the entire name must be enclosed within single quotes."
-reader = "urword"
-optional = true
-longname = "well name"
-type = "string"
-
-[blocks.period.iper]
-shape = "(nper)"
-block = "period"
-description = "integer value specifying the starting stress period number for which the data specified in the PERIOD block apply.  IPER must be less than or equal to NPER in the TDIS Package and greater than zero.  The IPER value assigned to a stress period block must be greater than the IPER value assigned for the previous PERIOD block.  The information specified in the PERIOD block will continue to apply for all subsequent stress periods, unless the program encounters another PERIOD block."
-block_variable = true
-reader = "urword"
-optional = false
-longname = "stress period number"
-type = "integer"
-
-[blocks.period.perioddata]
-shape = "(nper)"
-block = "period"
-reader = "urword"
-type = "list"
-
-[blocks.period.perioddata.children.perioddata]
-block = "period"
-reader = "urword"
-type = "record"
-
-[blocks.period.perioddata.children.perioddata.children.ifno]
-block = "packagedata"
-description = "integer value that defines the feature (UZF object) number associated with the specified PACKAGEDATA data on the line. IFNO must be greater than zero and less than or equal to NUZFCELLS.  UZF information must be specified for every UZF cell or the program will terminate with an error.  The program will also terminate with an error if information for a UZF cell is specified more than once."
-reader = "urword"
-longname = "uzf id number for this entry"
-numeric_index = true
-type = "integer"
-
-[blocks.period.perioddata.children.perioddata.children.finf]
-block = "period"
-description = "real or character value that defines the applied infiltration rate of the UZF cell ($LT^{-1}$). If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
-time_series = true
-reader = "urword"
-longname = "infiltration rate"
-type = "string"
-
-[blocks.period.perioddata.children.perioddata.children.pet]
-block = "period"
-description = "real or character value that defines the potential evapotranspiration rate of the UZF cell and specified GWF cell. Evapotranspiration is first removed from the unsaturated zone and any remaining potential evapotranspiration is applied to the saturated zone. If IVERTCON is greater than zero then residual potential evapotranspiration not satisfied in the UZF cell is applied to the underlying UZF and GWF cells. PET is always specified, but is only used if SIMULATE_ET is specified in the OPTIONS block. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
-reader = "urword"
-time_series = true
-longname = "potential ET rate"
-type = "string"
-
-[blocks.period.perioddata.children.perioddata.children.extdp]
-block = "period"
-description = "real or character value that defines the evapotranspiration extinction depth of the UZF cell. If IVERTCON is greater than zero and EXTDP extends below the GWF cell bottom then remaining potential evapotranspiration is applied to the underlying UZF and GWF cells. EXTDP is always specified, but is only used if SIMULATE_ET is specified in the OPTIONS block. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
-reader = "urword"
-time_series = true
-longname = "extinction depth"
-type = "string"
-
-[blocks.period.perioddata.children.perioddata.children.extwc]
-block = "period"
-description = "real or character value that defines the evapotranspiration extinction water content of the UZF cell. EXTWC is always specified, but is only used if SIMULATE_ET and UNSAT_ETWC are specified in the OPTIONS block. The evapotranspiration rate from the unsaturated zone will be set to zero when the calculated water content is at or less than this value.  The value for EXTWC cannot be less than the residual water content, and if it is specified as being less than the residual water content it is set to the residual water content. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
-reader = "urword"
-time_series = true
-longname = "extinction water content"
-type = "string"
-
-[blocks.period.perioddata.children.perioddata.children.ha]
-block = "period"
-description = "real or character value that defines the air entry potential (head) of the UZF cell. HA is always specified, but is only used if SIMULATE_ET and UNSAT_ETAE are specified in the OPTIONS block. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
-time_series = true
-reader = "urword"
-longname = "air entry potential"
-type = "string"
-
-[blocks.period.perioddata.children.perioddata.children.hroot]
-block = "period"
-description = "real or character value that defines the root potential (head) of the UZF cell. HROOT is always specified, but is only used if SIMULATE_ET and UNSAT_ETAE are specified in the OPTIONS block. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
-reader = "urword"
-time_series = true
-longname = "root potential"
-type = "string"
-
-[blocks.period.perioddata.children.perioddata.children.rootact]
-block = "period"
-description = "real or character value that defines the root activity function of the UZF cell. ROOTACT is the length of roots in a given volume of soil divided by that volume. Values range from 0 to about 3 $cm^{-2}$, depending on the plant community and its stage of development. ROOTACT is always specified, but is only used if SIMULATE_ET and UNSAT_ETAE are specified in the OPTIONS block. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
-reader = "urword"
-time_series = true
-longname = "root activity function"
-type = "string"
-
-[blocks.period.perioddata.children.perioddata.children.aux]
-shape = "(naux)"
-block = "period"
-description = "represents the values of the auxiliary variables for each UZF. The values of auxiliary variables must be present for each UZF. The values must be specified in the order of the auxiliary variables specified in the OPTIONS block.  If the package supports time series and the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
-reader = "urword"
-time_series = true
-optional = true
-longname = "auxiliary variables"
-type = "double"
-
 [blocks.period.ifno]
 shape = "(nper)"
-block = "period"
-description = "integer value that defines the feature (UZF object) number associated with the specified PERIOD data on the line."
+block = "packagedata"
+description = "integer value that defines the feature (UZF object) number associated with the specified PACKAGEDATA data on the line. IFNO must be greater than zero and less than or equal to NUZFCELLS.  UZF information must be specified for every UZF cell or the program will terminate with an error.  The program will also terminate with an error if information for a UZF cell is specified more than once."
 reader = "urword"
-longname = "UZF id number"
+longname = "uzf id number for this entry"
 numeric_index = true
 type = "integer"
 

@@ -90,30 +90,6 @@ optional = false
 longname = "file keyword"
 type = "string"
 
-[blocks.options.viscosity]
-block = "options"
-description = "keyword to specify that record corresponds to viscosity."
-reader = "urword"
-optional = false
-longname = "viscosity keyword"
-type = "keyword"
-
-[blocks.options.fileout]
-block = "options"
-description = "keyword to specify that an output filename is expected next."
-reader = "urword"
-optional = false
-longname = "file keyword"
-type = "keyword"
-
-[blocks.options.viscosityfile]
-block = "options"
-description = "name of the binary output file to write viscosity information.  The viscosity file has the same format as the head file.  Viscosity values will be written to the viscosity file whenever heads are written to the binary head file.  The settings for controlling head output are contained in the Output Control option."
-reader = "urword"
-optional = false
-longname = "file keyword"
-type = "string"
-
 [blocks.dimensions.nviscspecies]
 block = "dimensions"
 description = "number of species used in the viscosity equation of state.  If either concentrations or temperature (or both) are used to update viscosity then nviscspecies needs to be at least one."
@@ -164,42 +140,6 @@ longname = "modelname"
 type = "string"
 
 [blocks.packagedata.packagedata.children.packagedata.children.auxspeciesname]
-block = "packagedata"
-description = "name of an auxiliary variable in a GWF stress package that will be used for this species to calculate the viscosity values.  If a viscosity value is needed by the Viscosity Package then it will use the temperature or concentration values associated with this AUXSPECIESNAME in the viscosity equation of state.  For advanced stress packages (LAK, SFR, MAW, and UZF) that have an associated advanced transport package (LKT, SFT, MWT, and UZT), the FLOW_PACKAGE_AUXILIARY_NAME option in the advanced transport package can be used to transfer simulated temperature or concentration(s) into the flow package auxiliary variable.  In this manner, the Viscosity Package can calculate viscosity values for lakes, streams, multi-aquifer wells, and unsaturated zone flow cells using simulated concentrations."
-reader = "urword"
-longname = "auxspeciesname"
-type = "string"
-
-[blocks.packagedata.iviscspec]
-block = "packagedata"
-description = "integer value that defines the species number associated with the specified PACKAGEDATA data entered on each line. IVISCSPECIES must be greater than zero and less than or equal to NVISCSPECIES. Information must be specified for each of the NVISCSPECIES species or the program will terminate with an error.  The program will also terminate with an error if information for a species is specified more than once."
-reader = "urword"
-longname = "species number for this entry"
-numeric_index = true
-type = "integer"
-
-[blocks.packagedata.dviscdc]
-block = "packagedata"
-description = "real value that defines the slope of the line defining the linear relationship between viscosity and temperature or between viscosity and concentration, depending on the type of species entered on each line.  If the value of AUXSPECIESNAME entered on a line corresponds to TEMPERATURE_SPECIES_NAME (in the OPTIONS block), this value will be used when VISCOSITY_FUNC is equal to LINEAR (the default) in the OPTIONS block.  When VISCOSITY_FUNC is set to NONLINEAR, a value for DVISCDC must be specified though it is not used."
-reader = "urword"
-longname = "slope of the line that defines the linear relationship between viscosity and temperature or between viscosity and concentration, depending on the type of species entered on each line."
-type = "double"
-
-[blocks.packagedata.cviscref]
-block = "packagedata"
-description = "real value that defines the reference temperature or reference concentration value used for this species in the viscosity equation of state.  If AUXSPECIESNAME entered on a line corresponds to TEMPERATURE_SPECIES_NAME (in the OPTIONS block), then CVISCREF refers to a reference temperature, otherwise it refers to a reference concentration."
-reader = "urword"
-longname = "reference temperature value or reference concentration value"
-type = "double"
-
-[blocks.packagedata.modelname]
-block = "packagedata"
-description = "name of a GWT or GWE model used to simulate a species that will be used in the viscosity equation of state.  This name will have no effect if the simulation does not include a GWT or GWE model that corresponds to this GWF model."
-reader = "urword"
-longname = "modelname"
-type = "string"
-
-[blocks.packagedata.auxspeciesname]
 block = "packagedata"
 description = "name of an auxiliary variable in a GWF stress package that will be used for this species to calculate the viscosity values.  If a viscosity value is needed by the Viscosity Package then it will use the temperature or concentration values associated with this AUXSPECIESNAME in the viscosity equation of state.  For advanced stress packages (LAK, SFR, MAW, and UZF) that have an associated advanced transport package (LKT, SFT, MWT, and UZT), the FLOW_PACKAGE_AUXILIARY_NAME option in the advanced transport package can be used to transfer simulated temperature or concentration(s) into the flow package auxiliary variable.  In this manner, the Viscosity Package can calculate viscosity values for lakes, streams, multi-aquifer wells, and unsaturated zone flow cells using simulated concentrations."
 reader = "urword"

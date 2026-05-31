@@ -63,30 +63,6 @@
           }
         }
       },
-      "budget": {
-        "block": "options",
-        "description": "keyword to specify that record corresponds to the budget.",
-        "reader": "urword",
-        "optional": false,
-        "longname": "budget keyword",
-        "type": "keyword"
-      },
-      "fileout": {
-        "block": "options",
-        "description": "keyword to specify that an output filename is expected next.",
-        "reader": "urword",
-        "optional": false,
-        "longname": "file keyword",
-        "type": "keyword"
-      },
-      "budgetfile": {
-        "block": "options",
-        "description": "name of the binary output file to write budget information.",
-        "reader": "urword",
-        "optional": false,
-        "longname": "file keyword",
-        "type": "string"
-      },
       "budgetcsv_filerecord": {
         "block": "options",
         "reader": "urword",
@@ -118,22 +94,6 @@
             "type": "string"
           }
         }
-      },
-      "budgetcsv": {
-        "block": "options",
-        "description": "keyword to specify that record corresponds to the budget CSV.",
-        "reader": "urword",
-        "optional": false,
-        "longname": "budget keyword",
-        "type": "keyword"
-      },
-      "budgetcsvfile": {
-        "block": "options",
-        "description": "name of the comma-separated value (CSV) output file to write budget summary information.  A budget summary record will be written to this file for each time step of the simulation.",
-        "reader": "urword",
-        "optional": false,
-        "longname": "file keyword",
-        "type": "string"
       }
     }
   }

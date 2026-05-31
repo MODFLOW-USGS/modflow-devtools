@@ -62,11 +62,43 @@ options:
       formulation.  If A4 is not specified, a default value of 133.15 is assigned (Voss, 1984).
   viscosity_filerecord:
     block: options
-    type: record viscosity fileout viscosityfile
+    type: record
     reader: urword
     optional: true
     tagged: true
     mf6internal: viscosity_fr
+    fields:
+      viscosity:
+        block: options
+        type: keyword
+        reader: urword
+        optional: false
+        longname: viscosity keyword
+        description: keyword to specify that record corresponds to viscosity.
+        in_record: true
+        tagged: true
+      fileout:
+        block: options
+        type: keyword
+        reader: urword
+        optional: false
+        longname: file keyword
+        description: keyword to specify that an output filename is expected next.
+        in_record: true
+        tagged: true
+      viscosityfile:
+        block: options
+        type: string
+        reader: urword
+        optional: false
+        longname: file keyword
+        description: name of the binary output file to write viscosity information.  The viscosity file
+          has the same format as the head file.  Viscosity values will be written to the viscosity file
+          whenever heads are written to the binary head file.  The settings for controlling head output
+          are contained in the Output Control option.
+        preserve_case: true
+        in_record: true
+        tagged: false
 dimensions:
   nviscspecies:
     block: dimensions

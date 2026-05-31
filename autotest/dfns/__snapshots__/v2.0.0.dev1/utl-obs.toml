@@ -48,27 +48,6 @@ reader = "urword"
 optional = true
 type = "keyword"
 
-[blocks.continuous.fileout]
-block = "continuous"
-description = "keyword to specify that an output filename is expected next."
-reader = "urword"
-optional = false
-longname = "file keyword"
-type = "keyword"
-
-[blocks.continuous.obs_output_file_name]
-block = "continuous"
-description = "Name of a file to which simulated values corresponding to observations in the block are to be written. The file name can be an absolute or relative path name. A unique output file must be specified for each CONTINUOUS block. If the 'BINARY' option is used, output is written in binary form. By convention, text output files have the extension 'csv' (for 'Comma-Separated Values') and binary output files have the extension 'bsv' (for 'Binary Simulated Values')."
-reader = "urword"
-type = "string"
-
-[blocks.continuous.binary]
-block = "continuous"
-description = "an optional keyword used to indicate that the output file should be written in binary (unformatted) form."
-reader = "urword"
-optional = true
-type = "keyword"
-
 [blocks.continuous.continuous]
 block = "continuous"
 reader = "urword"
@@ -104,37 +83,6 @@ numeric_index = true
 type = "string"
 
 [blocks.continuous.continuous.children.continuous.children.id2]
-block = "continuous"
-description = "Text identifying cell adjacent to cell identified by ID. The form of ID2 is as described for ID. ID2 is used for intercell-flow observations of a GWF model, for three observation types of the LAK Package, for two observation types of the MAW Package, and one observation type of the UZF Package."
-reader = "urword"
-optional = true
-longname = "time"
-numeric_index = true
-type = "string"
-
-[blocks.continuous.obsname]
-block = "continuous"
-description = "string of 1 to 40 nonblank characters used to identify the observation. The identifier need not be unique; however, identification and post-processing of observations in the output files are facilitated if each observation is given a unique name."
-reader = "urword"
-longname = "observation name"
-type = "string"
-
-[blocks.continuous.obstype]
-block = "continuous"
-description = "a string of characters used to identify the observation type."
-reader = "urword"
-longname = "observation type"
-type = "string"
-
-[blocks.continuous.id]
-block = "continuous"
-description = "Text identifying cell where observation is located. For packages other than NPF, if boundary names are defined in the corresponding package input file, ID can be a boundary name. Otherwise ID is a cellid. If the model discretization is type DIS, cellid is three integers (layer, row, column). If the discretization is DISV, cellid is two integers (layer, cell number). If the discretization is DISU, cellid is one integer (node number)."
-reader = "urword"
-longname = "time"
-numeric_index = true
-type = "string"
-
-[blocks.continuous.id2]
 block = "continuous"
 description = "Text identifying cell adjacent to cell identified by ID. The form of ID2 is as described for ID. ID2 is used for intercell-flow observations of a GWF model, for three observation types of the LAK Package, for two observation types of the MAW Package, and one observation type of the UZF Package."
 reader = "urword"

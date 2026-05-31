@@ -27,57 +27,6 @@
       }
     },
     "period": {
-      "iper": {
-        "shape": "(nper)",
-        "block": "period",
-        "description": "integer value specifying the starting stress period number for which the data specified in the PERIOD block apply.  IPER must be less than or equal to NPER in the TDIS Package and greater than zero.  The IPER value assigned to a stress period block must be greater than the IPER value assigned for the previous PERIOD block.  The information specified in the PERIOD block will continue to apply for all subsequent stress periods, unless the program encounters another PERIOD block.",
-        "block_variable": true,
-        "reader": "urword",
-        "optional": false,
-        "longname": "stress period number",
-        "type": "integer"
-      },
-      "stress_period_data": {
-        "shape": "(nper, maxhfb)",
-        "block": "period",
-        "reader": "urword",
-        "mf6internal": "spd",
-        "type": "list",
-        "children": {
-          "stress_period_data": {
-            "shape": "(maxhfb)",
-            "block": "period",
-            "reader": "urword",
-            "mf6internal": "spd",
-            "type": "record",
-            "children": {
-              "cellid1": {
-                "shape": "(ncelldim)",
-                "block": "period",
-                "description": "identifier for the first cell.  For a structured grid that uses the DIS input file, CELLID1 is the layer, row, and column numbers of the cell.   For a grid that uses the DISV input file, CELLID1 is the layer number and CELL2D number for the two cells.  If the model uses the unstructured discretization (DISU) input file, then CELLID1 is the node number for the cell.  The barrier is located between cells designated as CELLID1 and CELLID2.  The program will terminate with an error if CELLID1 and CELLID2 are not horizontally or vertically adjacent.",
-                "reader": "urword",
-                "longname": "first cell adjacent to barrier",
-                "type": "integer"
-              },
-              "cellid2": {
-                "shape": "(ncelldim)",
-                "block": "period",
-                "description": "identifier for the second cell. See CELLID1 for description of how to specify.",
-                "reader": "urword",
-                "longname": "second cell adjacent to barrier",
-                "type": "integer"
-              },
-              "hydchr": {
-                "block": "period",
-                "description": "is the hydraulic characteristic of the hydraulic-flow barrier. The hydraulic characteristic is the barrier hydraulic conductivity divided by the width of the hydraulic-flow barrier. If the hydraulic characteristic is negative, then the absolute value of HYDCHR acts as a multiplier to the conductance between the two model cells specified as containing the barrier. For example, if the value for HYDCHR was specified as -1.5, the conductance calculated for the two cells would be multiplied by 1.5.",
-                "reader": "urword",
-                "longname": "barrier hydraulic characteristic",
-                "type": "double"
-              }
-            }
-          }
-        }
-      },
       "cellid1": {
         "shape": "(nper, ncelldim)",
         "block": "period",

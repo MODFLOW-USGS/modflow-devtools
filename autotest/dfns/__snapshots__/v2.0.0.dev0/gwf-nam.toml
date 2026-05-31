@@ -38,37 +38,155 @@ description = "keyword to indicate that all model package flow terms will be wri
 
 [options.newtonoptions]
 block = "options"
-type = "record newton under_relaxation"
+type = "record"
 reader = "urword"
 optional = true
 longname = "newton keyword and options"
 description = "none"
 
+[options.newtonoptions.fields.newton]
+block = "options"
+type = "keyword"
+reader = "urword"
+longname = "keyword to activate Newton-Raphson formulation"
+description = "keyword that activates the Newton-Raphson formulation for groundwater flow between connected, convertible groundwater cells and stress packages that support calculation of Newton-Raphson terms for groundwater exchanges. Cells will not dry when this option is used. By default, the Newton-Raphson formulation is not applied."
+in_record = true
+
+[options.newtonoptions.fields.under_relaxation]
+block = "options"
+type = "keyword"
+reader = "urword"
+optional = true
+longname = "keyword to activate Newton-Raphson UNDER_RELAXATION option"
+description = "keyword that indicates whether the groundwater head in a cell will be under-relaxed when water levels fall below the bottom of the model below any given cell. By default, Newton-Raphson UNDER_RELAXATION is not applied."
+in_record = true
+
 [options.nc_mesh2d_filerecord]
 block = "options"
-type = "record netcdf_mesh2d fileout ncmesh2dfile"
+type = "record"
 reader = "urword"
 optional = true
 description = "NetCDF layered mesh fileout record."
 tagged = true
 mf6internal = "ncmesh2drec"
 
+[options.nc_mesh2d_filerecord.fields.netcdf_mesh2d]
+block = "options"
+type = "keyword"
+reader = "urword"
+optional = false
+longname = "budget keyword"
+description = "keyword to specify that record corresponds to a layered mesh NetCDF file."
+in_record = true
+tagged = true
+extended = true
+
+[options.nc_mesh2d_filerecord.fields.fileout]
+block = "options"
+type = "keyword"
+reader = "urword"
+optional = false
+longname = "file keyword"
+description = "keyword to specify that an output filename is expected next."
+in_record = true
+tagged = true
+
+[options.nc_mesh2d_filerecord.fields.ncmesh2dfile]
+block = "options"
+type = "string"
+reader = "urword"
+optional = false
+longname = "file keyword"
+description = "name of the NetCDF ugrid layered mesh output file."
+preserve_case = true
+in_record = true
+tagged = false
+extended = true
+
 [options.nc_structured_filerecord]
 block = "options"
-type = "record netcdf_structured fileout ncstructfile"
+type = "record"
 reader = "urword"
 optional = true
 description = "NetCDF structured fileout record."
 tagged = true
 mf6internal = "ncstructrec"
 
+[options.nc_structured_filerecord.fields.netcdf_structured]
+block = "options"
+type = "keyword"
+reader = "urword"
+optional = false
+longname = "budget keyword"
+description = "keyword to specify that record corresponds to a structured NetCDF file."
+in_record = true
+tagged = true
+mf6internal = "netcdf_struct"
+extended = true
+
+[options.nc_structured_filerecord.fields.fileout]
+block = "options"
+type = "keyword"
+reader = "urword"
+optional = false
+longname = "file keyword"
+description = "keyword to specify that an output filename is expected next."
+in_record = true
+tagged = true
+
+[options.nc_structured_filerecord.fields.ncstructfile]
+block = "options"
+type = "string"
+reader = "urword"
+optional = false
+longname = "file keyword"
+description = "name of the NetCDF structured output file."
+preserve_case = true
+in_record = true
+tagged = false
+extended = true
+
 [options.nc_filerecord]
 block = "options"
-type = "record netcdf filein netcdf_filename"
+type = "record"
 reader = "urword"
 optional = true
 description = "NetCDF filerecord"
 tagged = true
+
+[options.nc_filerecord.fields.netcdf]
+block = "options"
+type = "keyword"
+reader = "urword"
+optional = false
+longname = "netcdf keyword"
+description = "keyword to specify that record corresponds to a NetCDF input file."
+in_record = true
+tagged = true
+extended = true
+
+[options.nc_filerecord.fields.filein]
+block = "options"
+type = "keyword"
+reader = "urword"
+optional = false
+longname = "file keyword"
+description = "keyword to specify that an input filename is expected next."
+in_record = true
+tagged = true
+
+[options.nc_filerecord.fields.netcdf_filename]
+block = "options"
+type = "string"
+reader = "urword"
+optional = false
+longname = "netcdf input filename"
+description = "defines a NetCDF input file."
+preserve_case = true
+in_record = true
+tagged = false
+mf6internal = "netcdf_fname"
+extended = true
 
 [packages.packages]
 block = "packages"

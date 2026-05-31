@@ -53,24 +53,6 @@ deprecated = "6.1.1"
 longname = "file keyword"
 type = "string"
 
-[blocks.options.csv_output]
-block = "options"
-description = "keyword to specify that the record corresponds to the comma separated values solver convergence output.  The CSV_OUTPUT option has been deprecated and split into the CSV_OUTER_OUTPUT and CSV_INNER_OUTPUT options.  Starting with MODFLOW 6 version 6.1.1 if the CSV_OUTPUT option is specified, then it is treated as the CSV_OUTER_OUTPUT option."
-reader = "urword"
-optional = false
-deprecated = "6.1.1"
-longname = "budget keyword"
-type = "keyword"
-
-[blocks.options.csvfile]
-block = "options"
-description = "name of the ascii comma separated values output file to write solver convergence information. If PRINT_OPTION is NONE or SUMMARY, comma separated values output includes maximum head change convergence information at the end of each outer iteration for each time step. If PRINT_OPTION is ALL, comma separated values output includes maximum head change and maximum residual convergence information for the solution and each model (if the solution includes more than one model) and linear acceleration information for each inner iteration."
-reader = "urword"
-optional = false
-deprecated = "6.1.1"
-longname = "file keyword"
-type = "string"
-
 [blocks.options.csv_outer_output_filerecord]
 block = "options"
 reader = "urword"
@@ -94,30 +76,6 @@ longname = "file keyword"
 type = "keyword"
 
 [blocks.options.csv_outer_output_filerecord.children.outer_csvfile]
-block = "options"
-description = "name of the ascii comma separated values output file to write maximum dependent-variable (for example, head) change convergence information at the end of each outer iteration for each time step."
-reader = "urword"
-optional = false
-longname = "file keyword"
-type = "string"
-
-[blocks.options.csv_outer_output]
-block = "options"
-description = "keyword to specify that the record corresponds to the comma separated values outer iteration convergence output."
-reader = "urword"
-optional = false
-longname = "budget keyword"
-type = "keyword"
-
-[blocks.options.fileout]
-block = "options"
-description = "keyword to specify that an output filename is expected next."
-reader = "urword"
-optional = false
-longname = "file keyword"
-type = "keyword"
-
-[blocks.options.outer_csvfile]
 block = "options"
 description = "name of the ascii comma separated values output file to write maximum dependent-variable (for example, head) change convergence information at the end of each outer iteration for each time step."
 reader = "urword"
@@ -155,22 +113,6 @@ optional = false
 longname = "file keyword"
 type = "string"
 
-[blocks.options.csv_inner_output]
-block = "options"
-description = "keyword to specify that the record corresponds to the comma separated values solver convergence output."
-reader = "urword"
-optional = false
-longname = "budget keyword"
-type = "keyword"
-
-[blocks.options.inner_csvfile]
-block = "options"
-description = "name of the ascii comma separated values output file to write solver convergence information. Comma separated values output includes maximum dependent-variable (for example, head) change and maximum residual convergence information for the solution and each model (if the solution includes more than one model) and linear acceleration information for each inner iteration."
-reader = "urword"
-optional = false
-longname = "file keyword"
-type = "string"
-
 [blocks.options.no_ptcrecord]
 block = "options"
 reader = "urword"
@@ -187,22 +129,6 @@ longname = "no pseudo-transient continuation"
 type = "keyword"
 
 [blocks.options.no_ptcrecord.children.no_ptc_option]
-block = "options"
-description = "is an optional keyword that is used to define options for disabling pseudo-transient continuation (PTC). FIRST is an optional keyword to disable PTC for the first stress period, if steady-state and one or more model is using the Newton-Raphson formulation. ALL is an optional keyword to disable PTC for all steady-state stress periods for models using the Newton-Raphson formulation. If NO_PTC_OPTION is not specified, the NO_PTC ALL option is used."
-reader = "urword"
-optional = true
-longname = "no pseudo-transient continuation option"
-type = "string"
-
-[blocks.options.no_ptc]
-block = "options"
-description = "is a flag that is used to disable pseudo-transient continuation (PTC). Option only applies to steady-state stress periods for models using the Newton-Raphson formulation. For many problems, PTC can significantly improve convergence behavior for steady-state simulations, and for this reason it is active by default.  In some cases, however, PTC can worsen the convergence behavior, especially when the initial conditions are similar to the solution.  When the initial conditions are similar to, or exactly the same as, the solution and convergence is slow, then the NO_PTC FIRST option should be used to deactivate PTC for the first stress period.  The NO_PTC ALL option should also be used in order to compare convergence behavior with other MODFLOW versions, as PTC is only available in MODFLOW 6."
-reader = "urword"
-optional = false
-longname = "no pseudo-transient continuation"
-type = "keyword"
-
-[blocks.options.no_ptc_option]
 block = "options"
 description = "is an optional keyword that is used to define options for disabling pseudo-transient continuation (PTC). FIRST is an optional keyword to disable PTC for the first stress period, if steady-state and one or more model is using the Newton-Raphson formulation. ALL is an optional keyword to disable PTC for all steady-state stress periods for models using the Newton-Raphson formulation. If NO_PTC_OPTION is not specified, the NO_PTC ALL option is used."
 reader = "urword"

@@ -50,30 +50,6 @@ optional = false
 longname = "file name of adaptive time series information"
 type = "string"
 
-[blocks.options.ats6]
-block = "options"
-description = "keyword to specify that record corresponds to an adaptive time step (ATS) input file.  The behavior of ATS and a description of the input file is provided separately."
-reader = "urword"
-optional = false
-longname = "ats keyword"
-type = "keyword"
-
-[blocks.options.filein]
-block = "options"
-description = "keyword to specify that an input filename is expected next."
-reader = "urword"
-optional = false
-longname = "file keyword"
-type = "keyword"
-
-[blocks.options.ats6_filename]
-block = "options"
-description = "defines an adaptive time step (ATS) input file defining ATS controls.  Records in the ATS file can be used to override the time step behavior for selected stress periods."
-reader = "urword"
-optional = false
-longname = "file name of adaptive time series information"
-type = "string"
-
 [blocks.dimensions.nper]
 block = "dimensions"
 description = "is the number of stress periods for the simulation."
@@ -116,30 +92,6 @@ longname = "number of time steps"
 type = "integer"
 
 [blocks.perioddata.perioddata.children.perioddata.children.tsmult]
-block = "perioddata"
-description = "is the multiplier for the length of successive time steps. The length of a time step is calculated by multiplying the length of the previous time step by TSMULT. The length of the first time step, $Delta t_1$, is related to PERLEN, NSTP, and TSMULT by the relation $Delta t_1= perlen frac{tsmult - 1}{tsmult^{nstp}-1}$."
-reader = "urword"
-optional = false
-longname = "number of time steps"
-type = "double"
-
-[blocks.perioddata.perlen]
-block = "perioddata"
-description = "is the length of a stress period."
-reader = "urword"
-optional = false
-longname = "length of stress period"
-type = "double"
-
-[blocks.perioddata.nstp]
-block = "perioddata"
-description = "is the number of time steps in a stress period."
-reader = "urword"
-optional = false
-longname = "number of time steps"
-type = "integer"
-
-[blocks.perioddata.tsmult]
 block = "perioddata"
 description = "is the multiplier for the length of successive time steps. The length of a time step is calculated by multiplying the length of the previous time step by TSMULT. The length of the first time step, $Delta t_1$, is related to PERLEN, NSTP, and TSMULT by the relation $Delta t_1= perlen frac{tsmult - 1}{tsmult^{nstp}-1}$."
 reader = "urword"

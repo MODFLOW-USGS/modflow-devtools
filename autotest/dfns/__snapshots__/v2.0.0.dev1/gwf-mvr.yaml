@@ -60,27 +60,6 @@ blocks:
           optional: false
           longname: file keyword
           type: string
-    budget:
-      block: options
-      description: keyword to specify that record corresponds to the budget.
-      reader: urword
-      optional: false
-      longname: budget keyword
-      type: keyword
-    fileout:
-      block: options
-      description: keyword to specify that an output filename is expected next.
-      reader: urword
-      optional: false
-      longname: file keyword
-      type: keyword
-    budgetfile:
-      block: options
-      description: name of the output file to write budget information.
-      reader: urword
-      optional: false
-      longname: file keyword
-      type: string
     budgetcsv_filerecord:
       block: options
       reader: urword
@@ -109,21 +88,6 @@ blocks:
           optional: false
           longname: file keyword
           type: string
-    budgetcsv:
-      block: options
-      description: keyword to specify that record corresponds to the budget CSV.
-      reader: urword
-      optional: false
-      longname: budget keyword
-      type: keyword
-    budgetcsvfile:
-      block: options
-      description: name of the comma-separated value (CSV) output file to write budget summary information.  A
-        budget summary record will be written to this file for each time step of the simulation.
-      reader: urword
-      optional: false
-      longname: file keyword
-      type: string
   dimensions:
     maxmvr:
       block: dimensions
@@ -174,117 +138,7 @@ blocks:
               reader: urword
               optional: false
               type: string
-    mname:
-      block: packages
-      description: name of model containing the package.  Model names are assigned by the user in the
-        simulation name file.
-      reader: urword
-      optional: true
-      type: string
-    pname:
-      block: packages
-      description: is the name of a package that may be included in a subsequent stress period block.  The
-        package name is assigned in the name file for the GWF Model.  Package names are optionally provided
-        in the name file.  If they are not provided by the user, then packages are assigned a default
-        value, which is the package acronym followed by a hyphen and the package number.  For example,
-        the first Drain Package is named DRN-1.  The second Drain Package is named DRN-2, and so forth.
-      reader: urword
-      optional: false
-      type: string
   period:
-    iper:
-      shape: (nper)
-      block: period
-      description: integer value specifying the starting stress period number for which the data specified
-        in the PERIOD block apply.  IPER must be less than or equal to NPER in the TDIS Package and greater
-        than zero.  The IPER value assigned to a stress period block must be greater than the IPER value
-        assigned for the previous PERIOD block.  The information specified in the PERIOD block will continue
-        to apply for all subsequent stress periods, unless the program encounters another PERIOD block.
-      block_variable: true
-      reader: urword
-      optional: false
-      longname: stress period number
-      type: integer
-    perioddata:
-      shape: (nper)
-      block: period
-      reader: urword
-      type: list
-      children:
-        perioddata:
-          shape: (maxbound)
-          block: period
-          reader: urword
-          type: record
-          children:
-            mname1:
-              block: period
-              description: name of model containing the package, PNAME1.
-              reader: urword
-              optional: true
-              type: string
-            pname1:
-              block: period
-              description: is the package name for the provider.  The package PNAME1 must be designated
-                to provide water through the MVR Package by specifying the keyword 'MOVER' in its OPTIONS
-                block.
-              reader: urword
-              longname: provider package name
-              type: string
-            id1:
-              block: period
-              description: is the identifier for the provider.  For the standard boundary packages, the
-                provider identifier is the number of the boundary as it is listed in the package input
-                file. (Note that the order of these boundaries may change by stress period, which must
-                be accounted for in the Mover Package.)  So the first well has an identifier of one.  The
-                second is two, and so forth.  For the advanced packages, the identifier is the reach number
-                (SFR Package), well number (MAW Package), or UZF cell number.  For the Lake Package, ID1
-                is the lake outlet number.  Thus, outflows from a single lake can be routed to different
-                streams, for example.
-              reader: urword
-              longname: provider reach
-              numeric_index: true
-              type: integer
-            mname2:
-              block: period
-              description: name of model containing the package, PNAME2.
-              reader: urword
-              optional: true
-              type: string
-            pname2:
-              block: period
-              description: is the package name for the receiver.  The package PNAME2 must be designated
-                to receive water from the MVR Package by specifying the keyword 'MOVER' in its OPTIONS
-                block.
-              reader: urword
-              longname: receiver package name
-              type: string
-            id2:
-              block: period
-              description: is the identifier for the receiver.  The receiver identifier is the reach number
-                (SFR Package), Lake number (LAK Package), well number (MAW Package), or UZF cell number.
-              reader: urword
-              longname: receiver reach
-              numeric_index: true
-              type: integer
-            mvrtype:
-              block: period
-              description: is the character string signifying the method for determining how much water
-                will be moved.  Supported values are 'FACTOR' 'EXCESS' 'THRESHOLD' and 'UPTO'.  These
-                four options determine how the receiver flow rate, $Q_R$, is calculated.  These options
-                mirror the options defined for the cprior variable in the SFR package, with the term 'FACTOR'
-                being functionally equivalent to the 'FRACTION' option for cprior.
-              reader: urword
-              longname: mover type
-              type: string
-            value:
-              block: period
-              description: is the value to be used in the equation for calculating the amount of water
-                to move.  For the 'FACTOR' option, VALUE is the $alpha$ factor.  For the remaining options,
-                VALUE is the specified flow rate, $Q_S$.
-              reader: urword
-              longname: mover value
-              type: double
     mname1:
       shape: (nper)
       block: period

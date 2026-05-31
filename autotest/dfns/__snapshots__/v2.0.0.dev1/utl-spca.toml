@@ -51,40 +51,6 @@ optional = false
 longname = "file name of time series information"
 type = "string"
 
-[blocks.options.tas6]
-block = "options"
-description = "keyword to specify that record corresponds to a time-array-series file."
-reader = "urword"
-optional = false
-longname = "head keyword"
-type = "keyword"
-
-[blocks.options.filein]
-block = "options"
-description = "keyword to specify that an input filename is expected next."
-reader = "urword"
-optional = false
-longname = "file keyword"
-type = "keyword"
-
-[blocks.options.tas6_filename]
-block = "options"
-description = "defines a time-array-series file defining a time-array series that can be used to assign time-varying values. See the Time-Variable Input section for instructions on using the time-array series capability."
-reader = "urword"
-optional = false
-longname = "file name of time series information"
-type = "string"
-
-[blocks.period.iper]
-shape = "(nper)"
-block = "period"
-description = "integer value specifying the starting stress period number for which the data specified in the PERIOD block apply.  IPER must be less than or equal to NPER in the TDIS Package and greater than zero.  The IPER value assigned to a stress period block must be greater than the IPER value assigned for the previous PERIOD block.  The information specified in the PERIOD block will continue to apply for all subsequent stress periods, unless the program encounters another PERIOD block."
-block_variable = true
-reader = "urword"
-optional = false
-longname = "stress period number"
-type = "integer"
-
 [blocks.period.concentration]
 shape = "(nper, ncol*nrow; ncpl)"
 block = "period"

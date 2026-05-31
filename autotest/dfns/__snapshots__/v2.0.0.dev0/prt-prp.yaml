@@ -65,17 +65,77 @@ options:
     mf6internal: extend
   track_filerecord:
     block: options
-    type: record track fileout trackfile
+    type: record
     reader: urword
     optional: true
     tagged: true
+    fields:
+      track:
+        block: options
+        type: keyword
+        reader: urword
+        optional: false
+        longname: track keyword
+        description: keyword to specify that record corresponds to a binary track output file.  Each PRP
+          Package may have a distinct binary track output file.
+        in_record: true
+        tagged: true
+      fileout:
+        block: options
+        type: keyword
+        reader: urword
+        optional: false
+        longname: file keyword
+        description: keyword to specify that an output filename is expected next.
+        in_record: true
+        tagged: true
+      trackfile:
+        block: options
+        type: string
+        reader: urword
+        optional: false
+        longname: file keyword
+        description: name of the binary output file to write tracking information.
+        preserve_case: true
+        in_record: true
+        tagged: false
   trackcsv_filerecord:
     block: options
-    type: record trackcsv fileout trackcsvfile
+    type: record
     reader: urword
     optional: true
     tagged: true
     mf6internal: trackcsvfr
+    fields:
+      fileout:
+        block: options
+        type: keyword
+        reader: urword
+        optional: false
+        longname: file keyword
+        description: keyword to specify that an output filename is expected next.
+        in_record: true
+        tagged: true
+      trackcsv:
+        block: options
+        type: keyword
+        reader: urword
+        optional: false
+        longname: track keyword
+        description: keyword to specify that record corresponds to a CSV track output file.  Each PRP
+          Package may have a distinct CSV track output file.
+        in_record: true
+        tagged: true
+      trackcsvfile:
+        block: options
+        type: string
+        reader: urword
+        optional: false
+        longname: file keyword
+        description: name of the comma-separated value (CSV) file to write tracking information.
+        preserve_case: true
+        in_record: true
+        tagged: false
   stoptime:
     block: options
     type: double precision
@@ -136,20 +196,63 @@ options:
       a cell results in an error.
   release_timesrecord:
     block: options
-    type: record release_times times
+    type: record
     reader: urword
     optional: true
     tagged: true
     mf6internal: releasetr
     removed: 6.6.0
+    fields:
+      release_times:
+        block: options
+        type: keyword
+        reader: urword
+        description: keyword indicating release times will follow
+        in_record: true
+        tagged: true
+        removed: 6.6.0
+      times:
+        block: options
+        type: double precision
+        shape: (any1d)
+        reader: urword
+        longname: release times
+        description: times to release, relative to the beginning of the simulation.  RELEASE_TIMES and
+          RELEASE_TIMESFILE are mutually exclusive.
+        in_record: true
+        tagged: false
+        repeating: true
+        removed: 6.6.0
   release_timesfilerecord:
     block: options
-    type: record release_timesfile timesfile
+    type: record
     reader: urword
     optional: true
     tagged: true
     mf6internal: release_timesfr
     removed: 6.6.0
+    fields:
+      release_timesfile:
+        block: options
+        type: keyword
+        reader: urword
+        description: keyword indicating release times file name will follow
+        in_record: true
+        tagged: true
+        mf6internal: release_timesfn
+        removed: 6.6.0
+      timesfile:
+        block: options
+        type: string
+        reader: urword
+        optional: false
+        longname: file keyword
+        description: name of the release times file.  RELEASE_TIMES and RELEASE_TIMESFILE are mutually
+          exclusive.
+        preserve_case: true
+        in_record: true
+        tagged: false
+        removed: 6.6.0
   dry_tracking_method:
     block: options
     type: string

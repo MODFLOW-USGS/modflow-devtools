@@ -27,21 +27,6 @@ reader = "urword"
 optional = false
 type = "string"
 
-[blocks.attributes.name]
-block = "attributes"
-description = "xxx"
-reader = "urword"
-optional = false
-type = "keyword"
-
-[blocks.attributes.time_series_name]
-shape = "(any1d)"
-block = "attributes"
-description = "Name by which a package references a particular time-array series. The name must be unique among all time-array series used in a package."
-reader = "urword"
-optional = false
-type = "string"
-
 [blocks.attributes.interpolation_methodrecord]
 block = "attributes"
 description = "xxx"
@@ -57,21 +42,6 @@ optional = false
 type = "keyword"
 
 [blocks.attributes.interpolation_methodrecord.children.interpolation_method]
-block = "attributes"
-description = "Interpolation method, which is either STEPWISE or LINEAR."
-valid = "stepwise linear linearend"
-reader = "urword"
-optional = false
-type = "string"
-
-[blocks.attributes.method]
-block = "attributes"
-description = " xxx"
-reader = "urword"
-optional = false
-type = "keyword"
-
-[blocks.attributes.interpolation_method]
 block = "attributes"
 description = "Interpolation method, which is either STEPWISE or LINEAR."
 valid = "stepwise linear linearend"
@@ -97,29 +67,6 @@ type = "keyword"
 shape = "time_series_name"
 block = "attributes"
 description = "Scale factor, which will multiply all array values in time series. SFAC is an optional attribute; if omitted, SFAC = 1.0."
-reader = "urword"
-optional = false
-type = "double"
-
-[blocks.attributes.sfac]
-block = "attributes"
-description = " xxx"
-reader = "urword"
-optional = false
-type = "keyword"
-
-[blocks.attributes.sfacval]
-shape = "time_series_name"
-block = "attributes"
-description = "Scale factor, which will multiply all array values in time series. SFAC is an optional attribute; if omitted, SFAC = 1.0."
-reader = "urword"
-optional = false
-type = "double"
-
-[blocks.time.time_from_model_start]
-block = "time"
-description = "A numeric time relative to the start of the simulation, in the time unit used in the simulation. Times must be strictly increasing."
-block_variable = true
 reader = "urword"
 optional = false
 type = "double"

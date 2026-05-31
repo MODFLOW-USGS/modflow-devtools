@@ -72,29 +72,6 @@ blocks:
           optional: false
           longname: file keyword
           type: string
-    sorbate:
-      block: options
-      description: keyword to specify that record corresponds to sorbate concentration.
-      reader: urword
-      optional: false
-      longname: sorbate keyword
-      type: keyword
-    fileout:
-      block: options
-      description: keyword to specify that an output filename is expected next.
-      reader: urword
-      optional: false
-      longname: file keyword
-      type: keyword
-    sorbatefile:
-      block: options
-      description: name of the output file to write sorbate concentration information.  Sorbate concentrations
-        will be written whenever aqueous concentrations are saved, as determined by settings in the Output
-        Control option.
-      reader: urword
-      optional: false
-      longname: file keyword
-      type: string
     export_array_ascii:
       block: options
       description: keyword that specifies input griddata arrays should be written to layered ascii output

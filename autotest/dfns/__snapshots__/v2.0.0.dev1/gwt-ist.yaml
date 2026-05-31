@@ -41,27 +41,6 @@ blocks:
           optional: false
           longname: file keyword
           type: string
-    budget:
-      block: options
-      description: keyword to specify that record corresponds to the budget.
-      reader: urword
-      optional: false
-      longname: budget keyword
-      type: keyword
-    fileout:
-      block: options
-      description: keyword to specify that an output filename is expected next.
-      reader: urword
-      optional: false
-      longname: file keyword
-      type: keyword
-    budgetfile:
-      block: options
-      description: name of the binary output file to write budget information.
-      reader: urword
-      optional: false
-      longname: file keyword
-      type: string
     budgetcsv_filerecord:
       block: options
       reader: urword
@@ -91,21 +70,6 @@ blocks:
           optional: false
           longname: file keyword
           type: string
-    budgetcsv:
-      block: options
-      description: keyword to specify that record corresponds to the budget CSV.
-      reader: urword
-      optional: false
-      longname: budget keyword
-      type: keyword
-    budgetcsvfile:
-      block: options
-      description: name of the comma-separated value (CSV) output file to write budget summary information.  A
-        budget summary record will be written to this file for each time step of the simulation.
-      reader: urword
-      optional: false
-      longname: file keyword
-      type: string
     sorption:
       block: options
       description: is a text keyword to indicate that sorption will be activated.  Valid sorption options
@@ -169,25 +133,6 @@ blocks:
           optional: false
           longname: file keyword
           type: string
-    cim:
-      block: options
-      description: keyword to specify that record corresponds to immobile concentration.
-      reader: urword
-      optional: false
-      longname: cim keyword
-      mf6internal: cimopt
-      type: keyword
-    cimfile:
-      block: options
-      description: name of the output file to write immobile concentrations.  This file is a binary file
-        that has the same format and structure as a binary head and concentration file.  The value for
-        the text variable written to the file is CIM.  Immobile domain concentrations will be written
-        to this file at the same interval as mobile domain concentrations are saved, as specified in the
-        GWT Model Output Control file.
-      reader: urword
-      optional: false
-      longname: file keyword
-      type: string
     cimprintrecord:
       block: options
       reader: urword
@@ -209,69 +154,6 @@ blocks:
           optional: false
           longname: keyword to indicate that a print format follows
           type: keyword
-    print_format:
-      block: options
-      description: keyword to specify format for printing to the listing file.
-      reader: urword
-      optional: false
-      longname: keyword to indicate that a print format follows
-      type: keyword
-    formatrecord:
-      block: options
-      reader: urword
-      optional: false
-      type: record
-      children:
-        columns:
-          block: options
-          description: number of columns for writing data.
-          reader: urword
-          longname: number of columns
-          type: integer
-        width:
-          block: options
-          description: width for writing each number.
-          reader: urword
-          longname: width for each number
-          type: integer
-        digits:
-          block: options
-          description: number of digits to use for writing a number.
-          reader: urword
-          longname: number of digits
-          type: integer
-        format:
-          block: options
-          description: write format can be EXPONENTIAL, FIXED, GENERAL, or SCIENTIFIC.
-          reader: urword
-          optional: false
-          longname: write format
-          type: string
-    columns:
-      block: options
-      description: number of columns for writing data.
-      reader: urword
-      longname: number of columns
-      type: integer
-    width:
-      block: options
-      description: width for writing each number.
-      reader: urword
-      longname: width for each number
-      type: integer
-    digits:
-      block: options
-      description: number of digits to use for writing a number.
-      reader: urword
-      longname: number of digits
-      type: integer
-    format:
-      block: options
-      description: write format can be EXPONENTIAL, FIXED, GENERAL, or SCIENTIFIC.
-      reader: urword
-      optional: false
-      longname: write format
-      type: string
     sorbate_filerecord:
       block: options
       reader: urword
@@ -302,22 +184,6 @@ blocks:
           optional: false
           longname: file keyword
           type: string
-    sorbate:
-      block: options
-      description: keyword to specify that record corresponds to immobile sorbate concentration.
-      reader: urword
-      optional: false
-      longname: sorbate keyword
-      type: keyword
-    sorbatefile:
-      block: options
-      description: name of the output file to write immobile sorbate concentration information.  Immobile
-        sorbate concentrations will be written whenever aqueous immobile concentrations are saved, as
-        determined by settings in the Output Control option.
-      reader: urword
-      optional: false
-      longname: file keyword
-      type: string
     export_array_ascii:
       block: options
       description: keyword that specifies input griddata arrays should be written to layered ascii output
