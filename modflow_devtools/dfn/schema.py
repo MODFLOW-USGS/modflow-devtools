@@ -18,6 +18,9 @@ from typing import (
 from warnings import warn
 
 from boltons.dictutils import OMD
+from boltons.iterutils import remap
+
+from modflow_devtools.misc import drop_none_or_empty
 
 SchemaVersion = Literal["1", "2.0.0.dev0", "2.0.0.dev1"]
 """DFN format version number."""
@@ -270,10 +273,12 @@ class Dfn(TypedDict):
                 from modflow_devtools.dfn.migrate_to_v2_0_0_dev0 import to_v2_0_0_dev0
 
                 data = to_v2_0_0_dev0(name=name, fields=fields, meta=meta, refs=refs)
+                data = remap(data, visit=drop_none_or_empty)
             case "2.0.0.dev1":
                 from modflow_devtools.dfn.migrate_to_v2_0_0_dev1 import to_v2_0_0_dev1
 
                 data = to_v2_0_0_dev1(name=name, fields=fields, meta=meta)
+                data = remap(data, visit=drop_none_or_empty)
             case _:
                 raise ValueError(
                     f"Unsupported schema version '{schema_version!r}' requested, "
