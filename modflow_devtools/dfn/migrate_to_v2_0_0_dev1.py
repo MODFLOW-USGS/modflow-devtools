@@ -22,11 +22,11 @@ def map_period_block(block: Fields) -> Fields:
 
     block = dict(block)
     fields = list(block.values())
-    if cast(str, fields[0]["type"]) == "list":
-        assert len(fields) == 1
-        recarray_name = fields[0]["name"]
+    list_field = next((f for f in fields if cast(str, f.get("type")) == "list"), None)
+    if list_field is not None:
+        recarray_name = list_field["name"]
         block.pop(recarray_name, None)
-        item = next(iter((fields[0]["children"] or {}).values()))
+        item = next(iter((list_field["children"] or {}).values()))
         columns = dict(item["children"] or {})
     else:
         recarray_name = None
@@ -192,7 +192,11 @@ def _map_field(fields: OMD, field: Field) -> Field:
 
 def to_v2_0_0_dev1(name: str, fields: OMD, meta: list[str]) -> Dfn:
     blocks: dict[str, Fields] = {
-        block_name: {field["name"]: _map_field(fields, cast(Field, field)) for field in block}
+        block_name: {
+            field["name"]: _map_field(fields, cast(Field, field))
+            for field in block
+            if field.get("in_record") != "true"
+        }
         for block_name, block in groupby(fields.values(multi=True), lambda field: field["block"])
     }
 

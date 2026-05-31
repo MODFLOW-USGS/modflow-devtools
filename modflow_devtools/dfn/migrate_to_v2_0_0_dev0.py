@@ -277,7 +277,8 @@ def to_v2_0_0_dev0(name: str, fields: OMD, meta: list[str], refs: dict | None = 
                 var_["type"] = "keystring"
 
             elif _type.startswith("record"):
-                var_["type"] = _type
+                var_["fields"] = _fields()
+                var_["type"] = "record"
 
             # for now, we can tell a var is an array if its type
             # is scalar and it has a shape. once we have proper
