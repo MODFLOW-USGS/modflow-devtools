@@ -11,7 +11,8 @@ import tomli
 import tomli_w
 from pydantic import BaseModel, Field, PrivateAttr
 
-from modflow_devtools.dfns.schema import Dfns
+from modflow_devtools.dfn import schema as dfn
+from modflow_devtools.dfns import schema as dfns
 
 __all__ = [
     "DfnRegistry",
@@ -27,10 +28,7 @@ class DfnRegistry(BaseModel):
 
     model_config = {"arbitrary_types_allowed": True}
 
-    _spec: Dfns | None = PrivateAttr(default=None, init=False)
-
-    @property
-    def spec(self) -> Dfns:
+    def spec(self, schema_version: str = dfns.CURRENT_SCHEMA_VERSION) -> dfns.Dfns | dfn.Dfns:
         raise NotImplementedError
 
     def get_path(self, component: str) -> Path:
@@ -45,11 +43,10 @@ class LocalDfnRegistry(DfnRegistry):
     def model_post_init(self, _) -> None:
         object.__setattr__(self, "path", Path(self.path).expanduser().resolve())
 
-    @property
-    def spec(self) -> Dfns:
-        if self._spec is None:
-            self._spec = Dfns.load(self.path)
-        return self._spec
+    def spec(self, schema_version: str = dfns.CURRENT_SCHEMA_VERSION) -> dfns.Dfns | dfn.Dfns:
+        if schema_version == dfns.CURRENT_SCHEMA_VERSION:
+            return dfns.Dfns.load(self.path)
+        return dfn.Dfn.load_all(self.path, schema_version=schema_version)  # type: ignore
 
     def get_path(self, component: str) -> Path:
         for ext in [".dfn", ".toml"]:
@@ -163,13 +160,12 @@ class RemoteDfnRegistry(DfnRegistry):
         repo, _ = self.release_id.split("@")
         return RemoteDfnRegistry.base_cache_path() / repo / self.latest_tag()
 
-    @property
-    def spec(self) -> Dfns:
-        if self._spec is None:
-            if not self.cache_path.exists() or not any(self.cache_path.iterdir()):
-                self.sync()
-            self._spec = Dfns.load(self.cache_path)
-        return self._spec
+    def spec(self, schema_version: str = dfns.CURRENT_SCHEMA_VERSION) -> dfns.Dfns | dfn.Dfns:
+        if not self.cache_path.exists() or not any(self.cache_path.iterdir()):
+            self.sync()
+        if schema_version == dfns.CURRENT_SCHEMA_VERSION:
+            return dfns.Dfns.load(self.cache_path)
+        return dfn.Dfn.load_all(self.cache_path, schema_version=schema_version)  # type: ignore
 
     def sync(self, force: bool = False) -> None:
         """Download and extract DFN files for this release to the local cache."""

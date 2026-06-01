@@ -152,7 +152,7 @@ def test_local_dfn_registry(dfn_dir):
     registry = LocalDfnRegistry(path=dfn_dir)
     assert registry.path == dfn_dir.resolve()
 
-    spec = registry.spec
+    spec = registry.spec()
     assert spec.schema_version == "2.0.0.dev2"
     assert len(spec.components) > 100
     assert "gwf-chd" in spec.components
@@ -194,7 +194,7 @@ def test_remote_dfn_registry_sync():
     path = registry.get_path("gwf-chd")
     assert path.exists()
 
-    spec = registry.spec
+    spec = registry.spec()
     assert "gwf-chd" in spec.components
     assert "sim-nam" in spec.components
 
