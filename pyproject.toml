@@ -166,9 +166,11 @@ mf = "modflow_devtools.cli:main"
 
 [tool.hatch.build.targets.sdist]
 only-include = ["modflow_devtools"]
+core-metadata-version = "2.4"
 
 [tool.hatch.build.targets.wheel]
 packages = ["modflow_devtools"]
+core-metadata-version = "2.4"
 
 [tool.hatch.build]
 include = [
