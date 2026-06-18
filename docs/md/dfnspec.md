@@ -274,7 +274,7 @@ Required. One of:
 - `double`
 - `array`
 - `string`
-- `path`
+- `file`
 - `record`
 - `union`
 - `list`
@@ -447,7 +447,7 @@ Type `union`. Sum type.
 
 ###### `arms`
 
-`{string: Scalar | Record}`. Subfields, required.
+`{string: Scalar | Array | Record}`. Subfields, required.
 
 #### List
 

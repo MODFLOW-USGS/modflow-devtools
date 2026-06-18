@@ -2,7 +2,7 @@
 
 MODFLOW 6 specifies input components and their variables in configuration files with a custom format. Such files are called definition (DFN) files and conventionally have suffix `.dfn`.
 
-The `modflow_devtools.dfns` module provides a structured API for working with MODFLOW 6 input specifications, including typed Python objects representing each component and field type, tools for acquiring, loading and managing specification versions, and a utility to convert `.dfn` files to a revised v2 schema and standard file formats.
+The `modflow_devtools.dfns` module provides a structured API for working with MODFLOW 6 input specifications, including typed Python objects representing each component and field type, tools for acquiring, loading and managing specification versions, and a utility to convert `.dfn` files to a revised schema and standard file formats.
 
 The `modflow_devtools.dfn` module provides a limited subset of the same functionality, but is now deprecated. This module will be removed with `modflow-devtools` version 2.x. The `modflow_devtools.dfns` module should in most cases be used instead, however it remains experimental and may change without notice until version 2.x.
 
@@ -21,9 +21,11 @@ pip install modflow-devtools[ecosystem]
 
 The `dfn` dependency group is also sufficient, but this group is deprecated and will be removed with `modflow-devtools` version 2.x.
 
-### CLI
+## CLI
 
-A command line interface is available to manage sets of DFN files corresponding to MODLOW 6 releases.
+A command line interface is available to manage sets of DFN files corresponding to MODFLOW 6 releases.
+
+### Cache management
 
 ```shell
 # Fetch DFNs from GitHub release assets
@@ -42,19 +44,21 @@ python -m modflow_devtools.dfns info
 python -m modflow_devtools.dfns clean
 ```
 
-A tool is also provided to migrate `.dfn` files to new schema versions.
+### Migration
+
+The `migrate` subcommand converts `.dfn` files to a new schema version.
 
 ```shell
-python -m modflow_devtools.dfns.migrate -i <dfn path> -o <output path> -s <schema version> [-f <format>]
+python -m modflow_devtools.dfns migrate -i <dfn path> -o <output path> -s <schema version> [-f <format>]
 ```
 
 The migration tool may be used on directories or individual files.
 
-Supported schema versions are currently "1.1", "1.2", and "2". Note that schema version 2 is under active development, and may change without warning. Versions 1.1 and 1.2 were early prototypes.
+Supported schema versions are currently `"2.0.0.dev0"`, `"2.0.0.dev1"`, and `"2.0.0.dev2"` (`CURRENT_SCHEMA_VERSION`). Note that `2.0.0.dev2` is under active development and may change without warning.
 
 The default serialization format is YAML. Use `--format` / `-f` to select `yaml` (default), `toml`, or `json`.
 
-#### Configuration
+### Configuration
 
 The `modflow-devtools` package ships with a built-in configuration specifying default DFN release versions to support:
 
@@ -74,7 +78,7 @@ You can extend or override the default registry configuration by creating an ove
 
 Entries in this file are merged with (and take precedence over) the defaults. The file uses the same format as the bundled configuration file. For instance, to point to DFN releases on your own fork, substitute your GitHub username for "MODFLOW-ORG".
 
-#### Caching
+### Cache layout
 
 DFN file sets are cached under:
 
@@ -95,9 +99,29 @@ The cache is organized by repository and release tag:
             └── ...
 ```
 
-### Python API
+## Python API
 
-#### Downloading DFNs
+### Schema version
+
+The current schema version is exposed as a constant:
+
+```python
+from modflow_devtools.dfns import CURRENT_SCHEMA_VERSION  # "2.0.0.dev2"
+```
+
+### Loading DFNs
+
+`Dfns` is a Pydantic model representing a set of component definitions. Load a directory of definition files with `Dfns.load()`:
+
+```python
+from modflow_devtools.dfns import Dfns
+
+spec = Dfns.load("/path/to/mf6/doc/mf6io/mf6ivar/dfn")
+```
+
+**Note**: Calling `Dfns.load()` on a directory of `.dfn` files will convert to `CURRENT_SCHEMA_VERSION` (`"2.0.0.dev2"`) automatically.
+
+For lower-level access, `fetch_dfns` downloads all `.dfn` files for a specific release to a local directory:
 
 ```python
 from modflow_devtools.dfns import fetch_dfns
@@ -105,19 +129,12 @@ from modflow_devtools.dfns import fetch_dfns
 fetch_dfns("MODFLOW-ORG", "modflow6", "6.6.0", "/tmp/dfns")
 ```
 
-Downloads all `.dfn` files for the specified MODFLOW 6 release into the given output directory.
+In most cases, using `RemoteDfnRegistry` (see [Managing DFNs](#managing-dfns)) is preferable since it handles caching automatically.
 
 ### Inspecting DFNs
 
-`Dfns` is a Pydantic model representing a set of component definitions.
-
 ```python
-from modflow_devtools.dfns import Dfns
-
-# Load all component definitions from a directory
-spec = Dfns.load("/path/to/mf6/doc/mf6io/mf6ivar/dfn")
-
-spec.schema_version         # e.g. "2"
+spec.schema_version         # e.g. CURRENT_SCHEMA_VERSION ("2.0.0.dev2")
 spec.root                   # the Simulation component, or None
 len(spec.components)        # total number of components
 
@@ -127,11 +144,9 @@ gwf_chd.name                # "gwf-chd"
 gwf_chd.parent              # "gwf-nam"
 
 # Navigate the component hierarchy
-sim_children = spec.children_of("sim-nam")   # {"gwf-nam": ..., ...}
-gwf_children = spec.children_of("gwf-nam")   # {"gwf-chd": ..., "gwf-wel": ..., ...}
+sim_children = spec.children("sim-nam")   # {"gwf-nam": ..., ...}
+gwf_children = spec.children("gwf-nam")   # {"gwf-chd": ..., "gwf-wel": ..., ...}
 ```
-
-**Note**: Calling `Dfns.load()` on a directory of `.dfn` files will convert to the v2 schema automatically.
 
 Each entry in `spec.components` is one of three component types, discriminated by a `type` field:
 
@@ -185,7 +200,7 @@ See [DFN specification](dfnspec.md) for full attribute documentation.
 
 ### Managing DFNs
 
-A registry system handles caching and accessing DFN files from MODFLOW 6 releases.
+A registry system handles caching and accessing DFN files from MODFLOW 6 releases. `DfnRegistry` is the abstract base class; `LocalDfnRegistry` and `RemoteDfnRegistry` are the two concrete implementations.
 
 For working with DFN files on the local filesystem, there is `LocalDfnRegistry`.
 
@@ -193,7 +208,7 @@ For working with DFN files on the local filesystem, there is `LocalDfnRegistry`.
 from modflow_devtools.dfns import LocalDfnRegistry
 
 registry = LocalDfnRegistry(path="/path/to/mf6/doc/mf6io/mf6ivar/dfn")
-spec = registry.spec                      # Dfns instance
+spec = registry.spec()                    # Dfns instance
 path = registry.get_path("gwf-chd")      # Path to the component file
 ```
 
@@ -203,16 +218,16 @@ For fetching and caching DFN files from a MODFLOW 6 release, `RemoteDfnRegistry`
 from modflow_devtools.dfns import RemoteDfnRegistry
 
 registry = RemoteDfnRegistry(release_id="MODFLOW-ORG/modflow6@6.6.0")
-registry.sync()  # download and cache DFN files
-registry.sync(force=True)  # force re-download
+registry.sync()           # download and cache DFN files
+registry.sync(force=True) # force re-download
 
-spec = registry.spec  # get the specification
+spec = registry.spec()    # get the specification
 
 tag = registry.latest_tag()  # resolve "latest" to actual tag
 tag = registry.cached_tag()  # return cached tag
 ```
 
-The `release_id` takes the form `"owner/repo@tag"`, where `tag` may be a specific version or "latest".
+The `release_id` takes the form `"owner/repo@tag"`, where `tag` may be a specific version or `"latest"`.
 
 For `@latest`, `latest_tag()` queries the GitHub API once and caches the result.
 
@@ -237,7 +252,7 @@ To get the base cache path programmatically:
 RemoteDfnRegistry.base_cache_path()
 ```
 
-To check the cache contents:
+To check whether a release is cached:
 
 ```python
 from modflow_devtools.dfns.registry import is_cached
@@ -245,4 +260,8 @@ from modflow_devtools.dfns.registry import is_cached
 is_cached("MODFLOW-ORG/modflow6@6.6.0")
 ```
 
-When `MODFLOW_DEVTOOLS_AUTO_SYNC=1` is set, `RemoteDfnRegistry.from_ids()` will automatically call `sync()` for any release ID that has no cached files yet.
+### Environment variables
+
+| Variable | Values | Effect |
+|---|---|---|
+| `MODFLOW_DEVTOOLS_AUTO_SYNC` | `1`, `true`, `yes` | `RemoteDfnRegistry.from_ids()` automatically calls `sync()` for any release ID with no cached files yet. |
