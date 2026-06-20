@@ -13,21 +13,18 @@ longname = "reference viscosity"
 description = "fluid reference viscosity used in the equation of state.  This value is set to 1.0 if not specified as an option."
 optional = true
 default = 1.0
-tagged = false
 
 [blocks.options.fields.temperature_species_name]
 type = "string"
 longname = "auxspeciesname that corresponds to temperature"
 description = "string used to identify the auxspeciesname in PACKAGEDATA that corresponds to the temperature species.  There can be only one occurrence of this temperature species name in the PACKAGEDATA block or the program will terminate with an error.  This value has no effect if viscosity does not depend on temperature."
 optional = true
-tagged = false
 
 [blocks.options.fields.thermal_formulation]
 type = "string"
 longname = "keyword to specify viscosity formulation for the temperature species"
 description = "may be used for specifying which viscosity formulation to use for the temperature species. Can be either LINEAR or NONLINEAR. The LINEAR viscosity formulation is the default."
 optional = true
-tagged = false
 valid = [
     "linear",
     "nonlinear",
@@ -39,7 +36,6 @@ longname = "coefficient used in nonlinear viscosity function"
 description = "is an empirical parameter specified by the user for calculating viscosity using a nonlinear formulation.  If A2 is not specified, a default value of 10.0 is assigned (Voss, 1984)."
 optional = true
 default = 10.0
-tagged = false
 
 [blocks.options.fields.thermal_a3]
 type = "double"
@@ -47,7 +43,6 @@ longname = "coefficient used in nonlinear viscosity function"
 description = "is an empirical parameter specified by the user for calculating viscosity using a nonlinear formulation.  If A3 is not specified, a default value of 248.37 is assigned (Voss, 1984)."
 optional = true
 default = 248.37
-tagged = false
 
 [blocks.options.fields.thermal_a4]
 type = "double"
@@ -55,7 +50,6 @@ longname = "coefficient used in nonlinear viscosity function"
 description = "is an empirical parameter specified by the user for calculating viscosity using a nonlinear formulation.  If A4 is not specified, a default value of 133.15 is assigned (Voss, 1984)."
 optional = true
 default = 133.15
-tagged = false
 
 [blocks.options.fields.viscosity_filerecord]
 type = "record"
@@ -71,7 +65,6 @@ mode = "fileout"
 type = "integer"
 longname = "number of species used in viscosity equation of state"
 description = "number of species used in the viscosity equation of state.  If either concentrations or temperature (or both) are used to update viscosity then nviscspecies needs to be at least one."
-tagged = false
 
 [blocks.packagedata.fields.packagedata]
 type = "list"

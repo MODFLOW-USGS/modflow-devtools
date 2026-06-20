@@ -30,7 +30,6 @@ type = "string"
 longname = "name of auxiliary variable for multiplier"
 description = "name of auxiliary variable to be used as multiplier of recharge."
 optional = true
-tagged = false
 
 [blocks.options.fields.boundnames]
 type = "keyword"
@@ -79,7 +78,6 @@ mode = "filein"
 type = "integer"
 longname = "maximum number of recharge cells"
 description = "integer value specifying the maximum number of recharge cells that will be specified for use during any stress period."
-tagged = false
 
 [blocks.period.fields.stress_period_data]
 type = "list"

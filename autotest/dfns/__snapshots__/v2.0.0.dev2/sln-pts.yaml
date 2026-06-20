@@ -15,7 +15,6 @@ blocks:
           listing file and model specific linear matrix solver convergence information to each model listing
           file in addition to SUMMARY information. NONE is default if PRINT_OPTION is not specified.
         optional: true
-        tagged: false
       complexity:
         type: string
         longname: print option
@@ -35,7 +34,6 @@ blocks:
           can be modified in the NONLINEAR and LINEAR blocks. If the COMPLEXITY option is not specified,
           NONLINEAR and LINEAR variables will be assigned the simple complexity values.
         optional: true
-        tagged: false
       csv_output_filerecord:
         type: record
         optional: true
@@ -111,7 +109,6 @@ blocks:
           allowable outer iterations, then the ATS (if active) will decrease the time step length by a
           factor of 1 / DTADJ.
         optional: true
-        tagged: false
   nonlinear:
     fields:
       outer_maximum:
@@ -119,4 +116,3 @@ blocks:
         longname: outer maximum iterations
         description: integer value defining the maximum number of outer (nonlinear) iterations -- that
           is, calls to the solution routine. For a linear problem OUTER_MAXIMUM should be 1.
-        tagged: false

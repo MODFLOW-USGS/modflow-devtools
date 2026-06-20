@@ -20,7 +20,6 @@ type = "string"
 longname = "model length units"
 description = "is the length units used for this model.  Values can be 'FEET', 'METERS', or 'CENTIMETERS'.  If not specified, the default is 'UNKNOWN'."
 optional = true
-tagged = false
 
 [blocks.options.fields.nogrb]
 type = "keyword"
@@ -43,21 +42,18 @@ type = "double"
 longname = "x-position origin of the model grid coordinate system"
 description = "x-position of the origin used for model grid vertices.  This value should be provided in a real-world coordinate system.  A default value of zero is assigned if not specified.  The value for XORIGIN does not affect the model simulation, but it is written to the binary grid file so that postprocessors can locate the grid in space."
 optional = true
-tagged = false
 
 [blocks.options.fields.yorigin]
 type = "double"
 longname = "y-position origin of the model grid coordinate system"
 description = "y-position of the origin used for model grid vertices.  This value should be provided in a real-world coordinate system.  If not specified, then a default value equal to zero is used.  The value for YORIGIN does not affect the model simulation, but it is written to the binary grid file so that postprocessors can locate the grid in space."
 optional = true
-tagged = false
 
 [blocks.options.fields.angrot]
 type = "double"
 longname = "rotation angle"
 description = "counter-clockwise rotation angle (in degrees) of the model grid coordinate system relative to a real-world coordinate system.  If not specified, then a default value of 0.0 is assigned.  The value for ANGROT does not affect the model simulation, but it is written to the binary grid file so that postprocessors can locate the grid in space."
 optional = true
-tagged = false
 
 [blocks.options.fields.export_array_ascii]
 type = "keyword"
@@ -71,21 +67,18 @@ longname = "CRS user input string"
 description = "is a real-world coordinate reference system (CRS) for the model, for example, an EPSG integer code (e.g. 26915), authority string (i.e. epsg:26915), or Open Geospatial Consortium Well-Known Text (WKT) specification. Limited to 5000 characters. The entry for CRS does not affect the model simulation, but it is written to the binary grid file so that postprocessors can locate the grid in space."
 optional = true
 developmode = true
-tagged = false
 case_sensitive = true
 
 [blocks.dimensions.fields.nodes]
 type = "integer"
 longname = "number of linear features"
 description = "is the number of linear cells."
-tagged = false
 
 [blocks.dimensions.fields.nvert]
 type = "integer"
 longname = "number of columns"
 description = "is the total number of (x, y, z) vertex pairs used to characterize the model grid."
 optional = true
-tagged = false
 
 [blocks.griddata.fields.length]
 type = "array"

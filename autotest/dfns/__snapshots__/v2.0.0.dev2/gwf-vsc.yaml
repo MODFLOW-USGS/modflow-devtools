@@ -16,7 +16,6 @@ blocks:
           if not specified as an option.
         optional: true
         default: 1.0
-        tagged: false
       temperature_species_name:
         type: string
         longname: auxspeciesname that corresponds to temperature
@@ -25,14 +24,12 @@ blocks:
           PACKAGEDATA block or the program will terminate with an error.  This value has no effect if
           viscosity does not depend on temperature.
         optional: true
-        tagged: false
       thermal_formulation:
         type: string
         longname: keyword to specify viscosity formulation for the temperature species
         description: may be used for specifying which viscosity formulation to use for the temperature
           species. Can be either LINEAR or NONLINEAR. The LINEAR viscosity formulation is the default.
         optional: true
-        tagged: false
         valid:
           - linear
           - nonlinear
@@ -43,7 +40,6 @@ blocks:
           nonlinear formulation.  If A2 is not specified, a default value of 10.0 is assigned (Voss, 1984).
         optional: true
         default: 10.0
-        tagged: false
       thermal_a3:
         type: double
         longname: coefficient used in nonlinear viscosity function
@@ -52,7 +48,6 @@ blocks:
           1984).
         optional: true
         default: 248.37
-        tagged: false
       thermal_a4:
         type: double
         longname: coefficient used in nonlinear viscosity function
@@ -61,7 +56,6 @@ blocks:
           1984).
         optional: true
         default: 133.15
-        tagged: false
       viscosity_filerecord:
         type: record
         optional: true
@@ -79,7 +73,6 @@ blocks:
         description: number of species used in the viscosity equation of state.  If either concentrations
           or temperature (or both) are used to update viscosity then nviscspecies needs to be at least
           one.
-        tagged: false
   packagedata:
     fields:
       packagedata:

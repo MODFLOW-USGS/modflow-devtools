@@ -31,7 +31,6 @@ blocks:
         longname: name of auxiliary variable for multiplier
         description: name of auxiliary variable to be used as multiplier of general-head boundary conductance.
         optional: true
-        tagged: false
       boundnames:
         type: keyword
         description: keyword to indicate that boundary names may be provided with the list of general-head
@@ -88,7 +87,6 @@ blocks:
         longname: maximum number of general-head boundaries
         description: integer value specifying the maximum number of general-head boundary cells that will
           be specified for use during any stress period.
-        tagged: false
   period:
     fields:
       stress_period_data:

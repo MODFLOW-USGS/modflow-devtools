@@ -28,8 +28,7 @@
           "type": "string",
           "longname": "name of auxiliary variable for multiplier",
           "description": "name of auxiliary variable to be used as multiplier of riverbed conductance.",
-          "optional": true,
-          "tagged": false
+          "optional": true
         },
         "boundnames": {
           "type": "keyword",
@@ -90,8 +89,7 @@
         "maxbound": {
           "type": "integer",
           "longname": "maximum number of rivers",
-          "description": "integer value specifying the maximum number of rivers cells that will be specified for use during any stress period.",
-          "tagged": false
+          "description": "integer value specifying the maximum number of rivers cells that will be specified for use during any stress period."
         }
       }
     },

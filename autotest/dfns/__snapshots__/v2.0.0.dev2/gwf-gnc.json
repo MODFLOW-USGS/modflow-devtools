@@ -41,14 +41,12 @@
         "numgnc": {
           "type": "integer",
           "longname": "number of ghost node corrections",
-          "description": "is the number of GNC entries.",
-          "tagged": false
+          "description": "is the number of GNC entries."
         },
         "numalphaj": {
           "type": "integer",
           "longname": "number of contributing factors",
-          "description": "is the number of contributing factors.",
-          "tagged": false
+          "description": "is the number of contributing factors."
         }
       }
     },

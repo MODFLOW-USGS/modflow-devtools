@@ -11,7 +11,6 @@ blocks:
         description: scheme used to solve the advection term.  Can be upstream, central, TVD or UTVD.  If
           not specified, upstream weighting is the default weighting scheme.
         optional: true
-        tagged: false
         valid:
           - central
           - upstream
@@ -30,4 +29,3 @@ blocks:
           the program will automatically reset it to an internal no data value to indicate that time steps
           should not be subject to this constraint.
         optional: true
-        tagged: false

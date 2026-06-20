@@ -118,7 +118,6 @@ blocks:
           with previous versions of MODFLOW but use of the RATE_SCALING option instead of the HEAD_LIMIT
           option is recommended. By default, SHUTDOWN_THETA is 0.7.
         optional: true
-        tagged: false
       shutdown_kappa:
         type: double
         longname: shutdown kappa
@@ -131,7 +130,6 @@ blocks:
           of MODFLOW but use of the RATE_SCALING option instead of the HEAD_LIMIT option is recommended.
           By default, SHUTDOWN_KAPPA is 0.0001.
         optional: true
-        tagged: false
       mfrcsv_filerecord:
         type: record
         optional: true
@@ -174,7 +172,6 @@ blocks:
         longname: number of MAW wells
         description: integer value specifying the number of multi-aquifer wells that will be simulated
           for all stress periods.
-        tagged: false
   packagedata:
     fields:
       packagedata:

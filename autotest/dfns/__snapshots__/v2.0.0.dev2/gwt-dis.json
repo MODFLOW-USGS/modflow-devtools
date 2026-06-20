@@ -36,8 +36,7 @@
           "type": "string",
           "longname": "model length units",
           "description": "is the length units used for this model.  Values can be 'FEET', 'METERS', or 'CENTIMETERS'.  If not specified, the default is 'UNKNOWN'.",
-          "optional": true,
-          "tagged": false
+          "optional": true
         },
         "nogrb": {
           "type": "keyword",
@@ -61,22 +60,19 @@
           "type": "double",
           "longname": "x-position of the model grid origin",
           "description": "x-position of the lower-left corner of the model grid.  A default value of zero is assigned if not specified.  The value for XORIGIN does not affect the model simulation, but it is written to the binary grid file so that postprocessors can locate the grid in space.",
-          "optional": true,
-          "tagged": false
+          "optional": true
         },
         "yorigin": {
           "type": "double",
           "longname": "y-position of the model grid origin",
           "description": "y-position of the lower-left corner of the model grid.  If not specified, then a default value equal to zero is used.  The value for YORIGIN does not affect the model simulation, but it is written to the binary grid file so that postprocessors can locate the grid in space.",
-          "optional": true,
-          "tagged": false
+          "optional": true
         },
         "angrot": {
           "type": "double",
           "longname": "rotation angle",
           "description": "counter-clockwise rotation angle (in degrees) of the lower-left corner of the model grid.  If not specified, then a default value of 0.0 is assigned.  The value for ANGROT does not affect the model simulation, but it is written to the binary grid file so that postprocessors can locate the grid in space.",
-          "optional": true,
-          "tagged": false
+          "optional": true
         },
         "export_array_ascii": {
           "type": "keyword",
@@ -96,7 +92,6 @@
           "description": "is a real-world coordinate reference system (CRS) for the model, for example, an EPSG integer code (e.g. 26915), authority string (i.e. epsg:26915), or Open Geospatial Consortium Well-Known Text (WKT) specification. Limited to 5000 characters. The entry for CRS does not affect the model simulation, but it is written to the binary grid file so that postprocessors can locate the grid in space.",
           "optional": true,
           "developmode": true,
-          "tagged": false,
           "case_sensitive": true
         },
         "ncf_filerecord": {
@@ -119,22 +114,19 @@
           "type": "integer",
           "longname": "number of layers",
           "description": "is the number of layers in the model grid.",
-          "default": 1,
-          "tagged": false
+          "default": 1
         },
         "nrow": {
           "type": "integer",
           "longname": "number of rows",
           "description": "is the number of rows in the model grid.",
-          "default": 2,
-          "tagged": false
+          "default": 2
         },
         "ncol": {
           "type": "integer",
           "longname": "number of columns",
           "description": "is the number of columns in the model grid.",
-          "default": 2,
-          "tagged": false
+          "default": 2
         }
       }
     },

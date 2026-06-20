@@ -13,7 +13,6 @@ blocks:
           the name of the list file will be the basename of the GWE model name file and the '.lst' extension.  For
           example, if the GWE name file is called 'my.model.nam' then the list file will be called 'my.model.lst'.
         optional: true
-        tagged: false
         case_sensitive: true
       print_input:
         type: keyword

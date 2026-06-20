@@ -19,14 +19,12 @@ blocks:
         description: keyword to specify name of first corresponding GWF Model.  In the simulation name
           file, the GWT6-GWT6 entry contains names for GWT Models (exgmnamea and exgmnameb).  The GWT
           Model with the name exgmnamea must correspond to the GWF Model with the name gwfmodelname1.
-        tagged: false
       gwfmodelname2:
         type: string
         longname: keyword to specify name of second corresponding GWF Model
         description: keyword to specify name of second corresponding GWF Model.  In the simulation name
           file, the GWT6-GWT6 entry contains names for GWT Models (exgmnamea and exgmnameb).  The GWT
           Model with the name exgmnameb must correspond to the GWF Model with the name gwfmodelname2.
-        tagged: false
       auxiliary:
         type: array
         longname: keyword to specify aux variables
@@ -72,7 +70,6 @@ blocks:
         description: scheme used to solve the advection term.  Can be upstream, central, or TVD.  If not
           specified, upstream weighting is the default weighting scheme.
         optional: true
-        tagged: false
         valid:
           - upstream
           - central
@@ -118,7 +115,6 @@ blocks:
         type: integer
         longname: number of exchanges
         description: keyword and integer value specifying the number of GWT-GWT exchanges.
-        tagged: false
   exchangedata:
     fields:
       exchangedata:

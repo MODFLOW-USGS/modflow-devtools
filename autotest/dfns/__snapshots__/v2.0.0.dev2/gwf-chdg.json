@@ -35,8 +35,7 @@
           "type": "string",
           "longname": "name of auxiliary variable for multiplier",
           "description": "name of auxiliary variable to be used as multiplier of CHD head value.",
-          "optional": true,
-          "tagged": false
+          "optional": true
         },
         "print_input": {
           "type": "keyword",
@@ -88,8 +87,7 @@
           "type": "integer",
           "longname": "maximum number of constant head cells in any stress period",
           "description": "integer value specifying the maximum number of constant-head cells that will be specified for use during any stress period.",
-          "optional": true,
-          "tagged": false
+          "optional": true
         }
       }
     },

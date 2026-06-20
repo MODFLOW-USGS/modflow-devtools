@@ -45,7 +45,6 @@ blocks:
         type: integer
         longname: number of exchanges
         description: keyword and integer value specifying the number of SWF-GWF exchanges.
-        tagged: false
   exchangedata:
     fields:
       exchangedata:

@@ -11,15 +11,13 @@
           "type": "string",
           "longname": "print option",
           "description": "is a flag that controls printing of convergence information from the solver.  NONE means print nothing. SUMMARY means print only the total number of iterations and nonlinear residual reduction summaries. ALL means print linear matrix solver convergence information to the solution listing file and model specific linear matrix solver convergence information to each model listing file in addition to SUMMARY information. NONE is default if PRINT_OPTION is not specified.",
-          "optional": true,
-          "tagged": false
+          "optional": true
         },
         "complexity": {
           "type": "string",
           "longname": "print option",
           "description": "is an optional keyword that defines default non-linear and linear solver parameters.  SIMPLE - indicates that default solver input values will be defined that work well for nearly linear models. This would be used for models that do not include nonlinear stress packages and models that are either confined or consist of a single unconfined layer that is thick enough to contain the water table within a single layer. MODERATE - indicates that default solver input values will be defined that work well for moderately nonlinear models. This would be used for models that include nonlinear stress packages and models that consist of one or more unconfined layers. The MODERATE option should be used when the SIMPLE option does not result in successful convergence.  COMPLEX - indicates that default solver input values will be defined that work well for highly nonlinear models. This would be used for models that include nonlinear stress packages and models that consist of one or more unconfined layers representing complex geology and surface-water/groundwater interaction. The COMPLEX option should be used when the MODERATE option does not result in successful convergence.  Non-linear and linear solver parameters assigned using a specified complexity can be modified in the NONLINEAR and LINEAR blocks. If the COMPLEXITY option is not specified, NONLINEAR and LINEAR variables will be assigned the simple complexity values.",
-          "optional": true,
-          "tagged": false
+          "optional": true
         },
         "csv_output_filerecord": {
           "type": "record",
@@ -80,8 +78,7 @@
           "type": "double",
           "longname": "fraction of outer maximum used with ats",
           "description": "real value defining the fraction of the maximum allowable outer iterations used with the Adaptive Time Step (ATS) capability if it is active.  If this value is set to zero by the user, then this solution will have no effect on ATS behavior.  This value must be greater than or equal to zero and less than or equal to 0.5 or the program will terminate with an error.  If it is not specified by the user, then it is assigned a default value of one third.  When the number of outer iterations for this solution is less than the product of this value and the maximum allowable outer iterations, then ATS will increase the time step length by a factor of DTADJ in the ATS input file.  When the number of outer iterations for this solution is greater than the maximum allowable outer iterations minus the product of this value and the maximum allowable outer iterations, then the ATS (if active) will decrease the time step length by a factor of 1 / DTADJ.",
-          "optional": true,
-          "tagged": false
+          "optional": true
         }
       }
     },
@@ -90,8 +87,7 @@
         "outer_maximum": {
           "type": "integer",
           "longname": "outer maximum iterations",
-          "description": "integer value defining the maximum number of outer (nonlinear) iterations -- that is, calls to the solution routine. For a linear problem OUTER_MAXIMUM should be 1.",
-          "tagged": false
+          "description": "integer value defining the maximum number of outer (nonlinear) iterations -- that is, calls to the solution routine. For a linear problem OUTER_MAXIMUM should be 1."
         }
       }
     }

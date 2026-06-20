@@ -8,7 +8,6 @@ type = "string"
 longname = "name of listing file"
 description = "is name of the listing file to create for this PRT model.  If not specified, then the name of the list file will be the basename of the PRT model name file and the '.lst' extension.  For example, if the PRT name file is called 'my.model.nam' then the list file will be called 'my.model.lst'."
 optional = true
-tagged = false
 
 [blocks.options.fields.print_input]
 type = "keyword"

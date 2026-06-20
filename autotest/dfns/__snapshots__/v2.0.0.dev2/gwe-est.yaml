@@ -35,7 +35,6 @@ blocks:
           to use a value other than the default.
         optional: true
         default: 1000.0
-        tagged: false
       heat_capacity_water:
         type: double
         longname: heat capacity of water
@@ -45,7 +44,6 @@ blocks:
           is necessary to use a value other than the default.
         optional: true
         default: 4184.0
-        tagged: false
       latent_heat_vaporization:
         type: double
         longname: latent heat of vaporization
@@ -60,7 +58,6 @@ blocks:
           than joules and kilograms or if it is necessary to use a value other than the default.
         optional: true
         default: 2453500.0
-        tagged: false
   griddata:
     fields:
       porosity:

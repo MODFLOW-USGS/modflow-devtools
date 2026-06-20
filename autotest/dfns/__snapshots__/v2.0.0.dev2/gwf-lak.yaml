@@ -135,7 +135,6 @@ blocks:
           If specified, SURFDEP must be greater than or equal to zero. If SURFDEP is not specified, a
           default value of zero is used for all vertical lake-GWF connections.
         optional: true
-        tagged: false
       maximum_iterations:
         type: integer
         longname: LAK Newton-Raphson iterations
@@ -144,7 +143,6 @@ blocks:
           to be increased from the default value if one or more lakes in a simulation has a large water
           budget error.
         optional: true
-        tagged: false
       maximum_stage_change:
         type: double
         longname: stage closure tolerance
@@ -153,7 +151,6 @@ blocks:
           from the default value if the water budget error for one or more lakes is too small or too large,
           respectively.
         optional: true
-        tagged: false
       time_conversion:
         type: double
         longname: time conversion factor
@@ -164,7 +161,6 @@ blocks:
           TIME_CONVERSION does not need to be specified if no lake outlets are specified or TIME_UNITS
           are seconds.
         optional: true
-        tagged: false
       length_conversion:
         type: double
         longname: length conversion factor
@@ -174,27 +170,23 @@ blocks:
           of feet, meters, or centimeters in the simulation, respectively. LENGTH_CONVERSION does not
           need to be specified if no lake outlets are specified or LENGTH_UNITS are meters.
         optional: true
-        tagged: false
   dimensions:
     fields:
       nlakes:
         type: integer
         longname: number of lakes
         description: value specifying the number of lakes that will be simulated for all stress periods.
-        tagged: false
       noutlets:
         type: integer
         longname: number of outlets
         description: value specifying the number of outlets that will be simulated for all stress periods.
           If NOUTLETS is not specified, a default value of zero is used.
-        tagged: false
       ntables:
         type: integer
         longname: number of tables
         description: value specifying the number of lakes tables that will be used to define the lake
           stage, volume relation, and surface area. If NTABLES is not specified, a default value of zero
           is used.
-        tagged: false
   packagedata:
     fields:
       packagedata:

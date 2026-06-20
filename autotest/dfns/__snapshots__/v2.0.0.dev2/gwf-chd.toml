@@ -24,7 +24,6 @@ type = "string"
 longname = "name of auxiliary variable for multiplier"
 description = "name of auxiliary variable to be used as multiplier of CHD head value."
 optional = true
-tagged = false
 
 [blocks.options.fields.boundnames]
 type = "keyword"
@@ -79,7 +78,6 @@ optional = true
 type = "integer"
 longname = "maximum number of constant heads"
 description = "integer value specifying the maximum number of constant-head cells that will be specified for use during any stress period."
-tagged = false
 
 [blocks.period.fields.stress_period_data]
 type = "list"

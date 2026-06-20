@@ -28,8 +28,7 @@
           "type": "string",
           "longname": "name of auxiliary variable for multiplier",
           "description": "name of auxiliary variable to be used as multiplier of precipitation.",
-          "optional": true,
-          "tagged": false
+          "optional": true
         },
         "boundnames": {
           "type": "keyword",
@@ -85,8 +84,7 @@
         "maxbound": {
           "type": "integer",
           "longname": "maximum number of precipitation cells",
-          "description": "integer value specifying the maximum number of precipitation cells that will be specified for use during any stress period.",
-          "tagged": false
+          "description": "integer value specifying the maximum number of precipitation cells that will be specified for use during any stress period."
         }
       }
     },

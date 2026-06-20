@@ -36,8 +36,7 @@
           "type": "string",
           "longname": "name of auxiliary variable for multiplier",
           "description": "name of auxiliary variable to be used as multiplier of recharge.",
-          "optional": true,
-          "tagged": false
+          "optional": true
         },
         "print_input": {
           "type": "keyword",

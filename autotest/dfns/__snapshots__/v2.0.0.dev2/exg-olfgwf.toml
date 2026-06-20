@@ -41,7 +41,6 @@ mode = "filein"
 type = "integer"
 longname = "number of exchanges"
 description = "keyword and integer value specifying the number of SWF-GWF exchanges."
-tagged = false
 
 [blocks.exchangedata.fields.exchangedata]
 type = "list"

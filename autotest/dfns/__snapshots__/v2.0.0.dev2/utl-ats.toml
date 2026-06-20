@@ -13,7 +13,6 @@ type = "integer"
 longname = "number of ATS periods"
 description = "is the number of records in the subsequent perioddata block that will be used for adaptive time stepping."
 default = 1
-tagged = false
 
 [blocks.perioddata.fields.perioddata]
 type = "list"

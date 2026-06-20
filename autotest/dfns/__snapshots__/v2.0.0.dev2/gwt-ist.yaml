@@ -39,7 +39,6 @@ blocks:
           then SP2 is also required in the GRIDDATA block.  The sorption option must be consistent with
           the sorption option specified in the MST Package or the program will terminate with an error.
         optional: true
-        tagged: false
         valid:
           - linear
           - freundlich

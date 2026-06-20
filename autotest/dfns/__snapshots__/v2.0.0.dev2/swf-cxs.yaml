@@ -25,13 +25,11 @@ blocks:
         longname: number of reaches
         description: integer value specifying the number of cross sections that will be defined.  There
           must be NSECTIONS entries in the PACKAGEDATA block.
-        tagged: false
       npoints:
         type: integer
         longname: total number of points defined for all reaches
         description: integer value specifying the total number of cross-section points defined for all
           reaches.  There must be NPOINTS entries in the CROSSSECTIONDATA block.
-        tagged: false
   packagedata:
     fields:
       packagedata:

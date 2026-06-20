@@ -29,7 +29,6 @@ mode = "filein"
 type = "integer"
 longname = "maximum number of ssm entries"
 description = "integer value specifying the maximum number of spc cells that will be specified for use during any stress period."
-tagged = false
 
 [blocks.period.fields.perioddata]
 type = "list"

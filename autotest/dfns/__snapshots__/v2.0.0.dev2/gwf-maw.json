@@ -111,15 +111,13 @@
           "type": "double",
           "longname": "shutdown theta",
           "description": "value that defines the weight applied to discharge rate for wells that limit the water level in a discharging well (defined using the HEAD_LIMIT keyword in the stress period data). SHUTDOWN_THETA is used to control discharge rate oscillations when the flow rate from the aquifer is less than the specified flow rate from the aquifer to the well. Values range between 0.0 and 1.0, and larger values increase the weight (decrease under-relaxation) applied to the well discharge rate. The HEAD_LIMIT option has been included to facilitate backward compatibility with previous versions of MODFLOW but use of the RATE_SCALING option instead of the HEAD_LIMIT option is recommended. By default, SHUTDOWN_THETA is 0.7.",
-          "optional": true,
-          "tagged": false
+          "optional": true
         },
         "shutdown_kappa": {
           "type": "double",
           "longname": "shutdown kappa",
           "description": "value that defines the weight applied to discharge rate for wells that limit the water level in a discharging well (defined using the HEAD_LIMIT keyword in the stress period data). SHUTDOWN_KAPPA is used to control discharge rate oscillations when the flow rate from the aquifer is less than the specified flow rate from the aquifer to the well. Values range between 0.0 and 1.0, and larger values increase the weight applied to the well discharge rate. The HEAD_LIMIT option has been included to facilitate backward compatibility with previous versions of MODFLOW but use of the RATE_SCALING option instead of the HEAD_LIMIT option is recommended. By default, SHUTDOWN_KAPPA is 0.0001.",
-          "optional": true,
-          "tagged": false
+          "optional": true
         },
         "mfrcsv_filerecord": {
           "type": "record",
@@ -169,8 +167,7 @@
         "nmawwells": {
           "type": "integer",
           "longname": "number of MAW wells",
-          "description": "integer value specifying the number of multi-aquifer wells that will be simulated for all stress periods.",
-          "tagged": false
+          "description": "integer value specifying the number of multi-aquifer wells that will be simulated for all stress periods."
         }
       }
     },

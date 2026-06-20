@@ -404,6 +404,11 @@ class Block(BaseModel):
     def optional(self) -> bool:
         return all(f.optional for f in self.fields.values())
 
+    def render(self) -> str:
+        from modflow_devtools.dfns.render import render_block
+
+        return render_block(self)
+
 
 Blocks = Mapping[str, Block]
 
@@ -443,6 +448,11 @@ class ComponentBase(BaseModel):
             if block.fields.get(field_name, None):
                 return block
         return None
+
+    def render(self) -> str:
+        from modflow_devtools.dfns.render import render_block
+
+        return "\n\n".join(render_block(b) for b in (self.blocks or {}).values())
 
 
 class Simulation(ComponentBase):

@@ -19,14 +19,12 @@ blocks:
         longname: number of table rows
         description: integer value specifying the number of rows in the reach cross-section table. There
           must be NROW rows of data in the TABLE block.
-        tagged: false
       ncol:
         type: integer
         longname: number of table columns
         description: integer value specifying the number of columns in the reach cross-section table.
           There must be NCOL columns of data in the TABLE block. NCOL must be equal to 2 if MANFRACTION
           is not specified or 3 otherwise.
-        tagged: false
   table:
     fields:
       table:

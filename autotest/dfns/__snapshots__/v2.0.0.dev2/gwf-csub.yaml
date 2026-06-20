@@ -37,7 +37,6 @@ blocks:
           meters.
         optional: true
         default: 9806.65
-        tagged: false
       beta:
         type: double
         longname: compressibility of water
@@ -45,7 +44,6 @@ blocks:
           lb/square foot in SI and English units, respectively. By default, BETA is 4.6512e-10 1/Pa.
         optional: true
         default: 4.6512e-10
-        tagged: false
       head_based:
         type: keyword
         longname: keyword to indicate the head-based formulation will be used
@@ -68,7 +66,6 @@ blocks:
         description: number of nodes used to discretize delay interbeds. If not specified, then a default
           value of 19 is assigned.
         optional: true
-        tagged: false
       compression_indices:
         type: keyword
         longname: keyword to indicate CR and CC are read instead of SSE and SSV
@@ -244,14 +241,12 @@ blocks:
         longname: number of CSUB interbed systems
         description: is the number of CSUB interbed systems.  More than 1 CSUB interbed systems can be
           assigned to a GWF cell; however, only 1 GWF cell can be assigned to a single CSUB interbed system.
-        tagged: false
       maxsig0:
         type: integer
         longname: maximum number of stress offset cells
         description: is the maximum number of cells that can have a specified stress offset.  More than
           1 stress offset can be assigned to a GWF cell. By default, MAXSIG0 is 0.
         optional: true
-        tagged: false
   griddata:
     fields:
       cg_ske_cr:

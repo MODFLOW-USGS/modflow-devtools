@@ -709,7 +709,7 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
         optional: bool = try_parse_bool(f.get("optional"), False)
         developmode: bool = try_parse_bool(f.get("developmode"), False)
         netcdf: bool = try_parse_bool(f.get("netcdf"), False)
-        tagged: bool = try_parse_bool(f.get("tagged"), False)
+        tagged: bool = try_parse_bool(f.get("tagged"), True)
         preserve_case: bool = try_parse_bool(f.get("preserve_case"), False)
         time_series: bool = try_parse_bool(f.get("time_series"), False)
         valid = f.get("valid")

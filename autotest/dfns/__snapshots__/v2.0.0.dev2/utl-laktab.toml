@@ -17,13 +17,11 @@ scope = "simulation"
 type = "integer"
 longname = "number of table rows"
 description = "integer value specifying the number of rows in the lake table. There must be NROW rows of data in the TABLE block."
-tagged = false
 
 [blocks.dimensions.fields.ncol]
 type = "integer"
 longname = "number of table columns"
 description = "integer value specifying the number of columns in the lake table. There must be NCOL columns of data in the TABLE block. For lakes with HORIZONTAL and/or VERTICAL CTYPE connections, NCOL must be equal to 3. For lakes with EMBEDDEDH or EMBEDDEDV CTYPE connections, NCOL must be equal to 4."
-tagged = false
 
 [blocks.table.fields.table]
 type = "list"

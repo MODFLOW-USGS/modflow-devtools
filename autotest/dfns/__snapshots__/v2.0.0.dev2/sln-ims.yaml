@@ -15,7 +15,6 @@ blocks:
           listing file and model specific linear matrix solver convergence information to each model listing
           file in addition to SUMMARY information. NONE is default if PRINT_OPTION is not specified.
         optional: true
-        tagged: false
       complexity:
         type: string
         longname: solver complexity
@@ -35,7 +34,6 @@ blocks:
           can be modified in the NONLINEAR and LINEAR blocks. If the COMPLEXITY option is not specified,
           NONLINEAR and LINEAR variables will be assigned the simple complexity values.
         optional: true
-        tagged: false
       csv_output_filerecord:
         type: record
         optional: true
@@ -111,7 +109,6 @@ blocks:
           allowable outer iterations, then the ATS (if active) will decrease the time step length by a
           factor of 1 / DTADJ.
         optional: true
-        tagged: false
   nonlinear:
     fields:
       outer_hclose:
@@ -124,7 +121,6 @@ blocks:
           (for dependent variable), however either one can be specified in order to maintain backward
           compatibility.
         optional: true
-        tagged: false
       outer_dvclose:
         type: double
         longname: dependent-variable change criterion
@@ -135,7 +131,6 @@ blocks:
           equals 0.01. The keyword, OUTER_HCLOSE can be still be specified instead of OUTER_DVCLOSE for
           backward compatibility with previous versions of MODFLOW 6 but eventually OUTER_HCLOSE will
           be deprecated and specification of OUTER_HCLOSE will cause MODFLOW 6 to terminate with an error.
-        tagged: false
       outer_rclosebnd:
         type: double
         longname: boundary package flow residual tolerance
@@ -148,13 +143,11 @@ blocks:
           can be still be specified for backward compatibility with previous versions of MODFLOW 6 but
           eventually specification of OUTER_RCLOSEBND will cause MODFLOW 6 to terminate with an error.
         optional: true
-        tagged: false
       outer_maximum:
         type: integer
         longname: outer maximum iterations
         description: integer value defining the maximum number of outer (nonlinear) iterations -- that
           is, calls to the solution routine. For a linear problem OUTER_MAXIMUM should be 1.
-        tagged: false
       under_relaxation:
         type: string
         longname: under relaxation scheme
@@ -170,7 +163,6 @@ blocks:
           however, experience has indicated that they also work well for non-Newton problems, such as
           those with the wet/dry options of MODFLOW 6.
         optional: true
-        tagged: false
       under_relaxation_gamma:
         type: double
         longname: relaxation factor for SIMPLE or the history or memory term factor for the Cooley and
@@ -191,7 +183,6 @@ blocks:
           works well for most problems. UNDER_RELAXATION_GAMMA only needs to be specified if UNDER_RELAXATION
           is not NONE.
         optional: true
-        tagged: false
       under_relaxation_theta:
         type: double
         longname: under relaxation reduction factor
@@ -202,7 +193,6 @@ blocks:
           The value usually ranges from 0.3 to 0.9; a value of 0.7 works well for most problems. UNDER_RELAXATION_THETA
           only needs to be specified if UNDER_RELAXATION is DBD.
         optional: true
-        tagged: false
       under_relaxation_kappa:
         type: double
         longname: under relaxation increment for the learning rate
@@ -213,7 +203,6 @@ blocks:
           The value usually ranges from 0.03 to 0.3; a value of 0.1 works well for most problems. UNDER_RELAXATION_KAPPA
           only needs to be specified if UNDER_RELAXATION is DBD.
         optional: true
-        tagged: false
       under_relaxation_momentum:
         type: double
         longname: fraction of past history changes that is added as a momentum term
@@ -224,7 +213,6 @@ blocks:
           0.0001 to 0.1; a value of 0.001 works well for most problems. UNDER_RELAXATION_MOMENTUM only
           needs to be specified if UNDER_RELAXATION is DBD.
         optional: true
-        tagged: false
       backtracking_number:
         type: integer
         longname: maximum number of backtracking iterations
@@ -232,7 +220,6 @@ blocks:
           residual reduction computations. If BACKTRACKING_NUMBER = 0 then the backtracking iterations
           are omitted. The value usually ranges from 2 to 20; a value of 10 works well for most problems.
         optional: true
-        tagged: false
       backtracking_tolerance:
         type: double
         longname: tolerance for residual change that is allowed for residual reduction
@@ -244,7 +231,6 @@ blocks:
           harder problems. BACKTRACKING_TOLERANCE only needs to be specified if BACKTRACKING_NUMBER is
           greater than zero.
         optional: true
-        tagged: false
       backtracking_reduction_factor:
         type: double
         longname: reduction in step size used for residual reduction computations
@@ -253,7 +239,6 @@ blocks:
           from 0.1 to 0.3; a value of 0.2 works well for most problems. BACKTRACKING_REDUCTION_FACTOR
           only needs to be specified if BACKTRACKING_NUMBER is greater than zero.
         optional: true
-        tagged: false
       backtracking_residual_limit:
         type: double
         longname: limit to which the residual is reduced with backtracking
@@ -263,7 +248,6 @@ blocks:
           may only slow down computations. BACKTRACKING_RESIDUAL_LIMIT only needs to be specified if BACKTRACKING_NUMBER
           is greater than zero.
         optional: true
-        tagged: false
   linear:
     fields:
       inner_maximum:
@@ -273,7 +257,6 @@ blocks:
           typically depends on the characteristics of the matrix solution scheme being used. For nonlinear
           problems, INNER_MAXIMUM usually ranges from 60 to 600; a value of 100 will be sufficient for
           most linear problems.
-        tagged: false
       inner_hclose:
         type: double
         longname: head change tolerance
@@ -285,7 +268,6 @@ blocks:
           the more general INNER_DVCLOSE (for dependent variable), however either one can be specified
           in order to maintain backward compatibility.
         optional: true
-        tagged: false
       inner_dvclose:
         type: double
         longname: dependent-variable change tolerance
@@ -298,7 +280,6 @@ blocks:
           instead of INNER_DVCLOSE for backward compatibility with previous versions of MODFLOW 6 but
           eventually INNER_HCLOSE will be deprecated and specification of INNER_HCLOSE will cause MODFLOW
           6 to terminate with an error.
-        tagged: false
       rcloserecord:
         type: record
         longname: rclose record
@@ -339,7 +320,6 @@ blocks:
         description: a keyword that defines the linear acceleration method used by the default IMS linear
           solvers.  CG - preconditioned conjugate gradient method.  BICGSTAB - preconditioned bi-conjugate
           gradient stabilized method.
-        tagged: false
       relaxation_factor:
         type: double
         longname: relaxation factor used by ILU factorization
@@ -351,7 +331,6 @@ blocks:
           ILUT preconditioning (depending on the value specified for PRECONDITIONER_LEVELS and/or PRECONDITIONER_DROP_TOLERANCE).
           By default,  RELAXATION_FACTOR is zero.
         optional: true
-        tagged: false
       preconditioner_levels:
         type: integer
         longname: level of fill for ILU decomposition
@@ -362,7 +341,6 @@ blocks:
           than zero results in use of the ILUT preconditioner. By default, PRECONDITIONER_LEVELS is zero
           and the zero-fill incomplete LU factorization preconditioners (ILU(0) and MILU(0)) are used.
         optional: true
-        tagged: false
       preconditioner_drop_tolerance:
         type: double
         longname: drop tolerance used to drop preconditioner terms
@@ -371,7 +349,6 @@ blocks:
           works well for most problems. By default, PRECONDITIONER_DROP_TOLERANCE is zero and the zero-fill
           incomplete LU factorization preconditioners (ILU(0) and MILU(0)) are used.
         optional: true
-        tagged: false
       number_orthogonalizations:
         type: integer
         longname: number of orthogonalizations
@@ -381,7 +358,6 @@ blocks:
           of the residual, a number between 4 and 10 is appropriate. By default, NUMBER_ORTHOGONALIZATIONS
           is zero.
         optional: true
-        tagged: false
       scaling_method:
         type: string
         longname: matrix scaling approach
@@ -390,7 +366,6 @@ blocks:
           using the POLCG preconditioner scaling method in Hill (1992).  L2NORM - symmetric matrix scaling
           using the L2 norm.
         optional: true
-        tagged: false
       reordering_method:
         type: string
         longname: matrix reordering approach
@@ -398,4 +373,3 @@ blocks:
           matrix reordering is not applied.  NONE - original ordering.  RCM - reverse Cuthill McKee ordering.  MD
           - minimum degree ordering.
         optional: true
-        tagged: false

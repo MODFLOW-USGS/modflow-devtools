@@ -28,8 +28,7 @@
           "type": "string",
           "longname": "name of auxiliary variable for multiplier",
           "description": "name of auxiliary variable to be used as multiplier of mass loading rate.",
-          "optional": true,
-          "tagged": false
+          "optional": true
         },
         "boundnames": {
           "type": "keyword",
@@ -91,8 +90,7 @@
         "maxbound": {
           "type": "integer",
           "longname": "maximum number of sources",
-          "description": "integer value specifying the maximum number of sources cells that will be specified for use during any stress period.",
-          "tagged": false
+          "description": "integer value specifying the maximum number of sources cells that will be specified for use during any stress period."
         }
       }
     },

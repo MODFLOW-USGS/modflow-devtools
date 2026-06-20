@@ -28,8 +28,7 @@
           "type": "string",
           "longname": "name of auxiliary variable for multiplier",
           "description": "name of auxiliary variable to be used as multiplier of concentration value.",
-          "optional": true,
-          "tagged": false
+          "optional": true
         },
         "boundnames": {
           "type": "keyword",
@@ -85,8 +84,7 @@
         "maxbound": {
           "type": "integer",
           "longname": "maximum number of constant concentrations",
-          "description": "integer value specifying the maximum number of constant concentrations cells that will be specified for use during any stress period.",
-          "tagged": false
+          "description": "integer value specifying the maximum number of constant concentrations cells that will be specified for use during any stress period."
         }
       }
     },

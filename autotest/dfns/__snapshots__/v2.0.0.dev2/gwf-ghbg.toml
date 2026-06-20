@@ -31,7 +31,6 @@ type = "string"
 longname = "name of auxiliary variable for multiplier"
 description = "name of auxiliary variable to be used as multiplier of general-head boundary conductance."
 optional = true
-tagged = false
 
 [blocks.options.fields.print_input]
 type = "keyword"
@@ -77,7 +76,6 @@ type = "integer"
 longname = "maximum number of general-head boundaries in any stress period"
 description = "integer value specifying the maximum number of general-head boundary cells that will be specified for use during any stress period."
 optional = true
-tagged = false
 
 [blocks.period.fields.bhead]
 type = "array"

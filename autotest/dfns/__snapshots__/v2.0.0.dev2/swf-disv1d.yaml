@@ -21,7 +21,6 @@ blocks:
         description: is the length units used for this model.  Values can be 'FEET', 'METERS', or 'CENTIMETERS'.  If
           not specified, the default is 'UNKNOWN'.
         optional: true
-        tagged: false
       nogrb:
         type: keyword
         longname: do not write binary grid file
@@ -44,7 +43,6 @@ blocks:
           value for XORIGIN does not affect the model simulation, but it is written to the binary grid
           file so that postprocessors can locate the grid in space.
         optional: true
-        tagged: false
       yorigin:
         type: double
         longname: y-position origin of the model grid coordinate system
@@ -53,7 +51,6 @@ blocks:
           used.  The value for YORIGIN does not affect the model simulation, but it is written to the
           binary grid file so that postprocessors can locate the grid in space.
         optional: true
-        tagged: false
       angrot:
         type: double
         longname: rotation angle
@@ -62,7 +59,6 @@ blocks:
           assigned.  The value for ANGROT does not affect the model simulation, but it is written to the
           binary grid file so that postprocessors can locate the grid in space.
         optional: true
-        tagged: false
       export_array_ascii:
         type: keyword
         longname: export array variables to layered ascii files.
@@ -79,7 +75,6 @@ blocks:
           can locate the grid in space.
         optional: true
         developmode: true
-        tagged: false
         case_sensitive: true
   dimensions:
     fields:
@@ -87,13 +82,11 @@ blocks:
         type: integer
         longname: number of linear features
         description: is the number of linear cells.
-        tagged: false
       nvert:
         type: integer
         longname: number of columns
         description: is the total number of (x, y, z) vertex pairs used to characterize the model grid.
         optional: true
-        tagged: false
   griddata:
     fields:
       width:

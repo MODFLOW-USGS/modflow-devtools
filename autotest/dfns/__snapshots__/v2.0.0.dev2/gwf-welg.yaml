@@ -41,7 +41,6 @@ blocks:
         longname: name of auxiliary variable for multiplier
         description: name of auxiliary variable to be used as multiplier of well flow rate.
         optional: true
-        tagged: false
       print_input:
         type: keyword
         longname: print input to listing file
@@ -75,7 +74,6 @@ blocks:
           in the Node Property Flow (NPF) input file. Reduction in flow will not occur for wells in cells
           marked as confined (ICELLTYPE = 0).
         optional: true
-        tagged: false
       afrcsv_filerecord:
         type: record
         optional: true
@@ -127,7 +125,6 @@ blocks:
         description: integer value specifying the maximum number of wells cells that will be specified
           for use during any stress period.
         optional: true
-        tagged: false
   period:
     fields:
       q:

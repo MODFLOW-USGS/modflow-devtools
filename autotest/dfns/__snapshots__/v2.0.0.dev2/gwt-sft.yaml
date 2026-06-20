@@ -17,7 +17,6 @@ blocks:
           then the corresponding flow package must have the same name as this advanced transport package
           (the name associated with this package in the GWT name file).
         optional: true
-        tagged: false
       auxiliary:
         type: array
         longname: keyword to specify aux variables
@@ -40,7 +39,6 @@ blocks:
           an auxiliary variable with this name or the program will terminate with an error.  If the flows
           for this advanced transport package are read from a file, then this option will have no effect.
         optional: true
-        tagged: false
       boundnames:
         type: keyword
         description: keyword to indicate that boundary names may be provided with the list of reach cells.

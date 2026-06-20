@@ -39,8 +39,7 @@
         "maxbound": {
           "type": "integer",
           "longname": "maximum number of ssm entries",
-          "description": "integer value specifying the maximum number of spc cells that will be specified for use during any stress period.",
-          "tagged": false
+          "description": "integer value specifying the maximum number of spc cells that will be specified for use during any stress period."
         }
       }
     },

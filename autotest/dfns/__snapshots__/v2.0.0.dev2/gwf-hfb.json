@@ -26,8 +26,7 @@
         "maxhfb": {
           "type": "integer",
           "longname": "maximum number of barriers",
-          "description": "integer value specifying the maximum number of hydraulic flow barriers that will be entered in this input file.  The value of MAXHFB is used to allocate memory for the hydraulic flow barriers.",
-          "tagged": false
+          "description": "integer value specifying the maximum number of hydraulic flow barriers that will be entered in this input file.  The value of MAXHFB is used to allocate memory for the hydraulic flow barriers."
         }
       }
     },

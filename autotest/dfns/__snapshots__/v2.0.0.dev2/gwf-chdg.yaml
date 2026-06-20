@@ -41,7 +41,6 @@ blocks:
         longname: name of auxiliary variable for multiplier
         description: name of auxiliary variable to be used as multiplier of CHD head value.
         optional: true
-        tagged: false
       print_input:
         type: keyword
         longname: print input to listing file
@@ -92,7 +91,6 @@ blocks:
         description: integer value specifying the maximum number of constant-head cells that will be specified
           for use during any stress period.
         optional: true
-        tagged: false
   period:
     fields:
       head:

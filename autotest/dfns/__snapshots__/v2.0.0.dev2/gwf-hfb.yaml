@@ -24,7 +24,6 @@ blocks:
         description: integer value specifying the maximum number of hydraulic flow barriers that will
           be entered in this input file.  The value of MAXHFB is used to allocate memory for the hydraulic
           flow barriers.
-        tagged: false
   period:
     fields:
       stress_period_data:

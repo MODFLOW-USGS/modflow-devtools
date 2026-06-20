@@ -33,16 +33,14 @@
           "type": "integer",
           "longname": "exit solve method",
           "description": "the method for iterative solution of particle exit location and time in the generalized Pollock's method.  0 default, 1 Brent, 2 Chandrupatla.  The default is Brent's method.",
-          "optional": true,
-          "tagged": false
+          "optional": true
         },
         "exit_solve_tolerance": {
           "type": "double",
           "longname": "exit solve tolerance",
           "description": "the convergence tolerance for iterative solution of particle exit location and time in the generalized Pollock's method.  The variable being solved for varies from 0 to 1.  A tolerance of 0.00001 works well for many problems, but the value that strikes the best balance between accuracy and runtime is problem-dependent.",
           "optional": true,
-          "default": 1e-05,
-          "tagged": false
+          "default": 1e-05
         },
         "local_z": {
           "type": "keyword",
@@ -84,15 +82,13 @@
           "type": "double",
           "longname": "stop time",
           "description": "real value defining the maximum simulation time to which particles in the package can be tracked.  Particles that have not terminated earlier due to another termination condition will terminate when simulation time STOPTIME is reached.  If the last stress period in the simulation consists of more than one time step, particles will not be tracked past the ending time of the last stress period, regardless of STOPTIME.  If the EXTEND_TRACKING option is enabled and the last stress period in the simulation is steady-state, the simulation ending time will not limit the time to which particles can be tracked, but STOPTIME and STOPTRAVELTIME will continue to apply.  If STOPTIME and STOPTRAVELTIME are both provided, particles will be stopped if either is reached.",
-          "optional": true,
-          "tagged": false
+          "optional": true
         },
         "stoptraveltime": {
           "type": "double",
           "longname": "stop travel time",
           "description": "real value defining the maximum travel time over which particles in the model can be tracked.  Particles that have not terminated earlier due to another termination condition will terminate when their travel time reaches STOPTRAVELTIME.  If the last stress period in the simulation consists of more than one time step, particles will not be tracked past the ending time of the last stress period, regardless of STOPTRAVELTIME.  If the EXTEND_TRACKING option is enabled and the last stress period in the simulation is steady-state, the simulation ending time will not limit the time to which particles can be tracked, but STOPTIME and STOPTRAVELTIME will continue to apply.  If STOPTIME and STOPTRAVELTIME are both provided, particles will be stopped if either is reached.",
-          "optional": true,
-          "tagged": false
+          "optional": true
         },
         "stop_at_weak_sink": {
           "type": "keyword",
@@ -104,8 +100,7 @@
           "type": "integer",
           "longname": "stop zone number",
           "description": "integer value defining the stop zone number.  If cells have been assigned IZONE values in the GRIDDATA block, a particle terminates if it enters a cell whose IZONE value matches ISTOPZONE.  An ISTOPZONE value of zero indicates that there is no stop zone.  The default value is zero.",
-          "optional": true,
-          "tagged": false
+          "optional": true
         },
         "drape": {
           "type": "keyword",
@@ -151,7 +146,6 @@
           "longname": "what to do in dry-but-active cells",
           "description": "is a string indicating how particles should behave in dry-but-active cells (as can occur with the Newton formulation).  The value can be 'DROP', 'STOP', or 'STAY'.  The default is 'DROP', which passes particles vertically and instantaneously to the water table. 'STOP' causes particles to terminate. 'STAY' causes particles to remain stationary but active.",
           "optional": true,
-          "tagged": false,
           "valid": [
             "drop",
             "stop",
@@ -167,15 +161,13 @@
           "type": "double",
           "longname": "release time coincidence tolerance",
           "description": "real number indicating the tolerance within which to consider consecutive release times coincident. Coincident release times will be merged into a single release time. The default is $epsilon times 10^{11}$, where $epsilon$ is machine precision.",
-          "optional": true,
-          "tagged": false
+          "optional": true
         },
         "release_time_frequency": {
           "type": "double",
           "longname": "release time frequency",
           "description": "real number indicating the time frequency at which to release particles. This option can be used to schedule releases at a regular interval for the duration of the simulation, starting at the simulation start time. The release schedule is the union of this option, the RELEASETIMES block, and PERIOD block RELEASESETTING selections. If none of these are provided, a single release time is configured at the beginning of the first time step of the simulation's first stress period.",
-          "optional": true,
-          "tagged": false
+          "optional": true
         },
         "coordinate_check_method": {
           "type": "string",
@@ -183,7 +175,6 @@
           "description": "approach for verifying that release point coordinates are in the cell with the specified ID. Possible values are NONE and EAGER. By default, release point coordinates are checked at release time, i.e. EAGER.",
           "optional": true,
           "default": "eager",
-          "tagged": false,
           "valid": [
             "none",
             "eager"
@@ -193,8 +184,7 @@
           "type": "integer",
           "longname": "cycle detection window size",
           "description": "integer value defining the size of the window (number of consecutive exit events) used for cycle detection. Defaults to 0, disabling cycle detection. With detection enabled, particle pathlines with duplicate cell exit events (i.e., exiting the same cell through the same face twice) will cause the program to terminate with an error. A larger window size provides more robust cycle detection at the cost of more runtime operations per cell exit.",
-          "optional": true,
-          "tagged": false
+          "optional": true
         }
       }
     },
@@ -203,14 +193,12 @@
         "nreleasepts": {
           "type": "integer",
           "longname": "number of particle release points",
-          "description": "is the number of particle release points.",
-          "tagged": false
+          "description": "is the number of particle release points."
         },
         "nreleasetimes": {
           "type": "integer",
           "longname": "number of particle release times",
-          "description": "is the number of particle release times specified in the RELEASETIMES block. This is not necessarily the total number of release times; release times are the union of RELEASE_TIME_FREQUENCY, RELEASETIMES block, and PERIOD block RELEASESETTING selections.",
-          "tagged": false
+          "description": "is the number of particle release times specified in the RELEASETIMES block. This is not necessarily the total number of release times; release times are the union of RELEASE_TIME_FREQUENCY, RELEASETIMES block, and PERIOD block RELEASESETTING selections."
         }
       }
     },

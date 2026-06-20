@@ -240,6 +240,19 @@ blocks:
       mf6internal: dev_dump_evtrace
       longname: print particle tracking events
       type: keyword
+    scratch_buffer:
+      block: options
+      description: keyword to stage track events in a temporary (scratch) file instead of an in-memory
+        buffer. Particle tracking results calculated during a time step are buffered, and output is deferred,
+        until successful completion of the time step. By default, results are buffered in memory. However,
+        for simulations in which a very large number of track events is generated during a time step,
+        memory limits can be exceeded. In such cases, the SCRATCH_BUFFER option can be invoked to buffer
+        results in a scratch file until successful completion of the time step. Buffering in a scratch
+        file is typically slower than buffering in memory.
+      reader: urword
+      optional: true
+      longname: buffer track events in scratch file instead of memory
+      type: keyword
   dimensions:
     ntracktimes:
       block: dimensions

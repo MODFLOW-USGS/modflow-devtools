@@ -31,7 +31,6 @@ blocks:
           DISTCOEF are specified in the GRIDDATA block.  If sorption is specified as FREUNDLICH or LANGMUIR
           then SP2 is also required in the GRIDDATA block.
         optional: true
-        tagged: false
         valid:
           - linear
           - freundlich

@@ -54,13 +54,11 @@ mode = "fileout"
 type = "integer"
 longname = "maximum number of movers"
 description = "integer value specifying the maximum number of water mover entries that will specified for any stress period."
-tagged = false
 
 [blocks.dimensions.fields.maxpackages]
 type = "integer"
 longname = "number of packages to be used with the mover"
 description = "integer value specifying the number of unique packages that are included in this water mover input file."
-tagged = false
 
 [blocks.packages.fields.packages]
 type = "list"

@@ -16,7 +16,6 @@ blocks:
         description: is the number of records in the subsequent perioddata block that will be used for
           adaptive time stepping.
         default: 1
-        tagged: false
   perioddata:
     fields:
       perioddata:

@@ -41,7 +41,6 @@ blocks:
         longname: name of auxiliary variable for multiplier
         description: name of auxiliary variable to be used as multiplier of drain conductance.
         optional: true
-        tagged: false
       auxdepthname:
         type: string
         longname: name of auxiliary variable for drainage depth
@@ -55,7 +54,6 @@ blocks:
           when the Standard or Newton-Raphson Formulation is used, respectively.  This discharge scaling
           option is described in more detail in Chapter 3 of the Supplemental Technical Information.
         optional: true
-        tagged: false
       print_input:
         type: keyword
         longname: print input to listing file
@@ -112,7 +110,6 @@ blocks:
         description: integer value specifying the maximum number of drains cells that will be specified
           for use during any stress period.
         optional: true
-        tagged: false
   period:
     fields:
       elev:

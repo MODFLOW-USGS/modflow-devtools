@@ -23,8 +23,7 @@
           "longname": "reference density",
           "description": "fluid reference density used in the equation of state.  This value is set to 1000. if not specified as an option.",
           "optional": true,
-          "default": 1000.0,
-          "tagged": false
+          "default": 1000.0
         },
         "density_filerecord": {
           "type": "record",
@@ -51,8 +50,7 @@
         "nrhospecies": {
           "type": "integer",
           "longname": "number of species used in density equation of state",
-          "description": "number of species used in density equation of state.  This value must be one or greater if the BUY package is activated.",
-          "tagged": false
+          "description": "number of species used in density equation of state.  This value must be one or greater if the BUY package is activated."
         }
       }
     },

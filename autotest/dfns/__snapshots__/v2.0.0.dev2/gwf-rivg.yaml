@@ -41,7 +41,6 @@ blocks:
         longname: name of auxiliary variable for multiplier
         description: name of auxiliary variable to be used as multiplier of riverbed conductance.
         optional: true
-        tagged: false
       print_input:
         type: keyword
         longname: print input to listing file
@@ -93,7 +92,6 @@ blocks:
         description: integer value specifying the maximum number of rivers cells that will be specified
           for use during any stress period.
         optional: true
-        tagged: false
   period:
     fields:
       stage:

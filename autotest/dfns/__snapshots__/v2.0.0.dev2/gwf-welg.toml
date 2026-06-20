@@ -31,7 +31,6 @@ type = "string"
 longname = "name of auxiliary variable for multiplier"
 description = "name of auxiliary variable to be used as multiplier of well flow rate."
 optional = true
-tagged = false
 
 [blocks.options.fields.print_input]
 type = "keyword"
@@ -56,7 +55,6 @@ type = "double"
 longname = "cell fractional thickness for reduced pumping"
 description = "keyword and real value that defines the fraction of the cell thickness used as an interval for smoothly adjusting negative pumping rates to 0 in cells with head values less than or equal to the bottom of the cell. Negative pumping rates are adjusted to 0 or a smaller negative value when the head in the cell is equal to or less than the calculated interval above the cell bottom. AUTO_FLOW_REDUCE is set to 0.1 if the specified value is less than or equal to zero. By default, negative pumping rates are not reduced during a simulation.  This AUTO_FLOW_REDUCE option only applies to wells in model cells that are marked as 'convertible' (ICELLTYPE /= 0) in the Node Property Flow (NPF) input file. Reduction in flow will not occur for wells in cells marked as confined (ICELLTYPE = 0)."
 optional = true
-tagged = false
 
 [blocks.options.fields.afrcsv_filerecord]
 type = "record"
@@ -100,7 +98,6 @@ type = "integer"
 longname = "maximum number of wells in any stress period"
 description = "integer value specifying the maximum number of wells cells that will be specified for use during any stress period."
 optional = true
-tagged = false
 
 [blocks.period.fields.q]
 type = "array"

@@ -31,7 +31,6 @@ blocks:
         description: the method for iterative solution of particle exit location and time in the generalized
           Pollock's method.  0 default, 1 Brent, 2 Chandrupatla.  The default is Brent's method.
         optional: true
-        tagged: false
       exit_solve_tolerance:
         type: double
         longname: exit solve tolerance
@@ -41,7 +40,6 @@ blocks:
           accuracy and runtime is problem-dependent.
         optional: true
         default: 1.0e-05
-        tagged: false
       local_z:
         type: keyword
         longname: whether to use local z coordinates
@@ -92,7 +90,6 @@ blocks:
           apply.  If STOPTIME and STOPTRAVELTIME are both provided, particles will be stopped if either
           is reached.
         optional: true
-        tagged: false
       stoptraveltime:
         type: double
         longname: stop travel time
@@ -106,7 +103,6 @@ blocks:
           will continue to apply.  If STOPTIME and STOPTRAVELTIME are both provided, particles will be
           stopped if either is reached.
         optional: true
-        tagged: false
       stop_at_weak_sink:
         type: keyword
         longname: stop at weak sink
@@ -120,7 +116,6 @@ blocks:
           in the GRIDDATA block, a particle terminates if it enters a cell whose IZONE value matches ISTOPZONE.  An
           ISTOPZONE value of zero indicates that there is no stop zone.  The default value is zero.
         optional: true
-        tagged: false
       drape:
         type: keyword
         longname: drape
@@ -166,7 +161,6 @@ blocks:
           is 'DROP', which passes particles vertically and instantaneously to the water table. 'STOP'
           causes particles to terminate. 'STAY' causes particles to remain stationary but active.
         optional: true
-        tagged: false
         valid:
           - drop
           - stop
@@ -182,7 +176,6 @@ blocks:
           times coincident. Coincident release times will be merged into a single release time. The default
           is $epsilon times 10^{11}$, where $epsilon$ is machine precision.
         optional: true
-        tagged: false
       release_time_frequency:
         type: double
         longname: release time frequency
@@ -193,7 +186,6 @@ blocks:
           time is configured at the beginning of the first time step of the simulation's first stress
           period.
         optional: true
-        tagged: false
       coordinate_check_method:
         type: string
         longname: coordinate checking method
@@ -202,7 +194,6 @@ blocks:
           release time, i.e. EAGER.
         optional: true
         default: eager
-        tagged: false
         valid:
           - none
           - eager
@@ -215,21 +206,18 @@ blocks:
           same face twice) will cause the program to terminate with an error. A larger window size provides
           more robust cycle detection at the cost of more runtime operations per cell exit.
         optional: true
-        tagged: false
   dimensions:
     fields:
       nreleasepts:
         type: integer
         longname: number of particle release points
         description: is the number of particle release points.
-        tagged: false
       nreleasetimes:
         type: integer
         longname: number of particle release times
         description: is the number of particle release times specified in the RELEASETIMES block. This
           is not necessarily the total number of release times; release times are the union of RELEASE_TIME_FREQUENCY,
           RELEASETIMES block, and PERIOD block RELEASESETTING selections.
-        tagged: false
   packagedata:
     fields:
       packagedata:

@@ -24,7 +24,6 @@ blocks:
           the total memory for each simulation component. ALL means print information for each variable
           stored in the memory manager. NONE is default if MEMORY_PRINT_OPTION is not specified.
         optional: true
-        tagged: false
       profile_option:
         type: string
         longname: profiling option
@@ -33,13 +32,11 @@ blocks:
           information with the highest resolution available. NONE is default if PROFILE_OPTION is not
           specified.
         optional: true
-        tagged: false
       maxerrors:
         type: integer
         longname: maximum number of errors
         description: maximum number of errors that will be stored and printed.
         optional: true
-        tagged: false
       print_input:
         type: keyword
         longname: print input to listing file
@@ -64,7 +61,6 @@ blocks:
         type: string
         longname: name of tdis input file
         description: is the name of the Temporal Discretization (TDIS) Input File.
-        tagged: false
         case_sensitive: true
   models:
     fields:
@@ -133,7 +129,6 @@ blocks:
         description: is the maximum number of outer iterations for this solution group.  The default value
           is 1.  If there is only one solution in the solution group, then MXITER must be 1.
         optional: true
-        tagged: false
       solutiongroup:
         type: list
         longname: solution type and models in the solution

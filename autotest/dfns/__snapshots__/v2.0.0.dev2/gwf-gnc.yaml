@@ -43,12 +43,10 @@ blocks:
         type: integer
         longname: number of ghost node corrections
         description: is the number of GNC entries.
-        tagged: false
       numalphaj:
         type: integer
         longname: number of contributing factors
         description: is the number of contributing factors.
-        tagged: false
   gncdata:
     fields:
       gncdata:

@@ -43,7 +43,6 @@ blocks:
         longname: name of auxiliary variable for multiplier
         description: name of auxiliary variable to be used as multiplier of evapotranspiration rate.
         optional: true
-        tagged: false
       print_input:
         type: keyword
         longname: print input to listing file

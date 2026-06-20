@@ -38,8 +38,7 @@
           "type": "string",
           "longname": "name of auxiliary variable for multiplier",
           "description": "name of auxiliary variable to be used as multiplier of evapotranspiration rate.",
-          "optional": true,
-          "tagged": false
+          "optional": true
         },
         "boundnames": {
           "type": "keyword",
@@ -101,14 +100,12 @@
         "maxbound": {
           "type": "integer",
           "longname": "maximum number of evapotranspiration cells",
-          "description": "integer value specifying the maximum number of evapotranspiration cells that will be specified for use during any stress period.",
-          "tagged": false
+          "description": "integer value specifying the maximum number of evapotranspiration cells that will be specified for use during any stress period."
         },
         "nseg": {
           "type": "integer",
           "longname": "number of ET segments",
-          "description": "number of ET segments.  Default is one.  When NSEG is greater than 1, the PXDP and PETM arrays must be of size NSEG - 1 and be listed in order from the uppermost segment down. Values for PXDP must be listed first followed by the values for PETM.  PXDP defines the extinction-depth proportion at the bottom of a segment. PETM defines the proportion of the maximum ET flux rate at the bottom of a segment.",
-          "tagged": false
+          "description": "number of ET segments.  Default is one.  When NSEG is greater than 1, the PXDP and PETM arrays must be of size NSEG - 1 and be listed in order from the uppermost segment down. Values for PXDP must be listed first followed by the values for PETM.  PXDP defines the extinction-depth proportion at the bottom of a segment. PETM defines the proportion of the maximum ET flux rate at the bottom of a segment."
         }
       }
     },

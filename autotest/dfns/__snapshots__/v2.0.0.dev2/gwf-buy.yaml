@@ -23,7 +23,6 @@ blocks:
           if not specified as an option.
         optional: true
         default: 1000.0
-        tagged: false
       density_filerecord:
         type: record
         optional: true
@@ -47,7 +46,6 @@ blocks:
         longname: number of species used in density equation of state
         description: number of species used in density equation of state.  This value must be one or greater
           if the BUY package is activated.
-        tagged: false
   packagedata:
     fields:
       packagedata:

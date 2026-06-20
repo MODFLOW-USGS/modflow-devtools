@@ -47,7 +47,6 @@ type = "string"
 longname = "conductance weighting option"
 description = "is a keyword and text keyword to indicate the method that will be used for calculating the conductance for horizontal cell connections.  The text value for CELL_AVERAGING can be 'HARMONIC', 'LOGARITHMIC', or 'AMT-LMK', which means 'arithmetic-mean thickness and logarithmic-mean hydraulic conductivity'. If the user does not specify a value for CELL_AVERAGING, then the harmonic-mean method will be used."
 optional = true
-tagged = false
 valid = [
     "harmonic",
     "logarithmic",
@@ -123,7 +122,6 @@ optional = true
 type = "integer"
 longname = "number of exchanges"
 description = "keyword and integer value specifying the number of GWF-GWF exchanges."
-tagged = false
 
 [blocks.exchangedata.fields.exchangedata]
 type = "list"

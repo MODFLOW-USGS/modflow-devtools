@@ -136,7 +136,6 @@ blocks:
           upstream to downstream, MAXIMUM_PICARD_ITERATIONS can be set to 1 to reduce model run time.
           By default, MAXIMUM_PICARD_ITERATIONS is equal to 100.
         optional: true
-        tagged: false
       maximum_iterations:
         type: integer
         longname: SFR Newton-Raphson iterations
@@ -145,7 +144,6 @@ blocks:
           would only need to be increased from the default value if one or more reach in a simulation
           has a large water budget error.
         optional: true
-        tagged: false
       maximum_depth_change:
         type: double
         longname: depth closure tolerance
@@ -154,7 +152,6 @@ blocks:
           from the default value if the water budget error for one or more reach is too small or too large,
           respectively.
         optional: true
-        tagged: false
       unit_conversion:
         type: double
         longname: conversion factor
@@ -163,7 +160,6 @@ blocks:
           for flow units of cubic feet per second, and a constant of 1.0 is used for units of cubic meters
           per second. The constant must be multiplied by 86,400 when using time units of days in the simulation.
         optional: true
-        tagged: false
       length_conversion:
         type: double
         longname: length conversion factor
@@ -172,7 +168,6 @@ blocks:
           when using length units (LENGTH_UNITS) of feet, meters, or centimeters in the simulation, respectively.
           LENGTH_CONVERSION does not need to be specified if LENGTH_UNITS are meters.
         optional: true
-        tagged: false
       time_conversion:
         type: double
         longname: time conversion factor
@@ -182,7 +177,6 @@ blocks:
           in the simulation, respectively. TIME_CONVERSION does not need to be specified if TIME_UNITS
           are seconds.
         optional: true
-        tagged: false
       dev_storage_weight:
         type: double
         longname: reach storage time weighting
@@ -190,7 +184,6 @@ blocks:
           in channel storage. STORAGE_WEIGHT must have a value between 0.5 and 1. Default STORAGE_WEIGHT
           value is 1.
         optional: true
-        tagged: false
   dimensions:
     fields:
       nreaches:
@@ -198,7 +191,6 @@ blocks:
         longname: maximum number reaches
         description: integer value specifying the number of stream reaches.  There must be NREACHES entries
           in the PACKAGEDATA block.
-        tagged: false
   packagedata:
     fields:
       packagedata:

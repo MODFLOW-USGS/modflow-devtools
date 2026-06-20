@@ -21,13 +21,11 @@ optional = true
 type = "integer"
 longname = "number of reaches"
 description = "integer value specifying the number of cross sections that will be defined.  There must be NSECTIONS entries in the PACKAGEDATA block."
-tagged = false
 
 [blocks.dimensions.fields.npoints]
 type = "integer"
 longname = "total number of points defined for all reaches"
 description = "integer value specifying the total number of cross-section points defined for all reaches.  There must be NPOINTS entries in the CROSSSECTIONDATA block."
-tagged = false
 
 [blocks.packagedata.fields.packagedata]
 type = "list"

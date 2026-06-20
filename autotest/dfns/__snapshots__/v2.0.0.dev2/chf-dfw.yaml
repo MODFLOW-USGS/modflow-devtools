@@ -21,7 +21,6 @@ blocks:
           when using length units (LENGTH_UNITS) of feet, meters, or centimeters in the simulation, respectively.
           LENGTH_CONVERSION does not need to be specified if LENGTH_UNITS are meters.
         optional: true
-        tagged: false
       time_conversion:
         type: double
         longname: time conversion factor
@@ -31,7 +30,6 @@ blocks:
           in the simulation, respectively. TIME_CONVERSION does not need to be specified if TIME_UNITS
           are seconds.
         optional: true
-        tagged: false
       save_flows:
         type: keyword
         longname: keyword to save DFW flows

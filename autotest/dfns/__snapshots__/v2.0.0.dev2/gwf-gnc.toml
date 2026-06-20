@@ -33,13 +33,11 @@ optional = true
 type = "integer"
 longname = "number of ghost node corrections"
 description = "is the number of GNC entries."
-tagged = false
 
 [blocks.dimensions.fields.numalphaj]
 type = "integer"
 longname = "number of contributing factors"
 description = "is the number of contributing factors."
-tagged = false
 
 [blocks.gncdata.fields.gncdata]
 type = "list"

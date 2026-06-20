@@ -28,8 +28,7 @@
           "type": "string",
           "longname": "model length units",
           "description": "is the length units used for this model.  Values can be 'FEET', 'METERS', or 'CENTIMETERS'.  If not specified, the default is 'UNKNOWN'.",
-          "optional": true,
-          "tagged": false
+          "optional": true
         },
         "nogrb": {
           "type": "keyword",
@@ -53,30 +52,26 @@
           "type": "double",
           "longname": "x-position origin of the model grid coordinate system",
           "description": "x-position of the origin used for model grid vertices.  This value should be provided in a real-world coordinate system.  A default value of zero is assigned if not specified.  The value for XORIGIN does not affect the model simulation, but it is written to the binary grid file so that postprocessors can locate the grid in space.",
-          "optional": true,
-          "tagged": false
+          "optional": true
         },
         "yorigin": {
           "type": "double",
           "longname": "y-position origin of the model grid coordinate system",
           "description": "y-position of the origin used for model grid vertices.  This value should be provided in a real-world coordinate system.  If not specified, then a default value equal to zero is used.  The value for YORIGIN does not affect the model simulation, but it is written to the binary grid file so that postprocessors can locate the grid in space.",
-          "optional": true,
-          "tagged": false
+          "optional": true
         },
         "angrot": {
           "type": "double",
           "longname": "rotation angle",
           "description": "counter-clockwise rotation angle (in degrees) of the model grid coordinate system relative to a real-world coordinate system.  If not specified, then a default value of 0.0 is assigned.  The value for ANGROT does not affect the model simulation, but it is written to the binary grid file so that postprocessors can locate the grid in space.",
-          "optional": true,
-          "tagged": false
+          "optional": true
         },
         "vertical_offset_tolerance": {
           "type": "double",
           "longname": "vertical length dimension for top and bottom checking",
           "description": "checks are performed to ensure that the top of a cell is not higher than the bottom of an overlying cell.  This option can be used to specify the tolerance that is used for checking.  If top of a cell is above the bottom of an overlying cell by a value less than this tolerance, then the program will not terminate with an error.  The default value is zero.  This option should generally not be used.",
           "optional": true,
-          "default": 0.0,
-          "tagged": false
+          "default": 0.0
         },
         "export_array_ascii": {
           "type": "keyword",
@@ -90,7 +85,6 @@
           "description": "is a real-world coordinate reference system (CRS) for the model, for example, an EPSG integer code (e.g. 26915), authority string (i.e. epsg:26915), or Open Geospatial Consortium Well-Known Text (WKT) specification. Limited to 5000 characters. The entry for CRS does not affect the model simulation, but it is written to the binary grid file so that postprocessors can locate the grid in space.",
           "optional": true,
           "developmode": true,
-          "tagged": false,
           "case_sensitive": true
         }
       }
@@ -100,21 +94,18 @@
         "nodes": {
           "type": "integer",
           "longname": "number of layers",
-          "description": "is the number of cells in the model grid.",
-          "tagged": false
+          "description": "is the number of cells in the model grid."
         },
         "nja": {
           "type": "integer",
           "longname": "number of columns",
-          "description": "is the sum of the number of connections and NODES.  When calculating the total number of connections, the connection between cell n and cell m is considered to be different from the connection between cell m and cell n.  Thus, NJA is equal to the total number of connections, including n to m and m to n, and the total number of cells.",
-          "tagged": false
+          "description": "is the sum of the number of connections and NODES.  When calculating the total number of connections, the connection between cell n and cell m is considered to be different from the connection between cell m and cell n.  Thus, NJA is equal to the total number of connections, including n to m and m to n, and the total number of cells."
         },
         "nvert": {
           "type": "integer",
           "longname": "number of vertices",
           "description": "is the total number of (x, y) vertex pairs used to define the plan-view shape of each cell in the model grid.  If NVERT is not specified or is specified as zero, then the VERTICES and CELL2D blocks below are not read.  NVERT and the accompanying VERTICES and CELL2D blocks should be specified for most simulations.  If the XT3D or SAVE_SPECIFIC_DISCHARGE options are specified in the NPF Package, then this information is required.",
-          "optional": true,
-          "tagged": false
+          "optional": true
         }
       }
     },

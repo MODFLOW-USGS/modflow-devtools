@@ -35,7 +35,6 @@ blocks:
           option, can be used to calculate the same horizontal conductance as MODFLOW-USG when upstream
           weighting is used (LAYCON=4).
         optional: true
-        tagged: false
         valid:
           - logarithmic
           - amt-lmk
@@ -207,7 +206,6 @@ blocks:
         longname: set saturation omega value
         description: set saturation omega value
         optional: true
-        tagged: false
   griddata:
     fields:
       icelltype:

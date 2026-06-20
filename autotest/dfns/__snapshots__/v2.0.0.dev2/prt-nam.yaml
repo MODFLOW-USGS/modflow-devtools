@@ -12,7 +12,6 @@ blocks:
           the name of the list file will be the basename of the PRT model name file and the '.lst' extension.  For
           example, if the PRT name file is called 'my.model.nam' then the list file will be called 'my.model.lst'.
         optional: true
-        tagged: false
       print_input:
         type: keyword
         longname: print input to listing file

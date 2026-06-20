@@ -23,7 +23,6 @@
           "longname": "conductance weighting option",
           "description": "is a text keyword to indicate that an alternative method will be used for calculating the conductance for horizontal cell connections.  The text value for ALTERNATIVE_CELL_AVERAGING can be 'LOGARITHMIC', 'AMT-LMK', or 'AMT-HMK'.  'AMT-LMK' signifies that the conductance will be calculated using arithmetic-mean thickness and logarithmic-mean hydraulic conductivity.  'AMT-HMK' signifies that the conductance will be calculated using arithmetic-mean thickness and harmonic-mean hydraulic conductivity. If the user does not specify a value for ALTERNATIVE_CELL_AVERAGING, then the harmonic-mean method will be used.  This option cannot be used if the XT3D option is invoked. The AMT-HMK ALTERNATIVE_CELL_AVERAGING option, in combination with the DRY_CELL_SATURATION option, can be used to calculate the same horizontal conductance as MODFLOW-USG when upstream weighting is used (LAYCON=4).",
           "optional": true,
-          "tagged": false,
           "valid": [
             "logarithmic",
             "amt-lmk",
@@ -170,8 +169,7 @@
           "type": "double",
           "longname": "set saturation omega value",
           "description": "set saturation omega value",
-          "optional": true,
-          "tagged": false
+          "optional": true
         }
       }
     },

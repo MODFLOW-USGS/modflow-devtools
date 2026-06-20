@@ -31,7 +31,6 @@ blocks:
         longname: name of auxiliary variable for multiplier
         description: name of auxiliary variable to be used as multiplier of riverbed conductance.
         optional: true
-        tagged: false
       boundnames:
         type: keyword
         description: keyword to indicate that boundary names may be provided with the list of river cells.
@@ -87,7 +86,6 @@ blocks:
         longname: maximum number of rivers
         description: integer value specifying the maximum number of rivers cells that will be specified
           for use during any stress period.
-        tagged: false
   period:
     fields:
       stress_period_data:

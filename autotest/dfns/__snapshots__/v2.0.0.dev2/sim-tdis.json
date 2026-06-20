@@ -17,15 +17,13 @@
           "type": "string",
           "longname": "time unit",
           "description": "is the time units of the simulation.  This is a text string that is used as a label within model output files.  Values for time_units may be 'unknown',  'seconds', 'minutes', 'hours', 'days', or 'years'.  The default time unit is 'unknown'.",
-          "optional": true,
-          "tagged": false
+          "optional": true
         },
         "start_date_time": {
           "type": "string",
           "longname": "starting date and time",
           "description": "is the starting date and time of the simulation.  This is a text string that is used as a label within the simulation list file.  The value has no effect on the simulation.  The recommended format for the starting date and time is described at https://www.w3.org/TR/NOTE-datetime.",
-          "optional": true,
-          "tagged": false
+          "optional": true
         },
         "ats_filerecord": {
           "type": "record",
@@ -47,8 +45,7 @@
           "type": "integer",
           "longname": "number of stress periods",
           "description": "is the number of stress periods for the simulation.",
-          "default": 1,
-          "tagged": false
+          "default": 1
         }
       }
     },

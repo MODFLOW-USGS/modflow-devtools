@@ -14,14 +14,12 @@ type = "double"
 longname = "length conversion factor"
 description = "real value that is used to convert user-specified Manning's roughness coefficients from meters to model length units. LENGTH_CONVERSION should be set to 3.28081, 1.0, and 100.0 when using length units (LENGTH_UNITS) of feet, meters, or centimeters in the simulation, respectively. LENGTH_CONVERSION does not need to be specified if LENGTH_UNITS are meters."
 optional = true
-tagged = false
 
 [blocks.options.fields.time_conversion]
 type = "double"
 longname = "time conversion factor"
 description = "real value that is used to convert user-specified Manning's roughness coefficients from seconds to model time units. TIME_CONVERSION should be set to 1.0, 60.0, 3,600.0, 86,400.0, and 31,557,600.0 when using time units (TIME_UNITS) of seconds, minutes, hours, days, or years in the simulation, respectively. TIME_CONVERSION does not need to be specified if TIME_UNITS are seconds."
 optional = true
-tagged = false
 
 [blocks.options.fields.save_flows]
 type = "keyword"

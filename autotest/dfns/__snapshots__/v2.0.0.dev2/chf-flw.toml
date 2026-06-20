@@ -24,7 +24,6 @@ type = "string"
 longname = "name of auxiliary variable for multiplier"
 description = "name of auxiliary variable to be used as multiplier of flow rate."
 optional = true
-tagged = false
 
 [blocks.options.fields.boundnames]
 type = "keyword"
@@ -73,7 +72,6 @@ mode = "filein"
 type = "integer"
 longname = "maximum number of inflow"
 description = "integer value specifying the maximum number of inflow cells that will be specified for use during any stress period."
-tagged = false
 
 [blocks.period.fields.stress_period_data]
 type = "list"

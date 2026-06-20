@@ -78,8 +78,7 @@
         "maxbound": {
           "type": "integer",
           "longname": "maximum number of zero-depth-gradient boundaries",
-          "description": "integer value specifying the maximum number of zero-depth-gradient boundary cells that will be specified for use during any stress period.",
-          "tagged": false
+          "description": "integer value specifying the maximum number of zero-depth-gradient boundary cells that will be specified for use during any stress period."
         }
       }
     },

@@ -30,7 +30,6 @@ blocks:
         description: is the length units used for this model.  Values can be 'FEET', 'METERS', or 'CENTIMETERS'.  If
           not specified, the default is 'UNKNOWN'.
         optional: true
-        tagged: false
       nogrb:
         type: keyword
         longname: do not write binary grid file
@@ -52,7 +51,6 @@ blocks:
           assigned if not specified.  The value for XORIGIN does not affect the model simulation, but
           it is written to the binary grid file so that postprocessors can locate the grid in space.
         optional: true
-        tagged: false
       yorigin:
         type: double
         longname: y-position of the model grid origin
@@ -60,7 +58,6 @@ blocks:
           default value equal to zero is used.  The value for YORIGIN does not affect the model simulation,
           but it is written to the binary grid file so that postprocessors can locate the grid in space.
         optional: true
-        tagged: false
       angrot:
         type: double
         longname: rotation angle
@@ -69,7 +66,6 @@ blocks:
           not affect the model simulation, but it is written to the binary grid file so that postprocessors
           can locate the grid in space.
         optional: true
-        tagged: false
       export_array_ascii:
         type: keyword
         longname: export array variables to layered ascii files.
@@ -94,7 +90,6 @@ blocks:
           can locate the grid in space.
         optional: true
         developmode: true
-        tagged: false
         case_sensitive: true
       ncf_filerecord:
         type: record
@@ -112,19 +107,16 @@ blocks:
         longname: number of layers
         description: is the number of layers in the model grid.
         default: 1
-        tagged: false
       nrow:
         type: integer
         longname: number of rows
         description: is the number of rows in the model grid.
         default: 2
-        tagged: false
       ncol:
         type: integer
         longname: number of columns
         description: is the number of columns in the model grid.
         default: 2
-        tagged: false
   griddata:
     fields:
       delr:

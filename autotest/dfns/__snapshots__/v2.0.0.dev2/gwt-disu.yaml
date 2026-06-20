@@ -24,7 +24,6 @@ blocks:
         description: is the length units used for this model.  Values can be 'FEET', 'METERS', or 'CENTIMETERS'.  If
           not specified, the default is 'UNKNOWN'.
         optional: true
-        tagged: false
       nogrb:
         type: keyword
         longname: do not write binary grid file
@@ -47,7 +46,6 @@ blocks:
           value for XORIGIN does not affect the model simulation, but it is written to the binary grid
           file so that postprocessors can locate the grid in space.
         optional: true
-        tagged: false
       yorigin:
         type: double
         longname: y-position origin of the model grid coordinate system
@@ -56,7 +54,6 @@ blocks:
           used.  The value for YORIGIN does not affect the model simulation, but it is written to the
           binary grid file so that postprocessors can locate the grid in space.
         optional: true
-        tagged: false
       angrot:
         type: double
         longname: rotation angle
@@ -65,7 +62,6 @@ blocks:
           assigned.  The value for ANGROT does not affect the model simulation, but it is written to the
           binary grid file so that postprocessors can locate the grid in space.
         optional: true
-        tagged: false
       vertical_offset_tolerance:
         type: double
         longname: vertical length dimension for top and bottom checking
@@ -76,7 +72,6 @@ blocks:
           should generally not be used.
         optional: true
         default: 0.0
-        tagged: false
       export_array_ascii:
         type: keyword
         longname: export array variables to layered ascii files.
@@ -93,7 +88,6 @@ blocks:
           can locate the grid in space.
         optional: true
         developmode: true
-        tagged: false
         case_sensitive: true
   dimensions:
     fields:
@@ -101,7 +95,6 @@ blocks:
         type: integer
         longname: number of layers
         description: is the number of cells in the model grid.
-        tagged: false
       nja:
         type: integer
         longname: number of columns
@@ -109,7 +102,6 @@ blocks:
           of connections, the connection between cell n and cell m is considered to be different from
           the connection between cell m and cell n.  Thus, NJA is equal to the total number of connections,
           including n to m and m to n, and the total number of cells.
-        tagged: false
       nvert:
         type: integer
         longname: number of vertices
@@ -119,7 +111,6 @@ blocks:
           should be specified for most simulations.  If the XT3D or SAVE_SPECIFIC_DISCHARGE options are
           specified in the NPF Package, then this information is required.
         optional: true
-        tagged: false
   griddata:
     fields:
       top:
