@@ -67,8 +67,9 @@ def _render_row(item: Record | Union) -> list[str]:
     if all(isinstance(arm, Record) for arm in item.arms.values()):
         rows = []
         for arm in item.arms.values():
-            row = " ".join(_inline(f) for f in arm.fields.values())
-            rows.append(f"[{row}]")
+            if isinstance(arm, Record):
+                row = " ".join(_inline(f) for f in arm.fields.values())
+                rows.append(f"[{row}]")
         return rows
     else:
         return [f"<{item.name}>"]
@@ -142,9 +143,6 @@ def _render_field(field: Field, indent: str = "  ") -> str:
             else:
                 r = rows[0]
                 return f"{indent}{r}\n{indent}{r}\n{indent}..."
-
-        case _:
-            return f"{indent}<{field.name}>"
 
 
 def render_block(block: Block) -> str:
