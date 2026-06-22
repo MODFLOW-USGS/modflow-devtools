@@ -196,6 +196,7 @@ def _render_rows(item: "Record | Union") -> list[str]:
         return [
             f"[{' '.join(_render_inline(f) for f in arm.fields.values())}]"
             for arm in item.arms.values()
+            if isinstance(arm, Record)
         ]
     return [f"<{item.name}>"]
 
@@ -237,8 +238,6 @@ def _render_field(field: "Field", indent: str = "  ") -> str:
             if len(rows) > 1:
                 return "\n".join(f"{indent}{r}" for r in rows)
             return f"{indent}{rows[0]}\n{indent}{rows[0]}\n{indent}..."
-        case _:
-            return f"{indent}<{field.name}>"
 
 
 def _render_block(block: "Block") -> str:
