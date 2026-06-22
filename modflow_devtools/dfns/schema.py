@@ -156,6 +156,100 @@ Union.model_rebuild()
 List.model_rebuild()
 
 
+def _render_shape(field: "Array") -> str:
+    return f"({', '.join(field.shape)})" if field.shape else ""
+
+
+def _render_inline(field: "Field") -> str:
+    """Render a field as a token within a record row."""
+    match field:
+        case Keyword():
+            token = field.name.upper()
+        case Array():
+            token = f"<{field.name}{_render_shape(field)}>"
+        case String() | Integer() | Double():
+            token = f"<{field.name}>"
+        case File():
+            # file name (uppercased) acts as the keyword in the record row
+            token = f"{field.name.upper()} {field.mode.upper()} <{field.name}>"
+        case Record():
+            token = " ".join(_render_inline(f) for f in field.fields.values())
+        case Union():
+            # Nested union inside a record: collapse to a single placeholder
+            token = f"<{field.name}>"
+        case _:
+            token = f"<{field.name}>"
+    return f"[{token}]" if field.optional else token
+
+
+def _render_rows(item: "Record | Union") -> list[str]:
+    """Return one or more rendered row strings for a List item.
+
+    A Union whose arms are all Records produces one row per arm (each wrapped
+    in [...] since arms are mutually exclusive alternatives).  A Union whose
+    arms are scalars/keywords collapses to a single <name> placeholder — listing
+    every option inline would be noise.
+    """
+    if isinstance(item, Record):
+        return [" ".join(_render_inline(f) for f in item.fields.values())]
+    if all(isinstance(arm, Record) for arm in item.arms.values()):
+        return [
+            f"[{' '.join(_render_inline(f) for f in arm.fields.values())}]"
+            for arm in item.arms.values()
+        ]
+    return [f"<{item.name}>"]
+
+
+def _render_field(field: "Field", indent: str = "  ") -> str:
+    """Render a top-level block field as one or more indented lines."""
+
+    def _wrap(token: str) -> str:
+        return f"[{token}]" if field.optional else token
+
+    match field:
+        case Keyword():
+            return f"{indent}{_wrap(field.name.upper())}"
+        case String() | Integer() | Double():
+            inner = f"{field.name.upper()} <{field.name}>" if field.tagged else f"<{field.name}>"
+            return f"{indent}{_wrap(inner)}"
+        case File():
+            return f"{indent}{_wrap(f'{field.mode.upper()} <{field.name}>')}"
+        case Array():
+            if field.shape:
+                body = f"{field.name.upper()}\n{indent}  <{field.name}{_render_shape(field)}> -- READARRAY"  # noqa: E501
+                return f"{indent}{_wrap(body)}"
+            inner = f"{field.name.upper()} <{field.name}>" if field.tagged else f"<{field.name}>"
+            return f"{indent}{_wrap(inner)}"
+        case Record():
+            return f"{indent}{_wrap(' '.join(_render_inline(f) for f in field.fields.values()))}"
+        case Union():
+            lines = []
+            for arm in field.arms.values():
+                inner = (
+                    " ".join(_render_inline(f) for f in arm.fields.values())
+                    if isinstance(arm, Record)
+                    else (arm.name.upper() if isinstance(arm, Keyword) else f"<{arm.name}>")
+                )
+                lines.append(f"{indent}{_wrap(inner)}")
+            return "\n".join(lines)
+        case List():
+            rows = _render_rows(field.item)
+            if len(rows) > 1:
+                return "\n".join(f"{indent}{r}" for r in rows)
+            return f"{indent}{rows[0]}\n{indent}{rows[0]}\n{indent}..."
+        case _:
+            return f"{indent}<{field.name}>"
+
+
+def _render_block(block: "Block") -> str:
+    """Render a Block as a BEGIN/END template string."""
+    lines = [f"BEGIN {block.name.upper()}"]
+    for field in block.fields.values():
+        lines.append(_render_field(field))
+    lines.append(f"END {block.name.upper()}")
+    return "\n".join(lines)
+
+
 def _names_in_expr(expr: str) -> set[str]:
     """Return dim-reference Name identifiers from expr.
 
@@ -405,9 +499,7 @@ class Block(BaseModel):
         return all(f.optional for f in self.fields.values())
 
     def render(self) -> str:
-        from modflow_devtools.dfns.render import render_block
-
-        return render_block(self)
+        return _render_block(self)
 
 
 Blocks = Mapping[str, Block]
@@ -450,9 +542,7 @@ class ComponentBase(BaseModel):
         return None
 
     def render(self) -> str:
-        from modflow_devtools.dfns.render import render_block
-
-        return "\n\n".join(render_block(b) for b in (self.blocks or {}).values())
+        return "\n\n".join(_render_block(b) for b in (self.blocks or {}).values())
 
 
 class Simulation(ComponentBase):

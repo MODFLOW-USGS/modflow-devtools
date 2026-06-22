@@ -198,6 +198,71 @@ Available field types:
 
 See [DFN specification](dfnspec.md) for full attribute documentation.
 
+### Rendering block templates
+
+`Block.render()` produces a `BEGIN/END` template string showing the structure of a block — the same format used in the MODFLOW 6 user guide and in tooling such as IDE hover text:
+
+```python
+wel = spec.components["gwf-wel"]
+
+print(wel.blocks["options"].render())
+# BEGIN OPTIONS
+#   [AUXILIARY <auxiliary>]
+#   [AUXMULTNAME <auxmultname>]
+#   [BOUNDNAMES]
+#   [PRINT_INPUT]
+#   ...
+# END OPTIONS
+
+print(wel.blocks["period"].render())
+# BEGIN PERIOD
+#   <cellid(ncelldim)> <q> [<aux(auxiliary)>] [<boundname>]
+#   <cellid(ncelldim)> <q> [<aux(auxiliary)>] [<boundname>]
+#   ...
+# END PERIOD
+```
+
+`ComponentBase.render()` renders all blocks joined by blank lines:
+
+```python
+print(wel.render())
+# BEGIN OPTIONS
+#   ...
+# END OPTIONS
+#
+# BEGIN DIMENSIONS
+#   ...
+# END DIMENSIONS
+#
+# BEGIN PERIOD
+#   ...
+# END PERIOD
+```
+
+Rendering rules by field type:
+
+| Field type | Block-level rendering | Inline (inside record row) |
+|---|---|---|
+| `Keyword` | `KEYWORD` | `KEYWORD` |
+| `String` / `Integer` / `Double` (tagged) | `NAME <name>` | `<name>` |
+| `String` / `Integer` / `Double` (untagged) | `<name>` | `<name>` |
+| `File` | `NAME FILEIN\|FILEOUT <name>` | `NAME FILEIN\|FILEOUT <name>` |
+| `Array` with shape (READARRAY) | `NAME\n    <name(shape)> -- READARRAY` | `<name(shape)>` |
+| `Array` without shape (inline) | `NAME <name>` | `<name(shape)>` |
+| `Record` | children expanded inline | children expanded inline |
+| `Union` with `Record` arms | one optional row per arm | `<name>` |
+| `Union` with scalar arms | `<name>` repeated + `...` | `<name>` |
+| `List` (single row type) | row repeated twice + `...` | — |
+| `List` with `Record`-arm `Union` | one row per arm, no `...` | — |
+| `List` with scalar-arm `Union` | `<name>` twice + `...` | — |
+
+Optional fields are wrapped in `[...]`. Array shapes use the abstract dimension names from the specification (e.g. `ncelldim`, `naux`) rather than resolved grid-specific values.
+
+The two `Union`-in-`List` cases correspond to different MF6 idioms:
+
+- **Union of Records** (e.g. `gwf-oc` period block): the `output` list accepts either a `SAVE` row or a `PRINT` row — each arm is shown as a distinct optional row with no ellipsis.
+- **Union of scalars** (e.g. `prt-prp` period block): the `perioddata` list accepts one of several keywords (`ALL`, `FIRST`, `LAST`, `FREQUENCY`, `STEPS`, `FRACTION`) — the alternatives are collapsed to `<releasesetting>` to avoid noise.
+
 ### Managing DFNs
 
 A registry system handles caching and accessing DFN files from MODFLOW 6 releases. `DfnRegistry` is the abstract base class; `LocalDfnRegistry` and `RemoteDfnRegistry` are the two concrete implementations.
