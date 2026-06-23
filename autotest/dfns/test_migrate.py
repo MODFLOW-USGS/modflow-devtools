@@ -10,7 +10,7 @@ from modflow_devtools.dfns import fetch_dfns, migrate
 FORMATS = ["yaml", "toml", "json"]
 MF6_OWNER = "MODFLOW-ORG"
 MF6_REPO = "modflow6"
-MF6_REF = "develop"
+MF6_REF = "6.7.0"
 
 
 def _load(path: Path, fmt: str) -> dict:
