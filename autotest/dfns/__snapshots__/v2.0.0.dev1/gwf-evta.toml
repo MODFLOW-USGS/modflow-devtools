@@ -61,7 +61,7 @@ block = "options"
 description = "keyword to indicate that evapotranspiration flow terms will be written to the file specified with 'BUDGET FILEOUT' in Output Control."
 reader = "urword"
 optional = true
-longname = "save EVTA flows to budget file"
+longname = "save CHD flows to budget file"
 mf6internal = "ipakcb"
 type = "keyword"
 
@@ -164,7 +164,7 @@ default = "1.e-3"
 reader = "readarray"
 time_series = true
 netcdf = true
-longname = "evapotranspiration rate"
+longname = "evapotranspiration surface"
 type = "double"
 
 [blocks.period.depth]

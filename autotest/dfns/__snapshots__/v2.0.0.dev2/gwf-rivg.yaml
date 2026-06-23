@@ -105,7 +105,7 @@ blocks:
           - nodes
       cond:
         type: array
-        longname: river conductance
+        longname: river conductnace
         description: is the riverbed hydraulic conductance.
         default: 3.0e+30
         netcdf: true

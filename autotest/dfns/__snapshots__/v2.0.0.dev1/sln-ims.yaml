@@ -38,7 +38,7 @@ blocks:
         be assigned the simple complexity values.
       reader: urword
       optional: true
-      longname: solver complexity
+      longname: print option
       type: string
     csv_output_filerecord:
       block: options
@@ -488,7 +488,7 @@ blocks:
         is zero.
       reader: urword
       optional: true
-      longname: number of orthogonalizations
+      longname: drop tolerance used to drop preconditioner terms
       type: integer
     scaling_method:
       block: linear

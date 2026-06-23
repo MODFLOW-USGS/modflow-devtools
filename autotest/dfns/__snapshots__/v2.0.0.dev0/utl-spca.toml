@@ -53,7 +53,6 @@ reader = "readarray"
 optional = true
 longname = "concentration"
 description = "is the concentration of the associated Recharge or Evapotranspiration stress package.  The concentration array may be defined by a time-array series (see the \"Using Time-Array Series in a Package\" section)."
-time_series = true
 
 [period.temperature]
 block = "period"
@@ -63,4 +62,3 @@ reader = "readarray"
 optional = true
 longname = "temperature"
 description = "is the temperature of the associated Recharge or Evapotranspiration stress package.  The temperature array may be defined by a time-array series (see the \"Using Time-Array Series in a Package\" section)."
-time_series = true

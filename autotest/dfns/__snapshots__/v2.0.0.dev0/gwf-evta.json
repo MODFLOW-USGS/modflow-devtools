@@ -77,7 +77,7 @@
       "type": "keyword",
       "reader": "urword",
       "optional": true,
-      "longname": "save EVTA flows to budget file",
+      "longname": "save CHD flows to budget file",
       "description": "keyword to indicate that evapotranspiration flow terms will be written to the file specified with 'BUDGET FILEOUT' in Output Control.",
       "mf6internal": "ipakcb"
     },
@@ -151,7 +151,7 @@
       "shape": "(ncol*nrow; ncpl)",
       "default": 0.001,
       "reader": "readarray",
-      "longname": "evapotranspiration rate",
+      "longname": "evapotranspiration surface",
       "description": "is the maximum ET flux rate ($LT^{-1}$).",
       "time_series": true,
       "netcdf": true

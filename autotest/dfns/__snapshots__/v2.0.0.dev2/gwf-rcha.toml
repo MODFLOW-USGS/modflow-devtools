@@ -47,7 +47,7 @@ optional = true
 
 [blocks.options.fields.save_flows]
 type = "keyword"
-longname = "save RCHA flows to budget file"
+longname = "save CHD flows to budget file"
 description = "keyword to indicate that recharge flow terms will be written to the file specified with 'BUDGET FILEOUT' in Output Control."
 optional = true
 

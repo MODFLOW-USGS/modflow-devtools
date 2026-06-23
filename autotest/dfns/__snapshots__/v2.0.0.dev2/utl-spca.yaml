@@ -41,7 +41,6 @@ blocks:
           in a Package" section).
         optional: true
         dtype: double
-        time_series: true
         shape:
           - ncpl
       temperature:
@@ -52,6 +51,5 @@ blocks:
           a Package" section).
         optional: true
         dtype: double
-        time_series: true
         shape:
           - ncpl

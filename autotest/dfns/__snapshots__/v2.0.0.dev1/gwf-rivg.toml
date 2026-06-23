@@ -132,7 +132,7 @@ default = "3.e30"
 reader = "readarray"
 layered = true
 netcdf = true
-longname = "river conductance"
+longname = "river conductnace"
 type = "double"
 
 [blocks.period.rbot]

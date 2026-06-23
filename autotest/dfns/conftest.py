@@ -62,7 +62,7 @@ def snapshot(snapshot):
 
 
 DFNS_REPO = os.getenv("TEST_DFNS_REPO", "MODFLOW-ORG/modflow6")
-DFNS_REF = os.getenv("TEST_DFNS_REF", "develop")
+DFNS_REF = os.getenv("TEST_DFNS_REF", "6.7.0")
 
 
 @pytest.fixture(scope="module")

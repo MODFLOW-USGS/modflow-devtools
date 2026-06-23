@@ -9,8 +9,6 @@ fkeys:
     val: perioddata
     abbr: tvs
     param: tvs_perioddata
-subcomponents:
-  - utl-tvs
 options:
   save_flows:
     block: options

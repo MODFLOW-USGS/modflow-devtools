@@ -4,9 +4,6 @@
   "advanced": false,
   "multi": false,
   "ftype": "STO",
-  "subcomponents": [
-    "utl-tvs"
-  ],
   "blocks": {
     "options": {
       "save_flows": {

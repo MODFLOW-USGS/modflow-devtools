@@ -390,7 +390,7 @@ blocks:
               tagged: false
             boundname:
               type: string
-              longname: interbed name
+              longname: well name
               description: name of the CSUB cell.  BOUNDNAME is an ASCII character variable that can contain
                 as many as 40 characters.  If BOUNDNAME contains spaces in it, then the entire name must
                 be enclosed within single quotes.
@@ -418,7 +418,7 @@ blocks:
                 - ncelldim
             sig0:
               type: double
-              longname: geostatic stress offset
+              longname: well stress offset
               description: is the stress offset for the cell. SIG0 is added to the calculated geostatic
                 stress for the cell. SIG0 is specified only if MAXSIG0 is specified to be greater than
                 0 in the DIMENSIONS block. If the Options block includes a TIMESERIESFILE entry (see the

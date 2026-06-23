@@ -140,7 +140,7 @@
         "reader": "readarray",
         "layered": true,
         "netcdf": true,
-        "longname": "river conductance",
+        "longname": "river conductnace",
         "type": "double"
       },
       "rbot": {

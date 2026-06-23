@@ -18,7 +18,7 @@
       "reader": "urword",
       "optional": true,
       "longname": "CRS well-known text (WKT) string",
-      "description": "is the coordinate reference system (CRS) well-known text (WKT) string. Used to embed CRS metadata in NetCDF output. Ignored if latitude and longitude griddata arrays have been provided for NETCDF_STRUCTURED export type."
+      "description": "is the coordinate reference system (CRS) well-known text (WKT) string. Ignored if latitude and longitude griddata arrays have been provided for NETCDF_STRUCTURED export type."
     },
     "deflate": {
       "block": "options",
@@ -26,7 +26,7 @@
       "reader": "urword",
       "optional": true,
       "longname": "variable compression deflate level",
-      "description": "is the variable deflate level (0=min, 9=max) in the NetCDF file. Defining this parameter activates per-variable compression at the level specified. Use with the SHUFFLE option to also enable the shuffle filter."
+      "description": "is the variable deflate level (0=min, 9=max) in the NetCDF file. Defining this parameter activates per-variable compression at the level specified."
     },
     "shuffle": {
       "block": "options",
@@ -41,7 +41,7 @@
       "reader": "urword",
       "optional": true,
       "longname": "chunking parameter for the time dimension",
-      "description": "is the chunk size for the time dimension in a NETCDF_MESH2D or NETCDF_STRUCTURED output file. Must be used in combination with the chunk_face parameter (NETCDF_MESH2D) or the chunk_z, chunk_y, and chunk_x parameter set (NETCDF_STRUCTURED) to have an effect."
+      "description": "is the keyword used to provide a data chunk size for the time dimension in a NETCDF_MESH2D or NETCDF_STRUCTURED output file. Must be used in combination with the the chunk_face parameter (NETCDF_MESH2D) or the chunk_z, chunk_y, and chunk_x parameter set (NETCDF_STRUCTURED) to have an effect."
     },
     "chunk_face": {
       "block": "options",
@@ -57,7 +57,7 @@
       "reader": "urword",
       "optional": true,
       "longname": "chunking parameter for structured z",
-      "description": "is the chunk size for the z dimension in a NETCDF_STRUCTURED output file. Must be used in combination with the chunk_time, chunk_x, and chunk_y parameters to have an effect."
+      "description": "is the keyword used to provide a data chunk size for the z dimension in a NETCDF_STRUCTURED output file. Must be used in combination with the the chunk_time, chunk_x and chunk_y parameter set to have an effect."
     },
     "chunk_y": {
       "block": "options",
@@ -65,7 +65,7 @@
       "reader": "urword",
       "optional": true,
       "longname": "chunking parameter for structured y",
-      "description": "is the chunk size for the y dimension in a NETCDF_STRUCTURED output file. Must be used in combination with the chunk_time, chunk_x, and chunk_z parameters to have an effect."
+      "description": "is the keyword used to provide a data chunk size for the y dimension in a NETCDF_STRUCTURED output file. Must be used in combination with the the chunk_time, chunk_x and chunk_z parameter set to have an effect."
     },
     "chunk_x": {
       "block": "options",
@@ -73,7 +73,7 @@
       "reader": "urword",
       "optional": true,
       "longname": "chunking parameter for structured x",
-      "description": "is the chunk size for the x dimension in a NETCDF_STRUCTURED output file. Must be used in combination with the chunk_time, chunk_y, and chunk_z parameters to have an effect."
+      "description": "is the keyword used to provide a data chunk size for the x dimension in a NETCDF_STRUCTURED output file. Must be used in combination with the the chunk_time, chunk_y and chunk_z parameter set to have an effect."
     },
     "modflow6_attr_off": {
       "block": "options",

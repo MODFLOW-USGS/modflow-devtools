@@ -47,7 +47,7 @@ optional = true
 
 [blocks.options.fields.save_flows]
 type = "keyword"
-longname = "save EVTA flows to budget file"
+longname = "save CHD flows to budget file"
 description = "keyword to indicate that evapotranspiration flow terms will be written to the file specified with 'BUDGET FILEOUT' in Output Control."
 optional = true
 
@@ -101,7 +101,7 @@ shape = [
 
 [blocks.period.fields.rate]
 type = "array"
-longname = "evapotranspiration rate"
+longname = "evapotranspiration surface"
 description = "is the maximum ET flux rate ($LT^{-1}$)."
 default = 0.001
 netcdf = true

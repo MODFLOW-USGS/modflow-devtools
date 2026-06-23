@@ -22,7 +22,7 @@ options:
     type: string
     reader: urword
     optional: true
-    longname: solver complexity
+    longname: print option
     description: is an optional keyword that defines default non-linear and linear solver parameters.  SIMPLE
       - indicates that default solver input values will be defined that work well for nearly linear models.
       This would be used for models that do not include nonlinear stress packages and models that are
@@ -509,7 +509,7 @@ linear:
     type: integer
     reader: urword
     optional: true
-    longname: number of orthogonalizations
+    longname: drop tolerance used to drop preconditioner terms
     description: optional integer value defining the interval used to explicitly recalculate the residual
       of the flow equation using the solver coefficient matrix, the latest dependent-variable (for example,
       head) estimates, and the right hand side. For problems that benefit from explicit recalculation

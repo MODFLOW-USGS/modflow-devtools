@@ -137,7 +137,7 @@ period:
     shape: (nodes)
     default: 3.0e+30
     reader: readarray
-    longname: river conductance
+    longname: river conductnace
     description: is the riverbed hydraulic conductance.
     layered: true
     netcdf: true

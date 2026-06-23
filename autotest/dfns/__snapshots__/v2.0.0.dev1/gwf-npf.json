@@ -4,9 +4,6 @@
   "advanced": false,
   "multi": false,
   "ftype": "NPF",
-  "subcomponents": [
-    "utl-tvk"
-  ],
   "blocks": {
     "options": {
       "save_flows": {

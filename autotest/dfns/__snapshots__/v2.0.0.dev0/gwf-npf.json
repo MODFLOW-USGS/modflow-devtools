@@ -12,9 +12,6 @@
       "param": "tvk_perioddata"
     }
   },
-  "subcomponents": [
-    "utl-tvk"
-  ],
   "options": {
     "save_flows": {
       "block": "options",
@@ -114,8 +111,7 @@
           "optional": false,
           "longname": "wetting factor to use for rewetting",
           "description": "is a keyword and factor that is included in the calculation of the head that is initially established at a cell when that cell is converted from dry to wet.",
-          "in_record": true,
-          "tagged": true
+          "in_record": true
         },
         "iwetit": {
           "block": "options",
@@ -124,8 +120,7 @@
           "optional": false,
           "longname": "interval to use for rewetting",
           "description": "is a keyword and iteration interval for attempting to wet cells. Wetting is attempted every IWETIT iteration. This applies to outer iterations and not inner iterations. If IWETIT is specified as zero or less, then the value is changed to 1.",
-          "in_record": true,
-          "tagged": true
+          "in_record": true
         },
         "ihdwet": {
           "block": "options",
@@ -134,8 +129,7 @@
           "optional": false,
           "longname": "flag to determine wetting equation",
           "description": "is a keyword and integer flag that determines which equation is used to define the initial head at cells that become wet.  If IHDWET is 0, h = BOT + WETFCT (hm - BOT). If IHDWET is not 0, h = BOT + WETFCT (THRESH).",
-          "in_record": true,
-          "tagged": true
+          "in_record": true
         }
       }
     },
