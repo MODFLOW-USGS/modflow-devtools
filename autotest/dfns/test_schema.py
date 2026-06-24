@@ -1,11 +1,14 @@
 """Basic tests for the DFN schema"""
 
+from pathlib import Path
+
 import pytest
 
 from modflow_devtools.dfns import Dfns
 from modflow_devtools.dfns.schema import (
     Block,
     Integer,
+    MemoryScalar,
     Model,
     Package,
     Simulation,
@@ -61,7 +64,7 @@ def _pkg(name: str, blocks=None, dims=None, parent=None, **kw) -> Package:
 def test_schema_version():
     pkg = _pkg("gwf-chd")
     spec = Dfns(components={"gwf-chd": pkg})
-    assert spec.schema_version == "2.0.0.dev2"  # default
+    assert spec.schema_version == "2.0.0.dev3"  # default
 
     pkg = Package(name="gwf-chd", schema_version="2.0.0.dev2")
     spec = Dfns(components={"gwf-chd": pkg})
@@ -227,3 +230,181 @@ def test_component_fields_loaded(dfn_dir):
         assert name == field.name
     # fields from all blocks are present (nlay is in dimensions, not options)
     assert "nlay" in fields
+
+
+def test_memory_phase_permissions_fc_readonly_ok():
+    pkg = _pkg("gwf-npf", memory={"hcof": MemoryScalar(type="double", set_in="fc", readonly=True)})
+    Dfns(components={"gwf-npf": pkg})  # must not raise
+
+
+def test_memory_phase_permissions_cq_readonly_ok():
+    pkg = _pkg(
+        "gwf-wel", memory={"simvals": MemoryScalar(type="double", set_in="cq", readonly=True)}
+    )
+    Dfns(components={"gwf-wel": pkg})  # must not raise
+
+
+def test_memory_phase_permissions_fc_not_readonly_raises():
+    pkg = _pkg("gwf-npf", memory={"hcof": MemoryScalar(type="double", set_in="fc", readonly=False)})
+    with pytest.raises(Exception, match="readonly"):
+        Dfns(components={"gwf-npf": pkg})
+
+
+def test_memory_phase_permissions_cq_not_readonly_raises():
+    pkg = _pkg(
+        "gwf-wel", memory={"simvals": MemoryScalar(type="double", set_in="cq", readonly=False)}
+    )
+    with pytest.raises(Exception, match="readonly"):
+        Dfns(components={"gwf-wel": pkg})
+
+
+def test_memory_phase_permissions_list_with_fc_raises():
+    pkg = _pkg(
+        "gwf-npf", memory={"sat": MemoryScalar(type="double", set_in=["ar", "fc"], readonly=False)}
+    )
+    with pytest.raises(Exception, match="readonly"):
+        Dfns(components={"gwf-npf": pkg})
+
+
+def test_memory_phase_coherence_derived_with_ad_ok():
+    pkg = _pkg(
+        "gwf-npf",
+        memory={
+            "k11": MemoryScalar(type="double", set_in="ar"),
+            "condsat": MemoryScalar(type="double", set_in=["ar", "ad"], source=["k11"]),
+        },
+    )
+    Dfns(components={"gwf-npf": pkg})
+
+
+def test_memory_phase_coherence_derived_ar_only_raises():
+    pkg = _pkg(
+        "gwf-npf",
+        memory={
+            "k11": MemoryScalar(type="double", set_in="ar"),
+            "condsat": MemoryScalar(type="double", set_in="ar", source=["k11"]),
+        },
+    )
+    with pytest.raises(Exception, match="advance-phase"):
+        Dfns(components={"gwf-npf": pkg})
+
+
+def test_memory_phase_coherence_derived_rp_only_raises():
+    pkg = _pkg(
+        "gwf-wel",
+        memory={
+            "bound": MemoryScalar(type="double", set_in="rp"),
+            "derived": MemoryScalar(type="double", set_in="rp", source=["bound"]),
+        },
+    )
+    with pytest.raises(Exception, match="advance-phase"):
+        Dfns(components={"gwf-wel": pkg})
+
+
+def test_memory_phase_coherence_non_derived_ar_ok():
+    pkg = _pkg("gwf-npf", memory={"k11": MemoryScalar(type="double", set_in="ar")})
+    Dfns(components={"gwf-npf": pkg})
+
+
+def test_memory_output_bool_ok():
+    pkg = _pkg(
+        "gwf-npf",
+        memory={"flowja": MemoryScalar(type="double", set_in="cq", readonly=True, output=True)},
+    )
+    Dfns(components={"gwf-npf": pkg})  # must not raise
+
+
+def test_memory_output_string_integer_gate_ok():
+    # output may reference an integer flag (e.g. ipakcb), not just a logical
+    pkg = _pkg(
+        "gwf-wel",
+        memory={
+            "ipakcb": MemoryScalar(type="integer", set_in="ar"),
+            "simvals": MemoryScalar(type="double", set_in="cq", readonly=True, output="ipakcb"),
+        },
+    )
+    Dfns(components={"gwf-wel": pkg})  # must not raise
+
+
+def test_memory_output_string_logical_gate_ok():
+    pkg = _pkg(
+        "gwf-wel",
+        memory={
+            "save_flows": MemoryScalar(type="logical", set_in="ar"),
+            "simvals": MemoryScalar(type="double", set_in="cq", readonly=True, output="save_flows"),
+        },
+    )
+    Dfns(components={"gwf-wel": pkg})  # must not raise
+
+
+def test_memory_output_string_missing_raises():
+    pkg = _pkg(
+        "gwf-wel",
+        memory={
+            "simvals": MemoryScalar(type="double", set_in="cq", readonly=True, output="ipakcb")
+        },
+    )
+    with pytest.raises(Exception, match="does not name a memory variable"):
+        Dfns(components={"gwf-wel": pkg})
+
+
+def test_memory_budget_accepted():
+    pkg = _pkg(
+        "gwf-wel",
+        memory={"simvals": MemoryScalar(type="double", set_in="cq", readonly=True, budget="WEL")},
+    )
+    Dfns(components={"gwf-wel": pkg})  # must not raise
+    assert pkg.memory["simvals"].budget == "WEL"
+
+
+def test_memory_obs_type_accepted():
+    pkg = _pkg(
+        "gwf-wel",
+        memory={"simvals": MemoryScalar(type="double", set_in="cq", readonly=True, obs_type="WEL")},
+    )
+    Dfns(components={"gwf-wel": pkg})  # must not raise
+    assert pkg.memory["simvals"].obs_type == "WEL"
+
+
+_DEV3_SNAPSHOT_DIR = Path(__file__).parent / "__snapshots__" / "v2.0.0.dev3"
+
+
+@pytest.fixture(scope="module")
+def dev3_spec():
+    return Dfns.load(_DEV3_SNAPSHOT_DIR)
+
+
+def test_memory_output_attributes_in_snapshot(dev3_spec):
+    """Stress package simvals must carry budget, obs_type, and output in the migrated spec."""
+    wel = dev3_spec.components["gwf-wel"]
+    simvals = wel.memory["simvals"]
+    assert simvals.budget == "WEL"
+    assert simvals.obs_type == "WEL"
+    assert simvals.output == "ipakcb"
+
+    simtomvr = wel.memory["simtomvr"]
+    assert simtomvr.budget == "WEL-TO-MVR"
+    assert simtomvr.output == "ipakcb"
+    assert simtomvr.obs_type is None  # to-mvr flows are not observable
+
+
+def test_memory_output_attributes_rcha(dev3_spec):
+    """RCHA budget term differs from its obs type (obs type is always RCH)."""
+    rcha = dev3_spec.components["gwf-rcha"]
+    simvals = rcha.memory["simvals"]
+    assert simvals.budget == "RCHA"
+    assert simvals.obs_type == "RCH"
+    assert simvals.output == "ipakcb"
+
+
+def test_memory_output_attributes_chd_no_to_mvr(dev3_spec):
+    """CHD does not support the Water Mover provider role; simtomvr has no budget."""
+    chd = dev3_spec.components["gwf-chd"]
+    simvals = chd.memory["simvals"]
+    assert simvals.budget == "CHD"
+    assert simvals.obs_type == "CHD"
+    assert simvals.output == "ipakcb"
+
+    simtomvr = chd.memory["simtomvr"]
+    assert simtomvr.budget is None
+    assert simtomvr.output is None

@@ -1,6 +1,6 @@
 # DFN specification
 
-This document describes the MODFLOW 6 component definition (DFN) system. This system is used to specify MODFLOW 6 components and their inputs, and reflects the MODFLOW 6 input data model as described in the MF6 IO guide.
+This document describes the MODFLOW 6 component definition (DFN) system. This system is used to specify MODFLOW 6 components, including user-facing inputs and (optionally) API-accessible memory variables.
 
 - [Overview](#overview)
 - [Components](#components)
@@ -11,6 +11,7 @@ This document describes the MODFLOW 6 component definition (DFN) system. This sy
     - [`parent`](#parent)
     - [`schema_version`](#schema_version)
     - [`dims`](#dims)
+    - [`memory`](#memory)
   - [Component types](#component-types)
     - [Simulation](#simulation)
     - [Model](#model)
@@ -26,13 +27,14 @@ This document describes the MODFLOW 6 component definition (DFN) system. This sy
     - [`name`](#name-1)
     - [`fields`](#fields)
     - [`repeats`](#repeats)
+  - [Field ordering](#field-ordering)
 - [Fields](#fields-1)
   - [Shared attributes](#shared-attributes-1)
     - [`name`](#name-2)
     - [`type`](#type-1)
     - [`longname`](#longname)
     - [`description`](#description)
-    - [`optional`](#optional-1)
+    - [`optional`](#optional)
     - [`default`](#default)
     - [`developmode`](#developmode)
     - [`netcdf`](#netcdf)
@@ -50,13 +52,13 @@ This document describes the MODFLOW 6 component definition (DFN) system. This sy
     - [Integer](#integer)
       - [Type-specific attributes](#type-specific-attributes-3)
         - [`valid`](#valid-1)
-        - [`time_series`](#time_series)
+        - [`time_series`](#time_series-1)
         - [`pk`](#pk-1)
         - [`fk`](#fk-1)
         - [`fk_ref`](#fk_ref-1)
     - [Double](#double)
       - [Type-specific attributes](#type-specific-attributes-4)
-        - [`time_series`](#time_series-1)
+        - [`time_series`](#time_series-2)
     - [File](#file)
       - [Type-specific attributes](#type-specific-attributes-5)
         - [`mode`](#mode)
@@ -65,7 +67,7 @@ This document describes the MODFLOW 6 component definition (DFN) system. This sy
       - [Type-specific attributes](#type-specific-attributes-6)
         - [`dtype`](#dtype)
         - [`shape`](#shape)
-        - [`time_series`](#time_series-2)
+        - [`time_series`](#time_series-3)
         - [`repeat`](#repeat)
     - [Record](#record)
       - [Type-specific attributes](#type-specific-attributes-7)
@@ -76,17 +78,30 @@ This document describes the MODFLOW 6 component definition (DFN) system. This sy
     - [List](#list)
       - [Type-specific attributes](#type-specific-attributes-9)
         - [`item`](#item)
+        - [`shape`](#shape-1)
   - [Dimensions](#dimensions)
     - [Dimension sources](#dimension-sources)
     - [Dimension scope](#dimension-scope)
   - [Primary/foreign keys](#primaryforeign-keys)
     - [Examples](#examples)
+- [Memory catalog](#memory-catalog)
+  - [Attributes](#attributes-1)
+    - [`type`](#type-2)
+    - [`dtype`](#dtype-1)
+    - [`shape`](#shape-2)
+    - [`readonly`](#readonly)
+    - [`set_in`](#set_in)
+    - [`source`](#source)
+    - [`description`](#description-1)
+    - [`output`](#output)
+    - [`budget`](#budget)
+    - [`obs_type`](#obs_type)
 
 ## Overview
 
 A MODFLOW 6 simulation consists of a hierarchy of modules, each one representing some functional element, such as a grid discretization, a hydrologic process (i.e. model), or a boundary condition.
 
-Modules are specified by **component definitions** (DFNs), each of which describes the module's general properties, its input fields, and its relationships to other modules. A module be represented by more than one component definition. A definition describes one way of representing a module; it may not be the only way. Any number of representational variants may exist, each of which reflects a certain tradeoff between properties like program runtime, memory or disk usage, and convenience.
+Modules are specified by **component definitions** (DFNs), each of which describes the module's general properties, its input fields, its relationships to other modules, and (optionally) its internal memory variables. A module be represented by more than one component definition. A definition describes one way of representing a module; it may not be the only way. Any number of representational variants may exist, each of which reflects a certain tradeoff between properties like program runtime, memory or disk usage, and convenience.
 
 This document refers to **components** instead of modules to emphasize this distinction.
 
@@ -100,6 +115,7 @@ Component definitions consist of a number of attributes:
 - `parent`: parent component(s)
 - `schema_version`: DFN schema version
 - `dims`: named dimensions (field-backed or derived) available for use in array shapes
+- `memory`: API-accessible runtime variable definitions
 
 Components may refer to, i.e. be constrained by, other components. Cross-component constraints include parent-child relations, model-solution compatibility restrictions, and primary/foreign keys.
 
@@ -142,6 +158,12 @@ Parent relationships are defined bottom-up with attribute `parent`:
 #### `dims`
 
 `{string: Dim} (default: {})`. Named dimensions available for use in array and list shape expressions. Each entry has a `value` expression and a `scope` that controls visibility to other components. See [Dimensions](#dimensions).
+
+#### `memory`
+
+`{string: MemoryVariable} (default: {})`. The component's memory catalog. See section below.
+
+If a component does not provide a `memory` catalog, all memory-managed variables in the component's runtime context will be readonly by default. To allow MODFLOW API access to runtime variables, they must be defined in the `memory` catalog.
 
 ### Component types
 
@@ -471,7 +493,7 @@ A **non-empty `shape`** (exactly one element) names a declared dimension that bo
 
 ### Dimensions
 
-Dimensions may be declared by a component with a `dims` map. Each entry in `dims` has a `value` expression and a `scope`:
+Dimensions may be declared by a component with a `dims` map. Each entry in `dims` has a `value` expression, a `scope`, and an optional `set_in`:
 
 ```yaml
 dims:
@@ -487,6 +509,10 @@ dims:
   auxiliary:
     value: "len(auxiliary)"      # backed by self-sizing array field 'auxiliary'
     scope: component
+  nbound:
+    set_in: rp                    # runtime-only: set each stress period
+  njas:
+    set_in: ar                    # runtime-only: set once at grid allocation
 ```
 
 Dimensions may be used in the `shape` expression of `list` and `array` fields.
@@ -499,14 +525,12 @@ The `value` attribute defines the dimension source as a Python expression. Three
 - **`len(name)`** — backed by a self-sizing array field of that name. The dimension equals the runtime length of the array.
 - **Arithmetic expression** `nlay * nrow * ncol` — derived from other dims. May not use bare field names; all operands must be declared dimensions.
 
-Shape expressions use Python-like syntax and may contain several kinds of reference, resolved in the order presented below:
+If `value` is absent, the dimension is **runtime-only**: its value cannot be derived from DFN input fields. The optional `set_in` attribute then indicates when MODFLOW first establishes the value:
 
-- **Local dimension**: an explicit or derived dimension in this component, resolved in dependency order.
-- **Inherited dimension**: a dimension inherited from another component, per scoping rules (see below).
-- **Record subfield**: a sibling `integer` subfield in the same record. Makes the record a variadic tuple whose width varies per row. Valid only when the array is a subfield of a record.
-- **List column**: a subfield of a record which is the item type of a regular (i.e. tabular) list, in this component or another. If in another component, the name must be fully qualified (see below). Valid only when the array is a subfield of a record.
+- **`"ar"`** — set once during Allocate and Read (grid allocation). The value is constant for the lifetime of the simulation. Examples: `njas` (number of cell-to-cell connections, computed from grid topology), `nodes` (total active cells, when inherited from a discretization package), `ncolbnd` (number of bound columns, fixed by package structure).
+- **`"rp"`** — reset at the start of each stress period from user input. Examples: `nbound` (number of active boundary entries in the current period).
 
-Shape expressions may also include simple integer arithmetic, e.g. `nlay + 1`, as well as constraints, e.g. `<`, `>`, `<=`, or `>=` and simple math functions like `sum()`.
+Runtime dims are valid in memory variable shapes but not in input field shapes.
 
 Canonical examples of dimensions:
 
@@ -528,8 +552,15 @@ dims:
   nodes: {value: "nlay * ncpl", scope: model}
   ncelldim: {value: "2", scope: model}
 
+  # gwf-disu: njas is expressible because nja is a user-supplied DFN field
+  njas: {value: "(nja - nodes) / 2"}
+
   # any package with an auxiliary array
   auxiliary: {value: "len(auxiliary)"}
+
+  # stress package runtime dims
+  nbound: {set_in: rp}   # active BCs this period, not derivable from input
+  njas: {set_in: ar}     # cell connections, set at grid allocation (DIS/DISV)
 ```
 
 An inline array may have its size determined by an integer subfield in the same record, or if the record it is within is the item type of a list, by a column in another list.
@@ -638,3 +669,81 @@ The `fk_ref` attribute names a sibling string field whose runtime value identifi
 | `utl-obs.continuous.id` (string arm) | — | — | `"obstype"` | **Open:** target block varies by package type; codec must handle case-by-case |
 | `utl-obs.continuous.id` (integer arm) | — | `"node"` | — | grid cell reference |
 | `gwf-wel.period.cellid` | — | `"node"` | — | grid cell reference |
+
+## Memory catalog
+
+Each component may declare a `memory` catalog describing runtime variables accessible via the MODFLOW API. Memory variables correspond to values in the MODFLOW 6 memory manager that can be read or written at runtime using hierarchical `/`-delimited memory addresses.
+
+The `memory` section complements the `blocks` section: `blocks` specifies user-facing input, while `memory` specifies the runtime representation. The two sections may overlap when a memory variable is loaded directly from an input field, and may diverge when a variable is derived or computed internally.
+
+The `memory` section documents:
+
+- What API-accessible variables exists for each component
+- If a variable may be written with the API, or only read
+- When each variable is (re)computed or overwritten by MF6
+- How a derived variable relates to contributing variables
+- If a variable is an output, budget term, or observation
+
+The `memory` section is optional, but highly recommended. If a component definition lacks a `memory` section, all memory-managed variables are readonly by default.
+
+### Attributes
+
+#### `type`
+
+`"integer" | "double" | "string" | "logical" | "array"`. Required. The memory variable's data type.
+
+#### `dtype`
+
+`string`. An array's data type. Must be one of the scalar types: `"integer" | "double" | "string" | "logical"`. Only meaningful/required for array variables.
+
+#### `shape`
+
+`[string] (default: [])`. The variable's shape, as a list of dimension names. An empty list means the shape is determined at runtime and is not specified in the DFN. Shape expressions follow the same syntax as array and list `shape` attributes in `blocks`, but may only reference named dimensions; expressions are not permitted.
+
+#### `readonly`
+
+`boolean (default: false)`. Indicates that this variable may only be read by API consumers, not written. When `false`, the variable may be both read and written. Structural variables, such as grid geometry, are typically `readonly = true`. Variables that influence the solution, e.g. initial or boundary conditions, are typically writable.
+
+#### `set_in`
+
+`string | [string] | null (default: null)`. Identifies the simulation framework hook(s) in which MODFLOW overwrites the variable. Answers the questions: *When I set a value with the API, will it have an effect on the simulation? If so, for how long?* While this information is not programmatically verifiable/actionable, it is critical for the user to understand how to interact with the simulation.
+
+A single string names the routine. A list indicates the variable may be written at more than one hook, as can occur if modification is conditional on input configuration (i.e., a variable is recomputed only when some input option is enabled).
+
+Allowed values:
+
+- `"ar"`: Allocate and Read. The variable is set once during initialisation. A value written via the API persists for the remainder of the simulation.
+- `"mc"`: Map Connections. Called once during solution initialisation to map local matrix positions to the global sparse system matrix. Variables set here are structural integer arrays (e.g. `idxglo`) that are constant for the lifetime of the simulation.
+- `"rp"`: Read and Prepare. The variable is overwritten at the start of each stress period. A value written via the API persists for one stress period.
+- `"ad"`: Advance. The variable is overwritten at the start of each time step. A value written via the API persists for one time step.
+- `"fc"`: Formulate. The variable is assembled from scratch each solver iteration (e.g. `hcof`, `rhs`). Any API write is overwritten before it can affect the solution. **Note:** a variable with `set_in = "fc"` must have `readonly = true`.
+- `"ca"`: Calculate. The variable (e.g. head, `x`) is updated by the solver in each solver iteration. Writing a value between time steps provides an initial guess for the next solve; any write within the solve loop is overwritten by the next linear solve and has no effect.
+- `"cq"`: Calculate Flows. The variable is computed after solution convergence. Writing to it has no effect on the solution. **Note:** a variable with `set_in = "cq"` must have `readonly = true`.
+
+The order of presentation above is the same as that in which the framework hooks are invoked at runtime: `"ar"` → `"mc"` → `"rp"` → `"ad"` → `"fc"` → `"ca"` → `"cq"`.
+
+#### `source`
+
+`string | [string] | null (default: null)`. Identifies the source(s) of a derived variable's.
+
+Allowed values:
+
+- A single string names an input field from which the variable is loaded directly.
+- A list of strings names multiple contributing memory variables from which this variable is derived.
+- Absent means the variable has no direct input or memory-variable counterpart; it is computed internally.
+
+#### `description`
+
+`string | null (default: null)`. A detailed description of the variable, including relevant usage notes for API consumers.
+
+#### `output`
+
+`boolean | string | null (default: null)`. Indicates that this is a model output variable. Registers the variable as an output to be returned by [BMI's `get_output_var_names()`](https://bmi.csdms.io/en/stable/bmi.info_funcs.html#get-output-var-names).
+
+#### `budget`
+
+`string | null (default: null)`. The budget file term name for variables that contribute to budget (e.g., `"WEL"` for `simvals` in a WEL package, `"FLOW-JA-FACE"` for `flowja`). Absent means the variable is not a budget term. Registers the variable as an output to be returned by [BMI's `get_output_var_names()`](https://bmi.csdms.io/en/stable/bmi.info_funcs.html#get-output-var-names).
+
+#### `obs_type`
+
+`string | null (default: null)`. The OBS package observation type name for variables observable through the `utl-obs` utility package (e.g., `"HEAD"` on `x`, `"WEL"` on `simvals` in the WEL package). Absent means the variable is not directly observable via OBS. Registers the variable as an output to be returned by [BMI's `get_output_var_names()`](https://bmi.csdms.io/en/stable/bmi.info_funcs.html#get-output-var-names).

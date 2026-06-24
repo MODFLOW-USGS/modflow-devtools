@@ -49,6 +49,44 @@ def is_advanced_package(comments: list[str]) -> bool:
     return any("package-type advanced" in line for line in comments)
 
 
+# Transport and surface-water stress packages that are semantically BndType subclasses
+# but whose v1 DFN files lack the "# package-type stress-package" header that GWF
+# stress packages carry. Listed explicitly rather than inferred from block structure.
+_STRESS_PKG_NAMES = frozenset(
+    {
+        "gwt-cnc",
+        "gwt-src",
+        "gwe-ctp",
+        "gwe-esl",
+        "chf-cdb",
+        "chf-chd",
+        "chf-flw",
+        "chf-evp",
+        "chf-pcp",
+        "chf-zdg",
+        "olf-cdb",
+        "olf-chd",
+        "olf-flw",
+        "olf-evp",
+        "olf-pcp",
+        "olf-zdg",
+        "swf-cdb",
+        "swf-chd",
+        "swf-flw",
+        "swf-evp",
+        "swf-pcp",
+        "swf-zdg",
+        "prt-prp",
+    }
+)
+
+
+def is_stress_package(name: str, comments: list[str]) -> bool:
+    return (
+        any("package-type stress-package" in line for line in comments) or name in _STRESS_PKG_NAMES
+    )
+
+
 def is_multi_package(comments: list[str]) -> bool:
     return any("flopy multi-package" in line for line in comments)
 

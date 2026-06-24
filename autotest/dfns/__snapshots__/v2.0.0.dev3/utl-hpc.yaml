@@ -1,0 +1,40 @@
+type: package
+schema_version: 2.0.0.dev3
+name: utl-hpc
+parent: sim-nam
+subtype: utility
+blocks:
+  options:
+    fields:
+      print_table:
+        type: keyword
+        longname: model print table to listing file
+        description: keyword to indicate that the partition table will be printed to the listing file.
+        optional: true
+      dev_log_mpi:
+        type: keyword
+        longname: log mpi traffic
+        description: keyword to enable (extremely verbose) logging of mpi traffic to file.
+        optional: true
+  partitions:
+    fields:
+      partitions:
+        type: list
+        longname: list of partition numbers
+        description: is the list of zero-based partition numbers.
+        optional: true
+        item:
+          type: record
+          description: is the record of zero-based partition numbers.
+          fields:
+            mname:
+              type: string
+              longname: model name
+              description: is the unique model name.
+              tagged: false
+            mrank:
+              type: integer
+              longname: model rank
+              description: 'is the zero-based partition number (also: MPI rank or processor id) to which
+                the model will be assigned.'
+              tagged: false

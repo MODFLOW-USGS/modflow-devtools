@@ -58,6 +58,14 @@ def dev2(request, dfn_dir, module_tmpdir):
     return out, fmt
 
 
+@pytest.fixture(scope="module", params=FORMATS)
+def dev3(request, dfn_dir, module_tmpdir):
+    fmt = request.param
+    out = module_tmpdir / f"dev3-{fmt}"
+    migrate(dfn_dir, out, schema_version="2.0.0.dev3", fmt=fmt)
+    return out, fmt
+
+
 def test_migrate_v2_0_0_dev0(dev0, snapshot):
     out, fmt = dev0
     files = sorted(out.glob(f"*.{fmt}"))
@@ -88,4 +96,15 @@ def test_migrate_v2_0_0_dev2(dev2, snapshot):
         data = _load(p, fmt)
         assert data["name"] == p.stem
         assert data["schema_version"] == "2.0.0.dev2"
+        assert snapshot(name=p.stem) == p.read_text()
+
+
+def test_migrate_v2_0_0_dev3(dev3, snapshot):
+    out, fmt = dev3
+    files = sorted(out.glob(f"*.{fmt}"))
+    assert files
+    for p in files:
+        data = _load(p, fmt)
+        assert data["name"] == p.stem
+        assert data["schema_version"] == "2.0.0.dev3"
         assert snapshot(name=p.stem) == p.read_text()

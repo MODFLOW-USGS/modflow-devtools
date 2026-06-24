@@ -2,7 +2,6 @@ type: package
 schema_version: 2.0.0.dev2
 name: olf-sto
 parent: olf-nam
-subtype: stress
 blocks:
   options:
     fields:

@@ -1,0 +1,42 @@
+type: package
+schema_version: 2.0.0.dev3
+name: swf-sto
+parent: swf-nam
+blocks:
+  options:
+    fields:
+      save_flows:
+        type: keyword
+        longname: keyword to save NPF flows
+        description: keyword to indicate that cell-by-cell flow terms will be written to the file specified
+          with 'BUDGET SAVE FILE' in Output Control.
+        optional: true
+      export_array_ascii:
+        type: keyword
+        longname: export array variables to layered ascii files.
+        description: keyword that specifies input grid arrays, which already support the layered keyword,
+          should be written to layered ascii output files.
+        optional: true
+  period:
+    fields:
+      storage:
+        type: string
+        longname: storage state
+        description: keyword to indicate that stress period IPER is steady-state. Steady-state conditions
+          will apply until the TRANSIENT keyword is specified in a subsequent BEGIN PERIOD block.
+        optional: true
+        valid:
+          - steady-state
+          - transient
+memory:
+  ipakcb:
+    set_in: ar
+    source: save_flows
+    type: integer
+  export_ascii:
+    set_in: ar
+    source: export_array_ascii
+    type: logical
+  steady_state:
+    set_in: rp
+    type: logical

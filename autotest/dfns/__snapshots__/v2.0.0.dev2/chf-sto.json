@@ -3,7 +3,6 @@
   "schema_version": "2.0.0.dev2",
   "name": "chf-sto",
   "parent": "chf-nam",
-  "subtype": "stress",
   "blocks": {
     "options": {
       "fields": {

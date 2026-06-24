@@ -17,7 +17,7 @@ from pydantic import (
     Field as PydanticField,
 )
 
-CURRENT_SCHEMA_VERSION = "2.0.0.dev2"
+CURRENT_SCHEMA_VERSION = "2.0.0.dev3"
 
 
 class FieldBase(BaseModel):
@@ -336,17 +336,29 @@ def _validate_len_call(call: ast.Call, component: "ComponentBase", expr: str) ->
         raise ValueError(f"len() argument must be a field name in {expr!r}")
 
 
+_Hook = Literal["ar", "mc", "rp", "ad", "fc", "ca", "cq"]
+
+
 class Dim(BaseModel):
     """A named dimension backed by a field reference or derived from an expression.
 
-    ``value`` is always a Python expression string:
+    ``value`` is a Python expression string:
       - bare identifier ``nlay``         → integer field reference
       - ``len(auxiliary)``               → self-sizing array field reference
       - anything else, e.g. ``nlay * ncol`` → derived arithmetic expression
+
+    If ``value`` is None, the dimension is runtime-only: its value cannot be
+    derived from DFN input fields. ``set_in`` then indicates the simulation phase
+    in which the value is first established by MODFLOW (e.g. ``"ar"`` for dims
+    set during grid allocation, ``"rp"`` for dims reset each stress period).
+
+    Runtime dims are valid in memory variable shapes but not in input field shapes,
+    since a sequential parser must know an array's size before reading it.
     """
 
-    value: str
+    value: str | None = None
     scope: Literal["component", "model", "simulation"] = "component"
+    set_in: _Hook | None = None
 
 
 def _parents_as_set(parent: "str | list[str] | None") -> set[str]:
@@ -398,6 +410,9 @@ def _resolve_derived_dims(component: "ComponentBase", known_dims: set[str]) -> l
     deps: dict[str, set[str]] = {}
 
     for name, dim_def in all_dims.items():
+        if dim_def.value is None:
+            deps[name] = set()
+            continue
         value = dim_def.value
         try:
             tree = ast.parse(value, mode="eval")
@@ -504,12 +519,57 @@ class Block(BaseModel):
 Blocks = Mapping[str, Block]
 
 
+_MemDtype = Literal["integer", "double", "string", "logical"]
+
+
+class MemoryVariableBase(BaseModel):
+    readonly: bool = False
+    set_in: _Hook | list[_Hook] | None = None
+    source: str | list[str] | None = None
+    description: str | None = None
+    budget: str | None = None
+    output: bool | str | None = None
+    obs_type: str | None = None
+
+
+class MemoryScalar(MemoryVariableBase):
+    """A scalar (rank-0) runtime memory variable accessible via the MODFLOW API."""
+
+    type: _MemDtype
+
+    @property
+    def dtype(self) -> str:
+        return self.type
+
+
+class MemoryArray(MemoryVariableBase):
+    """An array (rank >= 1) runtime memory variable accessible via the MODFLOW API."""
+
+    type: Literal["array"] = PydanticField(default="array", frozen=True)
+    dtype: _MemDtype
+    shape: list[str] = []
+
+    @model_serializer(mode="wrap")
+    def _serialize(self, handler: Any, info: SerializationInfo) -> dict[str, Any]:
+        data = handler(self)
+        if "type" not in data:
+            data = {"type": "array", **data}
+        return data
+
+
+MemoryVariable = Annotated[
+    MemoryScalar | MemoryArray,
+    PydanticField(discriminator="type"),
+]
+
+
 class ComponentBase(BaseModel):
     schema_version: str | None = None
     name: str
     parent: str | list[str] | None = None
     dims: dict[str, Dim] | None = None
     blocks: dict[str, Block] | None = None
+    memory: dict[str, MemoryVariable] | None = None
 
     @model_serializer(mode="wrap")
     def _serialize(self, handler: Any) -> dict[str, Any]:
@@ -845,7 +905,7 @@ def _validate_array_shapes(
     if not component.blocks:
         return
 
-    known_dims = spec.dims(component_name)
+    known_dims = spec.input_dims(component_name)
 
     def _check_list(lst: "List") -> None:
         for elem in lst.shape:
@@ -885,6 +945,136 @@ def _validate_array_shapes(
                     for subfield in item.fields.values():
                         if isinstance(subfield, Array):
                             _check_array(subfield, item)
+
+
+def _validate_memory_shapes(
+    component: "ComponentBase",
+    component_name: str,
+    spec: "Dfns",
+) -> None:
+    """Validate MemoryVariable shape elements against known dims.
+
+    Every shape element must be a plain identifier (dim name).  Expressions,
+    arithmetic, and other non-identifier forms are not allowed — MODFLOW
+    allocates memory arrays by scalar variable, never by expression.
+    """
+    if not component.memory:
+        return
+    known = spec.dims(component_name)
+    for var_name, var in component.memory.items():
+        for elem in getattr(var, "shape", []):
+            if not _DIM_RE.fullmatch(elem):
+                raise ValueError(
+                    f"MemoryVariable {var_name!r} shape element {elem!r} "
+                    f"must be a plain identifier (dim reference)"
+                )
+            if elem not in known:
+                raise ValueError(
+                    f"MemoryVariable {var_name!r} shape element {elem!r} "
+                    f"is not a known dimension in {component_name!r}"
+                )
+
+
+def _validate_memory_source(
+    component: "ComponentBase",
+    component_name: str,
+) -> None:
+    """Validate MemoryVariable source references.
+
+    A string source must name a field in the component's blocks.
+    A list source must name memory variables in the same component.
+    """
+    if not component.memory:
+        return
+    all_field_names = set(component.get_fields(recurse=True).keys())
+    all_mem_names = set(component.memory.keys())
+    for var_name, var in component.memory.items():
+        if var.source is None:
+            continue
+        if isinstance(var.source, str):
+            if var.source not in all_field_names:
+                raise ValueError(
+                    f"MemoryVariable {var_name!r} source {var.source!r} "
+                    f"does not name a field in {component_name!r}"
+                )
+        else:
+            for ref in var.source:
+                if ref not in all_mem_names:
+                    raise ValueError(
+                        f"MemoryVariable {var_name!r} source {ref!r} "
+                        f"does not name a memory variable in {component_name!r}"
+                    )
+
+
+def _validate_memory_phase_permissions(
+    component: "ComponentBase",
+    component_name: str,
+) -> None:
+    """Raise if any memory variable has phase in {fc, cq} but readonly=False.
+
+    Variables overwritten every formulate or calculate-flows step have no
+    legitimate write use case; they must be marked readonly.  A non-readonly
+    fc/cq variable is a schema authoring error, not a runtime warning.
+    """
+    if not component.memory:
+        return
+    for var_name, var in component.memory.items():
+        phases = {var.set_in} if isinstance(var.set_in, str) else set(var.set_in or [])
+        overwritten = phases & {"fc", "cq"}
+        if overwritten and not var.readonly:
+            raise ValueError(
+                f"MemoryVariable {var_name!r} in {component_name!r} has "
+                f"phase {sorted(overwritten)} but readonly=False; variables "
+                f"overwritten each formulate/calculate-flows step must be readonly"
+            )
+
+
+def _validate_memory_phase_coherence(
+    component: "ComponentBase",
+    component_name: str,
+) -> None:
+    """Raise if a derived memory variable has no phase at or after 'ad'.
+
+    Derived variables (source is a list of other memory variables) are
+    recomputed via the advance-phase dispatch (model_recalc_derived_all).
+    If none of the variable's declared phases is 'ad' or later, the trigger
+    can never update it, which is incoherent.
+    """
+    if not component.memory:
+        return
+    for var_name, var in component.memory.items():
+        if not isinstance(var.source, list):
+            continue
+        if var.set_in is None:
+            continue
+        phases = {var.set_in} if isinstance(var.set_in, str) else set(var.set_in)
+        ad_or_later = phases & {"ad", "fc", "cq"}
+        if not ad_or_later:
+            raise ValueError(
+                f"MemoryVariable {var_name!r} in {component_name!r} is derived "
+                f"(source is a list) but has no phase at or after 'ad'; "
+                f"the advance-phase recompute dispatch cannot update it"
+            )
+
+
+def _validate_memory_output(
+    component: "ComponentBase",
+    component_name: str,
+) -> None:
+    """Validate MemoryVariable output string references.
+
+    A string output must name a memory variable in the same component.
+    """
+    if not component.memory:
+        return
+    for var_name, var in component.memory.items():
+        if not isinstance(var.output, str):
+            continue
+        if component.memory.get(var.output) is None:
+            raise ValueError(
+                f"MemoryVariable {var_name!r} output {var.output!r} "
+                f"does not name a memory variable in {component_name!r}"
+            )
 
 
 def _inject_field_names(fields: dict) -> None:
@@ -941,8 +1131,16 @@ class Dfns(BaseModel):
         return {n: c for n, c in self.components.items() if c.parent == name}
 
     def local_dims(self, component_name: str) -> set[str]:
-        """Dim names declared in this component's dims section."""
+        """All dim names declared in this component's dims section, including runtime dims."""
         return set((self.components[component_name].dims or {}).keys())
+
+    def runtime_dims(self, component_name: str) -> set[str]:
+        """Runtime-only dim names declared locally (value=None)."""
+        return {
+            name
+            for name, dim in (self.components[component_name].dims or {}).items()
+            if dim.value is None
+        }
 
     def inherited_dims(self, component_name: str) -> set[str]:
         """
@@ -973,12 +1171,44 @@ class Dfns(BaseModel):
                             inherited.add(dim_name)
         return inherited
 
+    def input_dims(self, component_name: str) -> set[str]:
+        """
+        Non-runtime dim names visible to ``component_name``, valid in input field shapes.
+
+        Excludes runtime dims (value=None): a sequential parser must know an
+        array's size before reading it, so input arrays may not be sized by a
+        dim whose value is only known at runtime.
+        """
+        local = {
+            name
+            for name, dim in (self.components[component_name].dims or {}).items()
+            if dim.value is not None
+        }
+        inherited: set[str] = set()
+        component = self.components[component_name]
+        req_parent = component.parent
+        for cname, c in self.components.items():
+            if cname == component_name:
+                continue
+            for dim_name, dim in (c.dims or {}).items():
+                if dim.value is None:
+                    continue
+                match dim.scope:
+                    case "simulation":
+                        inherited.add(dim_name)
+                    case "model":
+                        if _can_share_model(req_parent, c.parent):
+                            inherited.add(dim_name)
+                    case "component":
+                        if cname in _parents_as_set(req_parent):
+                            inherited.add(dim_name)
+        return local | inherited
+
     def dims(self, component_name: str) -> set[str]:
         """
-        Return all dim names visible to ``component_name`` for shape resolution.
-
-        This is the union of the component's own declared dims (field-backed and
-        derived) and any dims inherited from other components via scoping rules.
+        All dim names visible to ``component_name`` for shape resolution,
+        including runtime dims (value=None). Used for memory variable shape
+        validation.
         """
         return self.local_dims(component_name) | self.inherited_dims(component_name)
 
@@ -1003,6 +1233,16 @@ class Dfns(BaseModel):
             _validate_fk_fields(component, self)
         for name, component in self.components.items():
             _validate_array_shapes(component, name, self)
+        for name, component in self.components.items():
+            _validate_memory_shapes(component, name, self)
+        for name, component in self.components.items():
+            _validate_memory_source(component, name)
+        for name, component in self.components.items():
+            _validate_memory_output(component, name)
+        for name, component in self.components.items():
+            _validate_memory_phase_permissions(component, name)
+        for name, component in self.components.items():
+            _validate_memory_phase_coherence(component, name)
         return self
 
     @classmethod

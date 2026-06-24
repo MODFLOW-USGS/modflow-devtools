@@ -1,0 +1,21 @@
+{
+  "type": "package",
+  "schema_version": "2.0.0.dev3",
+  "name": "sln-ems",
+  "parent": "sim-nam",
+  "subtype": "solution",
+  "memory": {
+    "icnvg": {
+      "readonly": true,
+      "set_in": "ar",
+      "description": "Convergence flag. 1 if the solution converged; 0 otherwise. Updated after each call to the solver.",
+      "type": "integer"
+    },
+    "ttsoln": {
+      "readonly": true,
+      "set_in": "ar",
+      "description": "Cumulative CPU time (seconds) spent in the solver.",
+      "type": "double"
+    }
+  }
+}

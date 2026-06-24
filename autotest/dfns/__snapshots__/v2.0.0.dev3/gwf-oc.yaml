@@ -1,0 +1,160 @@
+type: package
+schema_version: 2.0.0.dev3
+name: gwf-oc
+parent: gwf-nam
+blocks:
+  options:
+    fields:
+      budget_filerecord:
+        type: record
+        optional: true
+        fields:
+          budget:
+            type: file
+            longname: budget keyword
+            description: keyword to specify that record corresponds to the budget.
+            mode: fileout
+      budgetcsv_filerecord:
+        type: record
+        optional: true
+        fields:
+          budgetcsv:
+            type: file
+            longname: budget keyword
+            description: keyword to specify that record corresponds to the budget CSV.
+            mode: fileout
+      head_filerecord:
+        type: record
+        optional: true
+        fields:
+          head:
+            type: file
+            longname: head keyword
+            description: keyword to specify that record corresponds to head.
+            mode: fileout
+      headprintrecord:
+        type: record
+        optional: true
+        fields:
+          head:
+            type: keyword
+            longname: head keyword
+            description: keyword to specify that record corresponds to head.
+          print_format:
+            type: keyword
+            longname: keyword to indicate that a print format follows
+            description: keyword to specify format for printing to the listing file.
+          formatrecord:
+            type: record
+            fields:
+              columns:
+                type: integer
+                longname: number of columns
+                description: number of columns for writing data.
+              width:
+                type: integer
+                longname: width for each number
+                description: width for writing each number.
+              digits:
+                type: integer
+                longname: number of digits
+                description: number of digits to use for writing a number.
+              format:
+                type: string
+                longname: write format
+                description: write format can be EXPONENTIAL, FIXED, GENERAL, or SCIENTIFIC.
+                tagged: false
+  period:
+    fields:
+      output:
+        type: list
+        optional: true
+        item:
+          type: union
+          arms:
+            saverecord:
+              type: record
+              optional: true
+              fields:
+                save:
+                  type: keyword
+                  longname: keyword to save
+                  description: keyword to indicate that information will be saved this stress period.
+                rtype:
+                  type: string
+                  longname: record type
+                  description: type of information to save or print.  Can be BUDGET or HEAD.
+                  tagged: false
+                  valid:
+                    - HEAD
+                    - BUDGET
+                ocsetting:
+                  type: union
+                  description: specifies the steps for which the data will be saved.
+                  arms:
+                    all:
+                      type: keyword
+                      description: keyword to indicate save for all time steps in period.
+                    first:
+                      type: keyword
+                      description: keyword to indicate save for first step in period. This keyword may
+                        be used in conjunction with other keywords to print or save results for multiple
+                        time steps.
+                    last:
+                      type: keyword
+                      description: keyword to indicate save for last step in period. This keyword may
+                        be used in conjunction with other keywords to print or save results for multiple
+                        time steps.
+                    frequency:
+                      type: integer
+                      description: save at the specified time step frequency. This keyword may be used
+                        in conjunction with other keywords to print or save results for multiple time
+                        steps.
+                    steps:
+                      type: array
+                      description: save for each step specified in STEPS. This keyword may be used in
+                        conjunction with other keywords to print or save results for multiple time steps.
+                      dtype: integer
+            printrecord:
+              type: record
+              optional: true
+              fields:
+                print:
+                  type: keyword
+                  longname: keyword to save
+                  description: keyword to indicate that information will be printed this stress period.
+                rtype:
+                  type: string
+                  longname: record type
+                  description: type of information to save or print.  Can be BUDGET or HEAD.
+                  tagged: false
+                  valid:
+                    - HEAD
+                    - BUDGET
+                ocsetting:
+                  type: union
+                  description: specifies the steps for which the data will be saved.
+                  arms:
+                    all:
+                      type: keyword
+                      description: keyword to indicate save for all time steps in period.
+                    first:
+                      type: keyword
+                      description: keyword to indicate save for first step in period. This keyword may
+                        be used in conjunction with other keywords to print or save results for multiple
+                        time steps.
+                    last:
+                      type: keyword
+                      description: keyword to indicate save for last step in period. This keyword may
+                        be used in conjunction with other keywords to print or save results for multiple
+                        time steps.
+                    frequency:
+                      type: integer
+                      description: save at the specified time step frequency. This keyword may be used
+                        in conjunction with other keywords to print or save results for multiple time
+                        steps.
+                    steps:
+                      type: array
+                      description: save for each step specified in STEPS. This keyword may be used in
+                        conjunction with other keywords to print or save results for multiple time steps.
+                      dtype: integer

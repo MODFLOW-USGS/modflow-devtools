@@ -482,7 +482,7 @@ def test_local_dims():
     spec2 = Dfns(components={"gwf-chd": pkg2})
     assert spec2.local_dims("gwf-chd") == set()
 
-    # derived dims also included
+    # derived dims included
     pkg3 = Package(
         name="test",
         blocks=None,
@@ -490,6 +490,53 @@ def test_local_dims():
     )
     spec3 = Dfns(components={"test": pkg3})
     assert spec3.local_dims("test") == {"nodes"}
+
+    # runtime dims (value=None) also included
+    pkg4 = Package(
+        name="test",
+        blocks=None,
+        dims={"nja": Dim(value=None, phase="ar", scope="component")},
+    )
+    spec4 = Dfns(components={"test": pkg4})
+    assert spec4.local_dims("test") == {"nja"}
+
+
+def test_input_dims_excludes_runtime():
+    # input_dims should include field-backed and derived dims but not runtime dims
+    block = _dim_block("nlay", "nrow", "ncol")
+    pkg = Package(
+        name="gwf-dis",
+        parent="gwf-nam",
+        blocks={"dimensions": block},
+        dims={
+            "nlay": Dim(value="nlay", scope="model"),
+            "nrow": Dim(value="nrow", scope="model"),
+            "ncol": Dim(value="ncol", scope="model"),
+            "nodes": Dim(value="nlay * nrow * ncol", scope="model"),
+            "nja": Dim(value=None, phase="ar", scope="model"),
+        },
+    )
+    spec = Dfns(components={"gwf-dis": pkg})
+    assert spec.input_dims("gwf-dis") == {"nlay", "nrow", "ncol", "nodes"}
+    assert "nja" not in spec.input_dims("gwf-dis")
+    assert "nja" in spec.dims("gwf-dis")
+
+    # an Array whose shape references a runtime dim should fail validation
+    runtime_shaped = Package(
+        name="test",
+        parent="gwf-nam",
+        blocks={
+            "data": Block(
+                name="data",
+                fields={
+                    "vals": Array(name="vals", dtype="double", shape=["nja"]),
+                },
+            )
+        },
+        dims={"nja": Dim(value=None, phase="ar", scope="component")},
+    )
+    with pytest.raises(ValueError, match="does not resolve to a known dim"):
+        Dfns(components={"test": runtime_shaped})
 
 
 def test_resolve_derived_dims():

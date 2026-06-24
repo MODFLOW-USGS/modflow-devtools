@@ -182,9 +182,9 @@
       "type": "object"
     },
     "Dim": {
-      "description": "A named dimension, either backed by a field or derived from an expression.",
+      "description": "A named dimension backed by a field reference or derived from an expression.\n\n``value`` is a Python expression string:\n  - bare identifier ``nlay``         \u2192 integer field reference\n  - ``len(auxiliary)``               \u2192 self-sizing array field reference\n  - anything else, e.g. ``nlay * ncol`` \u2192 derived arithmetic expression\n\nIf ``value`` is None, the dimension is runtime-only: its value cannot be\nderived from DFN input fields. ``set_in`` then indicates the simulation phase\nin which the value is first established by MODFLOW (e.g. ``\"ar\"`` for dims\nset during grid allocation, ``\"rp\"`` for dims reset each stress period).\n\nRuntime dims are valid in memory variable shapes but not in input field shapes,\nsince a sequential parser must know an array's size before reading it.",
       "properties": {
-        "field": {
+        "value": {
           "anyOf": [
             {
               "type": "string"
@@ -194,19 +194,7 @@
             }
           ],
           "default": null,
-          "title": "Field"
-        },
-        "expr": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Expr"
+          "title": "Value"
         },
         "scope": {
           "default": "component",
@@ -217,6 +205,27 @@
           ],
           "title": "Scope",
           "type": "string"
+        },
+        "set_in": {
+          "anyOf": [
+            {
+              "enum": [
+                "ar",
+                "mc",
+                "rp",
+                "ad",
+                "fc",
+                "ca",
+                "cq"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Set In"
         }
       },
       "title": "Dim",
@@ -633,7 +642,8 @@
           "type": "boolean"
         },
         "tagged": {
-          "default": true,
+          "const": false,
+          "default": false,
           "title": "Tagged",
           "type": "boolean"
         },
@@ -668,6 +678,280 @@
         "item"
       ],
       "title": "List",
+      "type": "object"
+    },
+    "MemoryArray": {
+      "description": "An array (rank >= 1) runtime memory variable accessible via the MODFLOW API.",
+      "properties": {
+        "readonly": {
+          "default": false,
+          "title": "Readonly",
+          "type": "boolean"
+        },
+        "set_in": {
+          "anyOf": [
+            {
+              "enum": [
+                "ar",
+                "mc",
+                "rp",
+                "ad",
+                "fc",
+                "ca",
+                "cq"
+              ],
+              "type": "string"
+            },
+            {
+              "items": {
+                "enum": [
+                  "ar",
+                  "mc",
+                  "rp",
+                  "ad",
+                  "fc",
+                  "ca",
+                  "cq"
+                ],
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Set In"
+        },
+        "source": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "budget": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Budget"
+        },
+        "output": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Output"
+        },
+        "obs_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Obs Type"
+        },
+        "type": {
+          "const": "array",
+          "default": "array",
+          "title": "Type",
+          "type": "string"
+        },
+        "dtype": {
+          "enum": [
+            "integer",
+            "double",
+            "string",
+            "logical"
+          ],
+          "title": "Dtype",
+          "type": "string"
+        },
+        "shape": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Shape",
+          "type": "array"
+        }
+      },
+      "required": [
+        "dtype"
+      ],
+      "title": "MemoryArray",
+      "type": "object"
+    },
+    "MemoryScalar": {
+      "description": "A scalar (rank-0) runtime memory variable accessible via the MODFLOW API.",
+      "properties": {
+        "readonly": {
+          "default": false,
+          "title": "Readonly",
+          "type": "boolean"
+        },
+        "set_in": {
+          "anyOf": [
+            {
+              "enum": [
+                "ar",
+                "mc",
+                "rp",
+                "ad",
+                "fc",
+                "ca",
+                "cq"
+              ],
+              "type": "string"
+            },
+            {
+              "items": {
+                "enum": [
+                  "ar",
+                  "mc",
+                  "rp",
+                  "ad",
+                  "fc",
+                  "ca",
+                  "cq"
+                ],
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Set In"
+        },
+        "source": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "budget": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Budget"
+        },
+        "output": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Output"
+        },
+        "obs_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Obs Type"
+        },
+        "type": {
+          "enum": [
+            "integer",
+            "double",
+            "string",
+            "logical"
+          ],
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "MemoryScalar",
       "type": "object"
     },
     "Model": {
@@ -736,6 +1020,38 @@
           "default": null,
           "title": "Blocks"
         },
+        "memory": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "discriminator": {
+                  "mapping": {
+                    "array": "#/$defs/MemoryArray",
+                    "double": "#/$defs/MemoryScalar",
+                    "integer": "#/$defs/MemoryScalar",
+                    "logical": "#/$defs/MemoryScalar",
+                    "string": "#/$defs/MemoryScalar"
+                  },
+                  "propertyName": "type"
+                },
+                "oneOf": [
+                  {
+                    "$ref": "#/$defs/MemoryScalar"
+                  },
+                  {
+                    "$ref": "#/$defs/MemoryArray"
+                  }
+                ]
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Memory"
+        },
         "type": {
           "const": "model",
           "default": "model",
@@ -759,6 +1075,18 @@
           ],
           "default": null,
           "title": "Solution"
+        },
+        "dependent_variable": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Dependent Variable"
         }
       },
       "required": [
@@ -832,6 +1160,38 @@
           ],
           "default": null,
           "title": "Blocks"
+        },
+        "memory": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "discriminator": {
+                  "mapping": {
+                    "array": "#/$defs/MemoryArray",
+                    "double": "#/$defs/MemoryScalar",
+                    "integer": "#/$defs/MemoryScalar",
+                    "logical": "#/$defs/MemoryScalar",
+                    "string": "#/$defs/MemoryScalar"
+                  },
+                  "propertyName": "type"
+                },
+                "oneOf": [
+                  {
+                    "$ref": "#/$defs/MemoryScalar"
+                  },
+                  {
+                    "$ref": "#/$defs/MemoryArray"
+                  }
+                ]
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Memory"
         },
         "type": {
           "const": "package",
@@ -1054,6 +1414,38 @@
           ],
           "default": null,
           "title": "Blocks"
+        },
+        "memory": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "discriminator": {
+                  "mapping": {
+                    "array": "#/$defs/MemoryArray",
+                    "double": "#/$defs/MemoryScalar",
+                    "integer": "#/$defs/MemoryScalar",
+                    "logical": "#/$defs/MemoryScalar",
+                    "string": "#/$defs/MemoryScalar"
+                  },
+                  "propertyName": "type"
+                },
+                "oneOf": [
+                  {
+                    "$ref": "#/$defs/MemoryScalar"
+                  },
+                  {
+                    "$ref": "#/$defs/MemoryArray"
+                  }
+                ]
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Memory"
         },
         "type": {
           "const": "simulation",

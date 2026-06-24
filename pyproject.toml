@@ -186,6 +186,7 @@ skip = "cliff.toml,./modflow_devtools/registry/**,./docs/_build/**,./autotest/te
 ignore-words-list = [
     "nam",
     "wel",
+    "lke",
     "gage",
     "sav",
     "registr",

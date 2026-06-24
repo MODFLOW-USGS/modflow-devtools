@@ -696,7 +696,11 @@ def infer_parent(name: str, fields: OMD) -> str | None:
 def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
     """Map a component definition from the raw v1 schema to 2.0.0.dev2."""
 
-    from modflow_devtools.dfn.migrate_to_v2_0_0_dev0 import is_advanced_package, is_multi_package
+    from modflow_devtools.dfn.migrate_to_v2_0_0_dev0 import (
+        is_advanced_package,
+        is_multi_package,
+        is_stress_package,
+    )
 
     parent = infer_parent(name, fields)
 
@@ -1077,13 +1081,13 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
     elif name.startswith("utl-"):
         subtype = "utility"
     else:
-        is_stress_pkg = bool(any(blocks) and any("period" in k for k in blocks))
         # Transport-side advanced packages (gwt-lkt, gwe-lke, etc.) pair with a
         # GWF advanced package via flow_package_name but lack the v1
         # "package-type advanced-stress-package" header.
         is_advanced = is_advanced_package(meta) or any(
             f["name"] == "flow_package_name" for f in fields.values(multi=True)
         )
+        is_stress_pkg = is_stress_package(name, meta)
         subtype = "advanced" if is_advanced else "stress" if is_stress_pkg else None
     pkg = v2.Package(**d, subtype=subtype, multi=is_multi_package(meta))
     if name == "prt-fmi":

@@ -1,0 +1,42 @@
+type = "package"
+schema_version = "2.0.0.dev3"
+name = "gwt-mvt"
+parent = "gwt-nam"
+
+[blocks.options.fields.print_input]
+type = "keyword"
+longname = "print input to listing file"
+description = "keyword to indicate that the list of mover information will be written to the listing file immediately after it is read."
+optional = true
+
+[blocks.options.fields.print_flows]
+type = "keyword"
+longname = "print calculated flows to listing file"
+description = "keyword to indicate that the list of lake flow rates will be printed to the listing file for every stress period time step in which 'BUDGET PRINT' is specified in Output Control.  If there is no Output Control option and 'PRINT_FLOWS' is specified, then flow rates are printed for the last time step of each stress period."
+optional = true
+
+[blocks.options.fields.save_flows]
+type = "keyword"
+longname = "save lake flows to budget file"
+description = "keyword to indicate that lake flow terms will be written to the file specified with 'BUDGET FILEOUT' in Output Control."
+optional = true
+
+[blocks.options.fields.budget_filerecord]
+type = "record"
+optional = true
+
+[blocks.options.fields.budget_filerecord.fields.budget]
+type = "file"
+longname = "budget keyword"
+description = "keyword to specify that record corresponds to the budget."
+mode = "fileout"
+
+[blocks.options.fields.budgetcsv_filerecord]
+type = "record"
+optional = true
+
+[blocks.options.fields.budgetcsv_filerecord.fields.budgetcsv]
+type = "file"
+longname = "budget keyword"
+description = "keyword to specify that record corresponds to the budget CSV."
+mode = "fileout"

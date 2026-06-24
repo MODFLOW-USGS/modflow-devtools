@@ -1,0 +1,177 @@
+type = "package"
+schema_version = "2.0.0.dev3"
+name = "chf-oc"
+parent = "chf-nam"
+
+[blocks.options.fields.budget_filerecord]
+type = "record"
+optional = true
+
+[blocks.options.fields.budget_filerecord.fields.budget]
+type = "file"
+longname = "budget keyword"
+description = "keyword to specify that record corresponds to the budget."
+mode = "fileout"
+
+[blocks.options.fields.budgetcsv_filerecord]
+type = "record"
+optional = true
+
+[blocks.options.fields.budgetcsv_filerecord.fields.budgetcsv]
+type = "file"
+longname = "budget keyword"
+description = "keyword to specify that record corresponds to the budget CSV."
+mode = "fileout"
+
+[blocks.options.fields.qoutflow_filerecord]
+type = "record"
+optional = true
+
+[blocks.options.fields.qoutflow_filerecord.fields.qoutflow]
+type = "file"
+longname = "qoutflow keyword"
+description = "keyword to specify that record corresponds to qoutflow."
+mode = "fileout"
+
+[blocks.options.fields.stage_filerecord]
+type = "record"
+optional = true
+
+[blocks.options.fields.stage_filerecord.fields.stage]
+type = "file"
+longname = "stage keyword"
+description = "keyword to specify that record corresponds to stage."
+mode = "fileout"
+
+[blocks.options.fields.qoutflowprintrecord]
+type = "record"
+optional = true
+
+[blocks.options.fields.qoutflowprintrecord.fields.qoutflow]
+type = "keyword"
+longname = "qoutflow keyword"
+description = "keyword to specify that record corresponds to qoutflow."
+
+[blocks.options.fields.qoutflowprintrecord.fields.print_format]
+type = "keyword"
+longname = "keyword to indicate that a print format follows"
+description = "keyword to specify format for printing to the listing file."
+
+[blocks.options.fields.qoutflowprintrecord.fields.formatrecord]
+type = "record"
+
+[blocks.options.fields.qoutflowprintrecord.fields.formatrecord.fields.columns]
+type = "integer"
+longname = "number of columns"
+description = "number of columns for writing data."
+
+[blocks.options.fields.qoutflowprintrecord.fields.formatrecord.fields.width]
+type = "integer"
+longname = "width for each number"
+description = "width for writing each number."
+
+[blocks.options.fields.qoutflowprintrecord.fields.formatrecord.fields.digits]
+type = "integer"
+longname = "number of digits"
+description = "number of digits to use for writing a number."
+
+[blocks.options.fields.qoutflowprintrecord.fields.formatrecord.fields.format]
+type = "string"
+longname = "write format"
+description = "write format can be EXPONENTIAL, FIXED, GENERAL, or SCIENTIFIC."
+tagged = false
+
+[blocks.period.fields.output]
+type = "list"
+optional = true
+
+[blocks.period.fields.output.item]
+type = "union"
+
+[blocks.period.fields.output.item.arms.saverecord]
+type = "record"
+optional = true
+
+[blocks.period.fields.output.item.arms.saverecord.fields.save]
+type = "keyword"
+longname = "keyword to save"
+description = "keyword to indicate that information will be saved this stress period."
+
+[blocks.period.fields.output.item.arms.saverecord.fields.rtype]
+type = "string"
+longname = "record type"
+description = "type of information to save or print.  Can be BUDGET."
+tagged = false
+valid = [
+    "STAGE",
+    "BUDGET",
+]
+
+[blocks.period.fields.output.item.arms.saverecord.fields.ocsetting]
+type = "union"
+description = "specifies the steps for which the data will be saved."
+
+[blocks.period.fields.output.item.arms.saverecord.fields.ocsetting.arms.all]
+type = "keyword"
+description = "keyword to indicate save for all time steps in period."
+
+[blocks.period.fields.output.item.arms.saverecord.fields.ocsetting.arms.first]
+type = "keyword"
+description = "keyword to indicate save for first step in period. This keyword may be used in conjunction with other keywords to print or save results for multiple time steps."
+
+[blocks.period.fields.output.item.arms.saverecord.fields.ocsetting.arms.last]
+type = "keyword"
+description = "keyword to indicate save for last step in period. This keyword may be used in conjunction with other keywords to print or save results for multiple time steps."
+
+[blocks.period.fields.output.item.arms.saverecord.fields.ocsetting.arms.frequency]
+type = "integer"
+description = "save at the specified time step frequency. This keyword may be used in conjunction with other keywords to print or save results for multiple time steps."
+
+[blocks.period.fields.output.item.arms.saverecord.fields.ocsetting.arms.steps]
+type = "array"
+description = "save for each step specified in STEPS. This keyword may be used in conjunction with other keywords to print or save results for multiple time steps."
+dtype = "integer"
+
+[blocks.period.fields.output.item.arms.printrecord]
+type = "record"
+optional = true
+
+[blocks.period.fields.output.item.arms.printrecord.fields.print]
+type = "keyword"
+longname = "keyword to save"
+description = "keyword to indicate that information will be printed this stress period."
+
+[blocks.period.fields.output.item.arms.printrecord.fields.rtype]
+type = "string"
+longname = "record type"
+description = "type of information to save or print.  Can be BUDGET."
+tagged = false
+valid = [
+    "STAGE",
+    "BUDGET",
+]
+
+[blocks.period.fields.output.item.arms.printrecord.fields.ocsetting]
+type = "union"
+description = "specifies the steps for which the data will be saved."
+
+[blocks.period.fields.output.item.arms.printrecord.fields.ocsetting.arms.all]
+type = "keyword"
+description = "keyword to indicate save for all time steps in period."
+
+[blocks.period.fields.output.item.arms.printrecord.fields.ocsetting.arms.first]
+type = "keyword"
+description = "keyword to indicate save for first step in period. This keyword may be used in conjunction with other keywords to print or save results for multiple time steps."
+
+[blocks.period.fields.output.item.arms.printrecord.fields.ocsetting.arms.last]
+type = "keyword"
+description = "keyword to indicate save for last step in period. This keyword may be used in conjunction with other keywords to print or save results for multiple time steps."
+
+[blocks.period.fields.output.item.arms.printrecord.fields.ocsetting.arms.frequency]
+type = "integer"
+description = "save at the specified time step frequency. This keyword may be used in conjunction with other keywords to print or save results for multiple time steps."
+
+[blocks.period.fields.output.item.arms.printrecord.fields.ocsetting.arms.steps]
+type = "array"
+description = "save for each step specified in STEPS. This keyword may be used in conjunction with other keywords to print or save results for multiple time steps."
+dtype = "integer"

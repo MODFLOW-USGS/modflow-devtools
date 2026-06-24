@@ -2,7 +2,6 @@ type = "package"
 schema_version = "2.0.0.dev2"
 name = "sim-tdis"
 parent = "sim-nam"
-subtype = "stress"
 
 [dims.nper]
 value = "nper"

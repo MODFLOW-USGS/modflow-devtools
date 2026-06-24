@@ -1,0 +1,185 @@
+{
+  "type": "package",
+  "schema_version": "2.0.0.dev3",
+  "name": "gwf-sto",
+  "parent": "gwf-nam",
+  "dims": {
+    "nodes": {
+      "set_in": "ar"
+    }
+  },
+  "blocks": {
+    "options": {
+      "fields": {
+        "save_flows": {
+          "type": "keyword",
+          "longname": "keyword to save NPF flows",
+          "description": "keyword to indicate that cell-by-cell flow terms will be written to the file specified with 'BUDGET SAVE FILE' in Output Control.",
+          "optional": true
+        },
+        "storagecoefficient": {
+          "type": "keyword",
+          "longname": "keyword to indicate SS is read as storage coefficient",
+          "description": "keyword to indicate that the SS array is read as storage coefficient rather than specific storage.",
+          "optional": true
+        },
+        "ss_confined_only": {
+          "type": "keyword",
+          "longname": "keyword to indicate specific storage only applied under confined conditions",
+          "description": "keyword to indicate that compressible storage is only calculated for a convertible cell (ICONVERT>0) when the cell is under confined conditions (head greater than or equal to the top of the cell). This option has no effect on cells that are marked as being always confined (ICONVERT=0).  This option is identical to the approach used to calculate storage changes under confined conditions in MODFLOW-2005.",
+          "optional": true
+        },
+        "tvs_filerecord": {
+          "type": "record",
+          "optional": true,
+          "fields": {
+            "tvs6": {
+              "type": "file",
+              "longname": "tvs keyword",
+              "description": "keyword to specify that record corresponds to a time-varying storage (TVS) file.  The behavior of TVS and a description of the input file is provided separately.",
+              "mode": "filein"
+            }
+          }
+        },
+        "export_array_ascii": {
+          "type": "keyword",
+          "longname": "export array variables to layered ascii files.",
+          "description": "keyword that specifies input grid arrays, which already support the layered keyword, should be written to layered ascii output files.",
+          "optional": true
+        },
+        "export_array_netcdf": {
+          "type": "keyword",
+          "longname": "export array variables to netcdf output files.",
+          "description": "keyword that specifies input gridded arrays should be written to the model output NetCDF file with attributes that support using the generated file as a MODFLOW 6 simulation input.  This option only has an effect when an output model NetCDF file is configured and the simulation is run in VALIDATE mode, otherwise it is ignored.",
+          "optional": true
+        },
+        "dev_original_specific_storage": {
+          "type": "keyword",
+          "longname": "development option for original specific storage",
+          "description": "flag indicating the original storage specific storage formulation should be used",
+          "optional": true
+        },
+        "dev_oldstorageformulation": {
+          "type": "keyword",
+          "longname": "development option flag for old storage formulation",
+          "description": "development option flag for old storage formulation",
+          "optional": true
+        }
+      }
+    },
+    "griddata": {
+      "fields": {
+        "iconvert": {
+          "type": "array",
+          "longname": "convertible indicator",
+          "description": "is a flag for each cell that specifies whether or not a cell is convertible for the storage calculation. 0 indicates confined storage is used. $>$0 indicates confined storage is used when head is above cell top and a mixed formulation of unconfined and confined storage is used when head is below cell top.",
+          "default": 0,
+          "netcdf": true,
+          "dtype": "integer",
+          "shape": [
+            "nodes"
+          ]
+        },
+        "ss": {
+          "type": "array",
+          "longname": "specific storage",
+          "description": "is specific storage (or the storage coefficient if STORAGECOEFFICIENT is specified as an option). Specific storage values must be greater than or equal to 0. If the CSUB Package is included in the GWF model, specific storage must be zero for every cell.",
+          "default": 1e-05,
+          "netcdf": true,
+          "dtype": "double",
+          "shape": [
+            "nodes"
+          ]
+        },
+        "sy": {
+          "type": "array",
+          "longname": "specific yield",
+          "description": "is specific yield. Specific yield values must be greater than or equal to 0. Specific yield does not have to be specified if there are no convertible cells (ICONVERT=0 in every cell).",
+          "default": 0.15,
+          "netcdf": true,
+          "dtype": "double",
+          "shape": [
+            "nodes"
+          ]
+        }
+      }
+    },
+    "period": {
+      "fields": {
+        "storage": {
+          "type": "string",
+          "longname": "storage state",
+          "description": "keyword to indicate that stress period IPER is steady-state. Steady-state conditions will apply until the TRANSIENT keyword is specified in a subsequent BEGIN PERIOD block. If the CSUB Package is included in the GWF model, only the first and last stress period can be steady-state.",
+          "optional": true,
+          "valid": [
+            "steady-state",
+            "transient"
+          ]
+        }
+      }
+    }
+  },
+  "memory": {
+    "ipakcb": {
+      "set_in": "ar",
+      "source": "save_flows",
+      "type": "integer"
+    },
+    "istor_coef": {
+      "set_in": "ar",
+      "source": "storagecoefficient",
+      "type": "integer"
+    },
+    "export_ascii": {
+      "set_in": "ar",
+      "source": "export_array_ascii",
+      "type": "logical"
+    },
+    "export_nc": {
+      "set_in": "ar",
+      "source": "export_array_netcdf",
+      "type": "logical"
+    },
+    "iorig_ss": {
+      "set_in": "ar",
+      "source": "dev_original_specific_storage",
+      "type": "integer"
+    },
+    "iconf_ss": {
+      "set_in": "ar",
+      "source": "dev_oldstorageformulation",
+      "type": "integer"
+    },
+    "steady_state": {
+      "set_in": "rp",
+      "type": "logical"
+    },
+    "iconvert": {
+      "type": "array",
+      "set_in": "ar",
+      "source": "iconvert",
+      "dtype": "integer",
+      "shape": [
+        "nodes"
+      ]
+    },
+    "ss": {
+      "type": "array",
+      "set_in": "ar",
+      "source": "ss",
+      "dtype": "double",
+      "shape": [
+        "nodes"
+      ]
+    },
+    "sy": {
+      "type": "array",
+      "set_in": "ar",
+      "source": "sy",
+      "dtype": "double",
+      "shape": [
+        "nodes"
+      ]
+    }
+  }
+}
