@@ -285,7 +285,6 @@ def test_memory_output():
     Dfns(components={"gwf-wel": pkg})
 
 
-
 def test_memory_budget_accepted():
     pkg = _pkg(
         "gwf-wel",
