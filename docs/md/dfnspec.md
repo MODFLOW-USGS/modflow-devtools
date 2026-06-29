@@ -1,6 +1,6 @@
 # DFN specification
 
-This document describes the MODFLOW 6 component definition (DFN) system. This system is used to specify MODFLOW 6 components, including user-facing inputs and (optionally) API-accessible memory variables.
+This document describes the MODFLOW 6 component definition (DFN) system. This system is used to specify MODFLOW 6 components, including input fields and (optionally) API-accessible runtime memory variables.
 
 - [Overview](#overview)
 - [Components](#components)
