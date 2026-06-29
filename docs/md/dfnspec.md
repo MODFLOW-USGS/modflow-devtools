@@ -738,7 +738,7 @@ Allowed values:
 
 #### `output`
 
-`boolean | string | null (default: null)`. Indicates that this is a model output variable. Registers the variable as an output to be returned by [BMI's `get_output_var_names()`](https://bmi.csdms.io/en/stable/bmi.info_funcs.html#get-output-var-names).
+`boolean | null (default: null)`. Indicates that this is a model output variable. Registers the variable as an output to be returned by [BMI's `get_output_var_names()`](https://bmi.csdms.io/en/stable/bmi.info_funcs.html#get-output-var-names).
 
 #### `budget`
 

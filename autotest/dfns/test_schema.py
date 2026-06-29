@@ -274,38 +274,16 @@ def test_memory_output_bool_ok():
     Dfns(components={"gwf-npf": pkg})  # must not raise
 
 
-def test_memory_output_string_integer_gate_ok():
-    # output may reference an integer flag (e.g. ipakcb), not just a logical
-    pkg = _pkg(
-        "gwf-wel",
-        memory={
-            "ipakcb": MemoryScalar(type="integer", set_in="ar"),
-            "simvals": MemoryScalar(type="double", set_in="cq", readonly=True, output="ipakcb"),
-        },
-    )
-    Dfns(components={"gwf-wel": pkg})  # must not raise
-
-
-def test_memory_output_string_logical_gate_ok():
+def test_memory_output():
     pkg = _pkg(
         "gwf-wel",
         memory={
             "save_flows": MemoryScalar(type="logical", set_in="ar"),
-            "simvals": MemoryScalar(type="double", set_in="cq", readonly=True, output="save_flows"),
+            "simvals": MemoryScalar(type="double", set_in="cq", readonly=True, output=True),
         },
     )
-    Dfns(components={"gwf-wel": pkg})  # must not raise
+    Dfns(components={"gwf-wel": pkg})
 
-
-def test_memory_output_string_missing_raises():
-    pkg = _pkg(
-        "gwf-wel",
-        memory={
-            "simvals": MemoryScalar(type="double", set_in="cq", readonly=True, output="ipakcb")
-        },
-    )
-    with pytest.raises(Exception, match="does not name a memory variable"):
-        Dfns(components={"gwf-wel": pkg})
 
 
 def test_memory_budget_accepted():

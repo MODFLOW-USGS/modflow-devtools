@@ -528,7 +528,7 @@ class MemoryVariableBase(BaseModel):
     source: str | list[str] | None = None
     description: str | None = None
     budget: str | None = None
-    output: bool | str | None = None
+    output: bool | None = None
     obs_type: str | None = None
 
 
