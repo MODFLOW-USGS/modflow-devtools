@@ -242,7 +242,7 @@ readonly = true
 set_in = "cq"
 description = "Simulated boundary flow values for the current time step."
 budget = "WEL"
-output = "ipakcb"
+output = true
 obs_type = "WEL"
 dtype = "double"
 shape = [
@@ -255,7 +255,7 @@ readonly = true
 set_in = "cq"
 description = "Flow diverted to the Water Mover for each boundary."
 budget = "WEL-TO-MVR"
-output = "ipakcb"
+output = true
 dtype = "double"
 shape = [
     "nbound",

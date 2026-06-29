@@ -229,7 +229,7 @@
       "set_in": "cq",
       "description": "Simulated boundary flow values for the current time step.",
       "budget": "CDB",
-      "output": "ipakcb",
+      "output": true,
       "obs_type": "CDB",
       "dtype": "double",
       "shape": [
@@ -242,7 +242,7 @@
       "set_in": "cq",
       "description": "Flow diverted to the Water Mover for each boundary.",
       "budget": "CDB-TO-MVR",
-      "output": "ipakcb",
+      "output": true,
       "dtype": "double",
       "shape": [
         "nbound"

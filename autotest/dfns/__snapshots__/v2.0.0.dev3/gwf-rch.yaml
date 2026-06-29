@@ -222,7 +222,7 @@ memory:
     set_in: cq
     description: Simulated boundary flow values for the current time step.
     budget: RCH
-    output: ipakcb
+    output: true
     obs_type: RCH
     dtype: double
     shape:

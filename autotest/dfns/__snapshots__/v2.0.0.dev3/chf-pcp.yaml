@@ -216,7 +216,7 @@ memory:
     set_in: cq
     description: Simulated boundary flow values for the current time step.
     budget: PCP
-    output: ipakcb
+    output: true
     obs_type: PCP
     dtype: double
     shape:

@@ -250,7 +250,7 @@ memory:
     set_in: cq
     description: Simulated boundary flow values for the current time step.
     budget: DRN
-    output: ipakcb
+    output: true
     obs_type: DRN
     dtype: double
     shape:
@@ -261,7 +261,7 @@ memory:
     set_in: cq
     description: Flow diverted to the Water Mover for each boundary.
     budget: DRN-TO-MVR
-    output: ipakcb
+    output: true
     dtype: double
     shape:
       - nbound

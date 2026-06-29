@@ -434,7 +434,7 @@ readonly = true
 set_in = "cq"
 description = "Simulated boundary flow values for the current time step."
 budget = "PRP"
-output = "ipakcb"
+output = true
 obs_type = "PRP"
 dtype = "double"
 shape = [
@@ -447,7 +447,7 @@ readonly = true
 set_in = "cq"
 description = "Flow diverted to the Water Mover for each boundary."
 budget = "PRP-TO-MVR"
-output = "ipakcb"
+output = true
 dtype = "double"
 shape = [
     "nbound",

@@ -317,11 +317,11 @@ def test_memory_output_attributes_in_snapshot(dev3_spec):
     simvals = wel.memory["simvals"]
     assert simvals.budget == "WEL"
     assert simvals.obs_type == "WEL"
-    assert simvals.output == "ipakcb"
+    assert simvals.output is True
 
     simtomvr = wel.memory["simtomvr"]
     assert simtomvr.budget == "WEL-TO-MVR"
-    assert simtomvr.output == "ipakcb"
+    assert simtomvr.output is True
     assert simtomvr.obs_type is None  # to-mvr flows are not observable
 
 
@@ -331,7 +331,7 @@ def test_memory_output_attributes_rcha(dev3_spec):
     simvals = rcha.memory["simvals"]
     assert simvals.budget == "RCHA"
     assert simvals.obs_type == "RCH"
-    assert simvals.output == "ipakcb"
+    assert simvals.output is True
 
 
 def test_memory_output_attributes_chd_no_to_mvr(dev3_spec):
@@ -340,7 +340,7 @@ def test_memory_output_attributes_chd_no_to_mvr(dev3_spec):
     simvals = chd.memory["simvals"]
     assert simvals.budget == "CHD"
     assert simvals.obs_type == "CHD"
-    assert simvals.output == "ipakcb"
+    assert simvals.output is True
 
     simtomvr = chd.memory["simtomvr"]
     assert simtomvr.budget is None

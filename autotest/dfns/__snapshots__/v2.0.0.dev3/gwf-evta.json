@@ -256,7 +256,7 @@
       "set_in": "cq",
       "description": "Simulated boundary flow values for the current time step.",
       "budget": "EVTA",
-      "output": "ipakcb",
+      "output": true,
       "obs_type": "EVT",
       "dtype": "double",
       "shape": [

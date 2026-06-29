@@ -247,7 +247,7 @@ def _stress_pkg_memory(
             set_in="cq",
             readonly=True,
             description="Simulated boundary flow values for the current time step.",
-            **({"budget": budget, "obs_type": obs_type, "output": "ipakcb"} if budget else {}),
+            **({"budget": budget, "obs_type": obs_type, "output": True} if budget else {}),
         ),
         "simtomvr": _mem_var(
             "double",
@@ -255,7 +255,7 @@ def _stress_pkg_memory(
             set_in="cq",
             readonly=True,
             description="Flow diverted to the Water Mover for each boundary.",
-            **({"budget": to_mvr_budget, "output": "ipakcb"} if to_mvr_budget else {}),
+            **({"budget": to_mvr_budget, "output": True} if to_mvr_budget else {}),
         ),
         "naux": _mem_var(
             "integer", [], set_in="ar", readonly=True, description="Number of auxiliary variables."

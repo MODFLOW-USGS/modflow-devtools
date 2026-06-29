@@ -232,7 +232,7 @@ readonly = true
 set_in = "cq"
 description = "Simulated boundary flow values for the current time step."
 budget = "ZDG"
-output = "ipakcb"
+output = true
 obs_type = "ZDG"
 dtype = "double"
 shape = [
@@ -245,7 +245,7 @@ readonly = true
 set_in = "cq"
 description = "Flow diverted to the Water Mover for each boundary."
 budget = "ZDG-TO-MVR"
-output = "ipakcb"
+output = true
 dtype = "double"
 shape = [
     "nbound",

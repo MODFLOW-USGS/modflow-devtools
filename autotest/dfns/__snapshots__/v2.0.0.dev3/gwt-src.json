@@ -252,7 +252,7 @@
       "set_in": "cq",
       "description": "Simulated boundary flow values for the current time step.",
       "budget": "SRC",
-      "output": "ipakcb",
+      "output": true,
       "obs_type": "SRC",
       "dtype": "double",
       "shape": [
@@ -265,7 +265,7 @@
       "set_in": "cq",
       "description": "Flow diverted to the Water Mover for each boundary.",
       "budget": "SRC-TO-MVR",
-      "output": "ipakcb",
+      "output": true,
       "dtype": "double",
       "shape": [
         "nbound"

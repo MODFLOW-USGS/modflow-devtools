@@ -246,7 +246,7 @@
       "set_in": "cq",
       "description": "Simulated boundary flow values for the current time step.",
       "budget": "CNC",
-      "output": "ipakcb",
+      "output": true,
       "obs_type": "CNC",
       "dtype": "double",
       "shape": [

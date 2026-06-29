@@ -216,7 +216,7 @@ memory:
     set_in: cq
     description: Simulated boundary flow values for the current time step.
     budget: EVP
-    output: ipakcb
+    output: true
     obs_type: EVP
     dtype: double
     shape:

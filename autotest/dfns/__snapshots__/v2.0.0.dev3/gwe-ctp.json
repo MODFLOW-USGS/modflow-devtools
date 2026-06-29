@@ -246,7 +246,7 @@
       "set_in": "cq",
       "description": "Simulated boundary flow values for the current time step.",
       "budget": "CTP",
-      "output": "ipakcb",
+      "output": true,
       "obs_type": "CTP",
       "dtype": "double",
       "shape": [

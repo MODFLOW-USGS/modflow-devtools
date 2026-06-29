@@ -235,7 +235,7 @@
       "set_in": "cq",
       "description": "Simulated boundary flow values for the current time step.",
       "budget": "GHB",
-      "output": "ipakcb",
+      "output": true,
       "obs_type": "GHB",
       "dtype": "double",
       "shape": [
@@ -248,7 +248,7 @@
       "set_in": "cq",
       "description": "Flow diverted to the Water Mover for each boundary.",
       "budget": "GHB-TO-MVR",
-      "output": "ipakcb",
+      "output": true,
       "dtype": "double",
       "shape": [
         "nbound"

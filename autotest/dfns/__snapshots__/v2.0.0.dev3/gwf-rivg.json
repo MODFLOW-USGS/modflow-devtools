@@ -246,7 +246,7 @@
       "set_in": "cq",
       "description": "Simulated boundary flow values for the current time step.",
       "budget": "RIV",
-      "output": "ipakcb",
+      "output": true,
       "obs_type": "RIV",
       "dtype": "double",
       "shape": [
@@ -259,7 +259,7 @@
       "set_in": "cq",
       "description": "Flow diverted to the Water Mover for each boundary.",
       "budget": "RIV-TO-MVR",
-      "output": "ipakcb",
+      "output": true,
       "dtype": "double",
       "shape": [
         "nbound"

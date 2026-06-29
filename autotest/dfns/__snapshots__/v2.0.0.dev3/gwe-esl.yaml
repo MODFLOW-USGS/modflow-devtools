@@ -215,7 +215,7 @@ memory:
     set_in: cq
     description: Simulated boundary flow values for the current time step.
     budget: ESL
-    output: ipakcb
+    output: true
     obs_type: ESL
     dtype: double
     shape:
@@ -226,7 +226,7 @@ memory:
     set_in: cq
     description: Flow diverted to the Water Mover for each boundary.
     budget: ESL-TO-MVR
-    output: ipakcb
+    output: true
     dtype: double
     shape:
       - nbound
