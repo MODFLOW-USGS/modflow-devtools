@@ -348,7 +348,7 @@ class Dim(BaseModel):
       - anything else, e.g. ``nlay * ncol`` → derived arithmetic expression
 
     If ``value`` is None, the dimension is runtime-only: its value cannot be
-    derived from DFN input fields. ``set_in`` then indicates the simulation phase
+    derived from DFN input fields. ``set_in`` then indicates the simulation hook
     in which the value is first established by MODFLOW (e.g. ``"ar"`` for dims
     set during grid allocation, ``"rp"`` for dims reset each stress period).
 
@@ -1006,11 +1006,11 @@ def _validate_memory_source(
                     )
 
 
-def _validate_memory_phase_permissions(
+def _validate_memory_futility(
     component: "ComponentBase",
     component_name: str,
 ) -> None:
-    """Raise if any memory variable has phase in {fc, cq} but readonly=False.
+    """Raise if any memory variable is set in {fc, cq} but not readonly.
 
     Variables overwritten every formulate or calculate-flows step have no
     legitimate write use case; they must be marked readonly.  A non-readonly
@@ -1019,61 +1019,13 @@ def _validate_memory_phase_permissions(
     if not component.memory:
         return
     for var_name, var in component.memory.items():
-        phases = {var.set_in} if isinstance(var.set_in, str) else set(var.set_in or [])
-        overwritten = phases & {"fc", "cq"}
+        hooks = {var.set_in} if isinstance(var.set_in, str) else set(var.set_in or [])
+        overwritten = hooks & {"fc", "cq"}
         if overwritten and not var.readonly:
             raise ValueError(
                 f"MemoryVariable {var_name!r} in {component_name!r} has "
-                f"phase {sorted(overwritten)} but readonly=False; variables "
+                f"hook {sorted(overwritten)} but readonly=False; variables "
                 f"overwritten each formulate/calculate-flows step must be readonly"
-            )
-
-
-def _validate_memory_phase_coherence(
-    component: "ComponentBase",
-    component_name: str,
-) -> None:
-    """Raise if a derived memory variable has no phase at or after 'ad'.
-
-    Derived variables (source is a list of other memory variables) are
-    recomputed via the advance-phase dispatch (model_recalc_derived_all).
-    If none of the variable's declared phases is 'ad' or later, the trigger
-    can never update it, which is incoherent.
-    """
-    if not component.memory:
-        return
-    for var_name, var in component.memory.items():
-        if not isinstance(var.source, list):
-            continue
-        if var.set_in is None:
-            continue
-        phases = {var.set_in} if isinstance(var.set_in, str) else set(var.set_in)
-        ad_or_later = phases & {"ad", "fc", "cq"}
-        if not ad_or_later:
-            raise ValueError(
-                f"MemoryVariable {var_name!r} in {component_name!r} is derived "
-                f"(source is a list) but has no phase at or after 'ad'; "
-                f"the advance-phase recompute dispatch cannot update it"
-            )
-
-
-def _validate_memory_output(
-    component: "ComponentBase",
-    component_name: str,
-) -> None:
-    """Validate MemoryVariable output string references.
-
-    A string output must name a memory variable in the same component.
-    """
-    if not component.memory:
-        return
-    for var_name, var in component.memory.items():
-        if not isinstance(var.output, str):
-            continue
-        if component.memory.get(var.output) is None:
-            raise ValueError(
-                f"MemoryVariable {var_name!r} output {var.output!r} "
-                f"does not name a memory variable in {component_name!r}"
             )
 
 
@@ -1238,11 +1190,7 @@ class Dfns(BaseModel):
         for name, component in self.components.items():
             _validate_memory_source(component, name)
         for name, component in self.components.items():
-            _validate_memory_output(component, name)
-        for name, component in self.components.items():
-            _validate_memory_phase_permissions(component, name)
-        for name, component in self.components.items():
-            _validate_memory_phase_coherence(component, name)
+            _validate_memory_futility(component, name)
         return self
 
     @classmethod

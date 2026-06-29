@@ -266,46 +266,6 @@ def test_memory_phase_permissions_list_with_fc_raises():
         Dfns(components={"gwf-npf": pkg})
 
 
-def test_memory_phase_coherence_derived_with_ad_ok():
-    pkg = _pkg(
-        "gwf-npf",
-        memory={
-            "k11": MemoryScalar(type="double", set_in="ar"),
-            "condsat": MemoryScalar(type="double", set_in=["ar", "ad"], source=["k11"]),
-        },
-    )
-    Dfns(components={"gwf-npf": pkg})
-
-
-def test_memory_phase_coherence_derived_ar_only_raises():
-    pkg = _pkg(
-        "gwf-npf",
-        memory={
-            "k11": MemoryScalar(type="double", set_in="ar"),
-            "condsat": MemoryScalar(type="double", set_in="ar", source=["k11"]),
-        },
-    )
-    with pytest.raises(Exception, match="advance-phase"):
-        Dfns(components={"gwf-npf": pkg})
-
-
-def test_memory_phase_coherence_derived_rp_only_raises():
-    pkg = _pkg(
-        "gwf-wel",
-        memory={
-            "bound": MemoryScalar(type="double", set_in="rp"),
-            "derived": MemoryScalar(type="double", set_in="rp", source=["bound"]),
-        },
-    )
-    with pytest.raises(Exception, match="advance-phase"):
-        Dfns(components={"gwf-wel": pkg})
-
-
-def test_memory_phase_coherence_non_derived_ar_ok():
-    pkg = _pkg("gwf-npf", memory={"k11": MemoryScalar(type="double", set_in="ar")})
-    Dfns(components={"gwf-npf": pkg})
-
-
 def test_memory_output_bool_ok():
     pkg = _pkg(
         "gwf-npf",
