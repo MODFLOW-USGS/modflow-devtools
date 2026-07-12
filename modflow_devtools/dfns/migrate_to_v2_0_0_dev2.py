@@ -778,7 +778,7 @@ def _fix_lak_relations(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.B
             fields={key: renamed, arm.name: arm},
         )
 
-    new_arms: dict[str, "v2.Scalar | v2.Array | v2.Record"] = {}
+    new_arms: dict[str, v2.Scalar | v2.Array | v2.Record] = {}
     for arm_name, arm in setting_field.arms.items():
         if arm_name in _LAK_LAKE_SETTING_ARMS:
             new_arms[arm_name] = _retarget(arm_name, arm, "lakeno", "packagedata.ifno")
