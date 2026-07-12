@@ -225,7 +225,67 @@ def _resolve_dimensions(
     return blocks, array_dims
 
 
+def _collect_item_int_fields(fields: Mapping[str, v2.Field]) -> set[str]:
+    """
+    Return the names of Integer fields declared directly on a block's list-item
+    record(s) (or item union arms), one level deep. These are candidate row
+    identifiers — e.g. ``ifno`` in a ``packagedata`` recarray.
+    """
+    names: set[str] = set()
+
+    def _scan_record(record: v2.Record) -> None:
+        for fname, field in record.fields.items():
+            if isinstance(field, v2.Integer):
+                names.add(fname)
+
+    def _scan(fields: Mapping[str, v2.Field]) -> None:
+        for field in fields.values():
+            if isinstance(field, v2.Record):
+                _scan_record(field)
+            elif isinstance(field, v2.Union):
+                _scan(field.arms)
+            elif isinstance(field, v2.List):
+                item = field.item
+                if isinstance(item, v2.Record):
+                    _scan_record(item)
+                elif isinstance(item, v2.Union):
+                    _scan(item.arms)
+
+    _scan(fields)
+    return names
+
+
 def _resolve_relations(blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
+    """
+    Detect and annotate primary/foreign-key relations between a component's
+    blocks. Two independent signals are combined:
+
+    1. Shape-expression lookups: a v1 recarray shape like ``ncon(ifno)``
+       (rendered as ``packagedata.ncon(ifno)`` after v1 parsing) names an
+       array whose per-row length is looked up via a sibling ``ifno`` field
+       in another block's ``packagedata`` row. The referenced column
+       (``packagedata.ifno``) becomes ``pk``, and the sibling becomes ``fk``.
+       Currently only SFR's ``connectiondata`` uses this idiom upstream.
+
+    2. Same-name row identifiers: many advanced/multi-instance packages
+       (SFR, LAK, MAW, UZF, ...) define a numeric feature index (``ifno``,
+       or similarly) once in ``packagedata`` and repeat it, identically
+       named, as the leading column of every other block that addresses
+       the same feature (``connectiondata``, ``tables``, ``period``, ...).
+       Wherever such a name recurs outside ``packagedata``, the
+       ``packagedata`` occurrence becomes ``pk`` and the others become
+       ``fk``. This catches relations the shape idiom misses, including
+       most of SFR's own ``ifno`` columns.
+
+    Relations where the identifier is renamed (e.g. LAK's outlet-referencing
+    ``lakein``/``lakeout``) or genuinely ambiguous (e.g. LAK's period
+    ``number``, which means either a lake or an outlet number depending on
+    the setting) are intentionally not inferred here — a same-name match
+    would find nothing for the former, and would be actively wrong for the
+    latter. Both are resolved separately, by explicit patching rather than
+    name-based inference — see ``_fix_lak_relations`` and
+    ``docs/md/sfr-lak-structure.md``.
+    """
     pk_set: set[tuple[str, str]] = set()
     fk_map: dict[tuple[str, str], str] = {}
 
@@ -256,6 +316,17 @@ def _resolve_relations(blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
 
     for block_name, block in blocks.items():
         _scan_fields(block_name, block.fields)
+
+    # Signal 2: same-name row identifiers, keyed off the `packagedata` block.
+    pk_block_name = "packagedata"
+    if pk_block_name in blocks:
+        pk_names = _collect_item_int_fields(blocks[pk_block_name].fields)
+        for block_name, block in blocks.items():
+            if block_name == pk_block_name:
+                continue
+            for name in pk_names & _collect_item_int_fields(block.fields):
+                pk_set.add((pk_block_name, name))
+                fk_map.setdefault((block_name, name), f"{pk_block_name}.{name}")
 
     if not fk_map and not pk_set:
         return blocks
@@ -628,6 +699,127 @@ def _patch_oc_rtype(
     return result
 
 
+# LAK's period block pairs a single `number` field with a `laksetting` union
+# whose arms are either lake settings or outlet settings; `number` means a
+# lake number for the former, an outlet number for the latter. See
+# docs/md/sfr-lak-structure.md for the full rationale.
+_LAK_LAKE_SETTING_ARMS = frozenset(
+    {
+        "status",
+        "stage",
+        "rainfall",
+        "evaporation",
+        "runoff",
+        "inflow",
+        "withdrawal",
+        "auxiliaryrecord",
+    }
+)
+_LAK_OUTLET_SETTING_ARMS = frozenset({"rate", "invert", "width", "slope", "rough"})
+
+# outlets.lakein/lakeout are unambiguous lake references (unlike period
+# `number`), just under names that don't match packagedata's `ifno` — a
+# naming gap rather than a genuine ambiguity, so a static `fk` is correct.
+_LAK_OUTLET_LAKE_REFS = frozenset({"lakein", "lakeout"})
+
+
+def _fix_lak_relations(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
+    """
+    Patch LAK's pk/fk relations that the general `_resolve_relations` name
+    match can't reach on its own — see docs/md/sfr-lak-structure.md.
+
+    - Splits the ambiguous period `number` field into `lakeno` / `outletno`
+      fields nested inside the corresponding `laksetting` union arms, each
+      carrying a correct, non-conditional `fk`. A single `fk` on a shared
+      `number` field can't be correct for both arm categories at once, since
+      the target block depends on which arm is present.
+    - Marks `outlets.outletno` as `pk`, since the new `outletno` fk needs a
+      pk to point to (`packagedata.ifno` is already marked by
+      `_resolve_relations`).
+    - Marks `outlets.lakein`/`outlets.lakeout` as `fk: packagedata.ifno` —
+      unlike `number`, these are unambiguous; the gap is only that their
+      names don't match `ifno`, so the general name-matching pass never
+      finds them.
+    """
+    if name != "gwf-lak":
+        return blocks
+
+    period = blocks.get("period")
+    outlets = blocks.get("outlets")
+    if period is None or outlets is None:
+        return blocks
+
+    perioddata = period.fields.get("perioddata")
+    if not isinstance(perioddata, v2.List) or not isinstance(perioddata.item, v2.Record):
+        return blocks
+    item = perioddata.item
+    number_field = item.fields.get("number")
+    setting_field = item.fields.get("laksetting")
+    if not isinstance(number_field, v2.Integer) or not isinstance(setting_field, v2.Union):
+        return blocks
+
+    outlets_list = outlets.fields.get("outlets")
+    if not isinstance(outlets_list, v2.List) or not isinstance(outlets_list.item, v2.Record):
+        return blocks
+    outletno_field = outlets_list.item.fields.get("outletno")
+    if not isinstance(outletno_field, v2.Integer):
+        return blocks
+
+    def _retarget(
+        arm_name: str, arm: "v2.Scalar | v2.Array | v2.Record", key: str, fk: str
+    ) -> v2.Record:
+        renamed = number_field.model_copy(update={"name": key, "fk": fk})
+        if isinstance(arm, v2.Record):
+            return arm.model_copy(update={"fields": {key: renamed, **arm.fields}})
+        # Most arms are a bare scalar (e.g. `stage`), not a Record — wrap it
+        # alongside the renamed id field so the id can carry its own `fk`.
+        return v2.Record(
+            name=arm_name,
+            fields={key: renamed, arm.name: arm},
+        )
+
+    new_arms: dict[str, "v2.Scalar | v2.Array | v2.Record"] = {}
+    for arm_name, arm in setting_field.arms.items():
+        if arm_name in _LAK_LAKE_SETTING_ARMS:
+            new_arms[arm_name] = _retarget(arm_name, arm, "lakeno", "packagedata.ifno")
+        elif arm_name in _LAK_OUTLET_SETTING_ARMS:
+            new_arms[arm_name] = _retarget(arm_name, arm, "outletno", "outlets.outletno")
+        else:
+            new_arms[arm_name] = arm
+
+    new_setting = setting_field.model_copy(update={"arms": new_arms})
+    new_item = item.model_copy(
+        update={
+            "fields": {fn: f for fn, f in item.fields.items() if fn != "number"}
+            | {"laksetting": new_setting}
+        }
+    )
+    new_perioddata = perioddata.model_copy(update={"item": new_item})
+    new_period = period.model_copy(
+        update={"fields": {**period.fields, "perioddata": new_perioddata}}
+    )
+
+    outlets_item_fields = dict(outlets_list.item.fields)
+    changed = False
+    if not outletno_field.pk:
+        outlets_item_fields["outletno"] = outletno_field.model_copy(update={"pk": True})
+        changed = True
+    for fname in _LAK_OUTLET_LAKE_REFS:
+        f = outlets_item_fields.get(fname)
+        if isinstance(f, v2.Integer) and f.fk is None:
+            outlets_item_fields[fname] = f.model_copy(update={"fk": "packagedata.ifno"})
+            changed = True
+
+    if changed:
+        new_outlets_item = outlets_list.item.model_copy(update={"fields": outlets_item_fields})
+        new_outlets_list = outlets_list.model_copy(update={"item": new_outlets_item})
+        new_outlets = outlets.model_copy(update={"fields": {"outlets": new_outlets_list}})
+    else:
+        new_outlets = outlets
+
+    return {**blocks, "period": new_period, "outlets": new_outlets}
+
+
 def _parse_valid(valid: Any, coerce=None) -> list | None:
     """Parse a v1 ``valid`` attribute to a list, optionally coercing each element."""
     parts = valid.split() if isinstance(valid, str) else (list(valid) if valid else [])
@@ -822,7 +1014,9 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
             item_types = [
                 fi["type"]
                 for fi in fields.values(multi=True)
-                if fi["name"] in item_names and fi.get("in_record", False)
+                if fi["name"] in item_names
+                and fi.get("in_record", False)
+                and fi.get("block") == f.get("block")
             ]
 
             if (
@@ -853,7 +1047,9 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
             children = {
                 fi["name"]: _map_field(fi)
                 for fi in fields.values(multi=True)
-                if fi["name"] in item_names and fi.get("in_record", False)
+                if fi["name"] in item_names
+                and fi.get("in_record", False)
+                and fi.get("block") == f.get("block")
             }
             first = next(iter(children.values()))
             if len(children) == 1 and isinstance(first, v2.Union):
@@ -870,7 +1066,11 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
             result = {}
             for rname in (_type or "").split()[1:]:
                 for fi in fields.values(multi=True):
-                    if fi["name"] == rname and fi.get("in_record", False):
+                    if (
+                        fi["name"] == rname
+                        and fi.get("in_record", False)
+                        and fi.get("block") == f.get("block")
+                    ):
                         result[rname] = _map_field(fi)
                         break
             return result
@@ -1058,6 +1258,7 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
     blocks = _wrap_oc_period_records(blocks)
     blocks = _collapse_sto_keywords(blocks)
     blocks = _patch_oc_rtype(name, blocks)
+    blocks = _fix_lak_relations(name, blocks)
     dims = {**explicit_dims, **array_dims, **derived_dims} or None
 
     d: dict[str, Any] = {

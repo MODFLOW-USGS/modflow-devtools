@@ -82,7 +82,7 @@ This document describes the MODFLOW 6 component definition (DFN) system. This sy
   - [Dimensions](#dimensions)
     - [Dimension sources](#dimension-sources)
     - [Dimension scope](#dimension-scope)
-  - [Primary/foreign keys](#primaryforeign-keys)
+  - [Primary/foreign keys](#primary-and-foreign-keys)
     - [Examples](#examples)
 - [Memory catalog](#memory-catalog)
   - [Attributes](#attributes-1)
@@ -638,7 +638,7 @@ Examples:
 - `gwf-dis.dims.nrow`, `ncol`, `nlay` have `scope: "model"`: accessible to `gwf-chd`, `gwf-wel`, and any other component whose parent is `gwf-nam`, but also to e.g. `utl-spca` (which has `parent: "package"`).
 - `sim-tdis.dims.nper` has `scope: "simulation"`: accessible from all components.
 
-### Primary/foreign keys
+### Primary and foreign keys
 
 Sometimes a column in one list identifies a row in another list, or a grid cell. This can be conceptualized as a primary key (PK) / foreign key (FK) relation. Integers and strings may encode PK/FK semantics with attributes `pk`, `fk`, and `fk_ref`.
 
@@ -646,13 +646,13 @@ Sometimes a column in one list identifies a row in another list, or a grid cell.
 
 The `fk` attribute can take one of three forms:
 
-- **Hierarchical path** — `"block.field"` for within-component references, `"component.block.field"` for cross-component references where the target is statically known. The name of the list is omitted from the path because it is universally the same as the name of the block. Used without `fk_ref`.
-- **`"node"` sentinel** — indicates a grid cell reference. The target is the parent model's spatial discretization, resolved at runtime. Used without `fk_ref` wherever a field carries a cellid (e.g., `cellid` columns, or `utl-obs.continuous.id`).
-- **Bare block name** (e.g., `"packagedata"`) — used together with `fk_ref`. `fk_ref` resolves the target component at runtime; `fk` names the block within it, in which there must be one unique `pk: true` field. Blocks not be named "node", to avoid interference with the grid cell reference sentinel.
+- **Hierarchical path**: A path of the form `"[component.]block.field"`, for use when the primary key field is statically known. The `component` segment is necessary for cross-component references; it may be omitted for within-component references. The hierarchical path form may not be used with `fk_ref`.
+- **Grid cell sentinel**: A value `"node"` indicates a grid cell reference, resolve from the parent model's grid at runtime. This form may not be used with `fk_ref`.
+- **Bare block name**: The name of a block in which there is exactly one `pk` field. In this case, `fk_ref` is required to resolve the target component at runtime. Note that blocks must not be named "node" to avoid interference with the grid cell sentinel.
 
-The `fk_ref` attribute names a sibling string field whose runtime value identifies the target component. Two sub-cases exist:
+The `fk_ref` attribute names a string field whose runtime value identifies the component containing the `pk` field. Two sub-cases exist:
 
-- **With `fk`** (bare block name): resolve the component from `fk_ref`, then find the unique `pk: true` field in the block named by `fk`. This is fully explicit and preferred when the target block is known. For all current corpus cases where `fk_ref` identifies an integer "feature number" PK (e.g. SFR, MAW, UZF, LAK via `gwf-mvr`), the block is `packagedata`; `fk: "packagedata"` should therefore always be set alongside `fk_ref` for these cases.
+- **With `fk`**: The `fk` must be a bare block name. The component containing the block is resolved with `fk_ref`, then the block (identified by `fk`) is searched for a unique `pk` field. For all current corpus cases where `fk_ref` identifies an integer "feature number" PK (e.g. SFR, MAW, UZF, LAK via `gwf-mvr`), the block is `packagedata`; `fk: "packagedata"` should therefore always be set alongside `fk_ref` for these cases.
 - **Without `fk`**: the target block varies by component (e.g. `utl-obs.continuous.id`, where the target is a boundary name whose block varies by package type).
 
 #### Examples

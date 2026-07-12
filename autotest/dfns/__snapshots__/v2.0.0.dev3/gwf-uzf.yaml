@@ -204,6 +204,7 @@ blocks:
                 will terminate with an error.  The program will also terminate with an error if information
                 for a UZF cell is specified more than once.
               tagged: false
+              pk: true
             cellid:
               type: array
               longname: cell identifier
@@ -288,13 +289,11 @@ blocks:
           fields:
             ifno:
               type: integer
-              longname: uzf id number for this entry
+              longname: UZF id number
               description: integer value that defines the feature (UZF object) number associated with
-                the specified PACKAGEDATA data on the line. IFNO must be greater than zero and less than
-                or equal to NUZFCELLS.  UZF information must be specified for every UZF cell or the program
-                will terminate with an error.  The program will also terminate with an error if information
-                for a UZF cell is specified more than once.
+                the specified PERIOD data on the line.
               tagged: false
+              fk: packagedata.ifno
             finf:
               type: string
               longname: infiltration rate

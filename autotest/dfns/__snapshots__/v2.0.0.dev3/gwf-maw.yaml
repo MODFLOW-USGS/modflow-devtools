@@ -188,6 +188,7 @@ blocks:
                 or the program will terminate with an error.  The program will also terminate with an
                 error if information for a multi-aquifer well is specified more than once.
               tagged: false
+              pk: true
             radius:
               type: double
               longname: well radius
@@ -274,11 +275,13 @@ blocks:
               type: integer
               longname: well number for this entry
               description: integer value that defines the feature (well) number associated with the specified
-                PACKAGEDATA data on the line. IFNO must be greater than zero and less than or equal to
-                NMAWWELLS. Multi-aquifer well information must be specified for every multi-aquifer well
-                or the program will terminate with an error.  The program will also terminate with an
-                error if information for a multi-aquifer well is specified more than once.
+                CONNECTIONDATA data on the line. IFNO must be greater than zero and less than or equal
+                to NMAWWELLS. Multi-aquifer well connection information must be specified for every multi-aquifer
+                well connection to the GWF model (NGWFNODES) or the program will terminate with an error.  The
+                program will also terminate with an error if connection information for a multi-aquifer
+                well connection to the GWF model is specified more than once.
               tagged: false
+              fk: packagedata.ifno
             icon:
               type: integer
               longname: connection number
@@ -355,6 +358,7 @@ blocks:
               description: integer value that defines the well number associated with the specified PERIOD
                 data on the line. IFNO must be greater than zero and less than or equal to NMAWWELLS.
               tagged: false
+              fk: packagedata.ifno
             mawsetting:
               type: union
               description: 'line of information that is parsed into a keyword and values.  Keyword values

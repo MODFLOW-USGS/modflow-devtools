@@ -281,8 +281,9 @@ type = "record"
 [blocks.crosssections.fields.crosssections.item.fields.ifno]
 type = "integer"
 longname = "reach number for this entry"
-description = "integer value that defines the feature (reach) number associated with the specified PACKAGEDATA data on the line. IFNO must be greater than zero and less than or equal to NREACHES. Reach information must be specified for every reach or the program will terminate with an error.  The program will also terminate with an error if information for a reach is specified more than once."
+description = "integer value that defines the feature (reach) number associated with the specified cross-section table file on the line. IFNO must be greater than zero and less than or equal to NREACHES. The program will also terminate with an error if table information for a reach is specified more than once."
 tagged = false
+fk = "packagedata.ifno"
 
 [blocks.crosssections.fields.crosssections.item.fields.tab6]
 type = "keyword"
@@ -310,7 +311,7 @@ type = "record"
 [blocks.connectiondata.fields.connectiondata.item.fields.ifno]
 type = "integer"
 longname = "reach number for this entry"
-description = "integer value that defines the feature (reach) number associated with the specified PACKAGEDATA data on the line. IFNO must be greater than zero and less than or equal to NREACHES. Reach information must be specified for every reach or the program will terminate with an error.  The program will also terminate with an error if information for a reach is specified more than once."
+description = "integer value that defines the feature (reach) number associated with the specified CONNECTIONDATA data on the line. IFNO must be greater than zero and less than or equal to NREACHES. Reach connection information must be specified for every reach or the program will terminate with an error.  The program will also terminate with an error if connection information for a reach is specified more than once."
 tagged = false
 fk = "packagedata.ifno"
 
@@ -333,8 +334,9 @@ type = "record"
 [blocks.diversions.fields.diversions.item.fields.ifno]
 type = "integer"
 longname = "reach number for this entry"
-description = "integer value that defines the feature (reach) number associated with the specified PACKAGEDATA data on the line. IFNO must be greater than zero and less than or equal to NREACHES. Reach information must be specified for every reach or the program will terminate with an error.  The program will also terminate with an error if information for a reach is specified more than once."
+description = "integer value that defines the feature (reach) number associated with the specified DIVERSIONS data on the line. IFNO must be greater than zero and less than or equal to NREACHES.  Reach diversion information must be specified for every reach with a NDV value greater than 0 or the program will terminate with an error.  The program will also terminate with an error if diversion information for a given reach diversion is specified more than once."
 tagged = false
+fk = "packagedata.ifno"
 
 [blocks.diversions.fields.diversions.item.fields.idv]
 type = "integer"
@@ -363,8 +365,9 @@ type = "record"
 [blocks.initialstages.fields.initialstages.item.fields.ifno]
 type = "integer"
 longname = "reach number for this entry"
-description = "integer value that defines the feature (reach) number associated with the specified PACKAGEDATA data on the line. IFNO must be greater than zero and less than or equal to NREACHES. Reach information must be specified for every reach or the program will terminate with an error.  The program will also terminate with an error if information for a reach is specified more than once."
+description = "integer value that defines the feature (reach) number associated with the specified initial stage. Initial stage data must be specified for every reach or the program will terminate with an error. The program will also terminate with a error if IFNO is less than one or greater than NREACHES."
 tagged = false
+fk = "packagedata.ifno"
 
 [blocks.initialstages.fields.initialstages.item.fields.initialstage]
 type = "double"
@@ -383,6 +386,7 @@ type = "integer"
 longname = "reach number for this entry"
 description = "integer value that defines the feature (reach) number associated with the specified PERIOD data on the line. IFNO must be greater than zero and less than or equal to NREACHES."
 tagged = false
+fk = "packagedata.ifno"
 
 [blocks.period.fields.perioddata.item.fields.sfrsetting]
 type = "union"
@@ -406,9 +410,10 @@ description = "real or character value that defines the Manning's roughness coef
 time_series = true
 
 [blocks.period.fields.perioddata.item.fields.sfrsetting.arms.stage]
-type = "keyword"
-longname = "stage keyword"
-description = "keyword to specify that record corresponds to stage."
+type = "string"
+longname = "reach stage"
+description = "real or character value that defines the stage for the reach. The specified STAGE is only applied if the reach uses the simple routing option. If STAGE is not specified for reaches that use the simple routing option, the specified stage is set to the top of the reach. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
+time_series = true
 
 [blocks.period.fields.perioddata.item.fields.sfrsetting.arms.inflow]
 type = "string"
@@ -444,8 +449,8 @@ description = "keyword to indicate diversion record."
 
 [blocks.period.fields.perioddata.item.fields.sfrsetting.arms.diversionrecord.fields.idv]
 type = "integer"
-longname = "downstream diversion number"
-description = "integer value that defines the downstream diversion number for the diversion for reach IFNO. IDV must be greater than zero and less than or equal to NDV for reach IFNO."
+longname = "diversion number"
+description = "an integer value specifying which diversion of reach IFNO that DIVFLOW is being specified for.  Must be less or equal to ndv for the current reach (IFNO)."
 tagged = false
 
 [blocks.period.fields.perioddata.item.fields.sfrsetting.arms.diversionrecord.fields.divflow]

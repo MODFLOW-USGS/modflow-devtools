@@ -120,6 +120,7 @@ type = "integer"
 longname = "well number for this entry"
 description = "integer value that defines the feature (well) number associated with the specified PACKAGEDATA data on the line. IFNO must be greater than zero and less than or equal to NMAWWELLS. Well information must be specified for every well or the program will terminate with an error.  The program will also terminate with an error if information for a well is specified more than once."
 tagged = false
+pk = true
 
 [blocks.packagedata.fields.packagedata.item.fields.strt]
 type = "double"
@@ -156,6 +157,7 @@ type = "integer"
 longname = "well number for this entry"
 description = "integer value that defines the feature (well) number associated with the specified PERIOD data on the line. IFNO must be greater than zero and less than or equal to NMAWWELLS."
 tagged = false
+fk = "packagedata.ifno"
 
 [blocks.period.fields.mwtperioddata.item.fields.mwtsetting]
 type = "union"
@@ -167,9 +169,10 @@ longname = "well concentration status"
 description = "keyword option to define well status.  STATUS can be ACTIVE, INACTIVE, or CONSTANT. By default, STATUS is ACTIVE, which means that concentration will be calculated for the well.  If a well is inactive, then there will be no solute mass fluxes into or out of the well and the inactive value will be written for the well concentration.  If a well is constant, then the concentration for the well will be fixed at the user specified value."
 
 [blocks.period.fields.mwtperioddata.item.fields.mwtsetting.arms.concentration]
-type = "keyword"
-longname = "stage keyword"
-description = "keyword to specify that record corresponds to concentration."
+type = "string"
+longname = "well concentration"
+description = "real or character value that defines the concentration for the well. The specified CONCENTRATION is only applied if the well is a constant concentration well. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
+time_series = true
 
 [blocks.period.fields.mwtperioddata.item.fields.mwtsetting.arms.rate]
 type = "string"

@@ -204,7 +204,8 @@
                 "type": "integer",
                 "longname": "lake number for this entry",
                 "description": "integer value that defines the feature (lake) number associated with the specified PACKAGEDATA data on the line. IFNO must be greater than zero and less than or equal to NLAKES. Lake information must be specified for every lake or the program will terminate with an error.  The program will also terminate with an error if information for a lake is specified more than once.",
-                "tagged": false
+                "tagged": false,
+                "pk": true
               },
               "strt": {
                 "type": "double",
@@ -254,8 +255,9 @@
               "ifno": {
                 "type": "integer",
                 "longname": "lake number for this entry",
-                "description": "integer value that defines the feature (lake) number associated with the specified PACKAGEDATA data on the line. IFNO must be greater than zero and less than or equal to NLAKES. Lake information must be specified for every lake or the program will terminate with an error.  The program will also terminate with an error if information for a lake is specified more than once.",
-                "tagged": false
+                "description": "integer value that defines the feature (lake) number associated with the specified CONNECTIONDATA data on the line. IFNO must be greater than zero and less than or equal to NLAKES. Lake connection information must be specified for every lake connection to the GWF model (NLAKECONN) or the program will terminate with an error.  The program will also terminate with an error if connection information for a lake connection to the GWF model is specified more than once.",
+                "tagged": false,
+                "fk": "packagedata.ifno"
               },
               "iconn": {
                 "type": "integer",
@@ -326,8 +328,9 @@
               "ifno": {
                 "type": "integer",
                 "longname": "lake number for this entry",
-                "description": "integer value that defines the feature (lake) number associated with the specified PACKAGEDATA data on the line. IFNO must be greater than zero and less than or equal to NLAKES. Lake information must be specified for every lake or the program will terminate with an error.  The program will also terminate with an error if information for a lake is specified more than once.",
-                "tagged": false
+                "description": "integer value that defines the feature (lake) number associated with the specified TABLES data on the line. IFNO must be greater than zero and less than or equal to NLAKES. The program will terminate with an error if table information for a lake is specified more than once or the number of specified tables is less than NTABLES.",
+                "tagged": false,
+                "fk": "packagedata.ifno"
               },
               "tab6": {
                 "type": "keyword",
@@ -365,19 +368,22 @@
                 "type": "integer",
                 "longname": "outlet number for this entry",
                 "description": "integer value that defines the outlet number associated with the specified OUTLETS data on the line. OUTLETNO must be greater than zero and less than or equal to NOUTLETS. Outlet information must be specified for every outlet or the program will terminate with an error. The program will also terminate with an error if information for a outlet is specified more than once.",
-                "tagged": false
+                "tagged": false,
+                "pk": true
               },
               "lakein": {
                 "type": "integer",
                 "longname": "lake number for upstream lake",
                 "description": "integer value that defines the lake number that outlet is connected to. LAKEIN must be greater than zero and less than or equal to NLAKES.",
-                "tagged": false
+                "tagged": false,
+                "fk": "packagedata.ifno"
               },
               "lakeout": {
                 "type": "integer",
                 "longname": "lake number for downstream lake",
                 "description": "integer value that defines the lake number that outlet discharge from lake outlet OUTLETNO is routed to. LAKEOUT must be greater than or equal to zero and less than or equal to NLAKES. If LAKEOUT is zero, outlet discharge from lake outlet OUTLETNO is discharged to an external boundary.",
-                "tagged": false
+                "tagged": false,
+                "fk": "packagedata.ifno"
               },
               "couttype": {
                 "type": "string",
@@ -428,93 +434,235 @@
           "item": {
             "type": "record",
             "fields": {
-              "number": {
-                "type": "integer",
-                "longname": "lake or outlet number for this entry",
-                "description": "integer value that defines the lake or outlet number associated with the specified PERIOD data on the line.  NUMBER must be greater than zero and less than or equal to NLAKES for a lake number and less than or equal to NOUTLETS for an outlet number.",
-                "tagged": false
-              },
               "laksetting": {
                 "type": "union",
                 "description": "line of information that is parsed into a keyword and values.  Keyword values that can be used to start the LAKSETTING string include both keywords for lake settings and keywords for outlet settings.  Keywords for lake settings include: STATUS, STAGE, RAINFALL, EVAPORATION, RUNOFF, INFLOW, WITHDRAWAL, and AUXILIARY.  Keywords for outlet settings include RATE, INVERT, WIDTH, SLOPE, and ROUGH.",
                 "arms": {
                   "status": {
-                    "type": "string",
-                    "longname": "lake status",
-                    "description": "keyword option to define lake status.  STATUS can be ACTIVE, INACTIVE, or CONSTANT. By default, STATUS is ACTIVE."
+                    "type": "record",
+                    "fields": {
+                      "lakeno": {
+                        "type": "integer",
+                        "longname": "lake or outlet number for this entry",
+                        "description": "integer value that defines the lake or outlet number associated with the specified PERIOD data on the line.  NUMBER must be greater than zero and less than or equal to NLAKES for a lake number and less than or equal to NOUTLETS for an outlet number.",
+                        "tagged": false,
+                        "fk": "packagedata.ifno"
+                      },
+                      "status": {
+                        "type": "string",
+                        "longname": "lake status",
+                        "description": "keyword option to define lake status.  STATUS can be ACTIVE, INACTIVE, or CONSTANT. By default, STATUS is ACTIVE."
+                      }
+                    }
                   },
                   "stage": {
-                    "type": "keyword",
-                    "longname": "stage keyword",
-                    "description": "keyword to specify that record corresponds to stage."
+                    "type": "record",
+                    "fields": {
+                      "lakeno": {
+                        "type": "integer",
+                        "longname": "lake or outlet number for this entry",
+                        "description": "integer value that defines the lake or outlet number associated with the specified PERIOD data on the line.  NUMBER must be greater than zero and less than or equal to NLAKES for a lake number and less than or equal to NOUTLETS for an outlet number.",
+                        "tagged": false,
+                        "fk": "packagedata.ifno"
+                      },
+                      "stage": {
+                        "type": "string",
+                        "longname": "lake stage",
+                        "description": "real or character value that defines the stage for the lake. The specified STAGE is only applied if the lake is a constant stage lake. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value.",
+                        "time_series": true
+                      }
+                    }
                   },
                   "rainfall": {
-                    "type": "string",
-                    "longname": "rainfall rate",
-                    "description": "real or character value that defines the rainfall rate $(LT^{-1})$ for the lake. Value must be greater than or equal to zero. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value.",
-                    "time_series": true
+                    "type": "record",
+                    "fields": {
+                      "lakeno": {
+                        "type": "integer",
+                        "longname": "lake or outlet number for this entry",
+                        "description": "integer value that defines the lake or outlet number associated with the specified PERIOD data on the line.  NUMBER must be greater than zero and less than or equal to NLAKES for a lake number and less than or equal to NOUTLETS for an outlet number.",
+                        "tagged": false,
+                        "fk": "packagedata.ifno"
+                      },
+                      "rainfall": {
+                        "type": "string",
+                        "longname": "rainfall rate",
+                        "description": "real or character value that defines the rainfall rate $(LT^{-1})$ for the lake. Value must be greater than or equal to zero. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value.",
+                        "time_series": true
+                      }
+                    }
                   },
                   "evaporation": {
-                    "type": "string",
-                    "longname": "evaporation rate",
-                    "description": "real or character value that defines the maximum evaporation rate $(LT^{-1})$ for the lake. Value must be greater than or equal to zero. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value.",
-                    "time_series": true
+                    "type": "record",
+                    "fields": {
+                      "lakeno": {
+                        "type": "integer",
+                        "longname": "lake or outlet number for this entry",
+                        "description": "integer value that defines the lake or outlet number associated with the specified PERIOD data on the line.  NUMBER must be greater than zero and less than or equal to NLAKES for a lake number and less than or equal to NOUTLETS for an outlet number.",
+                        "tagged": false,
+                        "fk": "packagedata.ifno"
+                      },
+                      "evaporation": {
+                        "type": "string",
+                        "longname": "evaporation rate",
+                        "description": "real or character value that defines the maximum evaporation rate $(LT^{-1})$ for the lake. Value must be greater than or equal to zero. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value.",
+                        "time_series": true
+                      }
+                    }
                   },
                   "runoff": {
-                    "type": "string",
-                    "longname": "runoff rate",
-                    "description": "real or character value that defines the runoff rate $(L^3 T^{-1})$ for the lake. Value must be greater than or equal to zero. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value.",
-                    "time_series": true
+                    "type": "record",
+                    "fields": {
+                      "lakeno": {
+                        "type": "integer",
+                        "longname": "lake or outlet number for this entry",
+                        "description": "integer value that defines the lake or outlet number associated with the specified PERIOD data on the line.  NUMBER must be greater than zero and less than or equal to NLAKES for a lake number and less than or equal to NOUTLETS for an outlet number.",
+                        "tagged": false,
+                        "fk": "packagedata.ifno"
+                      },
+                      "runoff": {
+                        "type": "string",
+                        "longname": "runoff rate",
+                        "description": "real or character value that defines the runoff rate $(L^3 T^{-1})$ for the lake. Value must be greater than or equal to zero. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value.",
+                        "time_series": true
+                      }
+                    }
                   },
                   "inflow": {
-                    "type": "string",
-                    "longname": "inflow rate",
-                    "description": "real or character value that defines the volumetric inflow rate $(L^3 T^{-1})$ for the lake. Value must be greater than or equal to zero. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value. By default, inflow rates are zero for each lake.",
-                    "time_series": true
+                    "type": "record",
+                    "fields": {
+                      "lakeno": {
+                        "type": "integer",
+                        "longname": "lake or outlet number for this entry",
+                        "description": "integer value that defines the lake or outlet number associated with the specified PERIOD data on the line.  NUMBER must be greater than zero and less than or equal to NLAKES for a lake number and less than or equal to NOUTLETS for an outlet number.",
+                        "tagged": false,
+                        "fk": "packagedata.ifno"
+                      },
+                      "inflow": {
+                        "type": "string",
+                        "longname": "inflow rate",
+                        "description": "real or character value that defines the volumetric inflow rate $(L^3 T^{-1})$ for the lake. Value must be greater than or equal to zero. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value. By default, inflow rates are zero for each lake.",
+                        "time_series": true
+                      }
+                    }
                   },
                   "withdrawal": {
-                    "type": "string",
-                    "longname": "maximum withdrawal rate",
-                    "description": "real or character value that defines the maximum withdrawal rate $(L^3 T^{-1})$ for the lake. Value must be greater than or equal to zero. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value.",
-                    "time_series": true
+                    "type": "record",
+                    "fields": {
+                      "lakeno": {
+                        "type": "integer",
+                        "longname": "lake or outlet number for this entry",
+                        "description": "integer value that defines the lake or outlet number associated with the specified PERIOD data on the line.  NUMBER must be greater than zero and less than or equal to NLAKES for a lake number and less than or equal to NOUTLETS for an outlet number.",
+                        "tagged": false,
+                        "fk": "packagedata.ifno"
+                      },
+                      "withdrawal": {
+                        "type": "string",
+                        "longname": "maximum withdrawal rate",
+                        "description": "real or character value that defines the maximum withdrawal rate $(L^3 T^{-1})$ for the lake. Value must be greater than or equal to zero. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value.",
+                        "time_series": true
+                      }
+                    }
                   },
                   "rate": {
-                    "type": "string",
-                    "longname": "extraction rate",
-                    "description": "real or character value that defines the extraction rate for the lake outflow. A positive value indicates inflow and a negative value indicates outflow from the lake. RATE only applies to outlets associated with active lakes (STATUS is ACTIVE). A specified RATE is only applied if COUTTYPE for the OUTLETNO is SPECIFIED. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value. By default, the RATE for each SPECIFIED lake outlet is zero.",
-                    "time_series": true
+                    "type": "record",
+                    "fields": {
+                      "outletno": {
+                        "type": "integer",
+                        "longname": "lake or outlet number for this entry",
+                        "description": "integer value that defines the lake or outlet number associated with the specified PERIOD data on the line.  NUMBER must be greater than zero and less than or equal to NLAKES for a lake number and less than or equal to NOUTLETS for an outlet number.",
+                        "tagged": false,
+                        "fk": "outlets.outletno"
+                      },
+                      "rate": {
+                        "type": "string",
+                        "longname": "extraction rate",
+                        "description": "real or character value that defines the extraction rate for the lake outflow. A positive value indicates inflow and a negative value indicates outflow from the lake. RATE only applies to outlets associated with active lakes (STATUS is ACTIVE). A specified RATE is only applied if COUTTYPE for the OUTLETNO is SPECIFIED. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value. By default, the RATE for each SPECIFIED lake outlet is zero.",
+                        "time_series": true
+                      }
+                    }
                   },
                   "invert": {
-                    "type": "double",
-                    "longname": "invert elevation",
-                    "description": "real value that defines the invert elevation for the lake outlet. Any value can be specified if COUTTYPE is SPECIFIED. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value.",
-                    "tagged": false,
-                    "time_series": true
+                    "type": "record",
+                    "fields": {
+                      "outletno": {
+                        "type": "integer",
+                        "longname": "lake or outlet number for this entry",
+                        "description": "integer value that defines the lake or outlet number associated with the specified PERIOD data on the line.  NUMBER must be greater than zero and less than or equal to NLAKES for a lake number and less than or equal to NOUTLETS for an outlet number.",
+                        "tagged": false,
+                        "fk": "outlets.outletno"
+                      },
+                      "invert": {
+                        "type": "string",
+                        "longname": "invert elevation",
+                        "description": "real or character value that defines the invert elevation for the lake outlet. A specified INVERT value is only used for active lakes if COUTTYPE for lake outlet OUTLETNO is not SPECIFIED. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value.",
+                        "time_series": true
+                      }
+                    }
                   },
                   "width": {
-                    "type": "double",
-                    "longname": "outlet width",
-                    "description": "real value that defines the width of the lake outlet. Any value can be specified if COUTTYPE is SPECIFIED. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value.",
-                    "tagged": false,
-                    "time_series": true
+                    "type": "record",
+                    "fields": {
+                      "outletno": {
+                        "type": "integer",
+                        "longname": "lake or outlet number for this entry",
+                        "description": "integer value that defines the lake or outlet number associated with the specified PERIOD data on the line.  NUMBER must be greater than zero and less than or equal to NLAKES for a lake number and less than or equal to NOUTLETS for an outlet number.",
+                        "tagged": false,
+                        "fk": "outlets.outletno"
+                      },
+                      "width": {
+                        "type": "string",
+                        "longname": "outlet width",
+                        "description": "real or character value that defines the width of the lake outlet. A specified WIDTH value is only used for active lakes if COUTTYPE for lake outlet OUTLETNO is not SPECIFIED. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value.",
+                        "time_series": true
+                      }
+                    }
                   },
                   "slope": {
-                    "type": "double",
-                    "longname": "bed slope",
-                    "description": "real value that defines the bed slope for the lake outlet. Any value can be specified if COUTTYPE is not MANNING. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value.",
-                    "tagged": false,
-                    "time_series": true
+                    "type": "record",
+                    "fields": {
+                      "outletno": {
+                        "type": "integer",
+                        "longname": "lake or outlet number for this entry",
+                        "description": "integer value that defines the lake or outlet number associated with the specified PERIOD data on the line.  NUMBER must be greater than zero and less than or equal to NLAKES for a lake number and less than or equal to NOUTLETS for an outlet number.",
+                        "tagged": false,
+                        "fk": "outlets.outletno"
+                      },
+                      "slope": {
+                        "type": "string",
+                        "longname": "bed slope",
+                        "description": "real or character value that defines the bed slope for the lake outlet. A specified SLOPE value is only used for active lakes if COUTTYPE for lake outlet OUTLETNO is MANNING. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value.",
+                        "time_series": true
+                      }
+                    }
                   },
                   "rough": {
-                    "type": "double",
-                    "longname": "roughness coefficient",
-                    "description": "real value that defines the roughness coefficient for the lake outlet. Any value can be specified if COUTTYPE is not MANNING. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value.",
-                    "tagged": false,
-                    "time_series": true
+                    "type": "record",
+                    "fields": {
+                      "outletno": {
+                        "type": "integer",
+                        "longname": "lake or outlet number for this entry",
+                        "description": "integer value that defines the lake or outlet number associated with the specified PERIOD data on the line.  NUMBER must be greater than zero and less than or equal to NLAKES for a lake number and less than or equal to NOUTLETS for an outlet number.",
+                        "tagged": false,
+                        "fk": "outlets.outletno"
+                      },
+                      "rough": {
+                        "type": "string",
+                        "longname": "roughness coefficient",
+                        "description": "real value that defines the roughness coefficient for the lake outlet. Any value can be specified if COUTTYPE is not MANNING. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value.",
+                        "time_series": true
+                      }
+                    }
                   },
                   "auxiliaryrecord": {
                     "type": "record",
                     "fields": {
+                      "lakeno": {
+                        "type": "integer",
+                        "longname": "lake or outlet number for this entry",
+                        "description": "integer value that defines the lake or outlet number associated with the specified PERIOD data on the line.  NUMBER must be greater than zero and less than or equal to NLAKES for a lake number and less than or equal to NOUTLETS for an outlet number.",
+                        "tagged": false,
+                        "fk": "packagedata.ifno"
+                      },
                       "auxiliary": {
                         "type": "keyword",
                         "description": "keyword for specifying auxiliary variable."

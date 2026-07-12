@@ -134,6 +134,7 @@ blocks:
                 with an error.  The program will also terminate with an error if information for a lake
                 is specified more than once.
               tagged: false
+              pk: true
             strt:
               type: double
               longname: starting lake concentration
@@ -174,6 +175,7 @@ blocks:
               description: integer value that defines the feature (lake) number associated with the specified
                 PERIOD data on the line. IFNO must be greater than zero and less than or equal to NLAKES.
               tagged: false
+              fk: packagedata.ifno
             laksetting:
               type: union
               description: 'line of information that is parsed into a keyword and values.  Keyword values
@@ -194,9 +196,14 @@ blocks:
                     concentration.  If a lake is constant, then the concentration for the lake will be
                     fixed at the user specified value.
                 concentration:
-                  type: keyword
-                  longname: stage keyword
-                  description: keyword to specify that record corresponds to concentration.
+                  type: string
+                  longname: lake concentration
+                  description: real or character value that defines the concentration for the lake. The
+                    specified CONCENTRATION is only applied if the lake is a constant concentration lake.
+                    If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input'
+                    section), values can be obtained from a time series by entering the time-series name
+                    in place of a numeric value.
+                  time_series: true
                 rainfall:
                   type: string
                   longname: rainfall concentration
