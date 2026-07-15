@@ -932,6 +932,8 @@ def _fix_mvr_relations(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.B
     new_item_fields = dict(item_fields)
     for pname_key in ("pname1", "pname2"):
         pname_f = item_fields[pname_key]
+        if not isinstance(pname_f, v2.String):
+            continue
         if pname_f.fk is None:
             new_item_fields[pname_key] = pname_f.model_copy(update={"fk": "packages.pname"})
 
