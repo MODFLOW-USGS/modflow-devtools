@@ -85,6 +85,7 @@ blocks:
                 and the package number.  For example, the first Drain Package is named DRN-1.  The second
                 Drain Package is named DRN-2, and so forth.
               tagged: false
+              pk: true
         shape:
           - maxpackages
   period:
@@ -106,6 +107,7 @@ blocks:
                 to provide water through the MVR Package by specifying the keyword 'MOVER' in its OPTIONS
                 block.
               tagged: false
+              fk: packages.pname
             id1:
               type: integer
               longname: provider reach
@@ -130,6 +132,7 @@ blocks:
                 to receive water from the MVR Package by specifying the keyword 'MOVER' in its OPTIONS
                 block.
               tagged: false
+              fk: packages.pname
             id2:
               type: integer
               longname: receiver reach

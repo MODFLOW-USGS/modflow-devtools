@@ -375,6 +375,54 @@ def _resolve_relations(blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
     }
 
 
+_LONELY_PK_BLOCKS = ("packagedata", "perioddata")
+
+
+def _mark_lonely_pk(blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
+    """
+    Mark the leading identifier column of a self-titled ``packagedata`` or
+    ``perioddata`` recarray as ``pk`` even when nothing else in the component
+    names the same field, so ``_resolve_relations``'s cross-block signal
+    never fires (e.g. BUY's ``irhospec``, CSUB's ``icsubno``, ATS's
+    ``iperats``). These are still genuine row identifiers by construction
+    (MODFLOW rejects a repeated one) — they're just never referenced by name
+    anywhere else in their own component, unlike SFR/MAW/LAK/UZF's `ifno`
+    columns, which repeat across multiple blocks.
+
+    Conservative by design: only fires on a block literally named
+    ``packagedata``/``perioddata`` whose same-named list field's item record
+    leads with a required Integer column carrying no ``fk`` and no existing
+    ``pk`` anywhere in the record. This deliberately excludes lookalikes like
+    DISU/DISV's ``vertices``/``cell2d`` (row identifiers, but a distinct
+    grid-geometry concern) and the FK side of relations like
+    ``gwf-mvr.period.perioddata`` (block name doesn't match the list name).
+    """
+    updated: dict[str, v2.Block] = {}
+    for block_name, block in blocks.items():
+        field = block.fields.get(block_name) if block_name in _LONELY_PK_BLOCKS else None
+        if not isinstance(field, v2.List) or not isinstance(field.item, v2.Record):
+            continue
+        record = field.item
+        if not record.fields or any(getattr(f, "pk", False) for f in record.fields.values()):
+            continue
+        first_name, first = next(iter(record.fields.items()))
+        if not isinstance(first, v2.Integer) or first.optional or first.fk is not None:
+            continue
+        new_record = record.model_copy(
+            update={
+                "fields": {
+                    **record.fields,
+                    first_name: first.model_copy(update={"pk": True}),
+                }
+            }
+        )
+        new_field = field.model_copy(update={"item": new_record})
+        updated[block_name] = block.model_copy(
+            update={"fields": {**block.fields, block_name: new_field}}
+        )
+    return {**blocks, **updated}
+
+
 def _fill_period_list_shapes(
     blocks: dict[str, v2.Block],
     explicit_dims: dict[str, v2.Dim],
@@ -820,6 +868,82 @@ def _fix_lak_relations(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.B
     return {**blocks, "period": new_period, "outlets": new_outlets}
 
 
+def _fix_mvr_relations(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
+    """
+    Patch MVR's pk/fk relations — see docs/md/dfnspec.md, "Primary and
+    foreign keys" examples table.
+
+    - Marks `packages.pname` as `pk`: it's the unique name of a package
+      participating in the mover, but nothing else in the component repeats
+      the field name `pname` (the period block's `pname1`/`pname2` are
+      renamed), so neither `_resolve_relations` nor `_mark_lonely_pk` finds
+      it — the former needs a name match, and the latter's `packages` block
+      isn't in `_LONELY_PK_BLOCKS`, plus `pname` isn't `packages`' leading
+      column (`mname` is, and it's optional, so it can't be the pk anyway).
+    - Marks `period.perioddata`'s `pname1`/`pname2` as
+      `fk: "packages.pname"`, since each identifies the provider/receiver
+      package by name.
+
+    Does *not* yet annotate `id1`/`id2` (documented as
+    `fk: "packagedata", fk_ref: "pname1"/"pname2"`): `_validate_fk_fields`
+    treats any `fk` as a same-component block reference and treats `fk_ref`
+    as a literal component name, neither of which matches the "bare block
+    name resolved at runtime via a sibling field" contract the docs describe
+    for this form (and no field in the current corpus exercises `fk_ref`, so
+    that contract is untested). Wiring `id1`/`id2` up needs the validator
+    fixed first, not just this migration patch — left for the broader
+    pk/fk relations review.
+    """
+    if name != "gwf-mvr":
+        return blocks
+
+    packages = blocks.get("packages")
+    period = blocks.get("period")
+    if packages is None or period is None:
+        return blocks
+
+    packages_list = packages.fields.get("packages")
+    if not isinstance(packages_list, v2.List) or not isinstance(packages_list.item, v2.Record):
+        return blocks
+    pname_field = packages_list.item.fields.get("pname")
+    if not isinstance(pname_field, v2.String):
+        return blocks
+
+    perioddata = period.fields.get("perioddata")
+    if not isinstance(perioddata, v2.List) or not isinstance(perioddata.item, v2.Record):
+        return blocks
+    item_fields = perioddata.item.fields
+    if not all(isinstance(item_fields.get(n), v2.String) for n in ("pname1", "pname2")):
+        return blocks
+
+    new_packages = packages
+    if not pname_field.pk:
+        new_packages_item = packages_list.item.model_copy(
+            update={
+                "fields": {
+                    **packages_list.item.fields,
+                    "pname": pname_field.model_copy(update={"pk": True}),
+                }
+            }
+        )
+        new_packages_list = packages_list.model_copy(update={"item": new_packages_item})
+        new_packages = packages.model_copy(update={"fields": {"packages": new_packages_list}})
+
+    new_item_fields = dict(item_fields)
+    for pname_key in ("pname1", "pname2"):
+        pname_f = item_fields[pname_key]
+        if pname_f.fk is None:
+            new_item_fields[pname_key] = pname_f.model_copy(update={"fk": "packages.pname"})
+
+    new_item = perioddata.item.model_copy(update={"fields": new_item_fields})
+    new_perioddata = perioddata.model_copy(update={"item": new_item})
+    new_period = period.model_copy(
+        update={"fields": {**period.fields, "perioddata": new_perioddata}}
+    )
+
+    return {**blocks, "packages": new_packages, "period": new_period}
+
+
 def _parse_valid(valid: Any, coerce=None) -> list | None:
     """Parse a v1 ``valid`` attribute to a list, optionally coercing each element."""
     parts = valid.split() if isinstance(valid, str) else (list(valid) if valid else [])
@@ -1247,6 +1371,7 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
 
     blocks, array_dims = _resolve_dimensions(blocks)
     blocks = _resolve_relations(blocks)
+    blocks = _mark_lonely_pk(blocks)
     raw_dim_names = _raw_dim_names(blocks)
     blocks = _normalize_n_prefix_shapes(blocks, raw_dim_names)
     explicit_dims = _build_explicit_dims(parent, blocks)
@@ -1259,6 +1384,7 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
     blocks = _collapse_sto_keywords(blocks)
     blocks = _patch_oc_rtype(name, blocks)
     blocks = _fix_lak_relations(name, blocks)
+    blocks = _fix_mvr_relations(name, blocks)
     dims = {**explicit_dims, **array_dims, **derived_dims} or None
 
     d: dict[str, Any] = {

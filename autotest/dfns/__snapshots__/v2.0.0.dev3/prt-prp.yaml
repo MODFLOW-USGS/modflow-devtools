@@ -239,6 +239,7 @@ blocks:
                 or equal to NRELEASEPTS.  The program will terminate with an error if information for
                 a PRP release point number is specified more than once.
               tagged: false
+              pk: true
             cellid:
               type: array
               longname: cell identifier

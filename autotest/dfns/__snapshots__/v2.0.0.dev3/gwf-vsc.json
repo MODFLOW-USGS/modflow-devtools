@@ -90,7 +90,8 @@
                 "type": "integer",
                 "longname": "species number for this entry",
                 "description": "integer value that defines the species number associated with the specified PACKAGEDATA data entered on each line. IVISCSPECIES must be greater than zero and less than or equal to NVISCSPECIES. Information must be specified for each of the NVISCSPECIES species or the program will terminate with an error.  The program will also terminate with an error if information for a species is specified more than once.",
-                "tagged": false
+                "tagged": false,
+                "pk": true
               },
               "dviscdc": {
                 "type": "double",

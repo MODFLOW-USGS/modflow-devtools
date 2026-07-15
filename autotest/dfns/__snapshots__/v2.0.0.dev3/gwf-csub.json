@@ -322,7 +322,8 @@
                 "type": "integer",
                 "longname": "CSUB id number for this entry",
                 "description": "integer value that defines the CSUB interbed number associated with the specified PACKAGEDATA data on the line. CSUBNO must be greater than zero and less than or equal to NINTERBEDS.  CSUB information must be specified for every CSUB cell or the program will terminate with an error.  The program will also terminate with an error if information for a CSUB interbed number is specified more than once.",
-                "tagged": false
+                "tagged": false,
+                "pk": true
               },
               "cellid": {
                 "type": "array",

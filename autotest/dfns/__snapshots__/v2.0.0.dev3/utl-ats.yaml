@@ -32,6 +32,7 @@ blocks:
                 block.  The remaining ATS values on this line will apply to period iperats.  iperats must
                 be greater than zero.  A warning is printed if iperats is greater than nper.
               tagged: false
+              pk: true
             dt0:
               type: double
               longname: initial time step length

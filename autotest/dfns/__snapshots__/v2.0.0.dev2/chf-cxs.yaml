@@ -46,6 +46,7 @@ blocks:
                 with an error.  The program will also terminate with an error if information for a section
                 is specified more than once.
               tagged: false
+              pk: true
             nxspoints:
               type: integer
               longname: number of points used to define cross section

@@ -89,6 +89,7 @@ blocks:
                 species or the program will terminate with an error.  The program will also terminate
                 with an error if information for a species is specified more than once.
               tagged: false
+              pk: true
             dviscdc:
               type: double
               longname: slope of the line that defines the linear relationship between viscosity and temperature

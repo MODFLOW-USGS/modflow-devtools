@@ -55,6 +55,7 @@ type = "integer"
 longname = "species number for this entry"
 description = "integer value that defines the species number associated with the specified PACKAGEDATA data on the line. IRHOSPECIES must be greater than zero and less than or equal to NRHOSPECIES. Information must be specified for each of the NRHOSPECIES species or the program will terminate with an error.  The program will also terminate with an error if information for a species is specified more than once."
 tagged = false
+pk = true
 
 [blocks.packagedata.fields.packagedata.item.fields.drhodc]
 type = "double"

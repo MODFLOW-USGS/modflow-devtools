@@ -26,6 +26,7 @@ type = "integer"
 longname = "stress period indicator"
 description = "is the period number to apply the adaptive time stepping.  Adaptive time stepping is only activated for those periods with a corresponding iperats entry in the perioddata block.  The remaining ATS values on this line will apply to period iperats.  iperats must be greater than zero.  A warning is printed if iperats is greater than nper."
 tagged = false
+pk = true
 
 [blocks.perioddata.fields.perioddata.item.fields.dt0]
 type = "double"

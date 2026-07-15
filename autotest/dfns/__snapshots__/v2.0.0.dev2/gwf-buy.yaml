@@ -62,6 +62,7 @@ blocks:
                 program will terminate with an error.  The program will also terminate with an error if
                 information for a species is specified more than once.
               tagged: false
+              pk: true
             drhodc:
               type: double
               longname: slope of the density-concentration line

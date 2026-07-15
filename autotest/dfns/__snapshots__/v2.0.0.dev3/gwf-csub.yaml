@@ -310,6 +310,7 @@ blocks:
                 will terminate with an error.  The program will also terminate with an error if information
                 for a CSUB interbed number is specified more than once.
               tagged: false
+              pk: true
             cellid:
               type: array
               longname: cell identifier

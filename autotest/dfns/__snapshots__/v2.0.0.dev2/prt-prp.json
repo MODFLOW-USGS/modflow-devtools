@@ -213,7 +213,8 @@
                 "type": "integer",
                 "longname": "PRP id number for release point",
                 "description": "integer value that defines the PRP release point number associated with the specified PACKAGEDATA data on the line. IRPTNO must be greater than zero and less than or equal to NRELEASEPTS.  The program will terminate with an error if information for a PRP release point number is specified more than once.",
-                "tagged": false
+                "tagged": false,
+                "pk": true
               },
               "cellid": {
                 "type": "array",
