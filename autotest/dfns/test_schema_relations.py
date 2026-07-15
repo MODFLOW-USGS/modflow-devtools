@@ -11,6 +11,7 @@ from modflow_devtools.dfns.schema import (
     Model,
     Package,
     Record,
+    String,
     _validate_fk_fields,
 )
 
@@ -58,16 +59,48 @@ def test_dfns_validate_fk_fields_no_pk_on_item():
         Dfns(components={"gwf-nam": gwf, "gwf-lak": lak})
 
 
+def _mvr_id_ctx(fk_val="packagedata", fk_ref="pname1", with_pname_sibling=True):
+    """
+    Build a Package mimicking gwf-mvr's period block: an `id1` field with
+    `fk`/`fk_ref` set, alongside a sibling `pname1` String field (unless
+    ``with_pname_sibling`` is False).
+    """
+    fields: dict = {"id1": Integer(name="id1", fk=fk_val, fk_ref=fk_ref)}
+    if with_pname_sibling:
+        fields["pname1"] = String(name="pname1")
+    item = Record(name="item", fields=fields)
+    lst = List(name="period", item=item)
+    block = Block(name="period", fields={"period": lst})
+    pkg = Package(name="gwf-mvr", blocks={"period": block})
+    gwf = Model(name="gwf-nam", blocks=None)
+    return pkg, gwf
+
+
 def test_dfns_validate_fk_fields_fk_ref():
-    lak, gwf = _fk_validation_ctx("packagedata", pk_on_item=True, fk_ref="gwf-nam")
-    spec = Dfns(components={"gwf-nam": gwf, "gwf-lak": lak})
-    assert "gwf-lak" in spec.components
+    # Bare block name fk + fk_ref: fk_ref must name a sibling String field.
+    # The target block/component are only resolved at runtime (from that
+    # field's value), so no local "packagedata" block or pk is required.
+    mvr, gwf = _mvr_id_ctx()
+    spec = Dfns(components={"gwf-nam": gwf, "gwf-mvr": mvr})
+    assert "gwf-mvr" in spec.components
 
 
-def test_dfns_validate_fk_fields_fk_ref_unknown():
-    lak, gwf = _fk_validation_ctx("packagedata", pk_on_item=True, fk_ref="no-such-comp")
-    with pytest.raises(ValueError, match="not found in spec"):
-        Dfns(components={"gwf-nam": gwf, "gwf-lak": lak})
+def test_dfns_validate_fk_fields_fk_ref_not_sibling():
+    mvr, gwf = _mvr_id_ctx(with_pname_sibling=False)
+    with pytest.raises(ValueError, match="not a sibling String field"):
+        Dfns(components={"gwf-nam": gwf, "gwf-mvr": mvr})
+
+
+def test_dfns_validate_fk_fields_fk_ref_with_hierarchical_fk_rejected():
+    mvr, gwf = _mvr_id_ctx(fk_val="packagedata.ifno")
+    with pytest.raises(ValueError, match="may not be combined with fk_ref"):
+        Dfns(components={"gwf-nam": gwf, "gwf-mvr": mvr})
+
+
+def test_dfns_validate_fk_fields_fk_ref_with_node_rejected():
+    mvr, gwf = _mvr_id_ctx(fk_val="node")
+    with pytest.raises(ValueError, match="may not be combined with fk_ref"):
+        Dfns(components={"gwf-nam": gwf, "gwf-mvr": mvr})
 
 
 def test_dfns_validate_fk_fields_no_fk_set():

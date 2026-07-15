@@ -870,8 +870,8 @@ def _fix_lak_relations(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.B
 
 def _fix_mvr_relations(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
     """
-    Patch MVR's pk/fk relations — see docs/md/dfnspec.md, "Primary and
-    foreign keys" examples table.
+    Patch MVR's pk/fk relations that the general passes can't reach on their
+    own.
 
     - Marks `packages.pname` as `pk`: it's the unique name of a package
       participating in the mover, but nothing else in the component repeats
@@ -884,15 +884,15 @@ def _fix_mvr_relations(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.B
       `fk: "packages.pname"`, since each identifies the provider/receiver
       package by name.
 
-    Does *not* yet annotate `id1`/`id2` (documented as
-    `fk: "packagedata", fk_ref: "pname1"/"pname2"`): `_validate_fk_fields`
-    treats any `fk` as a same-component block reference and treats `fk_ref`
-    as a literal component name, neither of which matches the "bare block
-    name resolved at runtime via a sibling field" contract the docs describe
-    for this form (and no field in the current corpus exercises `fk_ref`, so
-    that contract is untested). Wiring `id1`/`id2` up needs the validator
-    fixed first, not just this migration patch — left for the broader
-    pk/fk relations review.
+    Does *not* annotate `id1`/`id2`. Each identifies a feature within the
+    package named by the sibling `pname1`/`pname2` field, but which block
+    that resolves to depends on that package's *type*: `packagedata`'s pk
+    for SFR/MAW/UZF, `outlets.outletno` (not `packagedata`'s pk) for LAK, and
+    a positional row index — not a `pk`-flagged column, and not even a
+    `packagedata` block — for ordinary boundary packages like WEL/DRN/RIV.
+    A single static `fk` value can't express that; see the pk/fk relations
+    review notes for how to represent a runtime target whose *block*, not
+    just its component, is conditional on resolved data.
     """
     if name != "gwf-mvr":
         return blocks

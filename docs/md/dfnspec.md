@@ -83,7 +83,6 @@ This document describes the MODFLOW 6 component definition (DFN) system. This sy
     - [Dimension sources](#dimension-sources)
     - [Dimension scope](#dimension-scope)
   - [Primary/foreign keys](#primary-and-foreign-keys)
-    - [Examples](#examples)
 - [Memory catalog](#memory-catalog)
   - [Attributes](#attributes-1)
     - [`type`](#type-2)
@@ -652,23 +651,8 @@ The `fk` attribute can take one of three forms:
 
 The `fk_ref` attribute names a string field whose runtime value identifies the component containing the `pk` field. Two sub-cases exist:
 
-- **With `fk`**: The `fk` must be a bare block name. The component containing the block is resolved with `fk_ref`, then the block (identified by `fk`) is searched for a unique `pk` field. For all current corpus cases where `fk_ref` identifies an integer "feature number" PK (e.g. SFR, MAW, UZF, LAK via `gwf-mvr`), the block is `packagedata`; `fk: "packagedata"` should therefore always be set alongside `fk_ref` for these cases.
-- **Without `fk`**: the target block varies by component (e.g. `utl-obs.continuous.id`, where the target is a boundary name whose block varies by package type).
-
-#### Examples
-
-| Field | `pk` | `fk` | `fk_ref` | Notes |
-|---|---|---|---|---|
-| `gwf-sfr.packagedata.rno` | `true` | — | — | PK of the reach list |
-| `gwf-sfr.connectiondata.rno` | — | `"packagedata.rno"` | — | FK; also row selector for ic's shape lookup |
-| `gwf-sfr.connectiondata.ic` | — | — | — | inline array; `shape: ["packagedata.ncon(rno)"]`; elements are signed reach refs (sign encodes upstream/downstream direction) |
-| `gwf-sfr.period.rno` | — | `"packagedata.rno"` | — | within-component |
-| `gwf-mvr.packages.pname` | `true` | — | — | string PK of the package list |
-| `gwf-mvr.period.pname1` | — | `"packages.pname"` | — | string FK, within-component |
-| `gwf-mvr.period.id1` | — | `"packagedata"` | `"pname1"` | component resolved from pname1; codec finds unique pk in packagedata |
-| `utl-obs.continuous.id` (string arm) | — | — | `"obstype"` | **Open:** target block varies by package type; codec must handle case-by-case |
-| `utl-obs.continuous.id` (integer arm) | — | `"node"` | — | grid cell reference |
-| `gwf-wel.period.cellid` | — | `"node"` | — | grid cell reference |
+- **With `fk`**: The `fk` must be a bare block name. The component containing the block is resolved with `fk_ref`, then the block (identified by `fk`) is searched for a unique `pk` field. This form assumes a single target block name is valid regardless of which component `fk_ref` resolves to; where that doesn't hold — the target block itself varies by the resolved component's type — a static `fk` cannot express the relation, and resolution must fall to the codec instead.
+- **Without `fk`**: the target block is not statically known at all and must be resolved by the codec, e.g. by inspecting a sibling discriminator field.
 
 ## Memory catalog
 

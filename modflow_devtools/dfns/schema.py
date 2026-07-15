@@ -845,10 +845,23 @@ def _validate_list_shape_element(
 
 def _validate_fk_fields(component: "ComponentBase", spec: "Dfns") -> None:
     """
-    For every Integer/String field with fk or fk_ref set, validate structure:
+    For every Integer/String field with fk or fk_ref set, validate structure.
 
-    - fk must reference a list block whose item must have at least one pk field.
-    - fk_ref must name a component that exists in the spec.
+    Three forms (see docs/md/dfnspec.md, "Primary and foreign keys"):
+
+    - Hierarchical path fk ("[component.]block.field", no fk_ref): the named
+      block must be a list block (in this component, or cross-component if
+      qualified) whose item has a pk field.
+    - "node" sentinel fk (no fk_ref): a grid cell reference, resolved from the
+      parent model's grid at runtime — no further structural check is
+      possible here.
+    - Bare block name fk + fk_ref, or fk_ref alone: fk_ref must name a sibling
+      String field in the same record, whose runtime value identifies the
+      target component (and, with fk, the pk field is looked up in the block
+      named by fk within that component). The target itself is only known at
+      runtime, so no further structural check is possible statically.
+
+    A hierarchical-path or "node" fk may not be combined with fk_ref.
     """
     if not component.blocks:
         return
@@ -858,7 +871,22 @@ def _validate_fk_fields(component: "ComponentBase", spec: "Dfns") -> None:
             fk: str | None = getattr(field, "fk", None)
             fk_ref: str | None = getattr(field, "fk_ref", None)
 
-            if fk is not None:
+            if fk_ref is not None:
+                if fk is not None and (fk == "node" or "." in fk):
+                    raise ValueError(
+                        f"Field {field.name!r}: fk={fk!r} may not be combined with "
+                        f"fk_ref (only a bare block name may be)"
+                    )
+                sibling = fields.get(fk_ref)
+                if not isinstance(sibling, String):
+                    raise ValueError(
+                        f"Field {field.name!r} fk_ref={fk_ref!r}: "
+                        f"not a sibling String field in the same record"
+                    )
+                # fk (a bare block name, if set) and the component it lives in
+                # are both resolved from fk_ref's runtime value — no further
+                # static check is possible.
+            elif fk is not None and fk != "node":
                 block_name = fk.split(".")[0] if "." in fk else fk
                 list_field = _find_list_in_block(component, block_name)
                 if list_field is None:
@@ -874,12 +902,6 @@ def _validate_fk_fields(component: "ComponentBase", spec: "Dfns") -> None:
                         f"Field {field.name!r} fk={fk!r}: "
                         f"list {list_field.name!r} item has no pk=True field"
                     )
-
-            if fk_ref is not None and fk_ref not in spec.components:
-                raise ValueError(
-                    f"Field {field.name!r} fk_ref={fk_ref!r}: "
-                    f"component {fk_ref!r} not found in spec"
-                )
 
             if isinstance(field, Record):
                 _check_fields(field.fields)
