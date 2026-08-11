@@ -2,6 +2,7 @@ import json
 import os
 import sys
 import tarfile
+import time
 import timeit
 import urllib.request
 from os import PathLike
@@ -223,6 +224,7 @@ def download_and_unzip(
     path: PathLike | None = None,
     delete_zip=True,
     retries=3,
+    timeout=30,
     verbose=False,
 ) -> Path:
     """
@@ -239,6 +241,8 @@ def download_and_unzip(
         Whether the zip file should be deleted after it is unzipped (default is True)
     retries : int
         The maximum number of retries for each request
+    timeout : int
+        Timeout in seconds for the download request
     verbose : bool
         Whether to show verbose output
 
@@ -271,7 +275,7 @@ def download_and_unzip(
         tries += 1
         try:
             with (
-                urllib.request.urlopen(request) as url_file,
+                urllib.request.urlopen(request, timeout=timeout) as url_file,
                 file_path.open("wb") as out_file,
             ):
                 content = url_file.read()
@@ -289,10 +293,17 @@ def download_and_unzip(
                     print(f"   file size: {sbfmt.format(bfmt.format(int(file_size)))}")
 
                 break
-        except urllib.error.HTTPError as err:
+        except (
+            urllib.error.HTTPError,
+            urllib.error.URLError,
+            ConnectionError,
+            TimeoutError,
+        ) as err:
             if tries < retries:
                 warn(f"URL request try {tries} failed ({err})")
+                time.sleep(1)
                 continue
+            raise
 
     # write the total download time
     toc = timeit.default_timer()
