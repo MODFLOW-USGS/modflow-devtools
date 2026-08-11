@@ -29,9 +29,11 @@ To skip tests if one or more executables are not available on the path:
 from shutil import which
 from modflow_devtools.markers import requires_exe
 
+
 @requires_exe("mf6")
 def test_mf6():
     assert which("mf6")
+
 
 @requires_exe("mf6", "mp7")
 def test_mf6_and_mp7():
@@ -44,9 +46,11 @@ To skip tests if one or more Python packages are not available:
 ```python
 from modflow_devtools.markers import requires_pkg
 
+
 @requires_pkg("pandas")
 def test_needs_pandas():
     import pandas as pd
+
 
 @requires_pkg("pandas", "shapefile")
 def test_needs_pandas():
@@ -61,9 +65,11 @@ import os
 import platform
 from modflow_devtools.markers import requires_platform, excludes_platform
 
+
 @requires_platform("Windows")
 def test_needs_windows():
     assert platform.system() == "Windows"
+
 
 @excludes_platform("Darwin", ci_only=True)
 def test_breaks_osx_ci():
@@ -85,6 +91,7 @@ A marker is also available to skip tests if `pytest` is running in parallel with
 ```python
 from os import environ
 from modflow_devtools.markers import no_parallel
+
 
 @no_parallel
 def test_only_serially():

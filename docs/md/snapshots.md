@@ -13,7 +13,7 @@ By default, tests run in comparison mode. This means a newly written test using 
 To use snapshot fixtures, add the following line to a test file or `conftest.py` file:
 
 ```python
-pytest_plugins = [ "modflow_devtools.snapshots" ]
+pytest_plugins = ["modflow_devtools.snapshots"]
 ```
 
 ## Disable snapshots

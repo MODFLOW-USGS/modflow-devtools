@@ -21,6 +21,7 @@ The fixtures are named according to their [scope](https://docs.pytest.org/en/7.1
 from pathlib import Path
 import inspect
 
+
 def test_tmpdirs(function_tmpdir, module_tmpdir):
     # function-scoped temporary directory
     assert function_tmpdir.is_dir()

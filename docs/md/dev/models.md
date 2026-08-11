@@ -256,26 +256,21 @@ At sync time, `modflow-devtools` attempts to discover remote registries accordin
 
 ```python
 RegistryDiscoveryError(
-    f"Registry file 'models.toml' not found "
-    f"as release asset for '{source}@{ref}'"
+    f"Registry file 'models.toml' not found as release asset for '{source}@{ref}'"
 )
 ```
 
 2. Look for a commit hash, tag, or branch matching the ref (in that order, matching `git`'s lookup order). If a match exists, registry discovery continues in **version-controlled** mode, looking for a registry metadata file in the location specified in the bootstrap file (or in the default location `.registry/`). If no matching ref is found, raise an error indicating registry discovery has failed:
 
 ```python
-RegistryDiscoveryError(
-    f"Registry discovery failed, "
-    f"ref '{source}@{ref}' does not exist"
-)
+RegistryDiscoveryError(f"Registry discovery failed, ref '{source}@{ref}' does not exist")
 ```
 
 If no registry metadata file can be found, raise an error indicating that the given branch or commit lacks a registry metadata file in the expected location:
 
 ```python
 RegistryDiscoveryError(
-    f"Registry file 'models.toml' not found "
-    f"in {registry_path} for '{source}@{ref}'"
+    f"Registry file 'models.toml' not found in {registry_path} for '{source}@{ref}'"
 )
 ```
 

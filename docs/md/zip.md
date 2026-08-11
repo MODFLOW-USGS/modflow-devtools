@@ -14,9 +14,10 @@ The `compressall` method is a static method that creates a zip file from lists o
 from zipfile import ZipFile
 from modflow_devtools.zip import MFZipFile
 
+
 def test_compressall(function_tmpdir):
     zip_file = function_tmpdir / "output.zip"
-    
+
     input_dir = function_tmpdir / "input"
     input_dir.mkdir()
 

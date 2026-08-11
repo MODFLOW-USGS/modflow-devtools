@@ -355,15 +355,12 @@ At sync time, `modflow-devtools` discovers remote registries for each configured
 3. **Failure cases**:
    - If release tag doesn't exist:
      ```python
-     ProgramRegistryDiscoveryError(
-         f"Release tag '{tag}' not found for {repo}"
-     )
+     ProgramRegistryDiscoveryError(f"Release tag '{tag}' not found for {repo}")
      ```
    - If release exists but lacks `programs.toml` asset:
      ```python
      ProgramRegistryDiscoveryError(
-         f"Program registry file 'programs.toml' not found as release asset "
-         f"for {repo}@{tag}"
+         f"Program registry file 'programs.toml' not found as release asset for {repo}@{tag}"
      )
      ```
 
@@ -753,6 +750,7 @@ Represents platform-specific distribution information:
 ```python
 class ProgramDistribution(BaseModel):
     """Distribution-specific information."""
+
     name: str  # Distribution name (e.g., linux, mac, win64)
     asset: str  # Release asset filename
     exe: str | None  # Executable path within archive (optional, overrides program-level exe)
@@ -766,6 +764,7 @@ Program metadata in registry:
 ```python
 class ProgramMetadata(BaseModel):
     """Program metadata in registry."""
+
     description: str | None
     license: str | None
     exe: str | None  # Optional: defaults to bin/{program}
@@ -782,6 +781,7 @@ Top-level registry data model:
 ```python
 class ProgramRegistry(BaseModel):
     """Program registry data model."""
+
     schema_version: str | None
     programs: dict[str, ProgramMetadata]
 ```
@@ -843,6 +843,7 @@ Tracks a single program installation:
 @dataclass
 class ProgramInstallation:
     """A single program installation."""
+
     version: str
     platform: str
     bindir: Path

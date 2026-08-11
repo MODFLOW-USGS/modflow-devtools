@@ -10,7 +10,8 @@ A warning to this effect is shown when `modflow_devtools.dfns` is imported. To s
 
 ```python
 import warnings
-warnings.filterwarnings('ignore', message='.*modflow_devtools.dfns.*experimental.*')
+
+warnings.filterwarnings("ignore", message=".*modflow_devtools.dfns.*experimental.*")
 ```
 
 The `ecosystem` optional dependency group is required to use either the `dfn` or `dfns` module.
@@ -134,18 +135,18 @@ In most cases, using `RemoteDfnRegistry` (see [Managing DFNs](#managing-dfns)) i
 ### Inspecting DFNs
 
 ```python
-spec.schema_version         # e.g. CURRENT_SCHEMA_VERSION ("2.0.0.dev2")
-spec.root                   # the Simulation component, or None
-len(spec.components)        # total number of components
+spec.schema_version  # e.g. CURRENT_SCHEMA_VERSION ("2.0.0.dev2")
+spec.root  # the Simulation component, or None
+len(spec.components)  # total number of components
 
 # Dict-like access to components
 gwf_chd = spec.components["gwf-chd"]
-gwf_chd.name                # "gwf-chd"
-gwf_chd.parent              # "gwf-nam"
+gwf_chd.name  # "gwf-chd"
+gwf_chd.parent  # "gwf-nam"
 
 # Navigate the component hierarchy
-sim_children = spec.children("sim-nam")   # {"gwf-nam": ..., ...}
-gwf_children = spec.children("gwf-nam")   # {"gwf-chd": ..., "gwf-wel": ..., ...}
+sim_children = spec.children("sim-nam")  # {"gwf-nam": ..., ...}
+gwf_children = spec.children("gwf-nam")  # {"gwf-chd": ..., "gwf-wel": ..., ...}
 ```
 
 Each entry in `spec.components` is one of three component types, discriminated by a `type` field:
@@ -273,8 +274,8 @@ For working with DFN files on the local filesystem, there is `LocalDfnRegistry`.
 from modflow_devtools.dfns import LocalDfnRegistry
 
 registry = LocalDfnRegistry(path="/path/to/mf6/doc/mf6io/mf6ivar/dfn")
-spec = registry.spec()                    # Dfns instance
-path = registry.get_path("gwf-chd")      # Path to the component file
+spec = registry.spec()  # Dfns instance
+path = registry.get_path("gwf-chd")  # Path to the component file
 ```
 
 For fetching and caching DFN files from a MODFLOW 6 release, `RemoteDfnRegistry`:
@@ -283,10 +284,10 @@ For fetching and caching DFN files from a MODFLOW 6 release, `RemoteDfnRegistry`
 from modflow_devtools.dfns import RemoteDfnRegistry
 
 registry = RemoteDfnRegistry(release_id="MODFLOW-ORG/modflow6@6.6.0")
-registry.sync()           # download and cache DFN files
-registry.sync(force=True) # force re-download
+registry.sync()  # download and cache DFN files
+registry.sync(force=True)  # force re-download
 
-spec = registry.spec()    # get the specification
+spec = registry.spec()  # get the specification
 
 tag = registry.latest_tag()  # resolve "latest" to actual tag
 tag = registry.cached_tag()  # return cached tag

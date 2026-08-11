@@ -5,11 +5,13 @@ There is a `@timed` decorator function available in the `modflow_devtools.misc` 
 ```python
 from modflow_devtools.misc import timed
 
+
 @timed
 def sleep1():
     sleep(0.001)
 
-sleep1() # prints e.g. "sleep1 took 1.26 ms"
+
+sleep1()  # prints e.g. "sleep1 took 1.26 ms"
 ```
 
 It can also wrap a function directly:

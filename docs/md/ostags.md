@@ -37,8 +37,8 @@ Conversion functions are available for each direction:
 Alternatively:
 
 ```python
-convert_ostag(platform.system(), "py2mf") # prints linux, mac, macarm, win32, or win64
-convert_ostag(platform.system(), "py2mf") # prints Linux, macOS, or Windows
+convert_ostag(platform.system(), "py2mf")  # prints linux, mac, macarm, win32, or win64
+convert_ostag(platform.system(), "py2mf")  # prints Linux, macOS, or Windows
 ```
 
 The second argument specifies the mapping in format `<source>2<target>`, where `<source>` and `<target>` may take values `py`, `mf`, or `gh`.

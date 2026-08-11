@@ -67,7 +67,7 @@ To install from source and set up a development environment please see the [deve
 To use the `pytest` fixtures provided by `modflow-devtools`, add the following to a test file or `conftest.py` file:
 
 ```python
-pytest_plugins = [ "modflow_devtools.fixtures" ]
+pytest_plugins = ["modflow_devtools.fixtures"]
 ```
 
 **Note**: this must be a top-level `conftest.py`, which nested `conftest.py` files may then override or extend.
