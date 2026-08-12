@@ -62,60 +62,96 @@ type = "record"
 optional = true
 
 [blocks.options.fields.stage_filerecord.fields.stage]
-type = "file"
+type = "keyword"
 longname = "stage keyword"
 description = "keyword to specify that record corresponds to stage."
-mode = "fileout"
+
+[blocks.options.fields.stage_filerecord.fields.stagefile]
+type = "file"
+longname = "file keyword"
+description = "name of the binary output file to write stage information."
+tagged = false
+direction = "out"
 
 [blocks.options.fields.budget_filerecord]
 type = "record"
 optional = true
 
 [blocks.options.fields.budget_filerecord.fields.budget]
-type = "file"
+type = "keyword"
 longname = "budget keyword"
 description = "keyword to specify that record corresponds to the budget."
-mode = "fileout"
+
+[blocks.options.fields.budget_filerecord.fields.budgetfile]
+type = "file"
+longname = "file keyword"
+description = "name of the binary output file to write budget information."
+tagged = false
+direction = "out"
 
 [blocks.options.fields.budgetcsv_filerecord]
 type = "record"
 optional = true
 
 [blocks.options.fields.budgetcsv_filerecord.fields.budgetcsv]
-type = "file"
+type = "keyword"
 longname = "budget keyword"
 description = "keyword to specify that record corresponds to the budget CSV."
-mode = "fileout"
+
+[blocks.options.fields.budgetcsv_filerecord.fields.budgetcsvfile]
+type = "file"
+longname = "file keyword"
+description = "name of the comma-separated value (CSV) output file to write budget summary information.  A budget summary record will be written to this file for each time step of the simulation."
+tagged = false
+direction = "out"
 
 [blocks.options.fields.package_convergence_filerecord]
 type = "record"
 optional = true
 
 [blocks.options.fields.package_convergence_filerecord.fields.package_convergence]
-type = "file"
+type = "keyword"
 longname = "package_convergence keyword"
 description = "keyword to specify that record corresponds to the package convergence comma spaced values file."
-mode = "fileout"
+
+[blocks.options.fields.package_convergence_filerecord.fields.package_convergence_filename]
+type = "file"
+longname = "file keyword"
+description = "name of the comma spaced values output file to write package convergence information."
+tagged = false
+direction = "out"
 
 [blocks.options.fields.ts_filerecord]
 type = "record"
 optional = true
 
 [blocks.options.fields.ts_filerecord.fields.ts6]
-type = "file"
+type = "keyword"
 longname = "head keyword"
 description = "keyword to specify that record corresponds to a time-series file."
-mode = "filein"
+
+[blocks.options.fields.ts_filerecord.fields.ts6_filename]
+type = "file"
+longname = "file name of time series information"
+description = "defines a time-series file defining time series that can be used to assign time-varying values. See the 'Time-Variable Input' section for instructions on using the time-series capability."
+tagged = false
+direction = "in"
 
 [blocks.options.fields.obs_filerecord]
 type = "record"
 optional = true
 
 [blocks.options.fields.obs_filerecord.fields.obs6]
-type = "file"
+type = "keyword"
 longname = "obs keyword"
 description = "keyword to specify that record corresponds to an observations file."
-mode = "filein"
+
+[blocks.options.fields.obs_filerecord.fields.obs6_filename]
+type = "file"
+longname = "obs6 input filename"
+description = "name of input file to define observations for the SFR package. See the 'Observation utility' section for instructions for preparing observation input files. Table {#2} lists observation type(s) supported by the SFR package."
+tagged = false
+direction = "in"
 
 [blocks.options.fields.mover]
 type = "keyword"
@@ -189,6 +225,7 @@ pk = true
 type = "array"
 longname = "cell identifier"
 description = "is the cell identifier, and depends on the type of grid that is used for the simulation. For a structured grid that uses the DIS input file, CELLID is the layer, row, and column. For a grid that uses the DISV input file, CELLID is the layer and CELL2D number. If the model uses the unstructured discretization (DISU) input file, CELLID is the node number for the cell. For reaches that are not connected to an underlying GWF cell, a zero should be specified for each grid dimension. For example, for a DIS grid a CELLID of 0 0 0 should be specified. Reach-aquifer flow is not calculated for unconnected reaches. The keyword NONE can be still be specified to identify unconnected reaches for backward compatibility with previous versions of MODFLOW 6 but eventually NONE will be deprecated and will cause MODFLOW 6 to terminate with an error."
+tagged = false
 dtype = "integer"
 shape = [
     "ncelldim",
@@ -262,6 +299,7 @@ type = "array"
 longname = "auxiliary variables"
 description = "represents the values of the auxiliary variables for each stream reach. The values of auxiliary variables must be present for each stream reach. The values must be specified in the order of the auxiliary variables specified in the OPTIONS block.  If the package supports time series and the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
 optional = true
+tagged = false
 dtype = "double"
 time_series = true
 shape = [
@@ -323,6 +361,7 @@ type = "array"
 longname = "connected reach numbers"
 description = "integer value that defines the reach number of the reach connected to the current reach and whether it is connected to the upstream or downstream end of the reach. Negative IC numbers indicate connected reaches are connected to the downstream end of the current reach. Positive IC numbers indicate connected reaches are connected to the upstream end of the current reach. The absolute value of IC must be greater than zero and less than or equal to NREACHES. IC should not be specified when NCON is zero but must be specified otherwise."
 optional = true
+tagged = false
 dtype = "integer"
 shape = [
     "packagedata.ncon(ifno)",
@@ -472,16 +511,21 @@ description = "real value that defines the fraction of upstream flow (USTRF) fro
 type = "record"
 
 [blocks.period.fields.perioddata.item.fields.sfrsetting.arms.cross_sectionrecord.fields.cross_section]
-type = "file"
+type = "keyword"
 longname = "cross_section keyword"
 description = "keyword to specify that record corresponds to a reach cross-section."
-mode = "filein"
 
 [blocks.period.fields.perioddata.item.fields.sfrsetting.arms.cross_sectionrecord.fields.tab6]
-type = "file"
+type = "keyword"
 longname = "head keyword"
 description = "keyword to specify that record corresponds to a cross-section table file."
-mode = "filein"
+
+[blocks.period.fields.perioddata.item.fields.sfrsetting.arms.cross_sectionrecord.fields.tab6_filename]
+type = "file"
+longname = "table file name"
+description = "character string that defines the path and filename for the file containing cross-section table data for the reach. The TAB6_FILENAME file includes the number of entries in the file and the station elevation data in terms of the fractional width and the reach depth. Instructions for creating the TAB6_FILENAME input file are provided in SFR Reach Cross-Section Table Input File section."
+tagged = false
+direction = "in"
 
 [blocks.period.fields.perioddata.item.fields.sfrsetting.arms.auxiliaryrecord]
 type = "record"
@@ -501,6 +545,13 @@ longname = "auxiliary variable value"
 description = "value for the auxiliary variable.  If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
 tagged = false
 time_series = true
+
+[blocks.period.header]
+name = "iper"
+type = "integer"
+longname = "stress period number"
+description = "integer value specifying the starting stress period number for which the data specified in the PERIOD block apply.  IPER must be less than or equal to NPER in the TDIS Package and greater than zero.  The IPER value assigned to a stress period block must be greater than the IPER value assigned for the previous PERIOD block.  The information specified in the PERIOD block will continue to apply for all subsequent stress periods, unless the program encounters another PERIOD block."
+tagged = false
 
 [memory.nreaches]
 set_in = "ar"

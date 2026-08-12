@@ -25,10 +25,16 @@
           "optional": true,
           "fields": {
             "ts6": {
-              "type": "file",
+              "type": "keyword",
               "longname": "head keyword",
-              "description": "keyword to specify that record corresponds to a time-series file.",
-              "mode": "filein"
+              "description": "keyword to specify that record corresponds to a time-series file."
+            },
+            "ts6_filename": {
+              "type": "file",
+              "longname": "file name of time series information",
+              "description": "defines a time-series file defining time series that can be used to assign time-varying values. See the 'Time-Variable Input' section for instructions on using the time-series capability.",
+              "tagged": false,
+              "direction": "in"
             }
           }
         }
@@ -80,6 +86,13 @@
             "maxbound"
           ]
         }
+      },
+      "header": {
+        "name": "iper",
+        "type": "integer",
+        "longname": "stress period number",
+        "description": "integer value specifying the starting stress period number for which the data specified in the PERIOD block apply.  IPER must be less than or equal to NPER in the TDIS Package and greater than zero.  The IPER value assigned to a stress period block must be greater than the IPER value assigned for the previous PERIOD block.  The information specified in the PERIOD block will continue to apply for all subsequent stress periods, unless the program encounters another PERIOD block.",
+        "tagged": false
       }
     }
   },

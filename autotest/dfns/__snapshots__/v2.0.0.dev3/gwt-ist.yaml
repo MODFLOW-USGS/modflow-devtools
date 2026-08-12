@@ -20,19 +20,30 @@ blocks:
         optional: true
         fields:
           budget:
-            type: file
+            type: keyword
             longname: budget keyword
             description: keyword to specify that record corresponds to the budget.
-            mode: fileout
+          budgetfile:
+            type: file
+            longname: file keyword
+            description: name of the binary output file to write budget information.
+            tagged: false
+            direction: out
       budgetcsv_filerecord:
         type: record
         optional: true
         fields:
           budgetcsv:
-            type: file
+            type: keyword
             longname: budget keyword
             description: keyword to specify that record corresponds to the budget CSV.
-            mode: fileout
+          budgetcsvfile:
+            type: file
+            longname: file keyword
+            description: name of the comma-separated value (CSV) output file to write budget summary information.  A
+              budget summary record will be written to this file for each time step of the simulation.
+            tagged: false
+            direction: out
       sorption:
         type: string
         longname: activate sorption
@@ -63,10 +74,19 @@ blocks:
         optional: true
         fields:
           cim:
-            type: file
+            type: keyword
             longname: cim keyword
             description: keyword to specify that record corresponds to immobile concentration.
-            mode: fileout
+          cimfile:
+            type: file
+            longname: file keyword
+            description: name of the output file to write immobile concentrations.  This file is a binary
+              file that has the same format and structure as a binary head and concentration file.  The
+              value for the text variable written to the file is CIM.  Immobile domain concentrations
+              will be written to this file at the same interval as mobile domain concentrations are saved,
+              as specified in the GWT Model Output Control file.
+            tagged: false
+            direction: out
       cimprintrecord:
         type: record
         optional: true
@@ -104,10 +124,17 @@ blocks:
         optional: true
         fields:
           sorbate:
-            type: file
+            type: keyword
             longname: sorbate keyword
             description: keyword to specify that record corresponds to immobile sorbate concentration.
-            mode: fileout
+          sorbatefile:
+            type: file
+            longname: file keyword
+            description: name of the output file to write immobile sorbate concentration information.  Immobile
+              sorbate concentrations will be written whenever aqueous immobile concentrations are saved,
+              as determined by settings in the Output Control option.
+            tagged: false
+            direction: out
       export_array_ascii:
         type: keyword
         longname: export array variables to layered ascii files.

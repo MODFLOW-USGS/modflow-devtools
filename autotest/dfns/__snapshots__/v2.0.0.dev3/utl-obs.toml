@@ -46,3 +46,18 @@ longname = "time"
 description = "Text identifying cell adjacent to cell identified by ID. The form of ID2 is as described for ID. ID2 is used for intercell-flow observations of a GWF model, for three observation types of the LAK Package, for two observation types of the MAW Package, and one observation type of the UZF Package."
 optional = true
 tagged = false
+
+[blocks.continuous.header]
+name = "output"
+type = "record"
+
+[blocks.continuous.header.fields.obs_output_file_name]
+type = "file"
+description = "Name of a file to which simulated values corresponding to observations in the block are to be written. The file name can be an absolute or relative path name. A unique output file must be specified for each CONTINUOUS block. If the 'BINARY' option is used, output is written in binary form. By convention, text output files have the extension 'csv' (for 'Comma-Separated Values') and binary output files have the extension 'bsv' (for 'Binary Simulated Values')."
+tagged = false
+direction = "out"
+
+[blocks.continuous.header.fields.binary]
+type = "keyword"
+description = "an optional keyword used to indicate that the output file should be written in binary (unformatted) form."
+optional = true

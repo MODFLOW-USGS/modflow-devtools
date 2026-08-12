@@ -26,10 +26,16 @@ type = "record"
 optional = true
 
 [blocks.options.fields.tvs_filerecord.fields.tvs6]
-type = "file"
+type = "keyword"
 longname = "tvs keyword"
 description = "keyword to specify that record corresponds to a time-varying storage (TVS) file.  The behavior of TVS and a description of the input file is provided separately."
-mode = "filein"
+
+[blocks.options.fields.tvs_filerecord.fields.tvs6_filename]
+type = "file"
+longname = "file name of TVS information"
+description = "defines a time-varying storage (TVS) input file.  Records in the TVS file can be used to change specific storage and specific yield properties at specified times or stress periods."
+tagged = false
+direction = "in"
 
 [blocks.options.fields.export_array_ascii]
 type = "keyword"
@@ -97,3 +103,10 @@ valid = [
     "steady-state",
     "transient",
 ]
+
+[blocks.period.header]
+name = "iper"
+type = "integer"
+longname = "stress period number"
+description = "integer value specifying the starting stress period number for which the data specified in the PERIOD block apply.  IPER must be less than or equal to NPER in the TDIS Package and greater than zero.  The IPER value assigned to a stress period block must be greater than the IPER value assigned for the previous PERIOD block.  The information specified in the PERIOD block will continue to apply for all subsequent stress periods, unless the program encounters another PERIOD block."
+tagged = false

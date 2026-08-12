@@ -8,30 +8,48 @@ type = "record"
 optional = true
 
 [blocks.options.fields.budget_filerecord.fields.budget]
-type = "file"
+type = "keyword"
 longname = "budget keyword"
 description = "keyword to specify that record corresponds to the budget."
-mode = "fileout"
+
+[blocks.options.fields.budget_filerecord.fields.budgetfile]
+type = "file"
+longname = "file keyword"
+description = "name of the output file to write budget information."
+tagged = false
+direction = "out"
 
 [blocks.options.fields.budgetcsv_filerecord]
 type = "record"
 optional = true
 
 [blocks.options.fields.budgetcsv_filerecord.fields.budgetcsv]
-type = "file"
+type = "keyword"
 longname = "budget keyword"
 description = "keyword to specify that record corresponds to the budget CSV."
-mode = "fileout"
+
+[blocks.options.fields.budgetcsv_filerecord.fields.budgetcsvfile]
+type = "file"
+longname = "file keyword"
+description = "name of the comma-separated value (CSV) output file to write budget summary information.  A budget summary record will be written to this file for each time step of the simulation."
+tagged = false
+direction = "out"
 
 [blocks.options.fields.concentration_filerecord]
 type = "record"
 optional = true
 
 [blocks.options.fields.concentration_filerecord.fields.concentration]
-type = "file"
+type = "keyword"
 longname = "concentration keyword"
 description = "keyword to specify that record corresponds to concentration."
-mode = "fileout"
+
+[blocks.options.fields.concentration_filerecord.fields.concentrationfile]
+type = "file"
+longname = "file keyword"
+description = "name of the output file to write conc information."
+tagged = false
+direction = "out"
 
 [blocks.options.fields.concentrationprintrecord]
 type = "record"
@@ -166,6 +184,14 @@ type = "array"
 description = "save for each step specified in STEPS. This keyword may be used in conjunction with other keywords to print or save results for multiple time steps."
 dtype = "integer"
 
+[blocks.period.header]
+name = "iper"
+type = "integer"
+longname = "stress period number"
+description = "integer value specifying the starting stress period number for which the data specified in the PERIOD block apply.  IPER must be less than or equal to NPER in the TDIS Package and greater than zero.  The IPER value assigned to a stress period block must be greater than the IPER value assigned for the previous PERIOD block.  The information specified in the PERIOD block will continue to apply for all subsequent stress periods, unless the program encounters another PERIOD block."
+tagged = false
+
 [memory.concfile]
 set_in = "ar"
+source = "concentrationfile"
 type = "string"

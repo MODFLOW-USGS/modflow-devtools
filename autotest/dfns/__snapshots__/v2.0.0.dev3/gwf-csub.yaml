@@ -135,108 +135,170 @@ blocks:
         optional: true
         fields:
           strain_csv_interbed:
-            type: file
+            type: keyword
             longname: budget keyword
             description: keyword to specify the record that corresponds to final interbed strain output.
-            mode: fileout
+          interbedstrain_filename:
+            type: file
+            longname: file keyword
+            description: name of the comma-separated-values output file to write final interbed strain
+              information.
+            tagged: false
+            direction: out
       straincg_filerecord:
         type: record
         optional: true
         fields:
           strain_csv_coarse:
-            type: file
+            type: keyword
             longname: budget keyword
             description: keyword to specify the record that corresponds to final coarse-grained material
               strain output.
-            mode: fileout
+          coarsestrain_filename:
+            type: file
+            longname: file keyword
+            description: name of the comma-separated-values output file to write final coarse-grained
+              material strain information.
+            tagged: false
+            direction: out
       compaction_filerecord:
         type: record
         optional: true
         fields:
           compaction:
-            type: file
+            type: keyword
             longname: compaction keyword
             description: keyword to specify that record corresponds to the compaction.
-            mode: fileout
+          compaction_filename:
+            type: file
+            longname: file keyword
+            description: name of the binary output file to write compaction information.
+            tagged: false
+            direction: out
       compaction_elastic_filerecord:
         type: record
         optional: true
         fields:
           compaction_elastic:
-            type: file
+            type: keyword
             longname: elastic interbed compaction keyword
             description: keyword to specify that record corresponds to the elastic interbed compaction
               binary file.
-            mode: fileout
+          elastic_compaction_filename:
+            type: file
+            longname: file keyword
+            description: name of the binary output file to write elastic interbed compaction information.
+            tagged: false
+            direction: out
       compaction_inelastic_filerecord:
         type: record
         optional: true
         fields:
           compaction_inelastic:
-            type: file
+            type: keyword
             longname: inelastic interbed compaction keyword
             description: keyword to specify that record corresponds to the inelastic interbed compaction
               binary file.
-            mode: fileout
+          inelastic_compaction_filename:
+            type: file
+            longname: file keyword
+            description: name of the binary output file to write inelastic interbed compaction information.
+            tagged: false
+            direction: out
       compaction_interbed_filerecord:
         type: record
         optional: true
         fields:
           compaction_interbed:
-            type: file
+            type: keyword
             longname: interbed compaction keyword
             description: keyword to specify that record corresponds to the interbed compaction binary
               file.
-            mode: fileout
+          interbed_compaction_filename:
+            type: file
+            longname: file keyword
+            description: name of the binary output file to write interbed compaction information.
+            tagged: false
+            direction: out
       compaction_coarse_filerecord:
         type: record
         optional: true
         fields:
           compaction_coarse:
-            type: file
+            type: keyword
             longname: coarse compaction keyword
             description: keyword to specify that record corresponds to the elastic coarse-grained material
               compaction binary file.
-            mode: fileout
+          coarse_compaction_filename:
+            type: file
+            longname: file keyword
+            description: name of the binary output file to write elastic coarse-grained material compaction
+              information.
+            tagged: false
+            direction: out
       zdisplacement_filerecord:
         type: record
         optional: true
         fields:
           zdisplacement:
-            type: file
+            type: keyword
             longname: budget keyword
             description: keyword to specify that record corresponds to the z-displacement binary file.
-            mode: fileout
+          zdisplacement_filename:
+            type: file
+            longname: file keyword
+            description: name of the binary output file to write z-displacement information.
+            tagged: false
+            direction: out
       package_convergence_filerecord:
         type: record
         optional: true
         fields:
           package_convergence:
-            type: file
+            type: keyword
             longname: package_convergence keyword
             description: keyword to specify that record corresponds to the package convergence comma spaced
               values file. Package convergence data is for delay interbeds. A warning message will be
               issued if package convergence data is requested but delay interbeds are not included in
               the package.
-            mode: fileout
+          package_convergence_filename:
+            type: file
+            longname: file keyword
+            description: name of the comma spaced values output file to write package convergence information.
+            tagged: false
+            direction: out
       ts_filerecord:
         type: record
         optional: true
         fields:
           ts6:
-            type: file
+            type: keyword
             longname: head keyword
             description: keyword to specify that record corresponds to a time-series file.
-            mode: filein
+          ts6_filename:
+            type: file
+            longname: file name of time series information
+            description: defines a time-series file defining time series that can be used to assign time-varying
+              values. See the 'Time-Variable Input' section for instructions on using the time-series
+              capability.
+            tagged: false
+            direction: in
       obs_filerecord:
         type: record
         optional: true
         fields:
           obs6:
-            type: file
+            type: keyword
             longname: obs keyword
             description: keyword to specify that record corresponds to an observations file.
-            mode: filein
+          obs6_filename:
+            type: file
+            longname: obs6 input filename
+            description: name of input file to define observations for the CSUB package. See the 'Observation
+              utility' section for instructions for preparing observation input files. Table {#2} lists
+              observation type(s) supported by the CSUB package.
+            tagged: false
+            direction: in
   dimensions:
     fields:
       ninterbeds:
@@ -319,6 +381,7 @@ blocks:
                 row, and column.   For a grid that uses the DISV input file, CELLID is the layer and CELL2D
                 number.  If the model uses the unstructured discretization (DISU) input file, CELLID is
                 the node number for the cell.
+              tagged: false
               dtype: integer
               shape:
                 - ncelldim
@@ -417,6 +480,7 @@ blocks:
                 row, and column.   For a grid that uses the DISV input file, CELLID is the layer and CELL2D
                 number.  If the model uses the unstructured discretization (DISU) input file, CELLID is
                 the node number for the cell.
+              tagged: false
               dtype: integer
               shape:
                 - ncelldim
@@ -432,6 +496,16 @@ blocks:
               time_series: true
         shape:
           - maxsig0
+    header:
+      name: iper
+      type: integer
+      longname: stress period number
+      description: integer value specifying the starting stress period number for which the data specified
+        in the PERIOD block apply.  IPER must be less than or equal to NPER in the TDIS Package and greater
+        than zero.  The IPER value assigned to a stress period block must be greater than the IPER value
+        assigned for the previous PERIOD block.  The information specified in the PERIOD block will continue
+        to apply for all subsequent stress periods, unless the program encounters another PERIOD block.
+      tagged: false
 memory:
   precon_head:
     set_in: ar
@@ -467,6 +541,7 @@ memory:
     type: logical
   interbedstrainfn:
     set_in: ar
+    source: interbedstrain_filename
     type: string
   csvcoarse:
     set_in: ar
@@ -474,9 +549,11 @@ memory:
     type: logical
   coarsestrainfn:
     set_in: ar
+    source: coarsestrain_filename
     type: string
   cmpfn:
     set_in: ar
+    source: compaction_filename
     type: string
   cmpelastic:
     set_in: ar
@@ -484,6 +561,7 @@ memory:
     type: logical
   elasticcmpfn:
     set_in: ar
+    source: elastic_compaction_filename
     type: string
   cmpinelastic:
     set_in: ar
@@ -491,6 +569,7 @@ memory:
     type: logical
   inelasticcmpfn:
     set_in: ar
+    source: inelastic_compaction_filename
     type: string
   cmpinterbed:
     set_in: ar
@@ -498,6 +577,7 @@ memory:
     type: logical
   interbedcmpfn:
     set_in: ar
+    source: interbed_compaction_filename
     type: string
   cmpcoarse:
     set_in: ar
@@ -505,9 +585,11 @@ memory:
     type: logical
   cmpcoarsefn:
     set_in: ar
+    source: coarse_compaction_filename
     type: string
   zdispfn:
     set_in: ar
+    source: zdisplacement_filename
     type: string
   pkgconverge:
     set_in: ar
@@ -515,6 +597,7 @@ memory:
     type: logical
   pkgconvergefn:
     set_in: ar
+    source: package_convergence_filename
     type: string
   maxbound:
     set_in: ar

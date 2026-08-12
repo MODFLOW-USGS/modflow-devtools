@@ -54,20 +54,32 @@ type = "record"
 optional = true
 
 [blocks.options.fields.track_filerecord.fields.track]
-type = "file"
+type = "keyword"
 longname = "track keyword"
 description = "keyword to specify that record corresponds to a binary track output file.  Each PRP Package may have a distinct binary track output file."
-mode = "fileout"
+
+[blocks.options.fields.track_filerecord.fields.trackfile]
+type = "file"
+longname = "file keyword"
+description = "name of the binary output file to write tracking information."
+tagged = false
+direction = "out"
 
 [blocks.options.fields.trackcsv_filerecord]
 type = "record"
 optional = true
 
 [blocks.options.fields.trackcsv_filerecord.fields.trackcsv]
-type = "file"
+type = "keyword"
 longname = "track keyword"
 description = "keyword to specify that record corresponds to a CSV track output file.  Each PRP Package may have a distinct CSV track output file."
-mode = "fileout"
+
+[blocks.options.fields.trackcsv_filerecord.fields.trackcsvfile]
+type = "file"
+longname = "file keyword"
+description = "name of the comma-separated value (CSV) file to write tracking information."
+tagged = false
+direction = "out"
 
 [blocks.options.fields.stoptime]
 type = "double"
@@ -111,6 +123,7 @@ description = "keyword indicating release times will follow"
 type = "array"
 longname = "release times"
 description = "times to release, relative to the beginning of the simulation.  RELEASE_TIMES and RELEASE_TIMESFILE are mutually exclusive."
+tagged = false
 dtype = "double"
 
 [blocks.options.fields.release_timesfilerecord]
@@ -203,6 +216,7 @@ pk = true
 type = "array"
 longname = "cell identifier"
 description = "is the cell identifier, and depends on the type of grid that is used for the simulation.  For a structured grid that uses the DIS input file, CELLID is the layer, row, and column.   For a grid that uses the DISV input file, CELLID is the layer and CELL2D number.  If the model uses the unstructured discretization (DISU) input file, CELLID is the node number for the cell."
+tagged = false
 dtype = "integer"
 shape = [
     "ncelldim",
@@ -282,3 +296,10 @@ type = "array"
 description = "release particles after the specified fraction of the time step has elapsed. If FRACTION is not set, particles are released at the start of the specified time step(s). FRACTION must be a single value when used with ALL, FIRST, or FREQUENCY. When used with STEPS, FRACTION may be a single value or an array of the same length as STEPS. If a single FRACTION value is provided with STEPS, the fraction applies to all steps. NOTE: The FRACTION option has been removed. For fine control over release timing, specify times explicitly using the RELEASETIMES block."
 optional = true
 dtype = "double"
+
+[blocks.period.header]
+name = "iper"
+type = "integer"
+longname = "stress period number"
+description = "integer value specifying the stress period number for which the data specified in the PERIOD block apply. IPER must be less than or equal to NPER in the TDIS Package and greater than zero. The IPER value assigned to a stress period block must be greater than the IPER value assigned for the previous PERIOD block. The information specified in the PERIOD block applies only to that stress period."
+tagged = false

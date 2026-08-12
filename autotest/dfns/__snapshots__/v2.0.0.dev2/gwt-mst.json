@@ -40,10 +40,16 @@
           "optional": true,
           "fields": {
             "sorbate": {
-              "type": "file",
+              "type": "keyword",
               "longname": "sorbate keyword",
-              "description": "keyword to specify that record corresponds to sorbate concentration.",
-              "mode": "fileout"
+              "description": "keyword to specify that record corresponds to sorbate concentration."
+            },
+            "sorbatefile": {
+              "type": "file",
+              "longname": "file keyword",
+              "description": "name of the output file to write sorbate concentration information.  Sorbate concentrations will be written whenever aqueous concentrations are saved, as determined by settings in the Output Control option.",
+              "tagged": false,
+              "direction": "out"
             }
           }
         },

@@ -11,6 +11,7 @@ from modflow_devtools.dfns.schema import (
     MemoryScalar,
     Model,
     Package,
+    Record,
     Simulation,
 )
 
@@ -332,6 +333,95 @@ def test_memory_output_attributes_rcha(dev3_spec):
     assert simvals.budget == "RCHA"
     assert simvals.obs_type == "RCH"
     assert simvals.output is True
+
+
+def test_render_respects_tagged_scalars_in_record(dev3_spec):
+    """Tagged Integer/String subfields of a Record must keep their keyword on render()."""
+    render = dev3_spec.components["gwf-oc"].blocks["options"].render()
+    assert "HEAD PRINT_FORMAT COLUMNS <columns> WIDTH <width> DIGITS <digits> <format>" in render
+
+
+def test_render_respects_untagged_arrays_in_record(dev3_spec):
+    """Untagged Array subfields of a Record (e.g. cellid) must render without a keyword."""
+    render = dev3_spec.components["gwf-chd"].blocks["period"].render()
+    assert "<cellid(ncelldim)> <head>" in render
+    assert "CELLID" not in render
+
+
+def test_block_header_scalar(dev3_spec):
+    """A block_variable scalar (e.g. iper) attaches to the block as `header`, not a body field."""
+    period = dev3_spec.components["gwf-wel"].blocks["period"]
+    assert "iper" not in period.fields
+    assert isinstance(period.header, Integer)
+    assert period.header.name == "iper"
+    assert period.header.tagged is False
+
+
+def test_block_header_record(dev3_spec):
+    """A block_variable record (e.g. utl-obs's `output`) attaches to the block as `header`."""
+    continuous = dev3_spec.components["utl-obs"].blocks["continuous"]
+    assert "output" not in continuous.fields
+    assert isinstance(continuous.header, Record)
+    assert continuous.header.name == "output"
+
+
+def test_get_fields_and_get_block_include_header(dev3_spec):
+    """get_fields()/get_block() must see block.header, not just block.fields."""
+    wel = dev3_spec.components["gwf-wel"]
+    fields = wel.get_fields(recurse=True)
+    assert "iper" in fields
+    assert fields["iper"].tagged is False
+    assert wel.get_block("iper") is wel.blocks["period"]
+
+
+def test_render_block_header_scalar(dev3_spec):
+    """render() attaches a scalar header to the BEGIN line, matching mf6io.pdf."""
+    render = dev3_spec.components["gwf-wel"].blocks["period"].render()
+    assert render.startswith("BEGIN PERIOD <iper>\n")
+
+
+def test_render_block_header_record(dev3_spec):
+    """render() attaches a record header to the BEGIN line, matching mf6io.pdf."""
+    render = dev3_spec.components["utl-obs"].blocks["continuous"].render()
+    assert render.startswith("BEGIN CONTINUOUS FILEOUT <obs_output_file_name> [BINARY]\n")
+
+
+def test_render_file_field_named_after_path_not_tag(dev3_spec):
+    """The File placeholder is named after the v1 path subfield, matching mf6io.pdf
+    (e.g. <afrcsvfile>), not the tag keyword (e.g. <auto_flow_reduce_csv>)."""
+    render = dev3_spec.components["gwf-wel"].blocks["options"].render()
+    assert "AUTO_FLOW_REDUCE_CSV FILEOUT <afrcsvfile>" in render
+
+
+def test_file_filerecord_not_collapsed(dev3_spec):
+    """A v1 filerecord stays a Record of {tag Keyword(s), path File}; the tag
+    keyword isn't folded into the File field itself (no File.tag)."""
+    afrcsv = dev3_spec.components["gwf-wel"].blocks["options"].fields["afrcsv_filerecord"]
+    assert isinstance(afrcsv, Record)
+    assert list(afrcsv.fields.keys()) == ["auto_flow_reduce_csv", "afrcsvfile"]
+
+    tag_field = afrcsv.fields["auto_flow_reduce_csv"]
+    assert tag_field.type == "keyword"
+
+    file_field = afrcsv.fields["afrcsvfile"]
+    assert file_field.type == "file"
+    assert file_field.tagged is False
+    assert file_field.direction == "out"
+    assert not hasattr(file_field, "tag")
+
+
+def test_file_filerecord_multiword_tag_not_collapsed(dev3_spec):
+    """A multi-word v1 tag (e.g. `CROSS_SECTION TAB6`) becomes two sibling
+    Keyword fields, not a single synthetic File.tag string."""
+    period = dev3_spec.components["gwf-sfr"].blocks["period"]
+    item = period.fields["perioddata"].item
+    union = item.children["sfrsetting"]
+    xsrecord = union.arms["cross_sectionrecord"]
+    assert isinstance(xsrecord, Record)
+    assert list(xsrecord.fields.keys()) == ["cross_section", "tab6", "tab6_filename"]
+    assert xsrecord.fields["cross_section"].type == "keyword"
+    assert xsrecord.fields["tab6"].type == "keyword"
+    assert xsrecord.fields["tab6_filename"].direction == "in"
 
 
 def test_memory_output_attributes_chd_no_to_mvr(dev3_spec):

@@ -61,10 +61,16 @@
           "optional": true,
           "fields": {
             "viscosity": {
-              "type": "file",
+              "type": "keyword",
               "longname": "viscosity keyword",
-              "description": "keyword to specify that record corresponds to viscosity.",
-              "mode": "fileout"
+              "description": "keyword to specify that record corresponds to viscosity."
+            },
+            "viscosityfile": {
+              "type": "file",
+              "longname": "file keyword",
+              "description": "name of the binary output file to write viscosity information.  The viscosity file has the same format as the head file.  Viscosity values will be written to the viscosity file whenever heads are written to the binary head file.  The settings for controlling head output are contained in the Output Control option.",
+              "tagged": false,
+              "direction": "out"
             }
           }
         }

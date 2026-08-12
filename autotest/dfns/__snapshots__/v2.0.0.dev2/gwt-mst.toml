@@ -37,10 +37,16 @@ type = "record"
 optional = true
 
 [blocks.options.fields.sorbate_filerecord.fields.sorbate]
-type = "file"
+type = "keyword"
 longname = "sorbate keyword"
 description = "keyword to specify that record corresponds to sorbate concentration."
-mode = "fileout"
+
+[blocks.options.fields.sorbate_filerecord.fields.sorbatefile]
+type = "file"
+longname = "file keyword"
+description = "name of the output file to write sorbate concentration information.  Sorbate concentrations will be written whenever aqueous concentrations are saved, as determined by settings in the Output Control option."
+tagged = false
+direction = "out"
 
 [blocks.options.fields.export_array_ascii]
 type = "keyword"

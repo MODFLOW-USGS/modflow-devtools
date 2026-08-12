@@ -13,16 +13,16 @@ optional = true
 type = "file"
 longname = "gwf head file"
 optional = true
-mode = "filein"
+direction = "in"
 
 [blocks.packagedata.fields.gwfbudget]
 type = "file"
 longname = "gwf budget file"
 optional = true
-mode = "filein"
+direction = "in"
 
 [blocks.packagedata.fields.gwfgrid]
 type = "file"
 longname = "gwf grid file"
 optional = true
-mode = "filein"
+direction = "in"

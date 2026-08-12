@@ -28,10 +28,18 @@ blocks:
         optional: true
         fields:
           density:
-            type: file
+            type: keyword
             longname: density keyword
             description: keyword to specify that record corresponds to density.
-            mode: fileout
+          densityfile:
+            type: file
+            longname: file keyword
+            description: name of the binary output file to write density information.  The density file
+              has the same format as the head file.  Density values will be written to the density file
+              whenever heads are written to the binary head file.  The settings for controlling head output
+              are contained in the Output Control option.
+            tagged: false
+            direction: out
       dev_efh_formulation:
         type: keyword
         longname: use equivalent freshwater head formulation

@@ -36,10 +36,16 @@ type = "record"
 optional = true
 
 [blocks.options.fields.grb_filerecord.fields.grb6]
-type = "file"
+type = "keyword"
 longname = "grb keyword"
 description = "keyword to specify that record corresponds to a binary grid file."
-mode = "fileout"
+
+[blocks.options.fields.grb_filerecord.fields.grb6_filename]
+type = "file"
+longname = "file name of GRB information"
+description = "defines a binary grid output file. If this option is not provided, the output file will have the same name as the discretization input file, plus extension '.grb'."
+tagged = false
+direction = "out"
 
 [blocks.options.fields.xorigin]
 type = "double"
@@ -256,6 +262,7 @@ tagged = false
 type = "array"
 longname = "array of vertex numbers"
 description = "is an array of integer values containing vertex numbers (in the VERTICES block) used to define the cell.  Vertices must be listed in clockwise order."
+tagged = false
 dtype = "integer"
 shape = [
     "ncvert",

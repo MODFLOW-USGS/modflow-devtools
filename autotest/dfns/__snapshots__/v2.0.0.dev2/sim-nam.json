@@ -47,10 +47,16 @@
           "optional": true,
           "fields": {
             "hpc6": {
-              "type": "file",
+              "type": "keyword",
               "longname": "head keyword",
-              "description": "keyword to specify that record corresponds to a hpc file.",
-              "mode": "filein"
+              "description": "keyword to specify that record corresponds to a hpc file."
+            },
+            "hpc6_filename": {
+              "type": "file",
+              "longname": "file name of time series information",
+              "description": "name of input file to define HPC file settings for the HPC package. See the 'HPC File' section for instructions for preparing HPC input files.",
+              "tagged": false,
+              "direction": "in"
             }
           }
         }
@@ -177,11 +183,18 @@
                 "type": "array",
                 "longname": "array of model names in this solution",
                 "description": "is the array of model names to add to this solution.  The number of model names is determined by the number of model names the user provides on this line.",
+                "tagged": false,
                 "dtype": "string"
               }
             }
           }
         }
+      },
+      "header": {
+        "name": "group_num",
+        "type": "integer",
+        "description": "is the group number of the solution group.  Solution groups must be numbered sequentially, starting with group number one.",
+        "tagged": false
       }
     }
   }

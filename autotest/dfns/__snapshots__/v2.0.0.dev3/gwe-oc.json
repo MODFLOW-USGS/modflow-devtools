@@ -11,10 +11,16 @@
           "optional": true,
           "fields": {
             "budget": {
-              "type": "file",
+              "type": "keyword",
               "longname": "budget keyword",
-              "description": "keyword to specify that record corresponds to the budget.",
-              "mode": "fileout"
+              "description": "keyword to specify that record corresponds to the budget."
+            },
+            "budgetfile": {
+              "type": "file",
+              "longname": "file keyword",
+              "description": "name of the output file to write budget information.",
+              "tagged": false,
+              "direction": "out"
             }
           }
         },
@@ -23,10 +29,16 @@
           "optional": true,
           "fields": {
             "budgetcsv": {
-              "type": "file",
+              "type": "keyword",
               "longname": "budget keyword",
-              "description": "keyword to specify that record corresponds to the budget CSV.",
-              "mode": "fileout"
+              "description": "keyword to specify that record corresponds to the budget CSV."
+            },
+            "budgetcsvfile": {
+              "type": "file",
+              "longname": "file keyword",
+              "description": "name of the comma-separated value (CSV) output file to write budget summary information.  A budget summary record will be written to this file for each time step of the simulation.",
+              "tagged": false,
+              "direction": "out"
             }
           }
         },
@@ -35,10 +47,16 @@
           "optional": true,
           "fields": {
             "temperature": {
-              "type": "file",
+              "type": "keyword",
               "longname": "temperature keyword",
-              "description": "keyword to specify that record corresponds to temperature.",
-              "mode": "fileout"
+              "description": "keyword to specify that record corresponds to temperature."
+            },
+            "temperaturefile": {
+              "type": "file",
+              "longname": "file keyword",
+              "description": "name of the output file to write temperature information.",
+              "tagged": false,
+              "direction": "out"
             }
           }
         },
@@ -193,12 +211,20 @@
             }
           }
         }
+      },
+      "header": {
+        "name": "iper",
+        "type": "integer",
+        "longname": "stress period number",
+        "description": "integer value specifying the starting stress period number for which the data specified in the PERIOD block apply.  IPER must be less than or equal to NPER in the TDIS Package and greater than zero.  The IPER value assigned to a stress period block must be greater than the IPER value assigned for the previous PERIOD block.  The information specified in the PERIOD block will continue to apply for all subsequent stress periods, unless the program encounters another PERIOD block.",
+        "tagged": false
       }
     }
   },
   "memory": {
     "tempfile": {
       "set_in": "ar",
+      "source": "temperaturefile",
       "type": "string"
     }
   }

@@ -20,19 +20,19 @@
           "type": "file",
           "longname": "gwf head file",
           "optional": true,
-          "mode": "filein"
+          "direction": "in"
         },
         "gwfbudget": {
           "type": "file",
           "longname": "gwf budget file",
           "optional": true,
-          "mode": "filein"
+          "direction": "in"
         },
         "gwfgrid": {
           "type": "file",
           "longname": "gwf grid file",
           "optional": true,
-          "mode": "filein"
+          "direction": "in"
         }
       }
     }

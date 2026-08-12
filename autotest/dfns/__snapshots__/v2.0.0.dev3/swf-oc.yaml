@@ -10,37 +10,58 @@ blocks:
         optional: true
         fields:
           budget:
-            type: file
+            type: keyword
             longname: budget keyword
             description: keyword to specify that record corresponds to the budget.
-            mode: fileout
+          budgetfile:
+            type: file
+            longname: file keyword
+            description: name of the output file to write budget information.
+            tagged: false
+            direction: out
       budgetcsv_filerecord:
         type: record
         optional: true
         fields:
           budgetcsv:
-            type: file
+            type: keyword
             longname: budget keyword
             description: keyword to specify that record corresponds to the budget CSV.
-            mode: fileout
+          budgetcsvfile:
+            type: file
+            longname: file keyword
+            description: name of the comma-separated value (CSV) output file to write budget summary information.  A
+              budget summary record will be written to this file for each time step of the simulation.
+            tagged: false
+            direction: out
       qoutflow_filerecord:
         type: record
         optional: true
         fields:
           qoutflow:
-            type: file
+            type: keyword
             longname: qoutflow keyword
             description: keyword to specify that record corresponds to qoutflow.
-            mode: fileout
+          qoutflowfile:
+            type: file
+            longname: file keyword
+            description: name of the output file to write conc information.
+            tagged: false
+            direction: out
       stage_filerecord:
         type: record
         optional: true
         fields:
           stage:
-            type: file
+            type: keyword
             longname: stage keyword
             description: keyword to specify that record corresponds to stage.
-            mode: fileout
+          stagefile:
+            type: file
+            longname: file keyword
+            description: name of the output file to write stage information.
+            tagged: false
+            direction: out
       qoutflowprintrecord:
         type: record
         optional: true
@@ -167,3 +188,13 @@ blocks:
                       description: save for each step specified in STEPS. This keyword may be used in
                         conjunction with other keywords to print or save results for multiple time steps.
                       dtype: integer
+    header:
+      name: iper
+      type: integer
+      longname: stress period number
+      description: integer value specifying the starting stress period number for which the data specified
+        in the PERIOD block apply.  IPER must be less than or equal to NPER in the TDIS Package and greater
+        than zero.  The IPER value assigned to a stress period block must be greater than the IPER value
+        assigned for the previous PERIOD block.  The information specified in the PERIOD block will continue
+        to apply for all subsequent stress periods, unless the program encounters another PERIOD block.
+      tagged: false

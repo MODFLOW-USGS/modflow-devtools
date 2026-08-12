@@ -26,7 +26,7 @@ This document describes the MODFLOW 6 component definition (DFN) system. This sy
   - [Attributes](#attributes)
     - [`name`](#name-1)
     - [`fields`](#fields)
-    - [`repeats`](#repeats)
+    - [`header`](#header)
   - [Field ordering](#field-ordering)
 - [Fields](#fields-1)
   - [Shared attributes](#shared-attributes-1)
@@ -61,7 +61,7 @@ This document describes the MODFLOW 6 component definition (DFN) system. This sy
         - [`time_series`](#time_series-2)
     - [File](#file)
       - [Type-specific attributes](#type-specific-attributes-5)
-        - [`mode`](#mode)
+        - [`direction`](#direction)
   - [Composites](#composites)
     - [Array](#array)
       - [Type-specific attributes](#type-specific-attributes-6)
@@ -236,18 +236,13 @@ Blocks are treated differently depending on the structural composition of their 
 
 `{string: Field} (default: {})`. The block's fields, in definition order.
 
-#### `repeats`
+#### `header`
 
-`boolean (default: false)`. Whether the block may appear multiple times in an input file. When true, each occurrence is read independently and associated with a unique label. The canonical repeating block is the period block, whose label is the stress period number.
+`Field | null (default: null)`. A field whose token attaches directly to the block's `begin <name>` line instead of appearing as a body row, e.g. `BEGIN PERIOD <iper>`. Its presence means the block may appear multiple times, each occurrence labeled by the header field's value. The canonical repeating block is the period block, whose header is the stress period number `iper`.
 
-A block has no explicit `optional` attribute. Its optionality is derived from its fields: a block is optional if and only if all of its fields are optional (vacuously true for an empty block). This combines with `repeats` to give four configurations:
+Unlike `fields`, which is a `{string: Field}` mapping keyed by field name, `header` holds a single `Field` directly since there is at most one per block.
 
-| `repeats` | derived optional | Meaning |
-|---|---|---|
-| `false` | `false` | must appear exactly once |
-| `false` | `true` | may appear at most once |
-| `true` | `false` | must appear at least once |
-| `true` | `true` | may appear zero or more times |
+A block has no explicit `optional` attribute. Its optionality is derived from its fields: a block is optional if and only if all of its fields are optional (vacuously true for an empty block).
 
 ### Field ordering
 
@@ -404,13 +399,15 @@ Type `double`.
 
 #### File
 
-Type `file`.
+Type `file`. A path to another file.
+
+If a file option is introduced by one or more leading keywords (e.g. `CROSS_SECTION TAB6` before `FILEIN <tab6_filename>`), those keywords are ordinary `Keyword` fields alongside the `File` field in the enclosing `Record`, in declaration order -- `File` carries no keyword/tag data of its own. An exception: `prt-fmi`'s `GWFHEAD`/`GWFBUDGET`/`GWFGRID` fields have no enclosing record, so they're directly `tagged: true`, using their own `name` as the tag like any other tagged scalar field.
 
 ##### Type-specific attributes
 
-###### `mode`
+###### `direction`
 
-`"filein" | "fileout"`. Whether the path is to an input or output file. Required.
+`"in" | "out"`. Whether the program reads or writes the file. Required.
 
 ### Composites
 

@@ -73,10 +73,16 @@
           "optional": true,
           "fields": {
             "auto_flow_reduce_csv": {
-              "type": "file",
+              "type": "keyword",
               "longname": "budget keyword",
-              "description": "keyword to specify that record corresponds to the AUTO_FLOW_REDUCE output option in which a new record is written for each well and for each time step in which the user-requested extraction rate is reduced by the program.",
-              "mode": "fileout"
+              "description": "keyword to specify that record corresponds to the AUTO_FLOW_REDUCE output option in which a new record is written for each well and for each time step in which the user-requested extraction rate is reduced by the program."
+            },
+            "afrcsvfile": {
+              "type": "file",
+              "longname": "file keyword",
+              "description": "name of the comma-separated value (CSV) output file to write information about well extraction rates that have been reduced by the program.  Entries are only written if the extraction rates are reduced.",
+              "tagged": false,
+              "direction": "out"
             }
           }
         },
@@ -91,10 +97,16 @@
           "optional": true,
           "fields": {
             "ts6": {
-              "type": "file",
+              "type": "keyword",
               "longname": "head keyword",
-              "description": "keyword to specify that record corresponds to a time-series file.",
-              "mode": "filein"
+              "description": "keyword to specify that record corresponds to a time-series file."
+            },
+            "ts6_filename": {
+              "type": "file",
+              "longname": "file name of time series information",
+              "description": "defines a time-series file defining time series that can be used to assign time-varying values. See the 'Time-Variable Input' section for instructions on using the time-series capability.",
+              "tagged": false,
+              "direction": "in"
             }
           }
         },
@@ -103,10 +115,16 @@
           "optional": true,
           "fields": {
             "obs6": {
-              "type": "file",
+              "type": "keyword",
               "longname": "obs keyword",
-              "description": "keyword to specify that record corresponds to an observations file.",
-              "mode": "filein"
+              "description": "keyword to specify that record corresponds to an observations file."
+            },
+            "obs6_filename": {
+              "type": "file",
+              "longname": "obs6 input filename",
+              "description": "name of input file to define observations for the WEL package. See the 'Observation utility' section for instructions for preparing observation input files. Table {#2} lists observation type(s) supported by the WEL package.",
+              "tagged": false,
+              "direction": "in"
             }
           }
         },
@@ -137,6 +155,7 @@
                 "type": "array",
                 "longname": "cell identifier",
                 "description": "is the cell identifier, and depends on the type of grid that is used for the simulation.  For a structured grid that uses the DIS input file, CELLID is the layer, row, and column.   For a grid that uses the DISV input file, CELLID is the layer and CELL2D number.  If the model uses the unstructured discretization (DISU) input file, CELLID is the node number for the cell.",
+                "tagged": false,
                 "dtype": "integer",
                 "shape": [
                   "ncelldim"
@@ -154,6 +173,7 @@
                 "longname": "auxiliary variables",
                 "description": "represents the values of the auxiliary variables for each well. The values of auxiliary variables must be present for each well. The values must be specified in the order of the auxiliary variables specified in the OPTIONS block.  If the package supports time series and the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value.",
                 "optional": true,
+                "tagged": false,
                 "dtype": "double",
                 "time_series": true,
                 "shape": [
@@ -173,6 +193,13 @@
             "maxbound"
           ]
         }
+      },
+      "header": {
+        "name": "iper",
+        "type": "integer",
+        "longname": "stress period number",
+        "description": "integer value specifying the starting stress period number for which the data specified in the PERIOD block apply.  IPER must be less than or equal to NPER in the TDIS Package and greater than zero.  The IPER value assigned to a stress period block must be greater than the IPER value assigned for the previous PERIOD block.  The information specified in the PERIOD block will continue to apply for all subsequent stress periods, unless the program encounters another PERIOD block.",
+        "tagged": false
       }
     }
   },

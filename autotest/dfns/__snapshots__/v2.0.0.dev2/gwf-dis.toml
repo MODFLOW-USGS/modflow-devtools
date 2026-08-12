@@ -44,10 +44,16 @@ type = "record"
 optional = true
 
 [blocks.options.fields.grb_filerecord.fields.grb6]
-type = "file"
+type = "keyword"
 longname = "grb keyword"
 description = "keyword to specify that record corresponds to a binary grid file."
-mode = "fileout"
+
+[blocks.options.fields.grb_filerecord.fields.grb6_filename]
+type = "file"
+longname = "file name of GRB information"
+description = "defines a binary grid output file. If this option is not provided, the output file will have the same name as the discretization input file, plus extension '.grb'."
+tagged = false
+direction = "out"
 
 [blocks.options.fields.xorigin]
 type = "double"
@@ -92,10 +98,16 @@ type = "record"
 optional = true
 
 [blocks.options.fields.ncf_filerecord.fields.ncf6]
-type = "file"
+type = "keyword"
 longname = "ncf keyword"
 description = "keyword to specify that record corresponds to a NetCDF configuration (NCF) file."
-mode = "filein"
+
+[blocks.options.fields.ncf_filerecord.fields.ncf6_filename]
+type = "file"
+longname = "file name of NCF information"
+description = "defines a NetCDF configuration (NCF) input file."
+tagged = false
+direction = "in"
 
 [blocks.dimensions.fields.nlay]
 type = "integer"

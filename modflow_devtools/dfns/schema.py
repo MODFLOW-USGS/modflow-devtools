@@ -81,7 +81,9 @@ class Double(FieldBase):
 
 class File(FieldBase):
     type: Literal["file"] = PydanticField(default="file", frozen=True)
-    mode: Literal["filein", "fileout"]
+    # Whether MF6 reads ("in") or writes ("out") the file. Independent of any
+    # particular serialization's keyword vocabulary (v1 text uses FILEIN/FILEOUT).
+    direction: Literal["in", "out"]
 
 
 Scalar = Annotated[
@@ -160,18 +162,29 @@ def _render_shape(field: "Array") -> str:
     return f"({', '.join(field.shape)})" if field.shape else ""
 
 
+def _render_file(field: "File") -> str:
+    keyword = "FILEIN" if field.direction == "in" else "FILEOUT"
+    if not field.tagged:
+        return f"{keyword} <{field.name}>"
+    return f"{field.name.upper()} {keyword} <{field.name}>"
+
+
+def _tag(field: "Field", inner: str) -> str:
+    """Prefix `inner` with the field's uppercased name if it's tagged."""
+    return f"{field.name.upper()} {inner}" if field.tagged else inner
+
+
 def _render_inline(field: "Field") -> str:
     """Render a field as a token within a record row."""
     match field:
         case Keyword():
             token = field.name.upper()
         case Array():
-            token = f"<{field.name}{_render_shape(field)}>"
+            token = _tag(field, f"<{field.name}{_render_shape(field)}>")
         case String() | Integer() | Double():
-            token = f"<{field.name}>"
+            token = _tag(field, f"<{field.name}>")
         case File():
-            # file name (uppercased) acts as the keyword in the record row
-            token = f"{field.name.upper()} {field.mode.upper()} <{field.name}>"
+            token = _render_file(field)
         case Record():
             token = " ".join(_render_inline(f) for f in field.fields.values())
         case Union():
@@ -211,16 +224,14 @@ def _render_field(field: "Field", indent: str = "  ") -> str:
         case Keyword():
             return f"{indent}{_wrap(field.name.upper())}"
         case String() | Integer() | Double():
-            inner = f"{field.name.upper()} <{field.name}>" if field.tagged else f"<{field.name}>"
-            return f"{indent}{_wrap(inner)}"
+            return f"{indent}{_wrap(_tag(field, f'<{field.name}>'))}"
         case File():
-            return f"{indent}{_wrap(f'{field.mode.upper()} <{field.name}>')}"
+            return f"{indent}{_wrap(_render_file(field))}"
         case Array():
             if field.shape:
                 body = f"{field.name.upper()}\n{indent}  <{field.name}{_render_shape(field)}> -- READARRAY"  # noqa: E501
                 return f"{indent}{_wrap(body)}"
-            inner = f"{field.name.upper()} <{field.name}>" if field.tagged else f"<{field.name}>"
-            return f"{indent}{_wrap(inner)}"
+            return f"{indent}{_wrap(_tag(field, f'<{field.name}>'))}"
         case Record():
             return f"{indent}{_wrap(' '.join(_render_inline(f) for f in field.fields.values()))}"
         case Union():
@@ -242,7 +253,10 @@ def _render_field(field: "Field", indent: str = "  ") -> str:
 
 def _render_block(block: "Block") -> str:
     """Render a Block as a BEGIN/END template string."""
-    lines = [f"BEGIN {block.name.upper()}"]
+    begin = f"BEGIN {block.name.upper()}"
+    if block.header is not None:
+        begin = f"{begin} {_render_inline(block.header)}"
+    lines = [begin]
     for field in block.fields.values():
         lines.append(_render_field(field))
     lines.append(f"END {block.name.upper()}")
@@ -473,7 +487,7 @@ def _resolve_derived_dims(component: "ComponentBase", known_dims: set[str]) -> l
 class Block(BaseModel):
     name: str
     fields: dict[str, Field]
-    repeats: bool = False
+    header: "Field | None" = None
 
     @model_validator(mode="after")
     def _check_field_order(self) -> "Block":
@@ -496,6 +510,11 @@ class Block(BaseModel):
     def _serialize(self, handler: Any) -> dict[str, Any]:
         data = handler(self)
         data.pop("name", None)  # name is the dict key in ComponentBase.blocks
+        # Unlike `fields`, `header` isn't stored in a name-keyed dict, so its
+        # `name` (stripped by FieldBase._serialize under strip_names) must be
+        # restored here or it can't be recovered on load.
+        if self.header is not None and isinstance(data.get("header"), dict):
+            data["header"] = {"name": self.header.name, **data["header"]}
         return data
 
     def dump(self, *, strip_names: bool = True, **kwargs) -> dict[str, Any]:
@@ -511,6 +530,11 @@ class Block(BaseModel):
     @property
     def optional(self) -> bool:
         return all(f.optional for f in self.fields.values())
+
+    @property
+    def repeats(self) -> bool:
+        """Whether the block may appear multiple times, each labeled by `header`."""
+        return self.header is not None
 
     def render(self) -> str:
         return _render_block(self)
@@ -592,11 +616,15 @@ class ComponentBase(BaseModel):
 
         for block in (self.blocks or {}).values():
             _collect(block.fields)
+            if block.header is not None:
+                _collect({block.header.name: block.header})
         return OMD(items)
 
     def get_block(self, field_name: str) -> Block | None:
         for block in (self.blocks or {}).values():
-            if block.fields.get(field_name, None):
+            if block.fields.get(field_name, None) or (
+                block.header is not None and block.header.name == field_name
+            ):
                 return block
         return None
 
@@ -1077,6 +1105,13 @@ def _inject_names(comp_data: dict) -> None:
     for block_name, block in (comp_data.get("blocks") or {}).items():
         block.setdefault("name", block_name)
         _inject_field_names(block.get("fields") or {})
+        header = block.get("header")
+        if isinstance(header, dict):
+            # header's own name is preserved verbatim by Block._serialize (it
+            # isn't stored in a name-keyed dict like `fields`); only its nested
+            # children need names injected from their dict keys.
+            _inject_field_names(header.get("fields") or {})
+            _inject_field_names(header.get("arms") or {})
 
 
 class Dfns(BaseModel):

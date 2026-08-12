@@ -21,6 +21,7 @@ blocks:
             type: array
             description: Name by which a package references a particular time-array series. The name must
               be unique among all time-array series used in a package.
+            tagged: false
             dtype: string
       interpolation_methodrecord:
         type: record
@@ -33,6 +34,7 @@ blocks:
           interpolation_method:
             type: array
             description: Interpolation method, which is either STEPWISE or LINEAR.
+            tagged: false
             dtype: string
       interpolation_methodrecord_single:
         type: record
@@ -61,6 +63,7 @@ blocks:
             type: array
             description: Scale factor, which will multiply all array values in time series. SFAC is an
               optional attribute; if omitted, SFAC = 1.0.
+            tagged: false
             dtype: double
       sfacrecord_single:
         type: record
@@ -71,6 +74,7 @@ blocks:
             type: array
             description: Scale factor, which will multiply all array values in time series. SFAC is an
               optional attribute; if omitted, SFAC = 1.0.
+            tagged: false
             dtype: double
       sfac:
         type: keyword
@@ -93,6 +97,7 @@ blocks:
               type: array
               description: A 2-D array of numeric, floating-point values, or a constant value, readable
                 by the U2DREL array-reading utility.
+              tagged: false
               dtype: double
               shape:
                 - interpolation_method

@@ -58,10 +58,16 @@
           "optional": true,
           "fields": {
             "head": {
-              "type": "file",
+              "type": "keyword",
               "longname": "head keyword",
-              "description": "keyword to specify that record corresponds to head.",
-              "mode": "fileout"
+              "description": "keyword to specify that record corresponds to head."
+            },
+            "headfile": {
+              "type": "file",
+              "longname": "file keyword",
+              "description": "name of the binary output file to write head information.",
+              "tagged": false,
+              "direction": "out"
             }
           }
         },
@@ -70,10 +76,16 @@
           "optional": true,
           "fields": {
             "budget": {
-              "type": "file",
+              "type": "keyword",
               "longname": "budget keyword",
-              "description": "keyword to specify that record corresponds to the budget.",
-              "mode": "fileout"
+              "description": "keyword to specify that record corresponds to the budget."
+            },
+            "budgetfile": {
+              "type": "file",
+              "longname": "file keyword",
+              "description": "name of the binary output file to write budget information.",
+              "tagged": false,
+              "direction": "out"
             }
           }
         },
@@ -82,10 +94,16 @@
           "optional": true,
           "fields": {
             "budgetcsv": {
-              "type": "file",
+              "type": "keyword",
               "longname": "budget keyword",
-              "description": "keyword to specify that record corresponds to the budget CSV.",
-              "mode": "fileout"
+              "description": "keyword to specify that record corresponds to the budget CSV."
+            },
+            "budgetcsvfile": {
+              "type": "file",
+              "longname": "file keyword",
+              "description": "name of the comma-separated value (CSV) output file to write budget summary information.  A budget summary record will be written to this file for each time step of the simulation.",
+              "tagged": false,
+              "direction": "out"
             }
           }
         },
@@ -124,10 +142,16 @@
           "optional": true,
           "fields": {
             "maw_flow_reduce_csv": {
-              "type": "file",
+              "type": "keyword",
               "longname": "budget keyword",
-              "description": "keyword to specify that record corresponds to the output option in which a new record is written for each multi-aquifer well and for each time step in which the user-requested extraction or injection rate is reduced by the program.",
-              "mode": "fileout"
+              "description": "keyword to specify that record corresponds to the output option in which a new record is written for each multi-aquifer well and for each time step in which the user-requested extraction or injection rate is reduced by the program."
+            },
+            "mfrcsvfile": {
+              "type": "file",
+              "longname": "file keyword",
+              "description": "name of the comma-separated value (CSV) output file to write information about multi-aquifer well extraction or injection rates that have been reduced by the program. Entries are only written if the extraction or injection rates are reduced.",
+              "tagged": false,
+              "direction": "out"
             }
           }
         },
@@ -136,10 +160,16 @@
           "optional": true,
           "fields": {
             "ts6": {
-              "type": "file",
+              "type": "keyword",
               "longname": "head keyword",
-              "description": "keyword to specify that record corresponds to a time-series file.",
-              "mode": "filein"
+              "description": "keyword to specify that record corresponds to a time-series file."
+            },
+            "ts6_filename": {
+              "type": "file",
+              "longname": "file name of time series information",
+              "description": "defines a time-series file defining time series that can be used to assign time-varying values. See the 'Time-Variable Input' section for instructions on using the time-series capability.",
+              "tagged": false,
+              "direction": "in"
             }
           }
         },
@@ -148,10 +178,16 @@
           "optional": true,
           "fields": {
             "obs6": {
-              "type": "file",
+              "type": "keyword",
               "longname": "obs keyword",
-              "description": "keyword to specify that record corresponds to an observations file.",
-              "mode": "filein"
+              "description": "keyword to specify that record corresponds to an observations file."
+            },
+            "obs6_filename": {
+              "type": "file",
+              "longname": "obs6 input filename",
+              "description": "name of input file to define observations for the MAW package. See the 'Observation utility' section for instructions for preparing observation input files. Table {#2} lists observation type(s) supported by the MAW package.",
+              "tagged": false,
+              "direction": "in"
             }
           }
         },
@@ -220,6 +256,7 @@
                 "longname": "auxiliary variables",
                 "description": "represents the values of the auxiliary variables for each multi-aquifer well. The values of auxiliary variables must be present for each multi-aquifer well. The values must be specified in the order of the auxiliary variables specified in the OPTIONS block.  If the package supports time series and the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value.",
                 "optional": true,
+                "tagged": false,
                 "dtype": "double",
                 "time_series": true,
                 "shape": [
@@ -265,6 +302,7 @@
                 "type": "array",
                 "longname": "cell identifier",
                 "description": "is the cell identifier, and depends on the type of grid that is used for the simulation.  For a structured grid that uses the DIS input file, CELLID is the layer, row, and column.   For a grid that uses the DISV input file, CELLID is the layer and CELL2D number.  If the model uses the unstructured discretization (DISU) input file, CELLID is the node number for the cell. One or more screened intervals can be connected to the same CELLID if CONDEQN for a well is MEAN. The program will terminate with an error if MAW wells using SPECIFIED, THIEM, SKIN, or CUMULATIVE conductance equations have more than one connection to the same CELLID.",
+                "tagged": false,
                 "dtype": "integer",
                 "shape": [
                   "ncelldim"
@@ -436,6 +474,13 @@
             }
           }
         }
+      },
+      "header": {
+        "name": "iper",
+        "type": "integer",
+        "longname": "stress period number",
+        "description": "integer value specifying the starting stress period number for which the data specified in the PERIOD block apply.  IPER must be less than or equal to NPER in the TDIS Package and greater than zero.  The IPER value assigned to a stress period block must be greater than the IPER value assigned for the previous PERIOD block.  The information specified in the PERIOD block will continue to apply for all subsequent stress periods, unless the program encounters another PERIOD block.",
+        "tagged": false
       }
     }
   }

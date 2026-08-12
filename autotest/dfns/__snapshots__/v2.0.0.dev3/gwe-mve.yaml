@@ -30,16 +30,27 @@ blocks:
         optional: true
         fields:
           budget:
-            type: file
+            type: keyword
             longname: budget keyword
             description: keyword to specify that record corresponds to the budget.
-            mode: fileout
+          budgetfile:
+            type: file
+            longname: file keyword
+            description: name of the binary output file to write budget information.
+            tagged: false
+            direction: out
       budgetcsv_filerecord:
         type: record
         optional: true
         fields:
           budgetcsv:
-            type: file
+            type: keyword
             longname: budget keyword
             description: keyword to specify that record corresponds to the budget CSV.
-            mode: fileout
+          budgetcsvfile:
+            type: file
+            longname: file keyword
+            description: name of the comma-separated value (CSV) output file to write budget summary information.  A
+              budget summary record will be written to this file for each time step of the simulation.
+            tagged: false
+            direction: out

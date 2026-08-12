@@ -60,30 +60,45 @@ blocks:
         optional: true
         fields:
           netcdf_mesh2d:
-            type: file
+            type: keyword
             longname: budget keyword
             description: keyword to specify that record corresponds to a layered mesh NetCDF file.
-            mode: fileout
+          ncmesh2dfile:
+            type: file
+            longname: file keyword
+            description: name of the NetCDF ugrid layered mesh output file.
+            tagged: false
+            direction: out
       nc_structured_filerecord:
         type: record
         description: NetCDF structured fileout record.
         optional: true
         fields:
           netcdf_structured:
-            type: file
+            type: keyword
             longname: budget keyword
             description: keyword to specify that record corresponds to a structured NetCDF file.
-            mode: fileout
+          ncstructfile:
+            type: file
+            longname: file keyword
+            description: name of the NetCDF structured output file.
+            tagged: false
+            direction: out
       nc_filerecord:
         type: record
         description: NetCDF filerecord
         optional: true
         fields:
           netcdf:
-            type: file
+            type: keyword
             longname: netcdf keyword
             description: keyword to specify that record corresponds to a NetCDF input file.
-            mode: filein
+          netcdf_filename:
+            type: file
+            longname: netcdf input filename
+            description: defines a NetCDF input file.
+            tagged: false
+            direction: in
   packages:
     fields:
       packages:

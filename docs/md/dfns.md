@@ -174,6 +174,7 @@ from modflow_devtools.dfns import Block, Keyword, Double, List, Record
 
 period = gwf_chd.blocks["period"]
 assert period.repeats is True
+assert period.header.name == "iper"
 
 spd = period.fields["stress_period_data"]
 assert isinstance(spd, List)
@@ -216,12 +217,14 @@ print(wel.blocks["options"].render())
 # END OPTIONS
 
 print(wel.blocks["period"].render())
-# BEGIN PERIOD
+# BEGIN PERIOD <iper>
 #   <cellid(ncelldim)> <q> [<aux(auxiliary)>] [<boundname>]
 #   <cellid(ncelldim)> <q> [<aux(auxiliary)>] [<boundname>]
 #   ...
 # END PERIOD
 ```
+
+A block whose `header` is set (see [`header`](dfnspec.md#header)) has that field's token attached to the `BEGIN` line rather than rendered as a body row — `<iper>` above comes from `wel.blocks["period"].header`, not `.fields`.
 
 `ComponentBase.render()` renders all blocks joined by blank lines:
 
@@ -235,7 +238,7 @@ print(wel.render())
 #   ...
 # END DIMENSIONS
 #
-# BEGIN PERIOD
+# BEGIN PERIOD <iper>
 #   ...
 # END PERIOD
 ```
@@ -247,7 +250,8 @@ Rendering rules by field type:
 | `Keyword` | `KEYWORD` | `KEYWORD` |
 | `String` / `Integer` / `Double` (tagged) | `NAME <name>` | `<name>` |
 | `String` / `Integer` / `Double` (untagged) | `<name>` | `<name>` |
-| `File` | `NAME FILEIN\|FILEOUT <name>` | `NAME FILEIN\|FILEOUT <name>` |
+| `File` (tagged) | `NAME FILEIN\|FILEOUT <name>` | `NAME FILEIN\|FILEOUT <name>` |
+| `File` (untagged) | `FILEIN\|FILEOUT <name>` | `FILEIN\|FILEOUT <name>` |
 | `Array` with shape (READARRAY) | `NAME\n    <name(shape)> -- READARRAY` | `<name(shape)>` |
 | `Array` without shape (inline) | `NAME <name>` | `<name(shape)>` |
 | `Record` | children expanded inline | children expanded inline |
@@ -256,6 +260,7 @@ Rendering rules by field type:
 | `List` (single row type) | row repeated twice + `...` | — |
 | `List` with `Record`-arm `Union` | one row per arm, no `...` | — |
 | `List` with scalar-arm `Union` | `<name>` twice + `...` | — |
+| `Block.header` (any field type) | attached to `BEGIN <NAME>` line, inline form | — |
 
 Optional fields are wrapped in `[...]`. Array shapes use the abstract dimension names from the specification (e.g. `ncelldim`, `naux`) rather than resolved grid-specific values.
 

@@ -148,10 +148,16 @@
           "optional": true,
           "fields": {
             "tvk6": {
-              "type": "file",
+              "type": "keyword",
               "longname": "tvk keyword",
-              "description": "keyword to specify that record corresponds to a time-varying hydraulic conductivity (TVK) file.  The behavior of TVK and a description of the input file is provided separately.",
-              "mode": "filein"
+              "description": "keyword to specify that record corresponds to a time-varying hydraulic conductivity (TVK) file.  The behavior of TVK and a description of the input file is provided separately."
+            },
+            "tvk6_filename": {
+              "type": "file",
+              "longname": "file name of TVK information",
+              "description": "defines a time-varying hydraulic conductivity (TVK) input file.  Records in the TVK file can be used to change hydraulic conductivity properties at specified times or stress periods.",
+              "tagged": false,
+              "direction": "in"
             }
           }
         },

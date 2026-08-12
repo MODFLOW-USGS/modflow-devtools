@@ -97,10 +97,16 @@
           "optional": true,
           "fields": {
             "gnc6": {
-              "type": "file",
+              "type": "keyword",
               "longname": "gnc6 keyword",
-              "description": "keyword to specify that record corresponds to a ghost-node correction file.",
-              "mode": "filein"
+              "description": "keyword to specify that record corresponds to a ghost-node correction file."
+            },
+            "gnc6_filename": {
+              "type": "file",
+              "longname": "gnc6 input filename",
+              "description": "is the file name for ghost node correction input file.  Information for the ghost nodes are provided in the file provided with these keywords.  The format for specifying the ghost nodes is the same as described for the GNC Package of the GWF Model.  This includes specifying OPTIONS, DIMENSIONS, and GNCDATA blocks.  The order of the ghost nodes must follow the same order as the order of the cells in the EXCHANGEDATA block.  For the GNCDATA, noden and all of the nodej values are assumed to be located in model 1, and nodem is assumed to be in model 2.",
+              "tagged": false,
+              "direction": "in"
             }
           }
         },
@@ -109,10 +115,16 @@
           "optional": true,
           "fields": {
             "mvr6": {
-              "type": "file",
+              "type": "keyword",
               "longname": "obs keyword",
-              "description": "keyword to specify that record corresponds to a mover file.",
-              "mode": "filein"
+              "description": "keyword to specify that record corresponds to a mover file."
+            },
+            "mvr6_filename": {
+              "type": "file",
+              "longname": "mvr6 input filename",
+              "description": "is the file name of the water mover input file to apply to this exchange.  Information for the water mover are provided in the file provided with these keywords.  The format for specifying the water mover information is the same as described for the Water Mover (MVR) Package of the GWF Model, with two exceptions.  First, in the PACKAGES block, the model name must be included as a separate string before each package.  Second, the appropriate model name must be included before package name 1 and package name 2 in the BEGIN PERIOD block.  This allows providers and receivers to be located in both models listed as part of this exchange.",
+              "tagged": false,
+              "direction": "in"
             }
           }
         },
@@ -121,10 +133,16 @@
           "optional": true,
           "fields": {
             "obs6": {
-              "type": "file",
+              "type": "keyword",
               "longname": "obs keyword",
-              "description": "keyword to specify that record corresponds to an observations file.",
-              "mode": "filein"
+              "description": "keyword to specify that record corresponds to an observations file."
+            },
+            "obs6_filename": {
+              "type": "file",
+              "longname": "obs6 input filename",
+              "description": "is the file name of the observations input file for this exchange. See the 'Observation utility' section for instructions for preparing observation input files. Table ref{table:gwf-obstypetable} lists observation type(s) supported by the GWF-GWF package.",
+              "tagged": false,
+              "direction": "in"
             }
           }
         },
@@ -194,6 +212,7 @@
                 "longname": "auxiliary variables",
                 "description": "represents the values of the auxiliary variables for each GWFGWF Exchange. The values of auxiliary variables must be present for each exchange. The values must be specified in the order of the auxiliary variables specified in the OPTIONS block.",
                 "optional": true,
+                "tagged": false,
                 "dtype": "double",
                 "shape": [
                   "auxiliary"

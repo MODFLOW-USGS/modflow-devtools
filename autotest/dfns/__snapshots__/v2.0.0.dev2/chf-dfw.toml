@@ -44,10 +44,16 @@ type = "record"
 optional = true
 
 [blocks.options.fields.obs_filerecord.fields.obs6]
-type = "file"
+type = "keyword"
 longname = "obs keyword"
 description = "keyword to specify that record corresponds to an observations file."
-mode = "filein"
+
+[blocks.options.fields.obs_filerecord.fields.obs6_filename]
+type = "file"
+longname = "obs6 input filename"
+description = "name of input file to define observations for the DFW package. See the 'Observation utility' section for instructions for preparing observation input files. Table {#2} lists observation type(s) supported by the DFW package."
+tagged = false
+direction = "in"
 
 [blocks.options.fields.export_array_ascii]
 type = "keyword"

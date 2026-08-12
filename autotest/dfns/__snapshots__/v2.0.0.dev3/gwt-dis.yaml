@@ -40,10 +40,16 @@ blocks:
         optional: true
         fields:
           grb6:
-            type: file
+            type: keyword
             longname: grb keyword
             description: keyword to specify that record corresponds to a binary grid file.
-            mode: fileout
+          grb6_filename:
+            type: file
+            longname: file name of GRB information
+            description: defines a binary grid output file. If this option is not provided, the output
+              file will have the same name as the discretization input file, plus extension '.grb'.
+            tagged: false
+            direction: out
       xorigin:
         type: double
         longname: x-position of the model grid origin
@@ -96,10 +102,15 @@ blocks:
         optional: true
         fields:
           ncf6:
-            type: file
+            type: keyword
             longname: ncf keyword
             description: keyword to specify that record corresponds to a NetCDF configuration (NCF) file.
-            mode: filein
+          ncf6_filename:
+            type: file
+            longname: file name of NCF information
+            description: defines a NetCDF configuration (NCF) input file.
+            tagged: false
+            direction: in
   dimensions:
     fields:
       nlay:

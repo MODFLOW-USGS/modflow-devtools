@@ -52,10 +52,16 @@
           "optional": true,
           "fields": {
             "netcdf_mesh2d": {
-              "type": "file",
+              "type": "keyword",
               "longname": "budget keyword",
-              "description": "keyword to specify that record corresponds to a layered mesh NetCDF file.",
-              "mode": "fileout"
+              "description": "keyword to specify that record corresponds to a layered mesh NetCDF file."
+            },
+            "ncmesh2dfile": {
+              "type": "file",
+              "longname": "file keyword",
+              "description": "name of the NetCDF ugrid layered mesh output file.",
+              "tagged": false,
+              "direction": "out"
             }
           }
         },
@@ -65,10 +71,16 @@
           "optional": true,
           "fields": {
             "netcdf_structured": {
-              "type": "file",
+              "type": "keyword",
               "longname": "budget keyword",
-              "description": "keyword to specify that record corresponds to a structured NetCDF file.",
-              "mode": "fileout"
+              "description": "keyword to specify that record corresponds to a structured NetCDF file."
+            },
+            "ncstructfile": {
+              "type": "file",
+              "longname": "file keyword",
+              "description": "name of the NetCDF structured output file.",
+              "tagged": false,
+              "direction": "out"
             }
           }
         },
@@ -78,10 +90,16 @@
           "optional": true,
           "fields": {
             "netcdf": {
-              "type": "file",
+              "type": "keyword",
               "longname": "netcdf keyword",
-              "description": "keyword to specify that record corresponds to a NetCDF input file.",
-              "mode": "filein"
+              "description": "keyword to specify that record corresponds to a NetCDF input file."
+            },
+            "netcdf_filename": {
+              "type": "file",
+              "longname": "netcdf input filename",
+              "description": "defines a NetCDF input file.",
+              "tagged": false,
+              "direction": "in"
             }
           }
         }
@@ -134,6 +152,7 @@
     },
     "netcdf_fname": {
       "set_in": "ar",
+      "source": "netcdf_filename",
       "type": "string"
     },
     "x": {

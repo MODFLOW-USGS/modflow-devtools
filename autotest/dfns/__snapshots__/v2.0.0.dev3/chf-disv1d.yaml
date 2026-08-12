@@ -31,10 +31,16 @@ blocks:
         optional: true
         fields:
           grb6:
-            type: file
+            type: keyword
             longname: grb keyword
             description: keyword to specify that record corresponds to a binary grid file.
-            mode: fileout
+          grb6_filename:
+            type: file
+            longname: file name of GRB information
+            description: defines a binary grid output file. If this option is not provided, the output
+              file will have the same name as the discretization input file, plus extension '.grb'.
+            tagged: false
+            direction: out
       xorigin:
         type: double
         longname: x-position origin of the model grid coordinate system
@@ -179,6 +185,7 @@ blocks:
                 used to define the cell.  Vertices must be listed in the order that defines the line representing
                 the cell.  Cells that are connected must share vertices. The bottom elevation of the cell
                 is calculated using the ZV of the first and last vertex point and FDC.
+              tagged: false
               dtype: integer
               shape:
                 - ncvert

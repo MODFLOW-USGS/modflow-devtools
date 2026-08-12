@@ -41,6 +41,7 @@ blocks:
                 and CELLID2.  For models that use the DIS and DISV grid types, the layer number for CELLID1
                 and CELLID2 must be the same.  For all grid types, cells must be horizontally or vertically
                 adjacent.
+              tagged: false
               dtype: integer
               shape:
                 - ncelldim
@@ -48,6 +49,7 @@ blocks:
               type: array
               longname: second cell adjacent to barrier
               description: identifier for the second cell. See CELLID1 for description of how to specify.
+              tagged: false
               dtype: integer
               shape:
                 - ncelldim
@@ -63,6 +65,16 @@ blocks:
               tagged: false
         shape:
           - maxhfb
+    header:
+      name: iper
+      type: integer
+      longname: stress period number
+      description: integer value specifying the starting stress period number for which the data specified
+        in the PERIOD block apply.  IPER must be less than or equal to NPER in the TDIS Package and greater
+        than zero.  The IPER value assigned to a stress period block must be greater than the IPER value
+        assigned for the previous PERIOD block.  The information specified in the PERIOD block will continue
+        to apply for all subsequent stress periods, unless the program encounters another PERIOD block.
+      tagged: false
 memory:
   maxbound:
     set_in: ar

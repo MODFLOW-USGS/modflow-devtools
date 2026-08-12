@@ -84,6 +84,7 @@ blocks:
                 a grid that uses the DISV input file, CELLID is the layer number and cell2d number for
                 the two cells.  If the model uses the unstructured discretization (DISU) input file, then
                 CELLID is the node number for the cell.
+              tagged: false
               dtype: integer
               shape:
                 - numalphaj
@@ -96,6 +97,7 @@ blocks:
                 sum of ALPHASJ should be less than one.  This is because one minus the sum of ALPHASJ
                 is equal to the alpha term (alpha n in equation 4-61 of the GWF Model report) that is
                 multiplied by the head in cell n.
+              tagged: false
               dtype: double
               shape:
                 - numalphaj

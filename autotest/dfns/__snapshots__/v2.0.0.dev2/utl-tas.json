@@ -24,6 +24,7 @@
             "time_series_name": {
               "type": "array",
               "description": "Name by which a package references a particular time-array series. The name must be unique among all time-array series used in a package.",
+              "tagged": false,
               "dtype": "string"
             }
           }
@@ -61,6 +62,7 @@
             "sfacval": {
               "type": "array",
               "description": "Scale factor, which will multiply all array values in time series. SFAC is an optional attribute; if omitted, SFAC = 1.0.",
+              "tagged": false,
               "dtype": "double",
               "shape": [
                 "time_series_name"
@@ -75,8 +77,15 @@
         "tas_array": {
           "type": "array",
           "description": "An array of numeric, floating-point values, or a constant value, readable by the U2DREL array-reading utility.",
+          "tagged": false,
           "dtype": "double"
         }
+      },
+      "header": {
+        "name": "time_from_model_start",
+        "type": "double",
+        "description": "A numeric time relative to the start of the simulation, in the time unit used in the simulation. Times must be strictly increasing.",
+        "tagged": false
       }
     }
   }

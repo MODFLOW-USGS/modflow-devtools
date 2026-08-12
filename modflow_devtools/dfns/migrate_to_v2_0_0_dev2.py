@@ -963,7 +963,7 @@ def _fix_prt_fmi(component: v2.Component) -> v2.Component:
     if block is None:
         return component
     new_fields = {
-        name: v2.File(name=name, longname=longname, optional=True, tagged=True, mode="filein")
+        name: v2.File(name=name, longname=longname, optional=True, tagged=True, direction="in")
         for name, longname in (
             ("gwfhead", "gwf head file"),
             ("gwfbudget", "gwf budget file"),
@@ -1060,7 +1060,7 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
                             for fi in fields.values(multi=True)
                             if fi["name"] == col_name
                             and fi["type"] == "integer"
-                            and fi.get("in_record", False)
+                            and try_parse_bool(fi.get("in_record", False))
                         ),
                         None,
                     )
@@ -1141,7 +1141,7 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
                 fi["type"]
                 for fi in fields.values(multi=True)
                 if fi["name"] in item_names
-                and fi.get("in_record", False)
+                and try_parse_bool(fi.get("in_record", False))
                 and fi.get("block") == f.get("block")
             ]
 
@@ -1174,7 +1174,7 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
                 fi["name"]: _map_field(fi)
                 for fi in fields.values(multi=True)
                 if fi["name"] in item_names
-                and fi.get("in_record", False)
+                and try_parse_bool(fi.get("in_record", False))
                 and fi.get("block") == f.get("block")
             }
             first = next(iter(children.values()))
@@ -1194,7 +1194,7 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
                 for fi in fields.values(multi=True):
                     if (
                         fi["name"] == rname
-                        and fi.get("in_record", False)
+                        and try_parse_bool(fi.get("in_record", False))
                         and fi.get("block") == f.get("block")
                     ):
                         result[rname] = _map_field(fi)
@@ -1251,9 +1251,15 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
                         break
 
             if file_mode:
-                # Filerecord pattern: <tag_kw> <filein|fileout> <path_string>
-                # In v2: drop the mode keyword and the untagged path string; promote
-                # the tag keyword to a File field (tagged=True, name=tag keyword name).
+                # Filerecord pattern: <tag...> <filein|fileout> <path_string> [<flag>...].
+                # The mode keyword and path string together denote one File value;
+                # tag keyword(s) before it and flag keyword(s) after it are ordinary
+                # sibling fields, mapped like any other tagged Record subfield -- no
+                # special-casing needed for render() to reconstruct the v1 text
+                # exactly (e.g. utl-obs's untagged `output` record already worked
+                # this way: `FILEOUT <path> [BINARY]`).
+                mode_idx = subnames.index(file_mode)
+
                 path_field_name: str | None = None
                 for sname in subnames:
                     if sname == file_mode:
@@ -1274,11 +1280,8 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
                         path_field_name = sname
                         break
 
-                rec_fields: dict[str, v2.Field] = {}
-                for rname in subnames:
-                    if rname in (file_mode, path_field_name):
-                        continue  # drop mode keyword and path string
-                    m = next(
+                def _lookup(rname: str) -> dict | None:
+                    return next(
                         (
                             fi
                             for fi in fields.values(multi=True)
@@ -1288,22 +1291,30 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
                         ),
                         None,
                     )
-                    if m is None:
-                        continue
-                    ftype = (m.get("type") or "").strip()
-                    if ftype == "keyword":
-                        rec_fields[rname] = v2.File(
-                            name=rname,
+
+                rec_fields: dict[str, v2.Field] = {}
+                for i, sname in enumerate(subnames):
+                    if i == mode_idx:
+                        continue  # folded into the File field at the path's position
+                    if sname == path_field_name:
+                        m = _lookup(sname)
+                        if m is None:
+                            continue
+                        rec_fields[sname] = v2.File(
+                            name=sname,
                             longname=m.get("longname") or None,
                             description=m.get("description") or None,
                             optional=try_parse_bool(m.get("optional"), False),
                             developmode=try_parse_bool(m.get("developmode"), False),
                             netcdf=try_parse_bool(m.get("netcdf"), False),
-                            tagged=True,
-                            mode=file_mode,  # type: ignore[arg-type]
+                            tagged=False,
+                            direction="in" if file_mode == "filein" else "out",
                         )
-                    else:
-                        rec_fields[rname] = _map_field(m)  # type: ignore
+                        continue
+                    m = _lookup(sname)
+                    if m is None:
+                        continue
+                    rec_fields[sname] = _map_field(m)  # type: ignore
             else:
                 rec_fields = _subfield_map()
 
@@ -1337,6 +1348,7 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
                             default=default,
                             developmode=developmode,
                             netcdf=netcdf,
+                            tagged=tagged,
                             time_series=time_series,
                             dtype="string",
                             shape=[],
@@ -1353,6 +1365,7 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
                         default=default,
                         developmode=developmode,
                         netcdf=netcdf,
+                        tagged=tagged,
                         time_series=time_series,
                         dtype=dtype,
                         shape=parsed_shape,
@@ -1363,13 +1376,17 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
     blocks: dict[str, v2.Block] = {}
 
     for field in fields.values(multi=True):
-        if field.get("in_record", False):
+        block = blocks.setdefault(field["block"], v2.Block(name=field["block"], fields={}))
+        if try_parse_bool(field.get("block_variable", False)):
+            # Field's token(s) attach to the BEGIN <BLOCK> line itself (e.g. `BEGIN
+            # PERIOD <iper>`) rather than appearing as a body row. Must be checked
+            # before the in_record skip below: block-attached scalars are marked
+            # in_record=true in v1 even though they aren't a record subfield.
+            block.header = _map_field(field)
+            continue
+        if try_parse_bool(field.get("in_record", False)):
             continue  # record subfields are handled recursively
-        v2_field = _map_field(field)
-        blocks.setdefault(field["block"], v2.Block(name=field["block"], fields={})).fields[
-            field["name"]
-        ] = v2_field
-        blocks[field["block"]].repeats = try_parse_bool(field.get("block_variable"), False)
+        block.fields[field["name"]] = _map_field(field)
 
     blocks, array_dims = _resolve_dimensions(blocks)
     blocks = _resolve_relations(blocks)

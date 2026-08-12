@@ -88,10 +88,16 @@
           "optional": true,
           "fields": {
             "mvt6": {
-              "type": "file",
+              "type": "keyword",
               "longname": "obs keyword",
-              "description": "keyword to specify that record corresponds to a transport mover file.",
-              "mode": "filein"
+              "description": "keyword to specify that record corresponds to a transport mover file."
+            },
+            "mvt6_filename": {
+              "type": "file",
+              "longname": "mvt6 input filename",
+              "description": "is the file name of the transport mover input file to apply to this exchange.  Information for the transport mover are provided in the file provided with these keywords.",
+              "tagged": false,
+              "direction": "in"
             }
           }
         },
@@ -100,10 +106,16 @@
           "optional": true,
           "fields": {
             "obs6": {
-              "type": "file",
+              "type": "keyword",
               "longname": "obs keyword",
-              "description": "keyword to specify that record corresponds to an observations file.",
-              "mode": "filein"
+              "description": "keyword to specify that record corresponds to an observations file."
+            },
+            "obs6_filename": {
+              "type": "file",
+              "longname": "obs6 input filename",
+              "description": "is the file name of the observations input file for this exchange. See the 'Observation utility' section for instructions for preparing observation input files. Table ref{table:gwt-obstypetable} lists observation type(s) supported by the GWT-GWT package.",
+              "tagged": false,
+              "direction": "in"
             }
           }
         },
@@ -173,6 +185,7 @@
                 "longname": "auxiliary variables",
                 "description": "represents the values of the auxiliary variables for each GWTGWT Exchange. The values of auxiliary variables must be present for each exchange. The values must be specified in the order of the auxiliary variables specified in the OPTIONS block.",
                 "optional": true,
+                "tagged": false,
                 "dtype": "double",
                 "shape": [
                   "auxiliary"

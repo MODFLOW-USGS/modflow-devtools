@@ -35,10 +35,17 @@ blocks:
         optional: true
         fields:
           obs6:
-            type: file
+            type: keyword
             longname: obs keyword
             description: keyword to specify that record corresponds to an observations file.
-            mode: filein
+          obs6_filename:
+            type: file
+            longname: obs6 input filename
+            description: is the file name of the observations input file for this exchange. See the 'Observation
+              utility' section for instructions for preparing observation input files. Table ref{table:gwf-obstypetable}
+              lists observation type(s) supported by the SWF-GWF package.
+            tagged: false
+            direction: in
   dimensions:
     fields:
       nexg:

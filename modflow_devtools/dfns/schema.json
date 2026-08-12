@@ -168,10 +168,59 @@
           "title": "Fields",
           "type": "object"
         },
-        "repeats": {
-          "default": false,
-          "title": "Repeats",
-          "type": "boolean"
+        "header": {
+          "anyOf": [
+            {
+              "discriminator": {
+                "mapping": {
+                  "array": "#/$defs/Array",
+                  "double": "#/$defs/Double",
+                  "file": "#/$defs/File",
+                  "integer": "#/$defs/Integer",
+                  "keyword": "#/$defs/Keyword",
+                  "list": "#/$defs/List",
+                  "record": "#/$defs/Record",
+                  "string": "#/$defs/String",
+                  "union": "#/$defs/Union"
+                },
+                "propertyName": "type"
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/Keyword"
+                },
+                {
+                  "$ref": "#/$defs/String"
+                },
+                {
+                  "$ref": "#/$defs/Integer"
+                },
+                {
+                  "$ref": "#/$defs/Double"
+                },
+                {
+                  "$ref": "#/$defs/File"
+                },
+                {
+                  "$ref": "#/$defs/Array"
+                },
+                {
+                  "$ref": "#/$defs/Record"
+                },
+                {
+                  "$ref": "#/$defs/Union"
+                },
+                {
+                  "$ref": "#/$defs/List"
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Header"
         }
       },
       "required": [
@@ -182,7 +231,7 @@
       "type": "object"
     },
     "Dim": {
-      "description": "A named dimension backed by a field reference or derived from an expression.\n\n``value`` is a Python expression string:\n  - bare identifier ``nlay``         \u2192 integer field reference\n  - ``len(auxiliary)``               \u2192 self-sizing array field reference\n  - anything else, e.g. ``nlay * ncol`` \u2192 derived arithmetic expression\n\nIf ``value`` is None, the dimension is runtime-only: its value cannot be\nderived from DFN input fields. ``set_in`` then indicates the simulation phase\nin which the value is first established by MODFLOW (e.g. ``\"ar\"`` for dims\nset during grid allocation, ``\"rp\"`` for dims reset each stress period).\n\nRuntime dims are valid in memory variable shapes but not in input field shapes,\nsince a sequential parser must know an array's size before reading it.",
+      "description": "A named dimension backed by a field reference or derived from an expression.\n\n``value`` is a Python expression string:\n  - bare identifier ``nlay``         \u2192 integer field reference\n  - ``len(auxiliary)``               \u2192 self-sizing array field reference\n  - anything else, e.g. ``nlay * ncol`` \u2192 derived arithmetic expression\n\nIf ``value`` is None, the dimension is runtime-only: its value cannot be\nderived from DFN input fields. ``set_in`` then indicates the simulation hook\nin which the value is first established by MODFLOW (e.g. ``\"ar\"`` for dims\nset during grid allocation, ``\"rp\"`` for dims reset each stress period).\n\nRuntime dims are valid in memory variable shapes but not in input field shapes,\nsince a sequential parser must know an array's size before reading it.",
       "properties": {
         "value": {
           "anyOf": [
@@ -375,18 +424,18 @@
           "title": "Type",
           "type": "string"
         },
-        "mode": {
+        "direction": {
           "enum": [
-            "filein",
-            "fileout"
+            "in",
+            "out"
           ],
-          "title": "Mode",
+          "title": "Direction",
           "type": "string"
         }
       },
       "required": [
         "name",
-        "mode"
+        "direction"
       ],
       "title": "File",
       "type": "object"
@@ -772,9 +821,6 @@
               "type": "boolean"
             },
             {
-              "type": "string"
-            },
-            {
               "type": "null"
             }
           ],
@@ -914,9 +960,6 @@
           "anyOf": [
             {
               "type": "boolean"
-            },
-            {
-              "type": "string"
             },
             {
               "type": "null"
