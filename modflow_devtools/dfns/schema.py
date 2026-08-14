@@ -3,7 +3,7 @@ import re
 from collections.abc import Mapping
 from os import PathLike
 from pathlib import Path
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any, Literal, cast
 
 from boltons.dictutils import OMD
 from pydantic import (
@@ -65,7 +65,7 @@ class FieldBase(BaseModel):
         every other field type renders identically either way. ``List`` has
         no inline form and raises if called with ``inline=True``.
         """
-        return _render_field(self, inline=inline)
+        return _render_field(cast("Field", self), inline=inline)
 
 
 class Keyword(FieldBase):
