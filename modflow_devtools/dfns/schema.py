@@ -50,6 +50,23 @@ class FieldBase(BaseModel):
             kwargs["context"] = {**(kwargs.get("context") or {}), "strip_names": True}
         return self.model_dump_json(**kwargs)
 
+    def render(self, *, inline: bool = False) -> str:
+        """Render this field as MF6IO-style template text.
+
+        No block indentation is baked in — a multi-line result (a shaped
+        ``Array``, a top-level ``Union``) is indented only relative to its
+        own first line; callers composing a field's render into a larger
+        template (e.g. ``Block``) are responsible for prefixing every line
+        with their own indent.
+
+        ``inline=True`` renders the field as a bare token for use inside a
+        parent ``Record``/``List`` row rather than owning its own row(s). It
+        only changes output for ``Array`` (with ``shape``) and ``Union`` —
+        every other field type renders identically either way. ``List`` has
+        no inline form and raises if called with ``inline=True``.
+        """
+        return _render_field(self, inline=inline)
+
 
 class Keyword(FieldBase):
     type: Literal["keyword"] = PydanticField(default="keyword", frozen=True)
@@ -174,27 +191,6 @@ def _tag(field: "Field", inner: str) -> str:
     return f"{field.name.upper()} {inner}" if field.tagged else inner
 
 
-def _render_inline(field: "Field") -> str:
-    """Render a field as a token within a record row."""
-    match field:
-        case Keyword():
-            token = field.name.upper()
-        case Array():
-            token = _tag(field, f"<{field.name}{_render_shape(field)}>")
-        case String() | Integer() | Double():
-            token = _tag(field, f"<{field.name}>")
-        case File():
-            token = _render_file(field)
-        case Record():
-            token = " ".join(_render_inline(f) for f in field.fields.values())
-        case Union():
-            # Nested union inside a record: collapse to a single placeholder
-            token = f"<{field.name}>"
-        case _:
-            token = f"<{field.name}>"
-    return f"[{token}]" if field.optional else token
-
-
 def _render_rows(item: "Record | Union") -> list[str]:
     """Return one or more rendered row strings for a List item.
 
@@ -204,61 +200,72 @@ def _render_rows(item: "Record | Union") -> list[str]:
     every option inline would be noise.
     """
     if isinstance(item, Record):
-        return [" ".join(_render_inline(f) for f in item.fields.values())]
+        return [" ".join(_render_field(f, inline=True) for f in item.fields.values())]
     if all(isinstance(arm, Record) for arm in item.arms.values()):
         return [
-            f"[{' '.join(_render_inline(f) for f in arm.fields.values())}]"
+            f"[{' '.join(_render_field(f, inline=True) for f in arm.fields.values())}]"
             for arm in item.arms.values()
             if isinstance(arm, Record)
         ]
     return [f"<{item.name}>"]
 
 
-def _render_field(field: "Field", indent: str = "  ") -> str:
-    """Render a top-level block field as one or more indented lines."""
+def _render_field(field: "Field", *, inline: bool = False) -> str:
+    """Render a field's own text, relative to its own first line (no block indent).
+
+    Backs ``FieldBase.render()`` — see that docstring for the ``inline``
+    semantics. Kept as a free function (rather than inlined per-subclass)
+    so ``Record``/``Union``/``List`` can recurse over arbitrary child field
+    types via a single ``match``.
+    """
 
     def _wrap(token: str) -> str:
         return f"[{token}]" if field.optional else token
 
     match field:
         case Keyword():
-            return f"{indent}{_wrap(field.name.upper())}"
+            return _wrap(field.name.upper())
         case String() | Integer() | Double():
-            return f"{indent}{_wrap(_tag(field, f'<{field.name}>'))}"
+            return _wrap(_tag(field, f"<{field.name}>"))
         case File():
-            return f"{indent}{_wrap(_render_file(field))}"
+            return _wrap(_render_file(field))
         case Array():
-            if field.shape:
-                body = f"{field.name.upper()}\n{indent}  <{field.name}{_render_shape(field)}> -- READARRAY"  # noqa: E501
-                return f"{indent}{_wrap(body)}"
-            return f"{indent}{_wrap(_tag(field, f'<{field.name}>'))}"
+            if inline or not field.shape:
+                return _wrap(_tag(field, f"<{field.name}{_render_shape(field)}>"))
+            body = f"{field.name.upper()}\n  <{field.name}{_render_shape(field)}> -- READARRAY"
+            return _wrap(body)
         case Record():
-            return f"{indent}{_wrap(' '.join(_render_inline(f) for f in field.fields.values()))}"
+            return _wrap(" ".join(_render_field(f, inline=True) for f in field.fields.values()))
         case Union():
+            if inline:
+                # Nested union inside a record: collapse to a single placeholder
+                return _wrap(f"<{field.name}>")
             lines = []
             for arm in field.arms.values():
                 inner = (
-                    " ".join(_render_inline(f) for f in arm.fields.values())
+                    " ".join(_render_field(f, inline=True) for f in arm.fields.values())
                     if isinstance(arm, Record)
                     else (arm.name.upper() if isinstance(arm, Keyword) else f"<{arm.name}>")
                 )
-                lines.append(f"{indent}{_wrap(inner)}")
+                lines.append(_wrap(inner))
             return "\n".join(lines)
         case List():
+            if inline:
+                raise ValueError(f"List field {field.name!r} has no inline form")
             rows = _render_rows(field.item)
             if len(rows) > 1:
-                return "\n".join(f"{indent}{r}" for r in rows)
-            return f"{indent}{rows[0]}\n{indent}{rows[0]}\n{indent}..."
+                return "\n".join(rows)
+            return f"{rows[0]}\n{rows[0]}\n..."
 
 
-def _render_block(block: "Block") -> str:
+def _render_block(block: "Block", indent: str = "  ") -> str:
     """Render a Block as a BEGIN/END template string."""
     begin = f"BEGIN {block.name.upper()}"
     if block.header is not None:
-        begin = f"{begin} {_render_inline(block.header)}"
+        begin = f"{begin} {block.header.render(inline=True)}"
     lines = [begin]
     for field in block.fields.values():
-        lines.append(_render_field(field))
+        lines.extend(f"{indent}{line}" for line in field.render().split("\n"))
     lines.append(f"END {block.name.upper()}")
     return "\n".join(lines)
 

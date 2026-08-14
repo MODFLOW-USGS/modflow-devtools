@@ -6,13 +6,19 @@ import pytest
 
 from modflow_devtools.dfns import Dfns
 from modflow_devtools.dfns.schema import (
+    Array,
     Block,
+    File,
     Integer,
+    Keyword,
+    List,
     MemoryScalar,
     Model,
     Package,
     Record,
     Simulation,
+    String,
+    Union,
 )
 
 
@@ -30,8 +36,6 @@ def test_field_dict_roundtrip():
 
 
 def test_block_optional_all_optional_fields():
-    from modflow_devtools.dfns.schema import Keyword
-
     block = Block(
         name="options",
         fields={
@@ -435,3 +439,158 @@ def test_memory_output_attributes_chd_no_to_mvr(dev3_spec):
     simtomvr = chd.memory["simtomvr"]
     assert simtomvr.budget is None
     assert simtomvr.output is None
+
+
+# --- FieldBase.render() -----------------------------------------------------
+
+
+def test_render_keyword():
+    field = Keyword(name="verbose")
+    assert field.render() == "VERBOSE"
+    assert field.render(inline=True) == "VERBOSE"
+
+
+def test_render_keyword_optional():
+    field = Keyword(name="verbose", optional=True)
+    assert field.render() == "[VERBOSE]"
+    assert field.render(inline=True) == "[VERBOSE]"
+
+
+def test_render_scalar_tagged():
+    field = String(name="fname", tagged=True)
+    assert field.render() == "FNAME <fname>"
+    assert field.render(inline=True) == "FNAME <fname>"
+
+
+def test_render_scalar_untagged():
+    field = Integer(name="nper", tagged=False)
+    assert field.render() == "<nper>"
+    assert field.render(inline=True) == "<nper>"
+
+
+def test_render_file():
+    filein = File(name="path", direction="in", tagged=False)
+    assert filein.render() == "FILEIN <path>"
+    assert filein.render(inline=True) == "FILEIN <path>"
+
+    fileout = File(name="csvfile", direction="out", tagged=True)
+    assert fileout.render() == "CSVFILE FILEOUT <csvfile>"
+    assert fileout.render(inline=True) == "CSVFILE FILEOUT <csvfile>"
+
+
+def test_render_array_no_shape():
+    """A shapeless Array has no READARRAY annotation; inline is a no-op."""
+    field = Array(name="aux", dtype="double", tagged=False)
+    assert field.render() == "<aux>"
+    assert field.render(inline=True) == "<aux>"
+
+
+def test_render_array_with_shape():
+    """Non-inline adds the NAME/READARRAY annotation; inline is the bare token."""
+    field = Array(name="k", dtype="double", shape=["nodes"], tagged=True)
+    assert field.render() == "K\n  <k(nodes)> -- READARRAY"
+    assert field.render(inline=True) == "K <k(nodes)>"
+
+
+def test_render_record():
+    """Record inline-expands its children the same way whether inline or not."""
+    field = Record(
+        name="tabrecord",
+        fields={
+            "tab6": Keyword(name="tab6"),
+            "fname": File(name="fname", direction="in", tagged=False),
+        },
+    )
+    assert field.render() == "TAB6 FILEIN <fname>"
+    assert field.render(inline=True) == "TAB6 FILEIN <fname>"
+
+
+def test_render_union_default_expands_arms():
+    """A standalone Union field's default render() is one row per arm, wrapped
+    in [...] if the *Union* itself (not the arm) is optional."""
+    field = Union(
+        name="ocsetting",
+        optional=True,
+        arms={
+            "save": Record(
+                name="saverecord",
+                fields={
+                    "save": Keyword(name="save"),
+                    "rtype": String(name="rtype", tagged=False),
+                },
+            ),
+            "print": Record(
+                name="printrecord",
+                fields={
+                    "print": Keyword(name="print"),
+                    "rtype": String(name="rtype", tagged=False),
+                },
+            ),
+        },
+    )
+    assert field.render() == "[SAVE <rtype>]\n[PRINT <rtype>]"
+
+
+def test_render_union_inline_collapses():
+    """A Union nested in a Record/List row collapses to a bare placeholder."""
+    field = Union(
+        name="ocsetting",
+        arms={
+            "save": Record(name="saverecord", fields={"save": Keyword(name="save")}),
+            "print": Record(name="printrecord", fields={"print": Keyword(name="print")}),
+        },
+    )
+    assert field.render(inline=True) == "<ocsetting>"
+
+
+def test_render_union_default_scalar_arm():
+    """A non-Record arm renders as its bare token (Keyword: NAME; else: <name>),
+    ignoring the arm's own `tagged` — matches the pre-refactor behavior."""
+    field = Union(
+        name="releasesetting",
+        arms={
+            "all": Keyword(name="all"),
+            "frequency": Integer(name="frequency", tagged=True),
+        },
+    )
+    assert field.render() == "ALL\n<frequency>"
+
+
+def test_render_list_inline_raises():
+    """List has no inline form — it can never appear nested in a Record/Union,
+    so `inline=True` is a caller misuse, not a reachable internal state."""
+    field = List(
+        name="stress_period_data",
+        item=Record(name="stress_period_data", fields={"cellid": Keyword(name="cellid")}),
+    )
+    with pytest.raises(ValueError):
+        field.render(inline=True)
+
+
+def test_render_list_single_row_type():
+    field = List(
+        name="perioddata",
+        item=Record(
+            name="perioddata",
+            fields={
+                "cellid": Keyword(name="cellid"),
+                "head": String(name="head", tagged=False),
+            },
+        ),
+    )
+    assert field.render() == "CELLID <head>\nCELLID <head>\n..."
+
+
+def test_render_block_matches_per_field_assembly(dev3_spec):
+    """Block.render() must equal BEGIN/END plus each field's own render(),
+    indented by the block — guards the two entry points against drifting apart."""
+    for component in dev3_spec.components.values():
+        for block in (component.blocks or {}).values():
+            begin = f"BEGIN {block.name.upper()}"
+            if block.header is not None:
+                begin = f"{begin} {block.header.render(inline=True)}"
+            lines = [begin]
+            for field in block.fields.values():
+                lines.extend(f"  {line}" for line in field.render().split("\n"))
+            lines.append(f"END {block.name.upper()}")
+            assert block.render() == "\n".join(lines)
