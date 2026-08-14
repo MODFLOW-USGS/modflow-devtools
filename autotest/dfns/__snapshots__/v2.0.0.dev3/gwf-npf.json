@@ -177,13 +177,15 @@
           "type": "keyword",
           "longname": "turn off Newton for unconfined cells",
           "description": "turn off Newton for unconfined cells",
-          "optional": true
+          "optional": true,
+          "developmode": true
         },
         "dev_omega": {
           "type": "double",
           "longname": "set saturation omega value",
           "description": "set saturation omega value",
-          "optional": true
+          "optional": true,
+          "developmode": true
         }
       }
     },
@@ -196,6 +198,7 @@
           "default": 0,
           "netcdf": true,
           "dtype": "integer",
+          "layered": true,
           "shape": [
             "nodes"
           ]
@@ -207,6 +210,7 @@
           "default": 1.0,
           "netcdf": true,
           "dtype": "double",
+          "layered": true,
           "shape": [
             "nodes"
           ]
@@ -218,6 +222,7 @@
           "optional": true,
           "netcdf": true,
           "dtype": "double",
+          "layered": true,
           "shape": [
             "nodes"
           ]
@@ -229,6 +234,7 @@
           "optional": true,
           "netcdf": true,
           "dtype": "double",
+          "layered": true,
           "shape": [
             "nodes"
           ]
@@ -240,6 +246,7 @@
           "optional": true,
           "netcdf": true,
           "dtype": "double",
+          "layered": true,
           "shape": [
             "nodes"
           ]
@@ -251,6 +258,7 @@
           "optional": true,
           "netcdf": true,
           "dtype": "double",
+          "layered": true,
           "shape": [
             "nodes"
           ]
@@ -262,6 +270,7 @@
           "optional": true,
           "netcdf": true,
           "dtype": "double",
+          "layered": true,
           "shape": [
             "nodes"
           ]
@@ -273,6 +282,7 @@
           "optional": true,
           "netcdf": true,
           "dtype": "double",
+          "layered": true,
           "shape": [
             "nodes"
           ]

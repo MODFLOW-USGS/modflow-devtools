@@ -29,6 +29,7 @@ type = "integer"
 longname = "exit solve method"
 description = "the method for iterative solution of particle exit location and time in the generalized Pollock's method.  0 default, 1 Brent, 2 Chandrupatla.  The default is Brent's method."
 optional = true
+developmode = true
 
 [blocks.options.fields.exit_solve_tolerance]
 type = "double"
@@ -114,31 +115,37 @@ optional = true
 [blocks.options.fields.release_timesrecord]
 type = "record"
 optional = true
+removed = "6.6.0"
 
 [blocks.options.fields.release_timesrecord.fields.release_times]
 type = "keyword"
 description = "keyword indicating release times will follow"
+removed = "6.6.0"
 
 [blocks.options.fields.release_timesrecord.fields.times]
 type = "array"
 longname = "release times"
 description = "times to release, relative to the beginning of the simulation.  RELEASE_TIMES and RELEASE_TIMESFILE are mutually exclusive."
 tagged = false
+removed = "6.6.0"
 dtype = "double"
 
 [blocks.options.fields.release_timesfilerecord]
 type = "record"
 optional = true
+removed = "6.6.0"
 
 [blocks.options.fields.release_timesfilerecord.fields.release_timesfile]
 type = "keyword"
 description = "keyword indicating release times file name will follow"
+removed = "6.6.0"
 
 [blocks.options.fields.release_timesfilerecord.fields.timesfile]
 type = "string"
 longname = "file keyword"
 description = "name of the release times file.  RELEASE_TIMES and RELEASE_TIMESFILE are mutually exclusive."
 tagged = false
+removed = "6.6.0"
 case_sensitive = true
 
 [blocks.options.fields.dry_tracking_method]
@@ -156,6 +163,7 @@ valid = [
 type = "keyword"
 longname = "force ternary tracking method"
 description = "force use of the ternary tracking method regardless of cell type in DISV grids."
+developmode = true
 
 [blocks.options.fields.release_time_tolerance]
 type = "double"
@@ -185,6 +193,7 @@ type = "integer"
 longname = "cycle detection window size"
 description = "integer value defining the size of the window (number of consecutive exit events) used for cycle detection. Defaults to 0, disabling cycle detection. With detection enabled, particle pathlines with duplicate cell exit events (i.e., exiting the same cell through the same face twice) will cause the program to terminate with an error. A larger window size provides more robust cycle detection at the cost of more runtime operations per cell exit."
 optional = true
+developmode = true
 
 [blocks.dimensions.fields.nreleasepts]
 type = "integer"
@@ -295,6 +304,7 @@ dtype = "integer"
 type = "array"
 description = "release particles after the specified fraction of the time step has elapsed. If FRACTION is not set, particles are released at the start of the specified time step(s). FRACTION must be a single value when used with ALL, FIRST, or FREQUENCY. When used with STEPS, FRACTION may be a single value or an array of the same length as STEPS. If a single FRACTION value is provided with STEPS, the fraction applies to all steps. NOTE: The FRACTION option has been removed. For fine control over release timing, specify times explicitly using the RELEASETIMES block."
 optional = true
+removed = "6.6.0"
 dtype = "double"
 
 [blocks.period.header]

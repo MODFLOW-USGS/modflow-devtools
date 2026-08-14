@@ -208,11 +208,13 @@ blocks:
         longname: turn off Newton for unconfined cells
         description: turn off Newton for unconfined cells
         optional: true
+        developmode: true
       dev_omega:
         type: double
         longname: set saturation omega value
         description: set saturation omega value
         optional: true
+        developmode: true
   griddata:
     fields:
       icelltype:
@@ -229,6 +231,7 @@ blocks:
         default: 0
         netcdf: true
         dtype: integer
+        layered: true
         shape:
           - nodes
       k:
@@ -243,6 +246,7 @@ blocks:
         default: 1.0
         netcdf: true
         dtype: double
+        layered: true
         shape:
           - nodes
       k22:
@@ -259,6 +263,7 @@ blocks:
         optional: true
         netcdf: true
         dtype: double
+        layered: true
         shape:
           - nodes
       k33:
@@ -271,6 +276,7 @@ blocks:
         optional: true
         netcdf: true
         dtype: double
+        layered: true
         shape:
           - nodes
       angle1:
@@ -288,6 +294,7 @@ blocks:
         optional: true
         netcdf: true
         dtype: double
+        layered: true
         shape:
           - nodes
       angle2:
@@ -306,6 +313,7 @@ blocks:
         optional: true
         netcdf: true
         dtype: double
+        layered: true
         shape:
           - nodes
       angle3:
@@ -321,6 +329,7 @@ blocks:
         optional: true
         netcdf: true
         dtype: double
+        layered: true
         shape:
           - nodes
       wetdry:
@@ -338,5 +347,6 @@ blocks:
         optional: true
         netcdf: true
         dtype: double
+        layered: true
         shape:
           - nodes

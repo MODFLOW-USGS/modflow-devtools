@@ -139,6 +139,7 @@ blocks:
         longname: model bottom elevation
         description: is the bottom elevation for each cell.
         dtype: double
+        layered: true
         shape:
           - ncpl
           - nlay
@@ -155,6 +156,7 @@ blocks:
           to as a 'vertical pass through' cell.
         optional: true
         dtype: integer
+        layered: true
         shape:
           - ncpl
           - nlay

@@ -62,11 +62,13 @@ blocks:
         longname: development option for original specific storage
         description: flag indicating the original storage specific storage formulation should be used
         optional: true
+        developmode: true
       dev_oldstorageformulation:
         type: keyword
         longname: development option flag for old storage formulation
         description: development option flag for old storage formulation
         optional: true
+        developmode: true
   griddata:
     fields:
       iconvert:
@@ -79,6 +81,7 @@ blocks:
         default: 0
         netcdf: true
         dtype: integer
+        layered: true
         shape:
           - nodes
       ss:
@@ -90,6 +93,7 @@ blocks:
         default: 1.0e-05
         netcdf: true
         dtype: double
+        layered: true
         shape:
           - nodes
       sy:
@@ -100,6 +104,7 @@ blocks:
         default: 0.15
         netcdf: true
         dtype: double
+        layered: true
         shape:
           - nodes
   period:

@@ -77,8 +77,12 @@ class Field(TypedDict):
     layered: NotRequired[bool | None]
     preserve_case: NotRequired[bool]
     numeric_index: NotRequired[bool]
-    deprecated: NotRequired[bool]
-    removed: NotRequired[bool]
+    # Version strings (e.g. "6.6.0"), not booleans -- `load_dfn` stores every
+    # attribute's raw text verbatim (see `field[key] = value` above), and unlike
+    # the boolean-flag attributes here, nothing coerces these two via
+    # `try_parse_bool` downstream.
+    deprecated: NotRequired[str | None]
+    removed: NotRequired[str | None]
     mf6internal: NotRequired[str | None]
     block_variable: NotRequired[bool]
     just_data: NotRequired[bool]

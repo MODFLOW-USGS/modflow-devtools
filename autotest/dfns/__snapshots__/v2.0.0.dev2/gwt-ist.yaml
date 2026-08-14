@@ -155,6 +155,7 @@ blocks:
           immobile domain volume.
         netcdf: true
         dtype: double
+        layered: true
         shape:
           - nodes
       volfrac:
@@ -164,6 +165,7 @@ blocks:
           immobile domain volume fractions must be less than one.
         netcdf: true
         dtype: double
+        layered: true
         shape:
           - nodes
       zetaim:
@@ -173,6 +175,7 @@ blocks:
           of per time.
         netcdf: true
         dtype: double
+        layered: true
         shape:
           - nodes
       cim:
@@ -183,6 +186,7 @@ blocks:
         optional: true
         netcdf: true
         dtype: double
+        layered: true
         shape:
           - nodes
       decay:
@@ -196,6 +200,7 @@ blocks:
         optional: true
         netcdf: true
         dtype: double
+        layered: true
         shape:
           - nodes
       decay_sorbed:
@@ -211,6 +216,7 @@ blocks:
         optional: true
         netcdf: true
         dtype: double
+        layered: true
         shape:
           - nodes
       bulk_density:
@@ -224,6 +230,7 @@ blocks:
         optional: true
         netcdf: true
         dtype: double
+        layered: true
         shape:
           - nodes
       distcoef:
@@ -236,6 +243,7 @@ blocks:
         optional: true
         netcdf: true
         dtype: double
+        layered: true
         shape:
           - nodes
       sp2:
@@ -249,5 +257,6 @@ blocks:
         optional: true
         netcdf: true
         dtype: double
+        layered: true
         shape:
           - nodes

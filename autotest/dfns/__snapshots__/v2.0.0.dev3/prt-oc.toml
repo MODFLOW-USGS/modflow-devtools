@@ -122,31 +122,37 @@ optional = true
 [blocks.options.fields.track_timesrecord]
 type = "record"
 optional = true
+removed = "6.6.0"
 
 [blocks.options.fields.track_timesrecord.fields.track_times]
 type = "keyword"
 description = "keyword indicating tracking times will follow"
+removed = "6.6.0"
 
 [blocks.options.fields.track_timesrecord.fields.times]
 type = "array"
 longname = "tracking times"
 description = "times to track, relative to the beginning of the simulation."
 tagged = false
+removed = "6.6.0"
 dtype = "double"
 
 [blocks.options.fields.track_timesfilerecord]
 type = "record"
 optional = true
+removed = "6.6.0"
 
 [blocks.options.fields.track_timesfilerecord.fields.track_timesfile]
 type = "keyword"
 description = "keyword indicating tracking times file name will follow"
+removed = "6.6.0"
 
 [blocks.options.fields.track_timesfilerecord.fields.timesfile]
 type = "string"
 longname = "file keyword"
 description = "name of the tracking times file"
 tagged = false
+removed = "6.6.0"
 case_sensitive = true
 
 [blocks.options.fields.dev_dump_event_trace]
@@ -154,6 +160,7 @@ type = "keyword"
 longname = "print particle tracking events"
 description = "print a verbose particle tracking event trace to standard output"
 optional = true
+developmode = true
 
 [blocks.dimensions.fields.ntracktimes]
 type = "integer"

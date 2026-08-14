@@ -96,6 +96,7 @@ blocks:
         longname: turn off Newton for unconfined cells
         description: turn off Newton for unconfined cells
         optional: true
+        developmode: true
   dimensions:
     fields:
       maxbound:
@@ -113,6 +114,7 @@ blocks:
         default: 3.0e+30
         netcdf: true
         dtype: double
+        layered: true
         shape:
           - nodes
       aux:
@@ -125,6 +127,7 @@ blocks:
         optional: true
         netcdf: true
         dtype: double
+        layered: true
         shape:
           - nodes
     header:

@@ -66,6 +66,7 @@ longname = "porosity"
 description = "is the mobile domain porosity, defined as the mobile domain pore volume per mobile domain volume.  Additional information on porosity within the context of mobile and immobile domain transport simulations is included in the MODFLOW 6 Supplemental Technical Information document."
 netcdf = true
 dtype = "double"
+layered = true
 shape = [
     "nodes",
 ]
@@ -77,6 +78,7 @@ description = "is the rate coefficient for first or zero-order decay for the aqu
 optional = true
 netcdf = true
 dtype = "double"
+layered = true
 shape = [
     "nodes",
 ]
@@ -88,6 +90,7 @@ description = "is the rate coefficient for first or zero-order decay for the sor
 optional = true
 netcdf = true
 dtype = "double"
+layered = true
 shape = [
     "nodes",
 ]
@@ -99,6 +102,7 @@ description = "is the bulk density of the aquifer in mass per length cubed.  bul
 optional = true
 netcdf = true
 dtype = "double"
+layered = true
 shape = [
     "nodes",
 ]
@@ -110,6 +114,7 @@ description = "is the distribution coefficient for the equilibrium-controlled li
 optional = true
 netcdf = true
 dtype = "double"
+layered = true
 shape = [
     "nodes",
 ]
@@ -121,6 +126,7 @@ description = "is the exponent for the Freundlich isotherm and the sorption capa
 optional = true
 netcdf = true
 dtype = "double"
+layered = true
 shape = [
     "nodes",
 ]

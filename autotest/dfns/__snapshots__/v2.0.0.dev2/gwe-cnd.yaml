@@ -48,6 +48,7 @@ blocks:
         optional: true
         netcdf: true
         dtype: double
+        layered: true
         shape:
           - nodes
       alv:
@@ -61,6 +62,7 @@ blocks:
         optional: true
         netcdf: true
         dtype: double
+        layered: true
         shape:
           - nodes
       ath1:
@@ -74,6 +76,7 @@ blocks:
         optional: true
         netcdf: true
         dtype: double
+        layered: true
         shape:
           - nodes
       ath2:
@@ -87,6 +90,7 @@ blocks:
         optional: true
         netcdf: true
         dtype: double
+        layered: true
         shape:
           - nodes
       atv:
@@ -99,6 +103,7 @@ blocks:
         optional: true
         netcdf: true
         dtype: double
+        layered: true
         shape:
           - nodes
       ktw:
@@ -111,6 +116,7 @@ blocks:
         optional: true
         netcdf: true
         dtype: double
+        layered: true
         shape:
           - nodes
       kts:
@@ -120,5 +126,6 @@ blocks:
         optional: true
         netcdf: true
         dtype: double
+        layered: true
         shape:
           - nodes

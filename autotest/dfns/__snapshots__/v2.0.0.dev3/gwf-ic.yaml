@@ -37,6 +37,7 @@ blocks:
         default: 1.0
         netcdf: true
         dtype: double
+        layered: true
         shape:
           - nodes
 memory:

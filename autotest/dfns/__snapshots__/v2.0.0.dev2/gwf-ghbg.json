@@ -105,6 +105,7 @@
           "default": 3e+30,
           "netcdf": true,
           "dtype": "double",
+          "layered": true,
           "shape": [
             "nodes"
           ]
@@ -116,6 +117,7 @@
           "default": 3e+30,
           "netcdf": true,
           "dtype": "double",
+          "layered": true,
           "shape": [
             "nodes"
           ]
@@ -127,6 +129,7 @@
           "optional": true,
           "netcdf": true,
           "dtype": "double",
+          "layered": true,
           "shape": [
             "nodes"
           ]

@@ -22,6 +22,7 @@ description = "is the initial (starting) concentration---that is, concentration 
 default = 0.0
 netcdf = true
 dtype = "double"
+layered = true
 shape = [
     "nodes",
 ]

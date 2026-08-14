@@ -114,6 +114,7 @@ blocks:
         default: 3.0e+30
         netcdf: true
         dtype: double
+        layered: true
         shape:
           - nodes
       cond:
@@ -123,6 +124,7 @@ blocks:
         default: 3.0e+30
         netcdf: true
         dtype: double
+        layered: true
         shape:
           - nodes
       rbot:
@@ -132,6 +134,7 @@ blocks:
         default: 3.0e+30
         netcdf: true
         dtype: double
+        layered: true
         shape:
           - nodes
       aux:
@@ -144,6 +147,7 @@ blocks:
         optional: true
         netcdf: true
         dtype: double
+        layered: true
         shape:
           - nodes
     header:

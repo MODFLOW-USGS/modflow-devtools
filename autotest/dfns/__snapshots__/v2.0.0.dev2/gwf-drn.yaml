@@ -111,6 +111,7 @@ blocks:
         longname: cubic-scaling
         description: cubic-scaling is used to scale the drain conductance
         optional: true
+        developmode: true
   dimensions:
     fields:
       maxbound:

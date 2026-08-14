@@ -296,6 +296,7 @@ description = "is the initial elastic coarse-grained material specific storage o
 default = 1e-05
 netcdf = true
 dtype = "double"
+layered = true
 shape = [
     "nodes",
 ]
@@ -307,6 +308,7 @@ description = "is the initial porosity of coarse-grained materials."
 default = 0.2
 netcdf = true
 dtype = "double"
+layered = true
 shape = [
     "nodes",
 ]
@@ -318,6 +320,7 @@ description = "is the specific gravity of moist or unsaturated sediments.  If no
 optional = true
 netcdf = true
 dtype = "double"
+layered = true
 shape = [
     "nodes",
 ]
@@ -329,6 +332,7 @@ description = "is the specific gravity of saturated sediments. If not specified,
 optional = true
 netcdf = true
 dtype = "double"
+layered = true
 shape = [
     "nodes",
 ]

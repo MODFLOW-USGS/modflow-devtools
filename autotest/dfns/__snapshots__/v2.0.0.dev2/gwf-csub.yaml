@@ -320,6 +320,7 @@ blocks:
         default: 1.0e-05
         netcdf: true
         dtype: double
+        layered: true
         shape:
           - nodes
       cg_theta:
@@ -329,6 +330,7 @@ blocks:
         default: 0.2
         netcdf: true
         dtype: double
+        layered: true
         shape:
           - nodes
       sgm:
@@ -339,6 +341,7 @@ blocks:
         optional: true
         netcdf: true
         dtype: double
+        layered: true
         shape:
           - nodes
       sgs:
@@ -349,6 +352,7 @@ blocks:
         optional: true
         netcdf: true
         dtype: double
+        layered: true
         shape:
           - nodes
   packagedata:

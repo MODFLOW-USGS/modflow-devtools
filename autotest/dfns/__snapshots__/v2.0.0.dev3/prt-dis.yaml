@@ -161,6 +161,7 @@ blocks:
         description: is the bottom elevation for each cell.
         default: 0.0
         dtype: double
+        layered: true
         shape:
           - ncol
           - nrow
@@ -178,6 +179,7 @@ blocks:
           to as a 'vertical pass through' cell.
         optional: true
         dtype: integer
+        layered: true
         shape:
           - ncol
           - nrow

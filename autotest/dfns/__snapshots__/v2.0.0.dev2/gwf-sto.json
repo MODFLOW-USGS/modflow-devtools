@@ -58,13 +58,15 @@
           "type": "keyword",
           "longname": "development option for original specific storage",
           "description": "flag indicating the original storage specific storage formulation should be used",
-          "optional": true
+          "optional": true,
+          "developmode": true
         },
         "dev_oldstorageformulation": {
           "type": "keyword",
           "longname": "development option flag for old storage formulation",
           "description": "development option flag for old storage formulation",
-          "optional": true
+          "optional": true,
+          "developmode": true
         }
       }
     },
@@ -77,6 +79,7 @@
           "default": 0,
           "netcdf": true,
           "dtype": "integer",
+          "layered": true,
           "shape": [
             "nodes"
           ]
@@ -88,6 +91,7 @@
           "default": 1e-05,
           "netcdf": true,
           "dtype": "double",
+          "layered": true,
           "shape": [
             "nodes"
           ]
@@ -99,6 +103,7 @@
           "default": 0.15,
           "netcdf": true,
           "dtype": "double",
+          "layered": true,
           "shape": [
             "nodes"
           ]

@@ -93,6 +93,7 @@ blocks:
         longname: turn off Newton for unconfined cells
         description: turn off Newton for unconfined cells
         optional: true
+        developmode: true
   dimensions:
     fields:
       maxbound:

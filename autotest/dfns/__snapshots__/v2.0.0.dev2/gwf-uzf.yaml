@@ -187,6 +187,7 @@ blocks:
           as a way to handle seepage to land surface.  The Drain Package with discharge scaling is described
           in Chapter 3 of the Supplemental Technical Information.
         optional: true
+        deprecated: 6.5.0
       unsat_etwc:
         type: keyword
         longname: use PET for theta greater than extwc

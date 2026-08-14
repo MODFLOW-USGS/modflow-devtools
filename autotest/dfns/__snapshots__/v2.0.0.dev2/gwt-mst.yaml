@@ -76,6 +76,7 @@ blocks:
           document.
         netcdf: true
         dtype: double
+        layered: true
         shape:
           - nodes
       decay:
@@ -89,6 +90,7 @@ blocks:
         optional: true
         netcdf: true
         dtype: double
+        layered: true
         shape:
           - nodes
       decay_sorbed:
@@ -104,6 +106,7 @@ blocks:
         optional: true
         netcdf: true
         dtype: double
+        layered: true
         shape:
           - nodes
       bulk_density:
@@ -116,6 +119,7 @@ blocks:
         optional: true
         netcdf: true
         dtype: double
+        layered: true
         shape:
           - nodes
       distcoef:
@@ -128,6 +132,7 @@ blocks:
         optional: true
         netcdf: true
         dtype: double
+        layered: true
         shape:
           - nodes
       sp2:
@@ -140,5 +145,6 @@ blocks:
         optional: true
         netcdf: true
         dtype: double
+        layered: true
         shape:
           - nodes

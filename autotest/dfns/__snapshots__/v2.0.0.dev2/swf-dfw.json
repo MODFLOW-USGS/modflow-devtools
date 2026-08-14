@@ -70,7 +70,8 @@
           "type": "keyword",
           "longname": "use SWR conductance formulation",
           "description": "use the conductance formulation in the Surface Water Routing (SWR) Process for MODFLOW-2005.",
-          "optional": true
+          "optional": true,
+          "developmode": true
         }
       }
     },

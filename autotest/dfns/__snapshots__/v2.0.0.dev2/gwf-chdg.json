@@ -83,7 +83,8 @@
           "type": "keyword",
           "longname": "turn off Newton for unconfined cells",
           "description": "turn off Newton for unconfined cells",
-          "optional": true
+          "optional": true,
+          "developmode": true
         }
       }
     },
@@ -106,6 +107,7 @@
           "default": 3e+30,
           "netcdf": true,
           "dtype": "double",
+          "layered": true,
           "shape": [
             "nodes"
           ]
@@ -117,6 +119,7 @@
           "optional": true,
           "netcdf": true,
           "dtype": "double",
+          "layered": true,
           "shape": [
             "nodes"
           ]

@@ -94,6 +94,7 @@ type = "keyword"
 longname = "turn off Newton for unconfined cells"
 description = "turn off Newton for unconfined cells"
 optional = true
+developmode = true
 
 [blocks.dimensions.fields.maxbound]
 type = "integer"

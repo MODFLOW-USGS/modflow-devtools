@@ -99,6 +99,7 @@ description = "is the boundary head."
 default = 3e+30
 netcdf = true
 dtype = "double"
+layered = true
 shape = [
     "nodes",
 ]
@@ -110,6 +111,7 @@ description = "is the hydraulic conductance of the interface between the aquifer
 default = 3e+30
 netcdf = true
 dtype = "double"
+layered = true
 shape = [
     "nodes",
 ]
@@ -121,6 +123,7 @@ description = "is an array of values for auxiliary variable aux(iaux), where iau
 optional = true
 netcdf = true
 dtype = "double"
+layered = true
 shape = [
     "nodes",
 ]

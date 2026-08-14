@@ -142,6 +142,7 @@ blocks:
         description: is the bottom elevation for each cell.
         netcdf: true
         dtype: double
+        layered: true
         shape:
           - ncpl
           - nlay
@@ -159,6 +160,7 @@ blocks:
         optional: true
         netcdf: true
         dtype: integer
+        layered: true
         shape:
           - ncpl
           - nlay

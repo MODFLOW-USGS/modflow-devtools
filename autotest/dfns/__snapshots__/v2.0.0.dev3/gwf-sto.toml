@@ -57,12 +57,14 @@ type = "keyword"
 longname = "development option for original specific storage"
 description = "flag indicating the original storage specific storage formulation should be used"
 optional = true
+developmode = true
 
 [blocks.options.fields.dev_oldstorageformulation]
 type = "keyword"
 longname = "development option flag for old storage formulation"
 description = "development option flag for old storage formulation"
 optional = true
+developmode = true
 
 [blocks.griddata.fields.iconvert]
 type = "array"
@@ -71,6 +73,7 @@ description = "is a flag for each cell that specifies whether or not a cell is c
 default = 0
 netcdf = true
 dtype = "integer"
+layered = true
 shape = [
     "nodes",
 ]
@@ -82,6 +85,7 @@ description = "is specific storage (or the storage coefficient if STORAGECOEFFIC
 default = 1e-05
 netcdf = true
 dtype = "double"
+layered = true
 shape = [
     "nodes",
 ]
@@ -93,6 +97,7 @@ description = "is specific yield. Specific yield values must be greater than or 
 default = 0.15
 netcdf = true
 dtype = "double"
+layered = true
 shape = [
     "nodes",
 ]

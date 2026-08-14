@@ -70,6 +70,7 @@ blocks:
           domain volume.  The GWE model does not support the concept of an immobile domain in the context
           of heat transport.
         dtype: double
+        layered: true
         shape:
           - nodes
       decay_water:
@@ -82,6 +83,7 @@ blocks:
           is specified in the options block.
         optional: true
         dtype: double
+        layered: true
         shape:
           - nodes
       decay_solid:
@@ -93,6 +95,7 @@ blocks:
           simulation results unless ZERO_ORDER_DECAY_SOLID is specified in the options block.
         optional: true
         dtype: double
+        layered: true
         shape:
           - nodes
       heat_capacity_solid:
@@ -101,6 +104,7 @@ blocks:
         description: is the mass-based heat capacity of dry solids (aquifer material). For example, units
           of J/kg/C may be used (or equivalent).
         dtype: double
+        layered: true
         shape:
           - nodes
       density_solid:
@@ -110,6 +114,7 @@ blocks:
           voids. Value will remain fixed for the entire simulation.  For example, if working in SI units,
           values may be entered as kilograms per cubic meter.
         dtype: double
+        layered: true
         shape:
           - nodes
 memory:

@@ -153,6 +153,7 @@ longname = "porosity of the immobile domain"
 description = "porosity of the immobile domain specified as the immobile domain pore volume per immobile domain volume."
 netcdf = true
 dtype = "double"
+layered = true
 shape = [
     "nodes",
 ]
@@ -163,6 +164,7 @@ longname = "volume fraction of this immobile domain"
 description = "fraction of the cell volume that consists of this immobile domain.  The sum of all immobile domain volume fractions must be less than one."
 netcdf = true
 dtype = "double"
+layered = true
 shape = [
     "nodes",
 ]
@@ -173,6 +175,7 @@ longname = "mass transfer rate coefficient between the mobile and immobile domai
 description = "mass transfer rate coefficient between the mobile and immobile domains, in dimensions of per time."
 netcdf = true
 dtype = "double"
+layered = true
 shape = [
     "nodes",
 ]
@@ -184,6 +187,7 @@ description = "initial concentration of the immobile domain in mass per length c
 optional = true
 netcdf = true
 dtype = "double"
+layered = true
 shape = [
     "nodes",
 ]
@@ -195,6 +199,7 @@ description = "is the rate coefficient for first or zero-order decay for the aqu
 optional = true
 netcdf = true
 dtype = "double"
+layered = true
 shape = [
     "nodes",
 ]
@@ -206,6 +211,7 @@ description = "is the rate coefficient for first or zero-order decay for the sor
 optional = true
 netcdf = true
 dtype = "double"
+layered = true
 shape = [
     "nodes",
 ]
@@ -217,6 +223,7 @@ description = "is the bulk density of this immobile domain in mass per length cu
 optional = true
 netcdf = true
 dtype = "double"
+layered = true
 shape = [
     "nodes",
 ]
@@ -228,6 +235,7 @@ description = "is the distribution coefficient for the equilibrium-controlled li
 optional = true
 netcdf = true
 dtype = "double"
+layered = true
 shape = [
     "nodes",
 ]
@@ -239,6 +247,7 @@ description = "is the exponent for the Freundlich isotherm and the sorption capa
 optional = true
 netcdf = true
 dtype = "double"
+layered = true
 shape = [
     "nodes",
 ]

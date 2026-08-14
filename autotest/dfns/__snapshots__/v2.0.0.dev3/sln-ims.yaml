@@ -37,6 +37,7 @@ blocks:
       csv_output_filerecord:
         type: record
         optional: true
+        deprecated: 6.1.1
         fields:
           csv_output:
             type: keyword
@@ -45,6 +46,7 @@ blocks:
               solver convergence output.  The CSV_OUTPUT option has been deprecated and split into the
               CSV_OUTER_OUTPUT and CSV_INNER_OUTPUT options.  Starting with MODFLOW 6 version 6.1.1 if
               the CSV_OUTPUT option is specified, then it is treated as the CSV_OUTER_OUTPUT option.
+            deprecated: 6.1.1
           csvfile:
             type: file
             longname: file keyword
@@ -55,6 +57,7 @@ blocks:
               and maximum residual convergence information for the solution and each model (if the solution
               includes more than one model) and linear acceleration information for each inner iteration.
             tagged: false
+            deprecated: 6.1.1
             direction: out
       csv_outer_output_filerecord:
         type: record
@@ -147,6 +150,7 @@ blocks:
           (for dependent variable), however either one can be specified in order to maintain backward
           compatibility.
         optional: true
+        deprecated: 6.1.1
       outer_dvclose:
         type: double
         longname: dependent-variable change criterion
@@ -169,6 +173,7 @@ blocks:
           can be still be specified for backward compatibility with previous versions of MODFLOW 6 but
           eventually specification of OUTER_RCLOSEBND will cause MODFLOW 6 to terminate with an error.
         optional: true
+        deprecated: 6.1.1
       outer_maximum:
         type: integer
         longname: outer maximum iterations
@@ -294,6 +299,7 @@ blocks:
           the more general INNER_DVCLOSE (for dependent variable), however either one can be specified
           in order to maintain backward compatibility.
         optional: true
+        deprecated: 6.1.1
       inner_dvclose:
         type: double
         longname: dependent-variable change tolerance

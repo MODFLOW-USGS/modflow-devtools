@@ -8,6 +8,7 @@ from modflow_devtools.dfns import Dfns
 from modflow_devtools.dfns.schema import (
     Array,
     Block,
+    Double,
     File,
     Integer,
     Keyword,
@@ -348,7 +349,7 @@ def test_render_respects_tagged_scalars_in_record(dev3_spec):
 def test_render_respects_untagged_arrays_in_record(dev3_spec):
     """Untagged Array subfields of a Record (e.g. cellid) must render without a keyword."""
     render = dev3_spec.components["gwf-chd"].blocks["period"].render()
-    assert "<cellid(ncelldim)> <head>" in render
+    assert "<cellid(ncelldim)> <@head@>" in render
     assert "CELLID" not in render
 
 
@@ -388,6 +389,31 @@ def test_render_block_header_record(dev3_spec):
     """render() attaches a record header to the BEGIN line, matching mf6io.pdf."""
     render = dev3_spec.components["utl-obs"].blocks["continuous"].render()
     assert render.startswith("BEGIN CONTINUOUS FILEOUT <obs_output_file_name> [BINARY]\n")
+
+
+def test_render_griddata_layered_and_netcdf(dev3_spec):
+    """Matches mf6io.pdf's GRIDDATA structure block for gwf-npf: every array is
+    both layered and netcdf-exportable."""
+    render = dev3_spec.components["gwf-npf"].blocks["griddata"].render()
+    assert "ICELLTYPE [LAYERED] $[NETCDF]$\n    <icelltype(nodes)> -- READARRAY" in render
+    assert "K [LAYERED] $[NETCDF]$\n    <k(nodes)> -- READARRAY" in render
+
+
+def test_render_griddata_layered_only(dev3_spec):
+    """chf-ic's strt is layered but not netcdf-exportable."""
+    render = dev3_spec.components["chf-ic"].blocks["griddata"].render()
+    assert "STRT [LAYERED]\n    <strt(nodes)> -- READARRAY" in render
+    assert "NETCDF" not in render
+
+
+def test_render_period_netcdf_only_suppresses_time_series(dev3_spec):
+    """gwf-rcha's recharge is both netcdf-exportable and time-series-enabled, but
+    it's read via READARRAY, so only the netcdf marker shows — matches mf6io.pdf,
+    which never shows `@...@` on a READARRAY block-level array."""
+    render = dev3_spec.components["gwf-rcha"].blocks["period"].render()
+    assert "RECHARGE $[NETCDF]$\n    <recharge" in render
+    assert "@recharge@" not in render
+    assert "LAYERED" not in render
 
 
 def test_render_file_field_named_after_path_not_tag(dev3_spec):
@@ -492,6 +518,46 @@ def test_render_array_with_shape():
     assert field.render(inline=True) == "K <k(nodes)>"
 
 
+def test_render_array_layered():
+    """A layered array gets a `[LAYERED]` marker on the READARRAY line only."""
+    field = Array(name="k", dtype="double", shape=["nodes"], tagged=True, layered=True)
+    assert field.render() == "K [LAYERED]\n  <k(nodes)> -- READARRAY"
+    assert field.render(inline=True) == "K <k(nodes)>"
+
+
+def test_render_array_netcdf():
+    """A netcdf-exportable array gets a `$[NETCDF]$` marker on the READARRAY line only."""
+    field = Array(name="k", dtype="double", shape=["nodes"], tagged=True, netcdf=True)
+    assert field.render() == "K $[NETCDF]$\n  <k(nodes)> -- READARRAY"
+    assert field.render(inline=True) == "K <k(nodes)>"
+
+
+def test_render_array_layered_and_netcdf():
+    """Both markers stack, layered first, in that order regardless of construction order."""
+    field = Array(name="k", dtype="double", shape=["nodes"], tagged=True, layered=True, netcdf=True)
+    assert field.render() == "K [LAYERED] $[NETCDF]$\n  <k(nodes)> -- READARRAY"
+
+
+def test_render_scalar_time_series():
+    """A time-series-enabled scalar wraps its token in `@...@`, tag unaffected."""
+    tagged = Double(name="rate", tagged=True, time_series=True)
+    assert tagged.render() == "RATE <@rate@>"
+    untagged = Double(name="head", tagged=False, time_series=True)
+    assert untagged.render() == "<@head@>"
+    assert untagged.render(inline=True) == "<@head@>"
+
+
+def test_render_array_time_series_inline():
+    """A time-series-enabled Array wraps name+shape in `@...@` when rendered inline
+    (i.e. embedded in a Record row); the marker never appears on the READARRAY
+    block-level form, since MF6 ignores time series for array-based input."""
+    field = Array(name="aux", dtype="double", shape=["naux"], tagged=False, time_series=True)
+    assert field.render(inline=True) == "<@aux(naux)@>"
+    # Rendered at block level (not inline), the array takes its READARRAY form,
+    # where the time-series marker doesn't apply.
+    assert field.render() == "AUX\n  <aux(naux)> -- READARRAY"
+
+
 def test_render_record():
     """Record inline-expands its children the same way whether inline or not."""
     field = Record(
@@ -591,6 +657,30 @@ def test_render_block_matches_per_field_assembly(dev3_spec):
                 begin = f"{begin} {block.header.render(inline=True)}"
             lines = [begin]
             for field in block.fields.values():
+                if field.removed is not None or field.deprecated is not None:
+                    continue
+                if field.developmode:
+                    continue
                 lines.extend(f"  {line}" for line in field.render().split("\n"))
             lines.append(f"END {block.name.upper()}")
             assert block.render() == "\n".join(lines)
+
+
+def test_render_excludes_removed_and_deprecated_fields(dev3_spec):
+    """render() never shows removed/deprecated fields as current syntax."""
+    render = dev3_spec.components["prt-oc"].blocks["options"].render()
+    # TRACK_TIMESTEP is current and must stay; TRACK_TIMES/TRACK_TIMESFILE (both
+    # `removed 6.6.0` in the v1 corpus) must not appear as their own rows.
+    assert "TRACK_TIMESTEP" in render
+    assert "TRACK_TIMES <" not in render
+    assert "TRACK_TIMESFILE <" not in render
+
+
+def test_render_excludes_developmode_fields_by_default(dev3_spec):
+    """render() hides developmode fields (including v1's `dev_`-prefix convention,
+    folded into `developmode` by the migration) by default, but can include them
+    via `developmode=True`."""
+    render = dev3_spec.components["gwf-dis"].blocks["options"].render()
+    assert "CRS" not in render
+    render_dev = dev3_spec.components["gwf-dis"].blocks["options"].render(developmode=True)
+    assert "CRS <crs>" in render_dev

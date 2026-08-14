@@ -15,6 +15,7 @@ longname = "starting concentration"
 description = "is the initial (starting) stage---that is, stage at the beginning of the CHF Model simulation.  STRT must be specified for all CHF Model simulations. One value is read for every model reach."
 default = 0.0
 dtype = "double"
+layered = true
 shape = [
     "nodes",
 ]

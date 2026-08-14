@@ -15,6 +15,7 @@ type = "keyword"
 longname = "log mpi traffic"
 description = "keyword to enable (extremely verbose) logging of mpi traffic to file."
 optional = true
+developmode = true
 
 [blocks.partitions.fields.partitions]
 type = "list"

@@ -94,7 +94,8 @@
           "type": "keyword",
           "longname": "cubic-scaling",
           "description": "cubic-scaling is used to scale the drain conductance",
-          "optional": true
+          "optional": true,
+          "developmode": true
         }
       }
     },
@@ -117,6 +118,7 @@
           "default": 3e+30,
           "netcdf": true,
           "dtype": "double",
+          "layered": true,
           "shape": [
             "nodes"
           ]
@@ -128,6 +130,7 @@
           "default": 3e+30,
           "netcdf": true,
           "dtype": "double",
+          "layered": true,
           "shape": [
             "nodes"
           ]
@@ -139,6 +142,7 @@
           "optional": true,
           "netcdf": true,
           "dtype": "double",
+          "layered": true,
           "shape": [
             "nodes"
           ]

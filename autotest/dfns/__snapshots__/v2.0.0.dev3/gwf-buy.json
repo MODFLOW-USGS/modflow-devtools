@@ -47,7 +47,8 @@
           "type": "keyword",
           "longname": "use equivalent freshwater head formulation",
           "description": "use the variable-density equivalent freshwater head formulation instead of the hydraulic head head formulation.  This dev option has only been implemented for confined aquifer conditions and should generally not be used.",
-          "optional": true
+          "optional": true,
+          "developmode": true
         }
       }
     },

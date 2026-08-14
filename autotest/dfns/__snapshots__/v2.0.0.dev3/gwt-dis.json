@@ -185,6 +185,7 @@
           "default": 0.0,
           "netcdf": true,
           "dtype": "double",
+          "layered": true,
           "shape": [
             "ncol",
             "nrow",
@@ -198,6 +199,7 @@
           "optional": true,
           "netcdf": true,
           "dtype": "integer",
+          "layered": true,
           "shape": [
             "ncol",
             "nrow",

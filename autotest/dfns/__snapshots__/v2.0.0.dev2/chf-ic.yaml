@@ -21,5 +21,6 @@ blocks:
           model reach.
         default: 0.0
         dtype: double
+        layered: true
         shape:
           - nodes

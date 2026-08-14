@@ -197,6 +197,7 @@ blocks:
           for flow units of cubic feet per second, and a constant of 1.0 is used for units of cubic meters
           per second. The constant must be multiplied by 86,400 when using time units of days in the simulation.
         optional: true
+        deprecated: 6.4.2
       length_conversion:
         type: double
         longname: length conversion factor
@@ -221,6 +222,7 @@ blocks:
           in channel storage. STORAGE_WEIGHT must have a value between 0.5 and 1. Default STORAGE_WEIGHT
           value is 1.
         optional: true
+        developmode: true
   dimensions:
     fields:
       nreaches:

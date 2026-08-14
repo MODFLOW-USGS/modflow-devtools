@@ -34,6 +34,7 @@ description = "effective molecular diffusion coefficient."
 optional = true
 netcdf = true
 dtype = "double"
+layered = true
 shape = [
     "nodes",
 ]
@@ -45,6 +46,7 @@ description = "longitudinal dispersivity in horizontal direction.  If flow is st
 optional = true
 netcdf = true
 dtype = "double"
+layered = true
 shape = [
     "nodes",
 ]
@@ -56,6 +58,7 @@ description = "longitudinal dispersivity in vertical direction.  If flow is stri
 optional = true
 netcdf = true
 dtype = "double"
+layered = true
 shape = [
     "nodes",
 ]
@@ -67,6 +70,7 @@ description = "transverse dispersivity in horizontal direction.  This is the tra
 optional = true
 netcdf = true
 dtype = "double"
+layered = true
 shape = [
     "nodes",
 ]
@@ -78,6 +82,7 @@ description = "transverse dispersivity in horizontal direction.  This is the tra
 optional = true
 netcdf = true
 dtype = "double"
+layered = true
 shape = [
     "nodes",
 ]
@@ -89,6 +94,7 @@ description = "transverse dispersivity when flow is in vertical direction.  If f
 optional = true
 netcdf = true
 dtype = "double"
+layered = true
 shape = [
     "nodes",
 ]

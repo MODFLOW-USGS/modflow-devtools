@@ -1029,11 +1029,18 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
         description: str | None = f.get("description") or None
         longname: str | None = f.get("longname") or None
         optional: bool = try_parse_bool(f.get("optional"), False)
-        developmode: bool = try_parse_bool(f.get("developmode"), False)
+        # `dev_`-prefixed names are v1's de facto (and only-ever-used) convention for
+        # marking a field internal/undocumented; the `developmode` attribute itself is
+        # declared in zero DFN files in the wild, so fold the name convention into it
+        # here rather than leaving `render()` to special-case a naming pattern.
+        developmode: bool = try_parse_bool(f.get("developmode"), False) or _name.startswith("dev_")
         netcdf: bool = try_parse_bool(f.get("netcdf"), False)
         tagged: bool = try_parse_bool(f.get("tagged"), True)
         preserve_case: bool = try_parse_bool(f.get("preserve_case"), False)
         time_series: bool = try_parse_bool(f.get("time_series"), False)
+        layered: bool = try_parse_bool(f.get("layered"), False)
+        removed: str | None = f.get("removed") or None
+        deprecated: str | None = f.get("deprecated") or None
         valid = f.get("valid")
         _default_raw = f.get("default", f.get("default_value", None))
         default = (
@@ -1090,6 +1097,8 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
                     default=default,
                     developmode=developmode,
                     netcdf=netcdf,
+                    removed=removed,
+                    deprecated=deprecated,
                 )
             if _type == "string":
                 return v2.String(
@@ -1100,6 +1109,8 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
                     default=default,
                     developmode=developmode,
                     netcdf=netcdf,
+                    removed=removed,
+                    deprecated=deprecated,
                     tagged=tagged,
                     valid=_parse_valid(valid),
                     case_sensitive=preserve_case,
@@ -1114,6 +1125,8 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
                     default=default,
                     developmode=developmode,
                     netcdf=netcdf,
+                    removed=removed,
+                    deprecated=deprecated,
                     tagged=tagged,
                     valid=_parse_valid(valid, int),
                     time_series=time_series,
@@ -1127,6 +1140,8 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
                     default=default,
                     developmode=developmode,
                     netcdf=netcdf,
+                    removed=removed,
+                    deprecated=deprecated,
                     tagged=tagged,
                     time_series=time_series,
                 )
@@ -1215,6 +1230,8 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
                 default=default,
                 developmode=developmode,
                 netcdf=netcdf,
+                removed=removed,
+                deprecated=deprecated,
                 item=item,
                 shape=list_shape,
             )
@@ -1228,6 +1245,8 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
                 optional=optional,
                 default=default,
                 developmode=developmode,
+                removed=removed,
+                deprecated=deprecated,
                 arms=arms,  # type: ignore[arg-type]
             )
 
@@ -1305,8 +1324,11 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
                             longname=m.get("longname") or None,
                             description=m.get("description") or None,
                             optional=try_parse_bool(m.get("optional"), False),
-                            developmode=try_parse_bool(m.get("developmode"), False),
+                            developmode=try_parse_bool(m.get("developmode"), False)
+                            or (m.get("name") or "").startswith("dev_"),
                             netcdf=try_parse_bool(m.get("netcdf"), False),
+                            removed=m.get("removed") or None,
+                            deprecated=m.get("deprecated") or None,
                             tagged=False,
                             direction="in" if file_mode == "filein" else "out",
                         )
@@ -1325,6 +1347,8 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
                 optional=optional,
                 default=default,
                 developmode=developmode,
+                removed=removed,
+                deprecated=deprecated,
                 fields=rec_fields,  # type: ignore[arg-type]
             )
 
@@ -1348,8 +1372,11 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
                             default=default,
                             developmode=developmode,
                             netcdf=netcdf,
+                            removed=removed,
+                            deprecated=deprecated,
                             tagged=tagged,
                             time_series=time_series,
+                            layered=layered,
                             dtype="string",
                             shape=[],
                         )
@@ -1365,8 +1392,11 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
                         default=default,
                         developmode=developmode,
                         netcdf=netcdf,
+                        removed=removed,
+                        deprecated=deprecated,
                         tagged=tagged,
                         time_series=time_series,
+                        layered=layered,
                         dtype=dtype,
                         shape=parsed_shape,
                     )

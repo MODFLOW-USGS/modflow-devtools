@@ -77,6 +77,7 @@ type = "keyword"
 longname = "turn off Newton for unconfined cells"
 description = "turn off Newton for unconfined cells"
 optional = true
+developmode = true
 
 [blocks.dimensions.fields.maxbound]
 type = "integer"
@@ -91,6 +92,7 @@ description = "is the head at the boundary."
 default = 3e+30
 netcdf = true
 dtype = "double"
+layered = true
 shape = [
     "nodes",
 ]
@@ -102,6 +104,7 @@ description = "is an array of values for auxiliary variable aux(iaux), where iau
 optional = true
 netcdf = true
 dtype = "double"
+layered = true
 shape = [
     "nodes",
 ]

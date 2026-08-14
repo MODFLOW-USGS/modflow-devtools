@@ -109,6 +109,7 @@ blocks:
         longname: cubic-scaling
         description: cubic-scaling is used to scale the drain conductance
         optional: true
+        developmode: true
   dimensions:
     fields:
       maxbound:
@@ -126,6 +127,7 @@ blocks:
         default: 3.0e+30
         netcdf: true
         dtype: double
+        layered: true
         shape:
           - nodes
       cond:
@@ -135,6 +137,7 @@ blocks:
         default: 3.0e+30
         netcdf: true
         dtype: double
+        layered: true
         shape:
           - nodes
       aux:
@@ -147,6 +150,7 @@ blocks:
         optional: true
         netcdf: true
         dtype: double
+        layered: true
         shape:
           - nodes
     header:

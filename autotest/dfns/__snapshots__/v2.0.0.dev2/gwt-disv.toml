@@ -136,6 +136,7 @@ longname = "model bottom elevation"
 description = "is the bottom elevation for each cell."
 netcdf = true
 dtype = "double"
+layered = true
 shape = [
     "ncpl",
     "nlay",
@@ -148,6 +149,7 @@ description = "is an optional array that characterizes the existence status of a
 optional = true
 netcdf = true
 dtype = "integer"
+layered = true
 shape = [
     "ncpl",
     "nlay",

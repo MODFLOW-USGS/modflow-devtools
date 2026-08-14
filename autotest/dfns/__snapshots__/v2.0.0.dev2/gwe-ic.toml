@@ -22,6 +22,7 @@ description = "is the initial (starting) temperature---that is, the temperature 
 default = 0.0
 netcdf = true
 dtype = "double"
+layered = true
 shape = [
     "nodes",
 ]

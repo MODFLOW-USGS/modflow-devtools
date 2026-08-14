@@ -21,6 +21,7 @@ blocks:
         longname: porosity
         description: is the aquifer porosity.
         dtype: double
+        layered: true
         shape:
           - nodes
       retfactor:
@@ -36,6 +37,7 @@ blocks:
           of porosity.  The default value is 1.
         optional: true
         dtype: double
+        layered: true
         shape:
           - nodes
       izone:
@@ -49,6 +51,7 @@ blocks:
           particles released by that PRP Package.  Each PRP Package may configure a single ISTOPZONE value.
         optional: true
         dtype: integer
+        layered: true
         shape:
           - nodes
 memory:

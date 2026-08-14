@@ -22,6 +22,7 @@ description = "is the initial (starting) head---that is, head at the beginning o
 default = 1.0
 netcdf = true
 dtype = "double"
+layered = true
 shape = [
     "nodes",
 ]

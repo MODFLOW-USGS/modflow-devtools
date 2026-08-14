@@ -22,17 +22,20 @@
         "csv_output_filerecord": {
           "type": "record",
           "optional": true,
+          "deprecated": "6.1.1",
           "fields": {
             "csv_output": {
               "type": "keyword",
               "longname": "budget keyword",
-              "description": "keyword to specify that the record corresponds to the comma separated values solver convergence output.  The CSV_OUTPUT option has been deprecated and split into the CSV_OUTER_OUTPUT and CSV_INNER_OUTPUT options.  Starting with MODFLOW 6 version 6.1.1 if the CSV_OUTPUT option is specified, then it is treated as the CSV_OUTER_OUTPUT option."
+              "description": "keyword to specify that the record corresponds to the comma separated values solver convergence output.  The CSV_OUTPUT option has been deprecated and split into the CSV_OUTER_OUTPUT and CSV_INNER_OUTPUT options.  Starting with MODFLOW 6 version 6.1.1 if the CSV_OUTPUT option is specified, then it is treated as the CSV_OUTER_OUTPUT option.",
+              "deprecated": "6.1.1"
             },
             "csvfile": {
               "type": "file",
               "longname": "file keyword",
               "description": "name of the ascii comma separated values output file to write solver convergence information. If PRINT_OPTION is NONE or SUMMARY, comma separated values output includes maximum head change convergence information at the end of each outer iteration for each time step. If PRINT_OPTION is ALL, comma separated values output includes maximum head change and maximum residual convergence information for the solution and each model (if the solution includes more than one model) and linear acceleration information for each inner iteration.",
               "tagged": false,
+              "deprecated": "6.1.1",
               "direction": "out"
             }
           }
@@ -106,7 +109,8 @@
           "type": "double",
           "longname": "head change criterion",
           "description": "real value defining the head change criterion for convergence of the outer (nonlinear) iterations, in units of length. When the maximum absolute value of the head change at all nodes during an iteration is less than or equal to OUTER_HCLOSE, iteration stops. Commonly, OUTER_HCLOSE equals 0.01.  The OUTER_HCLOSE option has been deprecated in favor of the more general OUTER_DVCLOSE (for dependent variable), however either one can be specified in order to maintain backward compatibility.",
-          "optional": true
+          "optional": true,
+          "deprecated": "6.1.1"
         },
         "outer_dvclose": {
           "type": "double",
@@ -117,7 +121,8 @@
           "type": "double",
           "longname": "boundary package flow residual tolerance",
           "description": "real value defining the residual tolerance for convergence of model packages that solve a separate equation not solved by the IMS linear solver. This value represents the maximum allowable residual between successive outer iterations at any single model package element. An example of a model package that would use OUTER_RCLOSEBND to evaluate convergence is the SFR package which solves a continuity equation for each reach.  The OUTER_RCLOSEBND option is deprecated and has no effect on simulation results as of version 6.1.1.  The keyword, OUTER_RCLOSEBND can be still be specified for backward compatibility with previous versions of MODFLOW 6 but eventually specification of OUTER_RCLOSEBND will cause MODFLOW 6 to terminate with an error.",
-          "optional": true
+          "optional": true,
+          "deprecated": "6.1.1"
         },
         "outer_maximum": {
           "type": "integer",
@@ -191,7 +196,8 @@
           "type": "double",
           "longname": "head change tolerance",
           "description": "real value defining the head change criterion for convergence of the inner (linear) iterations, in units of length. When the maximum absolute value of the head change at all nodes during an iteration is less than or equal to INNER_HCLOSE, the matrix solver assumes convergence. Commonly, INNER_HCLOSE is set equal to or an order of magnitude less than the OUTER_HCLOSE value specified for the NONLINEAR block.  The INNER_HCLOSE keyword has been deprecated in favor of the more general INNER_DVCLOSE (for dependent variable), however either one can be specified in order to maintain backward compatibility.",
-          "optional": true
+          "optional": true,
+          "deprecated": "6.1.1"
         },
         "inner_dvclose": {
           "type": "double",

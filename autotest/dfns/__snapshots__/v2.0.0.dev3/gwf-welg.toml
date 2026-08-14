@@ -127,6 +127,7 @@ description = "is the volumetric well rate. A positive value indicates recharge 
 default = 3e+30
 netcdf = true
 dtype = "double"
+layered = true
 shape = [
     "nodes",
 ]
@@ -138,6 +139,7 @@ description = "is an array of values for auxiliary variable aux(iaux), where iau
 optional = true
 netcdf = true
 dtype = "double"
+layered = true
 shape = [
     "nodes",
 ]

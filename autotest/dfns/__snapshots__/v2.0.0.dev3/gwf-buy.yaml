@@ -47,6 +47,7 @@ blocks:
           head head formulation.  This dev option has only been implemented for confined aquifer conditions
           and should generally not be used.
         optional: true
+        developmode: true
   dimensions:
     fields:
       nrhospecies:

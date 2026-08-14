@@ -22,17 +22,20 @@
         "csv_output_filerecord": {
           "type": "record",
           "optional": true,
+          "deprecated": "6.1.1",
           "fields": {
             "csv_output": {
               "type": "keyword",
               "longname": "budget keyword",
-              "description": "keyword to specify that the record corresponds to the comma separated values solver convergence output.  The CSV_OUTPUT option has been deprecated and split into the CSV_OUTER_OUTPUT and CSV_INNER_OUTPUT options.  Starting with MODFLOW 6 version 6.1.1 if the CSV_OUTPUT option is specified, then it is treated as the CSV_OUTER_OUTPUT option."
+              "description": "keyword to specify that the record corresponds to the comma separated values solver convergence output.  The CSV_OUTPUT option has been deprecated and split into the CSV_OUTER_OUTPUT and CSV_INNER_OUTPUT options.  Starting with MODFLOW 6 version 6.1.1 if the CSV_OUTPUT option is specified, then it is treated as the CSV_OUTER_OUTPUT option.",
+              "deprecated": "6.1.1"
             },
             "csvfile": {
               "type": "file",
               "longname": "file keyword",
               "description": "name of the ascii comma separated values output file to write solver convergence information. If PRINT_OPTION is NONE or SUMMARY, comma separated values output includes maximum head change convergence information at the end of each outer iteration for each time step. If PRINT_OPTION is ALL, comma separated values output includes maximum head change and maximum residual convergence information for the solution and each model (if the solution includes more than one model) and linear acceleration information for each inner iteration.",
               "tagged": false,
+              "deprecated": "6.1.1",
               "direction": "out"
             }
           }

@@ -29,6 +29,13 @@ class FieldBase(BaseModel):
     developmode: bool = False
     netcdf: bool = False
     tagged: bool = True
+    # Version this field was deprecated/removed as of (e.g. "6.6.0"), or None if
+    # neither. MF6 may still parse a deprecated field; a removed one no longer
+    # parses at all. Both are excluded from render() unconditionally — never
+    # shown as valid current syntax — but kept as data for other consumers (e.g.
+    # a linter that wants to warn on deprecated-but-still-accepted input).
+    removed: str | None = None
+    deprecated: str | None = None
 
     @model_serializer(mode="wrap")
     def _serialize(self, handler: Any, info: SerializationInfo) -> dict[str, Any]:
@@ -114,6 +121,7 @@ class Array(FieldBase):
     dtype: Literal["keyword", "integer", "double", "string"]
     shape: list[str] = []
     time_series: bool = False
+    layered: bool = False
     repeat: str | None = None
 
 
@@ -191,6 +199,11 @@ def _tag(field: "Field", inner: str) -> str:
     return f"{field.name.upper()} {inner}" if field.tagged else inner
 
 
+def _ts_token(token: str, *, time_series: bool) -> str:
+    """Wrap a bare `<token>` in `@...@` time-series markers if flagged."""
+    return f"<@{token}@>" if time_series else f"<{token}>"
+
+
 def _render_rows(item: "Record | Union") -> list[str]:
     """Return one or more rendered row strings for a List item.
 
@@ -226,13 +239,22 @@ def _render_field(field: "Field", *, inline: bool = False) -> str:
         case Keyword():
             return _wrap(field.name.upper())
         case String() | Integer() | Double():
-            return _wrap(_tag(field, f"<{field.name}>"))
+            token = _ts_token(field.name, time_series=field.time_series)
+            return _wrap(_tag(field, token))
         case File():
             return _wrap(_render_file(field))
         case Array():
             if inline or not field.shape:
-                return _wrap(_tag(field, f"<{field.name}{_render_shape(field)}>"))
-            body = f"{field.name.upper()}\n  <{field.name}{_render_shape(field)}> -- READARRAY"
+                token = _ts_token(
+                    f"{field.name}{_render_shape(field)}", time_series=field.time_series
+                )
+                return _wrap(_tag(field, token))
+            name_line = field.name.upper()
+            if field.layered:
+                name_line += " [LAYERED]"
+            if field.netcdf:
+                name_line += " $[NETCDF]$"
+            body = f"{name_line}\n  <{field.name}{_render_shape(field)}> -- READARRAY"
             return _wrap(body)
         case Record():
             return _wrap(" ".join(_render_field(f, inline=True) for f in field.fields.values()))
@@ -258,13 +280,31 @@ def _render_field(field: "Field", *, inline: bool = False) -> str:
             return f"{rows[0]}\n{rows[0]}\n..."
 
 
-def _render_block(block: "Block", indent: str = "  ") -> str:
+def _field_is_current(field: "Field", *, developmode: bool) -> bool:
+    """Whether a field belongs in render() output.
+
+    Removed/deprecated fields are never current syntax, so they're always
+    excluded (MF6 no longer parses a removed field at all, and a deprecated one
+    is discouraged even where still accepted) — there's no flag to see them in
+    render() output, matching mf6io.pdf. Fields flagged `Field.developmode`
+    (which subsumes v1's `dev_`-name convention; see `_map_field` in the
+    migration) are internal/undocumented and excluded by default, but callers
+    doing internal tooling can opt in via the `developmode` parameter.
+    """
+    if field.removed is not None or field.deprecated is not None:
+        return False
+    return developmode or not field.developmode
+
+
+def _render_block(block: "Block", indent: str = "  ", *, developmode: bool = False) -> str:
     """Render a Block as a BEGIN/END template string."""
     begin = f"BEGIN {block.name.upper()}"
     if block.header is not None:
         begin = f"{begin} {block.header.render(inline=True)}"
     lines = [begin]
     for field in block.fields.values():
+        if not _field_is_current(field, developmode=developmode):
+            continue
         lines.extend(f"{indent}{line}" for line in field.render().split("\n"))
     lines.append(f"END {block.name.upper()}")
     return "\n".join(lines)
@@ -543,8 +583,8 @@ class Block(BaseModel):
         """Whether the block may appear multiple times, each labeled by `header`."""
         return self.header is not None
 
-    def render(self) -> str:
-        return _render_block(self)
+    def render(self, *, developmode: bool = False) -> str:
+        return _render_block(self, developmode=developmode)
 
 
 Blocks = Mapping[str, Block]
@@ -635,8 +675,10 @@ class ComponentBase(BaseModel):
                 return block
         return None
 
-    def render(self) -> str:
-        return "\n\n".join(_render_block(b) for b in (self.blocks or {}).values())
+    def render(self, *, developmode: bool = False) -> str:
+        return "\n\n".join(
+            _render_block(b, developmode=developmode) for b in (self.blocks or {}).values()
+        )
 
 
 class Simulation(ComponentBase):

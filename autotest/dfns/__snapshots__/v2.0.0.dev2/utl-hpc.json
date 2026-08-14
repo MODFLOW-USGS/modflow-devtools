@@ -17,7 +17,8 @@
           "type": "keyword",
           "longname": "log mpi traffic",
           "description": "keyword to enable (extremely verbose) logging of mpi traffic to file.",
-          "optional": true
+          "optional": true,
+          "developmode": true
         }
       }
     },

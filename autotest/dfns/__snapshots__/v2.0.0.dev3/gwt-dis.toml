@@ -168,6 +168,7 @@ description = "is the bottom elevation for each cell."
 default = 0.0
 netcdf = true
 dtype = "double"
+layered = true
 shape = [
     "ncol",
     "nrow",
@@ -181,6 +182,7 @@ description = "is an optional array that characterizes the existence status of a
 optional = true
 netcdf = true
 dtype = "integer"
+layered = true
 shape = [
     "ncol",
     "nrow",
