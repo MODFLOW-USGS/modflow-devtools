@@ -35,9 +35,7 @@ jobs:
       - name: Install Python dependencies
         run: |
           pip install --upgrade pip
-          pip install build twine
-          pip install .
-          pip install ".[lint, test]"
+          pip install . --group test --group build twine
 
       - name: Update version
         id: version

@@ -23,11 +23,16 @@ Python3.11+. This project has historically aimed to support several recent versi
 
 ## Installation
 
-To get started, first fork and clone this repository. Then install the project and core packages as well as linting and testing dependencies:
+To get started, first fork and clone this repository. Then install the project in "editable" mode, along with all of the dependencies needed for running and development:
 
 ```shell
-pip install .
-pip install ".[lint, test]"
+pip install -e . --group dev
+```
+
+Developers that use a `uv` environment can "sync" the project to install the project with all dependencies:
+
+```shell
+uv sync
 ```
 
 ## Testing

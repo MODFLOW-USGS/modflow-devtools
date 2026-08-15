@@ -8,6 +8,12 @@ Packages are [available on PyPi](https://pypi.org/project/modflow-devtools/) and
 pip install modflow-devtools
 ```
 
+Optional dependencies required for some features can also be installed with the "ecosystem" extra:
+
+```shell
+pip install modflow-devtools[ecosystem]
+```
+
 ## Installing `modflow-devtools` from source
 
 To set up a `modflow-devtools` development environment, first clone the repository:
@@ -16,11 +22,10 @@ To set up a `modflow-devtools` development environment, first clone the reposito
 git clone https://github.com/MODFLOW-ORG/modflow-devtools.git
 ```
 
-Then install the local copy as well as testing, linting, and docs dependencies:
+Then install the local copy in "editable" mode, as well as dependencies needed for testing, linting, and build docs:
 
 ```
-pip install .
-pip install ".[lint, test, docs]"
+pip install -e . --group dev
 ```
 
 ## Using `modflow-devtools` as a `pytest` plugin

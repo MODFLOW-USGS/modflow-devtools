@@ -59,7 +59,7 @@ pip install modflow-devtools
 To install an optional dependency group:
 
 ```shell
-pip install "modflow-devtools[test]"
+pip install "modflow-devtools[ecosystem]"
 ```
 
 To install from source and set up a development environment please see the [developer documentation](DEVELOPER.md).
