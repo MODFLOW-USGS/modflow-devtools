@@ -169,7 +169,8 @@ class List(FieldBase):
 
     @property
     def children(self) -> "dict[str, Field]":
-        return {"item": self.item}  # type: ignore[return-value]
+        # item.name duplicates the List's own name, so it's not a useful key here.
+        return self.item.children
 
 
 Field = Annotated[
@@ -181,6 +182,16 @@ Field = Annotated[
 Record.model_rebuild()
 Union.model_rebuild()
 List.model_rebuild()
+
+
+def _collect_fields(
+    fields: "dict[str, Field]", items: "list[tuple[str, Field]]", *, recurse: bool
+) -> None:
+    """Append `fields` to `items`, descending into Record/Union/List children if `recurse`."""
+    for name, field in fields.items():
+        items.append((name, field))
+        if recurse and isinstance(field, (Record, Union, List)):
+            _collect_fields(field.children, items, recurse=True)
 
 
 def _render_shape(field: "Array") -> str:
@@ -586,6 +597,14 @@ class Block(BaseModel):
     def render(self, *, developmode: bool = False) -> str:
         return _render_block(self, developmode=developmode)
 
+    def get_fields(self, recurse: bool = False) -> OMD:
+        """Fields keyed by name, including `header`; `recurse` descends into children."""
+        items: list[tuple[str, Field]] = []
+        _collect_fields(self.fields, items, recurse=recurse)
+        if self.header is not None:
+            _collect_fields({self.header.name: self.header}, items, recurse=recurse)
+        return OMD(items)
+
 
 Blocks = Mapping[str, Block]
 
@@ -651,20 +670,8 @@ class ComponentBase(BaseModel):
 
     def get_fields(self, recurse: bool = False) -> OMD:
         items: list[tuple[str, Field]] = []
-
-        def _collect(fields: dict) -> None:
-            for name, field in fields.items():
-                items.append((name, field))
-                if recurse:
-                    if isinstance(field, (Record, Union)):
-                        _collect(field.children)
-                    elif isinstance(field, List):
-                        _collect(field.item.children)
-
         for block in (self.blocks or {}).values():
-            _collect(block.fields)
-            if block.header is not None:
-                _collect({block.header.name: block.header})
+            items.extend(block.get_fields(recurse=recurse).items(multi=True))
         return OMD(items)
 
     def get_block(self, field_name: str) -> Block | None:

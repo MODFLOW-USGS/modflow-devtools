@@ -379,6 +379,59 @@ def test_get_fields_and_get_block_include_header(dev3_spec):
     assert wel.get_block("iper") is wel.blocks["period"]
 
 
+def test_block_get_fields_no_recurse():
+    record = Record(
+        name="afrcsv_filerecord",
+        fields={
+            "auto_flow_reduce_csv": Keyword(name="auto_flow_reduce_csv"),
+            "afrcsvfile": File(name="afrcsvfile", direction="out"),
+        },
+    )
+    block = Block(name="options", fields={"afrcsv_filerecord": record})
+    fields = block.get_fields()
+    assert fields.keys() == ["afrcsv_filerecord"]
+    assert fields["afrcsv_filerecord"] is record
+
+
+def test_block_get_fields_recurse_descends_record():
+    inner = File(name="afrcsvfile", direction="out")
+    record = Record(
+        name="afrcsv_filerecord",
+        fields={"auto_flow_reduce_csv": Keyword(name="auto_flow_reduce_csv"), "afrcsvfile": inner},
+    )
+    block = Block(name="options", fields={"afrcsv_filerecord": record})
+    fields = block.get_fields(recurse=True)
+    assert set(fields.keys()) == {"afrcsv_filerecord", "auto_flow_reduce_csv", "afrcsvfile"}
+    assert fields["afrcsvfile"] is inner
+
+
+def test_block_get_fields_recurse_descends_list_item_union():
+    keyword_arm = Keyword(name="save")
+    record_arm = Record(name="print", fields={"rtype": String(name="rtype")})
+    union = Union(name="ocsetting", arms={"save": keyword_arm, "print": record_arm})
+    lst = List(name="steps", item=union)
+    block = Block(name="period", fields={"steps": lst})
+    fields = block.get_fields(recurse=True)
+    assert set(fields.keys()) == {"steps", "save", "print", "rtype"}
+
+
+def test_block_get_fields_recurse_includes_header():
+    header = Integer(name="iper", tagged=False)
+    block = Block(name="period", fields={}, header=header)
+    fields = block.get_fields(recurse=True)
+    assert fields["iper"] is header
+
+
+def test_component_get_fields_matches_block_get_fields(dev3_spec):
+    """ComponentBase.get_fields() is a flatten of each block's get_fields()."""
+    wel = dev3_spec.components["gwf-wel"]
+    expected: list[tuple] = []
+    for block in wel.blocks.values():
+        expected.extend(block.get_fields(recurse=True).items(multi=True))
+    actual = wel.get_fields(recurse=True)
+    assert list(actual.items(multi=True)) == expected
+
+
 def test_render_block_header_scalar(dev3_spec):
     """render() attaches a scalar header to the BEGIN line, matching mf6io.pdf."""
     render = dev3_spec.components["gwf-wel"].blocks["period"].render()
