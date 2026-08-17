@@ -43,10 +43,10 @@ Python development tools for MODFLOW 6 and related projects.
 
 Python3.11+, dependency-free by default.
 
-Two main dependency groups are available, oriented around specific use cases:
+Two optional dependencies are available, oriented around specific use cases:
 
-- `test`: pytest fixtures, markers, and extensions
 - `ecosystem`: program/model management, definition file utilities
+- `pytest`: pytest fixtures, markers, and extensions
 
 ## Installation
 
@@ -56,10 +56,10 @@ Two main dependency groups are available, oriented around specific use cases:
 pip install modflow-devtools
 ```
 
-To install an optional dependency group:
+To install the optional dependencies (choose one or more):
 
 ```shell
-pip install "modflow-devtools[ecosystem]"
+pip install "modflow-devtools[ecosystem,pytest]"
 ```
 
 To install from source and set up a development environment please see the [developer documentation](DEVELOPER.md).

@@ -48,9 +48,17 @@ ecosystem = [
     "tomli",
     "tomli-w"
 ]
+pytest = [
+    "numpy",
+    "pytest!=8.1.0",
+    "syrupy <5.0.0",
+]
+# optional dependencies listed below are deprecated, to be removed in version 2.x
 # deprecated - prefer "ecosystem" to "dfn"/"models" separately
 dfn = ["modflow-devtools[ecosystem]"]
 models = ["modflow-devtools[ecosystem]"]
+# deprecated - prefer "pytest" to "test" (to be kept only as a dependency-group)
+test = ["modflow-devtools[pytest]"]
 
 [dependency-groups]
 build = [
@@ -63,6 +71,7 @@ lint = [
     "mypy",
 ]
 test = [
+    "modflow-devtools[ecosystem,pytest]",  # self-reference to project.optional-dependencies
     "coverage",
     "flaky",
     "meson!=0.63.0",
@@ -83,7 +92,7 @@ docs = [
     "myst-parser"
 ]
 dev = [
-    "modflow-devtools[ecosystem]",  # self-reference to project.optional-dependencies
+    "modflow-devtools[ecosystem,pytest]",  # self-reference to project.optional-dependencies
     {include-group = "build"},
     {include-group = "lint"},
     {include-group = "test"},

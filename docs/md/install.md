@@ -8,10 +8,15 @@ Packages are [available on PyPi](https://pypi.org/project/modflow-devtools/) and
 pip install modflow-devtools
 ```
 
-Optional dependencies required for some features can also be installed with the "ecosystem" extra:
+Two optional dependencies are available, oriented around specific use cases:
+
+- `ecosystem`: program/model management, definition file utilities
+- `pytest`: pytest fixtures, markers, and extensions
+
+To install the optional dependencies (choose one or more):
 
 ```shell
-pip install modflow-devtools[ecosystem]
+pip install modflow-devtools[ecosystem,pytest]
 ```
 
 ## Installing `modflow-devtools` from source
@@ -24,7 +29,7 @@ git clone https://github.com/MODFLOW-ORG/modflow-devtools.git
 
 Then install the local copy in "editable" mode, as well as dependencies needed for testing, linting, and build docs:
 
-```
+```shell
 pip install -e . --group dev
 ```
 
