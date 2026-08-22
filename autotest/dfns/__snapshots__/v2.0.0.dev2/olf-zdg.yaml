@@ -117,7 +117,7 @@ blocks:
                 wide channel.
               tagged: false
               index: true
-              fk: olf-cxs.packagedata.idcxs
+              fk: chf-cxs.packagedata.idcxs
             width:
               type: double
               longname: width of the zero-depth gradient boundary

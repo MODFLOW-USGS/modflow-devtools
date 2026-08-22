@@ -99,7 +99,6 @@
           "optional": true,
           "dtype": "integer",
           "index": true,
-          "fk": "swf-cxs.packagedata.idcxs",
           "shape": [
             "nodes"
           ]

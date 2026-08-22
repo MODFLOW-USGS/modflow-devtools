@@ -94,7 +94,7 @@
           "optional": true,
           "dtype": "integer",
           "index": true,
-          "fk": "olf-cxs.packagedata.idcxs",
+          "fk": "chf-cxs.packagedata.idcxs",
           "shape": [
             "nodes"
           ]
