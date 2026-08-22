@@ -281,33 +281,24 @@ def _collect_item_int_fields(fields: Mapping[str, v2.Field]) -> set[str]:
 def _resolve_relations(blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
     """
     Detect and annotate primary/foreign-key relations between a component's
-    blocks. Two independent signals are combined:
+    blocks, from two independent signals:
 
     1. Shape-expression lookups: a v1 recarray shape like ``ncon(ifno)``
-       (rendered as ``packagedata.ncon(ifno)`` after v1 parsing) names an
-       array whose per-row length is looked up via a sibling ``ifno`` field
-       in another block's ``packagedata`` row. The referenced column
-       (``packagedata.ifno``) becomes ``pk``, and the sibling becomes ``fk``.
-       Currently only SFR's ``connectiondata`` uses this idiom upstream.
+       names an array whose per-row length is looked up via a sibling
+       ``ifno`` field in another block's ``packagedata`` row. The referenced
+       column becomes ``pk``, the sibling becomes ``fk``.
 
-    2. Same-name row identifiers: many advanced/multi-instance packages
-       (SFR, LAK, MAW, UZF, ...) define a numeric feature index (``ifno``,
-       or similarly) once in ``packagedata`` and repeat it, identically
-       named, as the leading column of every other block that addresses
-       the same feature (``connectiondata``, ``tables``, ``period``, ...).
-       Wherever such a name recurs outside ``packagedata``, the
-       ``packagedata`` occurrence becomes ``pk`` and the others become
-       ``fk``. This catches relations the shape idiom misses, including
-       most of SFR's own ``ifno`` columns.
+    2. Same-name row identifiers: advanced/multi-instance packages (SFR,
+       LAK, MAW, UZF, ...) define a numeric feature index once in
+       ``packagedata`` and repeat it, identically named, as the leading
+       column of other blocks addressing the same feature. Wherever the
+       name recurs outside ``packagedata``, that occurrence becomes ``pk``
+       and the others become ``fk``.
 
-    Relations where the identifier is renamed (e.g. LAK's outlet-referencing
-    ``lakein``/``lakeout``) or genuinely ambiguous (e.g. LAK's period
-    ``number``, which means either a lake or an outlet number depending on
-    the setting) are intentionally not inferred here — a same-name match
-    would find nothing for the former, and would be actively wrong for the
-    latter. Both are resolved separately, by explicit patching rather than
-    name-based inference — see ``_fix_lak_relations`` and
-    ``docs/md/sfr-lak-structure.md``.
+    Renamed identifiers (e.g. LAK's ``lakein``/``lakeout``) or genuinely
+    ambiguous ones (LAK's period ``number``, which means a lake or an outlet
+    number depending on the setting) aren't inferred here — see
+    ``_fix_lak_relations`` and ``docs/md/sfr-lak-structure.md``.
     """
     pk_set: set[tuple[str, str]] = set()
     fk_map: dict[tuple[str, str], str] = {}
@@ -403,11 +394,9 @@ _LONELY_PK_FIELDS = (
     "perioddata",
     # DISU/DISV/DISV1D/DISV2D geometry lists: row identifiers by construction
     # (MF6 requires consecutive numbering from 1), never referenced by name
-    # elsewhere in their own component (the things that reference cell/vertex
-    # numbers, e.g. `icvert`, are Arrays, which can't carry `pk`/`fk` at all —
-    # see index-node-attributes-plan.md Phase 3, item (b)). Distinct field
-    # names because MF6 names the block/list field after the geometry it
-    # holds, same idiom as period/perioddata above.
+    # elsewhere in their own component. Distinct names because MF6 names the
+    # block/list field after the geometry it holds, same idiom as
+    # period/perioddata above.
     "vertices",
     "cell2d",
     "cell1d",
@@ -423,15 +412,11 @@ def _mark_lonely_pk(blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
     ``irhospec``, CSUB's ``icsubno``, ATS's ``iperats``, SPC's ``bndno``,
     DISV's ``icell2d``). These are still genuine row identifiers by
     construction (MODFLOW rejects a repeated one, or requires consecutive
-    numbering) — they're just never referenced by name anywhere else in their
-    own component, unlike SFR/MAW/LAK/UZF's `ifno` columns, which repeat
-    across multiple blocks.
+    numbering) — they're just never referenced by name anywhere else in
+    their own component, unlike SFR/MAW/LAK/UZF's `ifno` columns.
 
-    Matches on the *list field's* name, not the enclosing block's. MF6's own
-    convention names the period block ``period`` but its list field
-    ``perioddata`` — the two are never the same string, so matching on the
-    block name (as this used to) silently never fired for the ``perioddata``
-    case at all, for any component.
+    Matches on the *list field's* name, not the enclosing block's — MF6
+    names the period block ``period`` but its list field ``perioddata``.
 
     Conservative by design: only fires when the list field's item record
     leads with a required Integer column carrying no ``fk`` and no existing
@@ -468,12 +453,10 @@ def _mark_lonely_pk(blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
     return {**blocks, **updated}
 
 
-# Corpus candidates for the `node` attribute (see index-node-attributes-plan.md
-# Phase 2): Integer columns in a list item record that reference a grid cell,
-# resolved from the parent model's grid (DIS/DISV/DISU) at runtime, rather than
-# a pk/fk relation to another list's row. Unlike `index`, v1 has no attribute
-# that signals this (numeric_index only says "needs 1-based/0-based
-# conversion" — true here too, and already migrated separately — not "is a
+# Integer columns in a list item record that reference a grid cell, resolved
+# from the parent model's grid (DIS/DISV/DISU) at runtime, rather than a pk/fk
+# relation to another list's row. v1 has no attribute that signals this
+# (`numeric_index` only means "needs 1-based/0-based conversion", not "is a
 # grid-cell reference"), so these are backfilled by an explicit, audited
 # per-field allowlist rather than derived mechanically. In every entry here the
 # list field's own name matches its enclosing block's name.
@@ -517,8 +500,7 @@ def _mark_node_refs(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.Bloc
     return {**blocks, block_name: new_block}
 
 
-# Corpus candidates for pk/fk backfill (index-node-attributes-plan.md Phase 3):
-# real relational facts the general `_resolve_relations`/`_mark_lonely_pk`
+# Real relational facts the general `_resolve_relations`/`_mark_lonely_pk`
 # passes can't infer, backfilled by an explicit, audited allowlist rather than
 # derived. Each entry: component -> (block name, list field name, {column:
 # fk target}). Unlike `_NODE_REF_FIELDS`, block name and list field name
@@ -526,35 +508,18 @@ def _mark_node_refs(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.Bloc
 #
 # - UZF's `ivertcon` is a self-referential fk (a UZF cell may point to another
 #   UZF cell below it) -- a same-block relation `_resolve_relations`
-#   explicitly never looks for, and the field isn't named `ifno` so its
-#   name-match signal wouldn't catch it either way.
-# - SFR's `iconr` is the downstream reach receiving diverted water -- a real
+#   explicitly never looks for.
+# - SFR's `iconr` is the downstream reach receiving diverted water -- a
 #   reference into `packagedata`'s reach numbers, not the record's leading
-#   field (so `_mark_lonely_pk` doesn't apply) and not named `ifno` (so
-#   `_resolve_relations`'s name-match doesn't fire). `diversions.idv` is a
-#   genuinely different case -- a diversion number scoped *within* reach
-#   IFNO, not globally unique -- so it correctly gets no pk/fk, only the
-#   `index` Phase 1 already set mechanically.
+#   field, so `_mark_lonely_pk` doesn't catch it either.
 # - `chf-cdb`/`chf-zdg`/`olf-zdg`'s `idcxs` reference the cross-section
-#   defined by `chf-cxs`'s `packagedata.idcxs` (already `pk`'d there since
-#   a838d84) -- a cross-component fk `_resolve_relations` structurally can't
-#   reach (single-component scope). OLF has no `*-cxs` component of its own
-#   (upstream modflow6 `c92f3e51`, "remove olf-cxs.dfn": "Overland flow has
-#   no concept of cross section") -- but `olf-zdg`'s Fortran source still
-#   takes a `SwfCxsType` pointer and indexes `idcxs` into it (`swf-zdg.f90`),
-#   the same shared cross-section object CHF's own zdg/cdb reference, so the
-#   fk target is `chf-cxs`, not a nonexistent `olf-cxs`. `swf-*` components
-#   were removed entirely (upstream `802d8e1d`, "remove swf dfns" -- SWF was
-#   split into CHF/OLF), so there's no `swf-zdg`/`swf-dfw` component left to
-#   backfill. `chf/olf-dfw`'s `idcxs` is the same relation but is an `Array`
-#   (a per-cell grid field, not a list column) -- see `_ARRAY_FK_BACKFILL`
-#   below, not here.
-#
-# MAW's `connectiondata.icon` (also flagged as a lonely-pk lookalike in
-# earlier scans) is, on inspection, the same compound-scoped shape as SFR's
-# `idv`: a per-well connection sequence number, not globally unique and never
-# referenced by fk elsewhere -- already fully handled by `index` alone,
-# deliberately excluded from this allowlist, not an oversight.
+#   defined by `chf-cxs`'s `packagedata.idcxs` -- a cross-component fk
+#   `_resolve_relations` structurally can't reach (single-component scope).
+#   OLF has no `*-cxs` component of its own (overland flow has no concept of
+#   cross section upstream), but `olf-zdg`'s Fortran source shares CHF's
+#   cross-section object, so the fk target is `chf-cxs`. `chf/olf-dfw`'s
+#   `idcxs` is the same relation but is an `Array` field, not a list column
+#   -- see `_ARRAY_FK_BACKFILL` below, not here.
 _FK_BACKFILL: dict[str, tuple[str, str, dict[str, str]]] = {
     "gwf-uzf": ("packagedata", "packagedata", {"ivertcon": "packagedata.ifno"}),
     "gwf-sfr": ("diversions", "diversions", {"iconr": "packagedata.ifno"}),
@@ -598,9 +563,8 @@ def _apply_fk_backfill(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.B
 # dtype="integer", shape=["nodes"]), not a list column, so it can't go through
 # `_apply_fk_backfill` above (which targets a List item's Record). It's the
 # same cross-section relation as `_FK_BACKFILL`'s `*-zdg`/`chf-cdb` entries
-# (including OLF targeting `chf-cxs` -- see the comment there), now
-# expressible directly since `Array.fk` exists (index-node-attributes-plan.md
-# Phase 3 addendum). Each entry: component -> (block name, field name, fk target).
+# (including OLF targeting `chf-cxs` -- see the comment there).
+# Each entry: component -> (block name, field name, fk target).
 _ARRAY_FK_BACKFILL: dict[str, tuple[str, str, str]] = {
     "chf-dfw": ("griddata", "idcxs", "chf-cxs.packagedata.idcxs"),
     "olf-dfw": ("griddata", "idcxs", "chf-cxs.packagedata.idcxs"),
@@ -984,16 +948,13 @@ def _fix_lak_relations(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.B
 
     - Splits the ambiguous period `number` field into `lakeno` / `outletno`
       fields nested inside the corresponding `laksetting` union arms, each
-      carrying a correct, non-conditional `fk`. A single `fk` on a shared
+      carrying a correct, non-conditional `fk` (a single `fk` on the shared
       `number` field can't be correct for both arm categories at once, since
-      the target block depends on which arm is present.
-    - Marks `outlets.outletno` as `pk`, since the new `outletno` fk needs a
-      pk to point to (`packagedata.ifno` is already marked by
-      `_resolve_relations`).
+      the target block depends on which arm is present).
+    - Marks `outlets.outletno` as `pk` (the new `outletno` fk needs one).
     - Marks `outlets.lakein`/`outlets.lakeout` as `fk: packagedata.ifno` —
-      unlike `number`, these are unambiguous; the gap is only that their
-      names don't match `ifno`, so the general name-matching pass never
-      finds them.
+      unambiguous, but named differently from `ifno` so the general
+      name-matching pass never finds them.
     """
     if name != "gwf-lak":
         return blocks
@@ -1083,10 +1044,7 @@ def _fix_mvr_relations(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.B
       participating in the mover, but nothing else in the component repeats
       the field name `pname` (the period block's `pname1`/`pname2` are
       renamed), so neither `_resolve_relations` nor `_mark_lonely_pk` finds
-      it — the former needs a name match, and the latter only fires on a
-      `packagedata`/`perioddata` list field, which `packages` isn't, plus
-      `pname` isn't `packages`' leading column (`mname` is, and it's
-      optional, so it can't be the pk anyway).
+      it, and `pname` isn't `packages`' leading column anyway (`mname` is).
     - Marks `period.perioddata`'s `pname1`/`pname2` as
       `fk: "packages.pname"`, since each identifies the provider/receiver
       package by name.
@@ -1094,12 +1052,10 @@ def _fix_mvr_relations(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.B
     Does *not* annotate `id1`/`id2`. Each identifies a feature within the
     package named by the sibling `pname1`/`pname2` field, but which block
     that resolves to depends on that package's *type*: `packagedata`'s pk
-    for SFR/MAW/UZF, `outlets.outletno` (not `packagedata`'s pk) for LAK, and
-    a positional row index — not a `pk`-flagged column, and not even a
-    `packagedata` block — for ordinary boundary packages like WEL/DRN/RIV.
-    A single static `fk` value can't express that; see the pk/fk relations
-    review notes for how to represent a runtime target whose *block*, not
-    just its component, is conditional on resolved data.
+    for SFR/MAW/UZF, `outlets.outletno` for LAK, and a positional row index
+    (no `pk`-flagged column at all) for ordinary boundary packages like
+    WEL/DRN/RIV. A single static `fk` value can't express a target that's
+    conditional on resolved data like that.
     """
     if name != "gwf-mvr":
         return blocks
@@ -1248,7 +1204,7 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
         layered: bool = try_parse_bool(f.get("layered"), False)
         # Pure serialization fact (1-based/0-based conversion), orthogonal to pk/fk
         # relational identity. Direct copy from v1: valid on Integer/Array(dtype=
-        # "integer") only, never on String (see index-node-attributes-plan.md).
+        # "integer") only, never on String.
         numeric_index: bool = try_parse_bool(f.get("numeric_index"), False)
         removed: str | None = f.get("removed") or None
         deprecated: str | None = f.get("deprecated") or None
