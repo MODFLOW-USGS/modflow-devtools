@@ -535,12 +535,20 @@ def _mark_node_refs(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.Bloc
 #   genuinely different case -- a diversion number scoped *within* reach
 #   IFNO, not globally unique -- so it correctly gets no pk/fk, only the
 #   `index` Phase 1 already set mechanically.
-# - `chf/olf/swf-zdg` and `chf-cdb`'s `idcxs` reference the cross-section
-#   defined by the sibling `*-cxs` component's `packagedata.idcxs` (already
-#   `pk`'d there since a838d84) -- a cross-component fk `_resolve_relations`
-#   structurally can't reach (single-component scope). `chf/olf/swf-dfw`'s
-#   `idcxs` is the same relation but is an `Array` (a per-cell grid field, not
-#   a list column) -- see `_ARRAY_FK_BACKFILL` below, not here.
+# - `chf-cdb`/`chf-zdg`/`olf-zdg`'s `idcxs` reference the cross-section
+#   defined by `chf-cxs`'s `packagedata.idcxs` (already `pk`'d there since
+#   a838d84) -- a cross-component fk `_resolve_relations` structurally can't
+#   reach (single-component scope). OLF has no `*-cxs` component of its own
+#   (upstream modflow6 `c92f3e51`, "remove olf-cxs.dfn": "Overland flow has
+#   no concept of cross section") -- but `olf-zdg`'s Fortran source still
+#   takes a `SwfCxsType` pointer and indexes `idcxs` into it (`swf-zdg.f90`),
+#   the same shared cross-section object CHF's own zdg/cdb reference, so the
+#   fk target is `chf-cxs`, not a nonexistent `olf-cxs`. `swf-*` components
+#   were removed entirely (upstream `802d8e1d`, "remove swf dfns" -- SWF was
+#   split into CHF/OLF), so there's no `swf-zdg`/`swf-dfw` component left to
+#   backfill. `chf/olf-dfw`'s `idcxs` is the same relation but is an `Array`
+#   (a per-cell grid field, not a list column) -- see `_ARRAY_FK_BACKFILL`
+#   below, not here.
 #
 # MAW's `connectiondata.icon` (also flagged as a lonely-pk lookalike in
 # earlier scans) is, on inspection, the same compound-scoped shape as SFR's
@@ -552,8 +560,7 @@ _FK_BACKFILL: dict[str, tuple[str, str, dict[str, str]]] = {
     "gwf-sfr": ("diversions", "diversions", {"iconr": "packagedata.ifno"}),
     "chf-cdb": ("period", "stress_period_data", {"idcxs": "chf-cxs.packagedata.idcxs"}),
     "chf-zdg": ("period", "stress_period_data", {"idcxs": "chf-cxs.packagedata.idcxs"}),
-    "olf-zdg": ("period", "stress_period_data", {"idcxs": "olf-cxs.packagedata.idcxs"}),
-    "swf-zdg": ("period", "stress_period_data", {"idcxs": "swf-cxs.packagedata.idcxs"}),
+    "olf-zdg": ("period", "stress_period_data", {"idcxs": "chf-cxs.packagedata.idcxs"}),
 }
 
 
@@ -587,16 +594,16 @@ def _apply_fk_backfill(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.B
     return {**blocks, block_name: new_block}
 
 
-# `chf/olf/swf-dfw`'s `idcxs` is a per-cell grid array (`griddata` block,
+# `chf-dfw`/`olf-dfw`'s `idcxs` is a per-cell grid array (`griddata` block,
 # dtype="integer", shape=["nodes"]), not a list column, so it can't go through
 # `_apply_fk_backfill` above (which targets a List item's Record). It's the
-# same cross-section relation as `_FK_BACKFILL`'s `*-zdg`/`chf-cdb` entries,
-# now expressible directly since `Array.fk` exists (index-node-attributes-plan.md
+# same cross-section relation as `_FK_BACKFILL`'s `*-zdg`/`chf-cdb` entries
+# (including OLF targeting `chf-cxs` -- see the comment there), now
+# expressible directly since `Array.fk` exists (index-node-attributes-plan.md
 # Phase 3 addendum). Each entry: component -> (block name, field name, fk target).
 _ARRAY_FK_BACKFILL: dict[str, tuple[str, str, str]] = {
     "chf-dfw": ("griddata", "idcxs", "chf-cxs.packagedata.idcxs"),
-    "olf-dfw": ("griddata", "idcxs", "olf-cxs.packagedata.idcxs"),
-    "swf-dfw": ("griddata", "idcxs", "swf-cxs.packagedata.idcxs"),
+    "olf-dfw": ("griddata", "idcxs", "chf-cxs.packagedata.idcxs"),
 }
 
 
