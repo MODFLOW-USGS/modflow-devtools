@@ -415,7 +415,7 @@ def has_pkg(pkg: str, strict: bool = False, name_map: dict[str, str] | None = No
         try:  # import name, e.g. "import shapefile"
             importlib.import_module(get_module_name())
             return True
-        except ModuleNotFoundError:
+        except ImportError:
             return False
 
     def try_metadata() -> bool:
