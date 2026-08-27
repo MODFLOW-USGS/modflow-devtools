@@ -1,6 +1,6 @@
 import ast
 import re
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from os import PathLike
 from pathlib import Path
 from typing import Annotated, Any, Literal, cast
@@ -20,7 +20,7 @@ from pydantic import (
 CURRENT_SCHEMA_VERSION = "2.0.0.dev3"
 
 
-class FieldBase(BaseModel):
+class InputFieldBase(BaseModel):
     name: str
     longname: str | None = None
     description: str | None = None
@@ -72,14 +72,14 @@ class FieldBase(BaseModel):
         every other field type renders identically either way. ``List`` has
         no inline form and raises if called with ``inline=True``.
         """
-        return _render_field(cast("Field", self), inline=inline)
+        return _render_field(cast("InputField", self), inline=inline)
 
 
-class Keyword(FieldBase):
+class Keyword(InputFieldBase):
     type: Literal["keyword"] = PydanticField(default="keyword", frozen=True)
 
 
-class String(FieldBase):
+class String(InputFieldBase):
     type: Literal["string"] = PydanticField(default="string", frozen=True)
     valid: list[str] | None = None
     case_sensitive: bool = False
@@ -89,7 +89,7 @@ class String(FieldBase):
     fk_ref: str | None = None
 
 
-class Integer(FieldBase):
+class Integer(InputFieldBase):
     type: Literal["integer"] = PydanticField(default="integer", frozen=True)
     valid: list[int] | None = None
     time_series: bool = False
@@ -100,12 +100,12 @@ class Integer(FieldBase):
     node: bool = False
 
 
-class Double(FieldBase):
+class Double(InputFieldBase):
     type: Literal["double"] = PydanticField(default="double", frozen=True)
     time_series: bool = False
 
 
-class File(FieldBase):
+class File(InputFieldBase):
     type: Literal["file"] = PydanticField(default="file", frozen=True)
     direction: Literal["in", "out"]
 
@@ -116,7 +116,7 @@ Scalar = Annotated[
 ]
 
 
-class Array(FieldBase):
+class Array(InputFieldBase):
     type: Literal["array"] = PydanticField(default="array", frozen=True)
     dtype: Literal["keyword", "integer", "double", "string"]
     shape: list[str] = []
@@ -138,25 +138,25 @@ class Array(FieldBase):
         return self
 
 
-class Record(FieldBase):
+class Record(InputFieldBase):
     type: Literal["record"] = PydanticField(default="record", frozen=True)
     fields: "dict[str, Scalar | Array | Record | Union]" = PydanticField(default_factory=dict)
 
     @property
-    def children(self) -> "dict[str, Field]":
+    def children(self) -> "dict[str, InputField]":
         return self.fields  # type: ignore[return-value]
 
 
-class Union(FieldBase):
+class Union(InputFieldBase):
     type: Literal["union"] = PydanticField(default="union", frozen=True)
     arms: "dict[str, Scalar | Array | Record]" = PydanticField(default_factory=dict)
 
     @property
-    def children(self) -> "dict[str, Field]":
+    def children(self) -> "dict[str, InputField]":
         return self.arms  # type: ignore[return-value]
 
 
-class List(FieldBase):
+class List(InputFieldBase):
     type: Literal["list"] = PydanticField(default="list", frozen=True)
     tagged: Literal[False] = PydanticField(default=False, frozen=True)
     item: "Record | Union"
@@ -181,11 +181,12 @@ class List(FieldBase):
         return self
 
     @property
-    def children(self) -> "dict[str, Field]":
+    def children(self) -> "dict[str, InputField]":
+        # item.name duplicates the List's own name, so it's not a useful key here.
         return self.item.children
 
 
-Field = Annotated[
+InputField = Annotated[
     Keyword | String | Integer | Double | File | Array | Record | Union | List,
     PydanticField(discriminator="type"),
 ]
@@ -197,7 +198,7 @@ List.model_rebuild()
 
 
 def _collect_fields(
-    fields: "dict[str, Field]", items: "list[tuple[str, Field]]", *, recurse: bool
+    fields: "dict[str, InputField]", items: "list[tuple[str, InputField]]", *, recurse: bool
 ) -> None:
     for name, field in fields.items():
         items.append((name, field))
@@ -216,7 +217,8 @@ def _render_file(field: "File") -> str:
     return f"{field.name.upper()} {keyword} <{field.name}>"
 
 
-def _tag(field: "Field", inner: str) -> str:
+def _tag(field: "InputField", inner: str) -> str:
+    """Prefix `inner` with the field's uppercased name if it's tagged."""
     return f"{field.name.upper()} {inner}" if field.tagged else inner
 
 
@@ -236,7 +238,15 @@ def _render_rows(item: "Record | Union") -> list[str]:
     return [f"<{item.name}>"]
 
 
-def _render_field(field: "Field", *, inline: bool = False) -> str:
+def _render_field(field: "InputField", *, inline: bool = False) -> str:
+    """Render a field's own text, relative to its own first line (no block indent).
+
+    Backs ``InputFieldBase.render()`` — see that docstring for the ``inline``
+    semantics. Kept as a free function (rather than inlined per-subclass)
+    so ``Record``/``Union``/``List`` can recurse over arbitrary child field
+    types via a single ``match``.
+    """
+
     def _wrap(token: str) -> str:
         return f"[{token}]" if field.optional else token
 
@@ -285,11 +295,19 @@ def _render_field(field: "Field", *, inline: bool = False) -> str:
             return f"{rows[0]}\n{rows[0]}\n..."
 
 
-def _should_render(field: "Field", *, developmode: bool) -> bool:
-    # always omit removed/deprecated fields
+def _should_render(field: "InputField", *, developmode: bool) -> bool:
+    """Whether a field belongs in render() output.
+
+    Removed/deprecated fields are never current syntax, so they're always
+    excluded (MF6 no longer parses a removed field at all, and a deprecated one
+    is discouraged even where still accepted) — there's no flag to see them in
+    render() output, matching mf6io.pdf. Fields flagged `InputField.developmode`
+    (which subsumes v1's `dev_`-name convention; see `_map_field` in the
+    migration) are internal/undocumented and excluded by default, but callers
+    doing internal tooling can opt in via the `developmode` parameter.
+    """
     if field.removed is not None or field.deprecated is not None:
         return False
-    # optionally omit developmode fields
     return developmode or not field.developmode
 
 
@@ -388,26 +406,35 @@ def _validate_len_call(call: ast.Call, component: "ComponentBase", expr: str) ->
 _Hook = Literal["ar", "mc", "rp", "ad", "fc", "ca", "cq"]
 
 
-class Dim(BaseModel):
-    """A named dimension backed by a field reference or derived from an expression.
+class InputDim(BaseModel):
+    """A named dimension resolvable from input fields at DFN-parse time.
 
     ``value`` specifies the dimension size, directly or indirectly, and can be:
       - ``nlay``: an integer field
       - ``len(auxiliary)``: the runtime length of a self-sizing array field
       - ``nlay * ncol``: the result of an arithmetic expression, e.g. of other dims
 
-    If ``value`` is None, the dimension is runtime-only: its value cannot be
-    derived from DFN input fields. ``set_in`` then indicates the simulation hook
-    in which the value is first set by MODFLOW (e.g. ``"ar"`` for dims that are
-    set during grid allocation, ``"rp"`` for dims reset each stress period).
-
-    Runtime dims may appear in memory variable shape expressions but not in input
-    field shapes expressions.
+    Valid in both input field shapes and memory variable shapes.
     """
 
-    value: str | None = None
+    value: str
     scope: Literal["component", "model", "simulation"] = "component"
-    set_in: _Hook | None = None
+
+
+class RuntimeDim(BaseModel):
+    """A named dimension whose value is established by MODFLOW at runtime and
+    cannot be derived from DFN input fields.
+
+    ``set_in`` indicates the simulation hook in which the value is first
+    established (e.g. ``"ar"`` for dims set during grid allocation, ``"rp"``
+    for dims reset each stress period).
+
+    Valid only in memory variable shapes, never in input field shapes, since
+    a sequential parser must know an array's size before reading it.
+    """
+
+    set_in: _Hook
+    scope: Literal["component", "model", "simulation"] = "component"
 
 
 def _parents_as_set(parent: "str | list[str] | None") -> set[str]:
@@ -419,11 +446,31 @@ def _parents_as_set(parent: "str | list[str] | None") -> set[str]:
 def _receives_from(
     requester_parent: "str | list[str] | None",
     provider_parent: "str | list[str] | None",
+    requester_name: str | None = None,
 ) -> bool:
+    """
+    Return True if the requesting component (requester_parent) can be in the
+    same model as the providing component (provider_parent).
+
+    The provider's parent identifies which model it belongs to (a concrete
+    ``<type>-nam`` name, e.g. ``"gwf-nam"``).  The requester's parent
+    determines whether it can be in that model: an explicit match, or a generic
+    type like ``"model"`` or ``"package"`` meaning any model.
+
+    ``requester_name``, if given, additionally makes a model component itself
+    (e.g. ``"gwf-nam"``) able to receive from its own child packages: a
+    model's own ``parent`` names the simulation, not the model, so without
+    this a model could never see a dim its own DIS package declares (e.g.
+    the discretization package's ``nodesuser``, referenced by the model's
+    own runtime ``nodes`` dim).
+    """
     provider_parents = _parents_as_set(provider_parent)
     model_contexts = {p for p in provider_parents if p.endswith("-nam") and p != "sim-nam"}
     if not model_contexts:
         return False
+
+    if requester_name is not None and requester_name in model_contexts:
+        return True
 
     requester_parents = _parents_as_set(requester_parent)
     for rp in requester_parents:
@@ -447,9 +494,6 @@ def _resolve_derived_dims(component: "ComponentBase", known_dims: set[str]) -> l
     deps: dict[str, set[str]] = {}
 
     for name, dim_def in all_dims.items():
-        if dim_def.value is None:
-            deps[name] = set()
-            continue
         value = dim_def.value
         try:
             tree = ast.parse(value, mode="eval")
@@ -509,8 +553,8 @@ def _resolve_derived_dims(component: "ComponentBase", known_dims: set[str]) -> l
 
 class Block(BaseModel):
     name: str
-    fields: dict[str, Field]
-    header: "Field | None" = None
+    fields: dict[str, InputField]
+    header: "InputField | None" = None
 
     @model_validator(mode="after")
     def _check_field_order(self) -> "Block":
@@ -534,7 +578,7 @@ class Block(BaseModel):
         data = handler(self)
         data.pop("name", None)  # name is the dict key in ComponentBase.blocks
         # Unlike `fields`, `header` isn't stored in a name-keyed dict, so its
-        # `name` (stripped by FieldBase._serialize under strip_names) must be
+        # `name` (stripped by InputFieldBase._serialize under strip_names) must be
         # restored here or it can't be recovered on load.
         if self.header is not None and isinstance(data.get("header"), dict):
             data["header"] = {"name": self.header.name, **data["header"]}
@@ -564,7 +608,7 @@ class Block(BaseModel):
 
     def get_fields(self, recurse: bool = False) -> OMD:
         """Fields keyed by name, including `header`; `recurse` descends into children."""
-        items: list[tuple[str, Field]] = []
+        items: list[tuple[str, InputField]] = []
         _collect_fields(self.fields, items, recurse=recurse)
         if self.header is not None:
             _collect_fields({self.header.name: self.header}, items, recurse=recurse)
@@ -622,7 +666,8 @@ class ComponentBase(BaseModel):
     schema_version: str | None = None
     name: str
     parent: str | list[str] | None = None
-    dims: dict[str, Dim] | None = None
+    dims: dict[str, InputDim] | None = None
+    runtime_dims: dict[str, RuntimeDim] | None = None
     blocks: dict[str, Block] | None = None
     memory: dict[str, MemoryVariable] | None = None
 
@@ -634,7 +679,7 @@ class ComponentBase(BaseModel):
         return data
 
     def get_fields(self, recurse: bool = False) -> OMD:
-        items: list[tuple[str, Field]] = []
+        items: list[tuple[str, InputField]] = []
         for block in (self.blocks or {}).values():
             items.extend(block.get_fields(recurse=recurse).items(multi=True))
         return OMD(items)
@@ -1186,20 +1231,41 @@ class Dfns(BaseModel):
         return {n: c for n, c in self.components.items() if c.parent == name}
 
     def local_dims(self, component_name: str) -> set[str]:
-        """All dim names declared in this component's dims section, including runtime dims."""
-        return set((self.components[component_name].dims or {}).keys())
+        """All dim names declared in this component, both input and runtime."""
+        component = self.components[component_name]
+        return set((component.dims or {}).keys()) | set((component.runtime_dims or {}).keys())
 
-    def runtime_dims(self, component_name: str) -> set[str]:
-        """Runtime-only dim names declared locally (value=None)."""
-        return {
-            name
-            for name, dim in (self.components[component_name].dims or {}).items()
-            if dim.value is None
-        }
+    def local_runtime_dims(self, component_name: str) -> set[str]:
+        """Runtime dim names declared locally."""
+        return set((self.components[component_name].runtime_dims or {}).keys())
+
+    def _inherited_dim_names(
+        self,
+        component_name: str,
+        dicts: "Callable[[Component], dict[str, InputDim] | dict[str, RuntimeDim] | None]",
+    ) -> set[str]:
+        """Names from ``dicts(c)`` on every other component, filtered by scope visibility."""
+        inherited: set[str] = set()
+        component = self.components[component_name]
+        req_parent = component.parent
+        for cname, c in self.components.items():
+            if cname == component_name:
+                continue
+            for dim_name, dim in (dicts(c) or {}).items():
+                match dim.scope:
+                    case "simulation":
+                        inherited.add(dim_name)
+                    case "model":
+                        if _receives_from(req_parent, c.parent, requester_name=component_name):
+                            inherited.add(dim_name)
+                    case "component":
+                        if cname in _parents_as_set(req_parent):
+                            inherited.add(dim_name)
+        return inherited
 
     def inherited_dims(self, component_name: str) -> set[str]:
         """
-        Dim names visible to ``component_name`` from other components.
+        Dim names (input and runtime) visible to ``component_name`` from other components.
 
         - ``"simulation"`` scope: always visible.
         - ``"model"`` scope: visible when the requesting component can share a
@@ -1208,62 +1274,25 @@ class Dfns(BaseModel):
         - ``"component"`` scope: visible when the dim-defining component is
           explicitly listed as a parent of the requesting component (subpackage).
         """
-        inherited: set[str] = set()
-        component = self.components[component_name]
-        req_parent = component.parent
-        for cname, c in self.components.items():
-            if cname == component_name:
-                continue
-            for dim_name, dim in (c.dims or {}).items():
-                match dim.scope:
-                    case "simulation":
-                        inherited.add(dim_name)
-                    case "model":
-                        if _receives_from(req_parent, c.parent):
-                            inherited.add(dim_name)
-                    case "component":
-                        if cname in _parents_as_set(req_parent):
-                            inherited.add(dim_name)
-        return inherited
+        return self._inherited_dim_names(
+            component_name, lambda c: c.dims
+        ) | self._inherited_dim_names(component_name, lambda c: c.runtime_dims)
 
     def input_dims(self, component_name: str) -> set[str]:
         """
-        Non-runtime dim names visible to ``component_name``, valid in input field shapes.
+        Input dim names visible to ``component_name``, valid in input field shapes.
 
-        Excludes runtime dims (value=None): a sequential parser must know an
-        array's size before reading it, so input arrays may not be sized by a
-        dim whose value is only known at runtime.
+        Excludes runtime dims: a sequential parser must know an array's size
+        before reading it, so input arrays may not be sized by a dim whose
+        value is only known at runtime.
         """
-        local = {
-            name
-            for name, dim in (self.components[component_name].dims or {}).items()
-            if dim.value is not None
-        }
-        inherited: set[str] = set()
-        component = self.components[component_name]
-        req_parent = component.parent
-        for cname, c in self.components.items():
-            if cname == component_name:
-                continue
-            for dim_name, dim in (c.dims or {}).items():
-                if dim.value is None:
-                    continue
-                match dim.scope:
-                    case "simulation":
-                        inherited.add(dim_name)
-                    case "model":
-                        if _receives_from(req_parent, c.parent):
-                            inherited.add(dim_name)
-                    case "component":
-                        if cname in _parents_as_set(req_parent):
-                            inherited.add(dim_name)
-        return local | inherited
+        local = set((self.components[component_name].dims or {}).keys())
+        return local | self._inherited_dim_names(component_name, lambda c: c.dims)
 
     def dims(self, component_name: str) -> set[str]:
         """
-        All dim names visible to ``component_name`` for shape resolution,
-        including runtime dims (value=None). Used for memory variable shape
-        validation.
+        All dim names (input and runtime) visible to ``component_name`` for
+        shape resolution. Used for memory variable shape validation.
         """
         return self.local_dims(component_name) | self.inherited_dims(component_name)
 

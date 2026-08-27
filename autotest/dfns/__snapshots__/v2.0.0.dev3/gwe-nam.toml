@@ -4,10 +4,10 @@ name = "gwe-nam"
 parent = "sim-nam"
 dependent_variable = "temperature"
 
-[dims.nja]
+[runtime_dims.nja]
 set_in = "ar"
 
-[dims.nodes]
+[runtime_dims.nodes]
 set_in = "ar"
 
 [blocks.options.fields.list]

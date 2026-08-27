@@ -105,3 +105,43 @@ type = "integer"
 set_in = "ar"
 source = "nexg"
 type = "integer"
+
+[memory.nodem1]
+type = "array"
+set_in = "ar"
+source = "cellidm1"
+description = "Reduced node number in the surface water model for each exchange, derived from CELLIDM1. Registered as NODEM1 in memory though the Fortran field is named NODESWF."
+dtype = "integer"
+shape = [
+    "nexg",
+]
+
+[memory.nodem2]
+type = "array"
+set_in = "ar"
+source = "cellidm2"
+description = "Reduced node number in the GWF model for each exchange, derived from CELLIDM2. Registered as NODEM2 in memory though the Fortran field is named NODEGWF."
+dtype = "integer"
+shape = [
+    "nexg",
+]
+
+[memory.bedleak]
+type = "array"
+set_in = "ar"
+source = "bedleak"
+description = "Bed leakance for each exchange."
+dtype = "double"
+shape = [
+    "nexg",
+]
+
+[memory.cfact]
+type = "array"
+set_in = "ar"
+source = "cfact"
+description = "Factor used in the conductance calculation for each exchange."
+dtype = "double"
+shape = [
+    "nexg",
+]

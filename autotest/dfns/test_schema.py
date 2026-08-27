@@ -231,7 +231,7 @@ def test_component_fields_loaded(dfn_dir):
     fields = gwf_dis.get_fields()
     assert isinstance(fields, dict)
     assert len(fields) > 0
-    # every value is a Field instance, every key matches the field's name
+    # every value is an InputField instance, every key matches the field's name
     for name, field in fields.items():
         assert name == field.name
     # fields from all blocks are present (nlay is in dimensions, not options)
@@ -524,7 +524,7 @@ def test_memory_output_attributes_chd_no_to_mvr(dev3_spec):
     assert simtomvr.output is None
 
 
-# --- FieldBase.render() -----------------------------------------------------
+# --- InputFieldBase.render() -------------------------------------------------
 
 
 def test_render_keyword():

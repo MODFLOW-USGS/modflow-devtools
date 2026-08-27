@@ -154,9 +154,15 @@ def _normalize_n_prefix_shapes(
 def _build_explicit_dims(
     parent: "str | list[str] | None",
     blocks: dict[str, v2.Block],
-) -> dict[str, v2.Dim]:
-    """Build the dims section from a component's dimensions block."""
-    dims: dict[str, v2.Dim] = {}
+) -> dict[str, v2.InputDim]:
+    """Build the dims section from a component's dimensions block.
+
+    ``nodes`` here is always the user-facing, pre-reduction grid cell count
+    (what sizes K/TOP/BOTM/IDOMAIN); see dfnspec.md's "Dimensions" section
+    for how this coexists with the runtime ``nodes``/``nodesuser`` dims dev3
+    injects for memory variables.
+    """
+    dims: dict[str, v2.InputDim] = {}
     dim_block = blocks.get("dimensions")
     if not dim_block:
         return dims
@@ -164,23 +170,23 @@ def _build_explicit_dims(
     scope = _scope_for(parent)
     for fname, field in dim_block.fields.items():
         if isinstance(field, v2.Integer):
-            dims[fname] = v2.Dim(value=fname, scope=scope)
+            dims[fname] = v2.InputDim(value=fname, scope=scope)
 
     if scope == "model":
         has = set(dims.keys())
         if {"nlay", "nrow", "ncol"} <= has:
-            dims["ncpl"] = v2.Dim(value="nrow * ncol", scope="model")
-            dims["nodes"] = v2.Dim(value="nlay * nrow * ncol", scope="model")
-            dims["ncelldim"] = v2.Dim(value="3", scope="model")
+            dims["ncpl"] = v2.InputDim(value="nrow * ncol", scope="model")
+            dims["nodes"] = v2.InputDim(value="nlay * nrow * ncol", scope="model")
+            dims["ncelldim"] = v2.InputDim(value="3", scope="model")
         elif {"nlay", "ncpl"} <= has:
-            dims["nodes"] = v2.Dim(value="nlay * ncpl", scope="model")
-            dims["ncelldim"] = v2.Dim(value="2", scope="model")
+            dims["nodes"] = v2.InputDim(value="nlay * ncpl", scope="model")
+            dims["ncelldim"] = v2.InputDim(value="2", scope="model")
         elif {"nrow", "ncol"} <= has:
-            dims["ncpl"] = v2.Dim(value="nrow * ncol", scope="model")
-            dims["nodes"] = v2.Dim(value="nrow * ncol", scope="model")
-            dims["ncelldim"] = v2.Dim(value="2", scope="model")
+            dims["ncpl"] = v2.InputDim(value="nrow * ncol", scope="model")
+            dims["nodes"] = v2.InputDim(value="nrow * ncol", scope="model")
+            dims["ncelldim"] = v2.InputDim(value="2", scope="model")
         elif "nodes" in has:
-            dims["ncelldim"] = v2.Dim(value="1", scope="model")
+            dims["ncelldim"] = v2.InputDim(value="1", scope="model")
 
     return dims
 
@@ -208,7 +214,7 @@ def _sanitize_list_shapes(
 
 def _resolve_dimensions(
     blocks: dict[str, v2.Block],
-) -> tuple[dict[str, v2.Block], dict[str, v2.Dim]]:
+) -> tuple[dict[str, v2.Block], dict[str, v2.InputDim]]:
     """
     Detect self-sizing arrays whose name is referenced in another array's shape
     expression — those define a component-scoped dimension.
@@ -219,7 +225,7 @@ def _resolve_dimensions(
     self_sizing: set[str] = set()
     shape_refs: set[str] = set()
 
-    def _scan(fields: Mapping[str, v2.Field]) -> None:
+    def _scan(fields: Mapping[str, v2.InputField]) -> None:
         for name, field in fields.items():
             if isinstance(field, v2.Array):
                 if not field.shape:
@@ -244,11 +250,13 @@ def _resolve_dimensions(
     # array has shape (nodes) and never references 'auxiliary' by name in a shape.
     if "auxiliary" in self_sizing:
         array_dim_names.add("auxiliary")
-    array_dims = {n: v2.Dim(value=f"len({n})", scope="component") for n in sorted(array_dim_names)}
+    array_dims = {
+        n: v2.InputDim(value=f"len({n})", scope="component") for n in sorted(array_dim_names)
+    }
     return blocks, array_dims
 
 
-def _collect_item_int_fields(fields: Mapping[str, v2.Field]) -> set[str]:
+def _collect_item_int_fields(fields: Mapping[str, v2.InputField]) -> set[str]:
     """
     Return the names of Integer fields declared directly on a block's list-item
     record(s) (or item union arms), one level deep. These are candidate row
@@ -261,7 +269,7 @@ def _collect_item_int_fields(fields: Mapping[str, v2.Field]) -> set[str]:
             if isinstance(field, v2.Integer):
                 names.add(fname)
 
-    def _scan(fields: Mapping[str, v2.Field]) -> None:
+    def _scan(fields: Mapping[str, v2.InputField]) -> None:
         for field in fields.values():
             if isinstance(field, v2.Record):
                 _scan_record(field)
@@ -303,7 +311,7 @@ def _resolve_relations(blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
     pk_set: set[tuple[str, str]] = set()
     fk_map: dict[tuple[str, str], str] = {}
 
-    def _scan_fields(block_name: str, fields: Mapping[str, v2.Field]) -> None:
+    def _scan_fields(block_name: str, fields: Mapping[str, v2.InputField]) -> None:
 
         def _scan_record(record: v2.Record) -> None:
             for field in record.fields.values():
@@ -345,7 +353,9 @@ def _resolve_relations(blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
     if not fk_map and not pk_set:
         return blocks
 
-    def _resolve_fields(block_name: str, fields: Mapping[str, v2.Field]) -> dict[str, v2.Field]:
+    def _resolve_fields(
+        block_name: str, fields: Mapping[str, v2.InputField]
+    ) -> dict[str, v2.InputField]:
 
         def _resolve_record(record: v2.Record) -> v2.Record:
             updates: dict = {}
@@ -595,7 +605,7 @@ def _apply_array_fk_backfill(name: str, blocks: dict[str, v2.Block]) -> dict[str
 
 def _fill_period_list_shapes(
     blocks: dict[str, v2.Block],
-    explicit_dims: dict[str, v2.Dim],
+    explicit_dims: dict[str, v2.InputDim],
 ) -> dict[str, v2.Block]:
     """
     For period blocks whose List field has no shape expression, infer the shape
@@ -624,7 +634,7 @@ def _item_array_dims(field: v2.List) -> set[str]:
 
 def _fill_named_list_shapes(
     blocks: dict[str, v2.Block],
-    explicit_dims: dict[str, v2.Dim],
+    explicit_dims: dict[str, v2.InputDim],
 ) -> dict[str, v2.Block]:
     """
     For non-period named list blocks (e.g. packagedata) whose List field has no
@@ -752,7 +762,7 @@ def _infer_list_shape_dims(
     v1_fields: OMD,
     scope: "Literal['component', 'model', 'simulation']",
     existing_dims: set[str],
-) -> "tuple[dict[str, v2.Block], dict[str, v2.Dim]]":
+) -> "tuple[dict[str, v2.Block], dict[str, v2.InputDim]]":
     """
     For shapeless List fields whose original v1 recarray had a complex shape
     expression, translate that expression to a derived dim and restore the shape.
@@ -770,7 +780,7 @@ def _infer_list_shape_dims(
             if shape:
                 v1_shapes[(f["block"], f["name"])] = shape
 
-    derived: dict[str, v2.Dim] = {}
+    derived: dict[str, v2.InputDim] = {}
     new_blocks = dict(blocks)
 
     for bname, block in blocks.items():
@@ -789,7 +799,7 @@ def _infer_list_shape_dims(
             # Avoid clobbering an existing dim with the same name.
             if dim_name in existing_dims or dim_name in derived:
                 continue
-            derived[dim_name] = v2.Dim(value=v2_expr, scope=scope)
+            derived[dim_name] = v2.InputDim(value=v2_expr, scope=scope)
             new_fields[fname] = field.model_copy(update={"shape": [dim_name]})
             changed = True
         if changed:
@@ -1185,7 +1195,7 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
 
     parent = infer_parent(name, fields)
 
-    def _map_field(f: v1.Field) -> v2.Field:
+    def _map_field(f: v1.Field) -> v2.InputField:
         _name: str = f["name"]
         _type: str | None = f.get("type")
         shape_str: str | None = f.get("shape") or None
@@ -1479,7 +1489,7 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
                         None,
                     )
 
-                rec_fields: dict[str, v2.Field] = {}
+                rec_fields: dict[str, v2.InputField] = {}
                 for i, sname in enumerate(subnames):
                     if i == mode_idx:
                         continue  # folded into the File field at the path's position

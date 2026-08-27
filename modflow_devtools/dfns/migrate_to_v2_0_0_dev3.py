@@ -358,12 +358,235 @@ def _apt_common_memory(
 
 
 # ---------------------------------------------------------------------------
+# Exchange package connection memory variables
+# Model-pair exchanges built on DisConnExchange (GWF-GWF, GWT-GWT, GWE-GWE)
+# allocate NODEM1/NODEM2/IHC/CL1/CL2/HWVA from the EXCHANGEDATA recarray
+# (cellidm1/cellidm2/ihc/cl1/cl2/hwva DFN fields), plus NAUX/AUXNAME_CST/
+# AUXVAR for auxiliary columns. Confirmed from DisConnExchange.f90
+# (allocate_scalars/allocate_arrays). These are the fields silently
+# truncated by modflowapi's tuple-presence heuristic (they were previously
+# uncataloged here entirely, so modflowapi had no declared shape to fall
+# back on).
+#
+# The SWF-family exchanges (CHF-GWF, OLF-GWF) extend SwfGwfExchangeType
+# rather than DisConnExchangeType; they still register connection nodes as
+# NODEM1/NODEM2 (the Fortran fields are named nodeswf/nodegwf, but
+# mem_allocate registers them under NODEM1/NODEM2 for API consistency with
+# the DisConnExchange family) but replace IHC/CL1/CL2/HWVA with
+# BEDLEAK/CFACT and do not support auxiliary variables (confirmed from
+# exg-swfgwf.f90; the AUXVAR-handling code there is commented out).
+# ---------------------------------------------------------------------------
+
+
+def _disconn_exg_memory() -> "dict[str, v2.MemoryScalar | v2.MemoryArray]":
+    """Connection memory for DisConnExchange-derived exchanges: gwfgwf/gwtgwt/gwegwe."""
+    return {
+        "nodem1": _mem_var(
+            "integer",
+            ["nexg"],
+            set_in="ar",
+            source="cellidm1",
+            description="Reduced node number in model 1 for each exchange, derived from CELLIDM1.",
+        ),
+        "nodem2": _mem_var(
+            "integer",
+            ["nexg"],
+            set_in="ar",
+            source="cellidm2",
+            description="Reduced node number in model 2 for each exchange, derived from CELLIDM2.",
+        ),
+        "ihc": _mem_var(
+            "integer",
+            ["nexg"],
+            set_in="ar",
+            source="ihc",
+            description=(
+                "Connection type flag for each exchange: 0 vertical, 1 horizontal, "
+                "2 horizontal for a vertically staggered grid."
+            ),
+        ),
+        "cl1": _mem_var(
+            "double",
+            ["nexg"],
+            set_in="ar",
+            source="cl1",
+            description="Distance between the center of the model 1 cell and its shared face.",
+        ),
+        "cl2": _mem_var(
+            "double",
+            ["nexg"],
+            set_in="ar",
+            source="cl2",
+            description="Distance between the center of the model 2 cell and its shared face.",
+        ),
+        "hwva": _mem_var(
+            "double",
+            ["nexg"],
+            set_in="ar",
+            source="hwva",
+            description=(
+                "Horizontal width of the connection if IHC > 0, or the area "
+                "perpendicular to flow of the vertical connection if IHC = 0."
+            ),
+        ),
+        "naux": _mem_var(
+            "integer", [], set_in="ar", readonly=True, description="Number of auxiliary variables."
+        ),
+        "auxname_cst": _mem_var(
+            "string",
+            ["naux"],
+            set_in="ar",
+            readonly=True,
+            description="Names of auxiliary variables.",
+        ),
+        "auxvar": _mem_var(
+            "double",
+            ["naux", "nexg"],
+            set_in="ar",
+            source="aux",
+            description="Auxiliary variable values for each exchange.",
+        ),
+    }
+
+
+def _swf_gwf_exg_memory() -> "dict[str, v2.MemoryScalar | v2.MemoryArray]":
+    """Connection memory for SwfGwfExchange-derived exchanges: chfgwf/olfgwf."""
+    return {
+        "nodem1": _mem_var(
+            "integer",
+            ["nexg"],
+            set_in="ar",
+            source="cellidm1",
+            description=(
+                "Reduced node number in the surface water model for each exchange, "
+                "derived from CELLIDM1. Registered as NODEM1 in memory though the "
+                "Fortran field is named NODESWF."
+            ),
+        ),
+        "nodem2": _mem_var(
+            "integer",
+            ["nexg"],
+            set_in="ar",
+            source="cellidm2",
+            description=(
+                "Reduced node number in the GWF model for each exchange, derived "
+                "from CELLIDM2. Registered as NODEM2 in memory though the Fortran "
+                "field is named NODEGWF."
+            ),
+        ),
+        "bedleak": _mem_var(
+            "double",
+            ["nexg"],
+            set_in="ar",
+            source="bedleak",
+            description="Bed leakance for each exchange.",
+        ),
+        "cfact": _mem_var(
+            "double",
+            ["nexg"],
+            set_in="ar",
+            source="cfact",
+            description="Factor used in the conductance calculation for each exchange.",
+        ),
+    }
+
+
+# ---------------------------------------------------------------------------
+# Transport Mover (MVT/MVE) memory variables
+# gwt-mvt and gwe-mve are both generic instantiations of the single
+# TspMvtType (tsp-mvt.f90) — their v1 DFNs are identical apart from a
+# longname string. print_input/print_flows/save_flows are parsed by hand
+# in read_options() (not routed through the IDM found-struct, so the v1 DFN
+# carries no mf6internal annotation) but still land in the inherited
+# NumericalPackageType scalars IPRPAK/IPRFLOW/IPAKCB. MAXPACKAGES is
+# computed internally (count of packages with an active mover) and has no
+# DFN field counterpart. IBUDGETOUT/IBUDCSV (output file unit numbers) and
+# PAKNAMES (bookkeeping array of provider/receiver package names) are
+# omitted, consistent with no other package in this catalog exposing raw
+# file units.
+# ---------------------------------------------------------------------------
+
+
+def _mvt_memory() -> "dict[str, v2.MemoryScalar | v2.MemoryArray]":
+    return {
+        "iprpak": _mem_var(
+            "integer",
+            [],
+            set_in="ar",
+            source="print_input",
+            description="Flag controlling whether mover input is echoed to the listing file.",
+        ),
+        "iprflow": _mem_var(
+            "integer",
+            [],
+            set_in="ar",
+            source="print_flows",
+            description=(
+                "Flag controlling whether mover flow rates are printed to the listing file."
+            ),
+        ),
+        "ipakcb": _mem_var(
+            "integer",
+            [],
+            set_in="ar",
+            source="save_flows",
+            description="Flag controlling whether mover flows are written to the budget file.",
+        ),
+        "maxpackages": _mem_var(
+            "integer",
+            [],
+            set_in="ar",
+            readonly=True,
+            description=(
+                "Number of packages participating in the mover. "
+                "Computed from the packages that supply or receive moved water."
+            ),
+        ),
+    }
+
+
+def _dis_node_maps() -> "dict[str, v2.MemoryScalar | v2.MemoryArray]":
+    """NODEUSER/NODEREDUCED, common to every discretization package."""
+    return {
+        "nodeuser": _mem_var(
+            "integer",
+            ["nodes"],
+            set_in="ar",
+            readonly=True,
+            description=(
+                "Maps each packed (active-cell) node position to its full-grid "
+                "user node number. Index map for the runtime 'nodes' dimension."
+            ),
+        ),
+        "nodereduced": _mem_var(
+            "integer",
+            ["nodesuser"],
+            set_in="ar",
+            readonly=True,
+            description=(
+                "Maps each full-grid user node number to its packed (active-cell) "
+                "node position, or a nonpositive sentinel if the cell is inactive."
+            ),
+        ),
+    }
+
+
+# ---------------------------------------------------------------------------
 # Package-specific extra memory variables
 # For derived or renamed variables not covered by mf6internal or same-name
 # griddata convention. Merged last so they intentionally override.
 # ---------------------------------------------------------------------------
 
 _EXTRA_MEMORY: dict[str, dict[str, "v2.MemoryScalar | v2.MemoryArray"]] = {
+    # Exchange connection data (see banner above).
+    "gwfgwf": _disconn_exg_memory(),
+    "gwtgwt": _disconn_exg_memory(),
+    "gwegwe": _disconn_exg_memory(),
+    "chfgwf": _swf_gwf_exg_memory(),
+    "olfgwf": _swf_gwf_exg_memory(),
+    # Transport mover (see banner above).
+    "mvt": _mvt_memory(),
+    "mve": _mvt_memory(),
     # NPF: k is loaded as K11; condsat and sat are derived/computed.
     "npf": {
         "k11": _mem_var(
@@ -399,6 +622,10 @@ _EXTRA_MEMORY: dict[str, dict[str, "v2.MemoryScalar | v2.MemoryArray"]] = {
         ),
     },
     # DIS/DISV/DISU: area is computed from grid geometry, not a DFN field.
+    #
+    # NODEUSER/NODEREDUCED (see _dis_node_maps): confirmed from mem_allocate
+    # calls in Dis.f90, Dis2d.f90, Disv.f90, Disv1d.f90, Disv2d.f90, and
+    # Disu.f90 — every discretization package allocates both, uniformly.
     "dis": {
         "area": _mem_var(
             "double",
@@ -407,6 +634,7 @@ _EXTRA_MEMORY: dict[str, dict[str, "v2.MemoryScalar | v2.MemoryArray"]] = {
             readonly=True,
             description="Horizontal cell area, computed from grid geometry.",
         ),
+        **_dis_node_maps(),
     },
     "disv": {
         "area": _mem_var(
@@ -416,16 +644,21 @@ _EXTRA_MEMORY: dict[str, dict[str, "v2.MemoryScalar | v2.MemoryArray"]] = {
             readonly=True,
             description="Horizontal cell area, computed from grid geometry.",
         ),
+        **_dis_node_maps(),
     },
     "disu": {
         "area": _mem_var(
             "double",
-            ["nodes"],
+            ["nodesuser"],
             set_in="ar",
             readonly=True,
             description="Horizontal cell area, computed from grid geometry.",
         ),
+        **_dis_node_maps(),
     },
+    "dis2d": _dis_node_maps(),
+    "disv1d": _dis_node_maps(),
+    "disv2d": _dis_node_maps(),
     # SFR: packagedata field names differ from Fortran memory variable names.
     "sfr": {
         "length": _mem_var(
@@ -1202,32 +1435,40 @@ def to_v2_0_0_dev3(name: str, fields: OMD, meta: list[str]) -> v2.Component:
             memory[var_name] = mv.model_copy(update={"source": None})
 
     # Step 6: inject dims for any shape elements used by memory variables that
-    # are not already declared in the component's dims section. Shape elements
-    # that resolve to existing dims or can be derived from fields are left alone;
-    # everything else is injected as a runtime dim (value=None, set_in=<set_in>).
-    # Special cases:
-    #   naux        → derived from len(auxiliary) when that field exists
-    #   njas (disu) → expressible as (nja - nodes) / 2 since nja is a DFN field
+    # are not already declared in the component's dims/runtime_dims sections.
+    # Shape elements that resolve to an existing dim (input or runtime) are
+    # left alone; everything else is injected as a RuntimeDim. Special cases:
+    #   naux        → derived from len(auxiliary) when that field exists (InputDim)
+    #   njas (disu) → expressible as (nja - nodes) / 2, both DFN fields (InputDim)
     #   nbound      → set_in "rp" (reset each stress period from period input)
     #   all others  → set_in "ar" (established at grid allocation, then constant)
-    existing_dims = dict(component.dims or {})
-    if pkg_short == "disu" and "nja" in existing_dims and "nodes" in existing_dims:
-        existing_dims.setdefault("njas", v2.Dim(value="(nja - nodes) / 2"))
+    existing_input_dims = dict(component.dims or {})
+    existing_runtime_dims = dict(component.runtime_dims or {})
+    if pkg_short == "disu" and "nja" in existing_input_dims and "nodes" in existing_input_dims:
+        existing_input_dims.setdefault("njas", v2.InputDim(value="(nja - nodes) / 2"))
     if memory:
         all_field_names = set(component.get_fields(recurse=True).keys())
         mem_shape_dims = {elem for mv in memory.values() for elem in getattr(mv, "shape", [])}
-        for dim_name in sorted(mem_shape_dims - set(existing_dims.keys())):
+        # "nodes" deliberately names both an InputDim (the full, pre-reduction grid
+        # count that sizes input arrays) and a RuntimeDim (the post-IDOMAIN-reduction
+        # active-cell count that sizes memory variables like NODEUSER) on the
+        # discretization packages themselves — see _build_explicit_dims. A memory
+        # variable's own "nodes" shape reference always means the RuntimeDim sense,
+        # so it must not be treated as already satisfied by the same-named InputDim.
+        known = (set(existing_input_dims) - {"nodes"}) | set(existing_runtime_dims)
+        for dim_name in sorted(mem_shape_dims - known):
             if dim_name == "naux" and "auxiliary" in all_field_names:
-                existing_dims[dim_name] = v2.Dim(value="len(auxiliary)")
+                existing_input_dims[dim_name] = v2.InputDim(value="len(auxiliary)")
             elif dim_name == "nbound":
-                existing_dims[dim_name] = v2.Dim(value=None, set_in="rp")
+                existing_runtime_dims[dim_name] = v2.RuntimeDim(set_in="rp")
             else:
-                existing_dims[dim_name] = v2.Dim(value=None, set_in="ar")
+                existing_runtime_dims[dim_name] = v2.RuntimeDim(set_in="ar")
 
     return component.model_copy(
         update={
             "schema_version": "2.0.0.dev3",
             "memory": memory or None,
-            "dims": existing_dims or None,
+            "dims": existing_input_dims or None,
+            "runtime_dims": existing_runtime_dims or None,
         }
     )

@@ -52,3 +52,27 @@ longname = "file keyword"
 description = "name of the comma-separated value (CSV) output file to write budget summary information.  A budget summary record will be written to this file for each time step of the simulation."
 tagged = false
 direction = "out"
+
+[memory.iprpak]
+set_in = "ar"
+source = "print_input"
+description = "Flag controlling whether mover input is echoed to the listing file."
+type = "integer"
+
+[memory.iprflow]
+set_in = "ar"
+source = "print_flows"
+description = "Flag controlling whether mover flow rates are printed to the listing file."
+type = "integer"
+
+[memory.ipakcb]
+set_in = "ar"
+source = "save_flows"
+description = "Flag controlling whether mover flows are written to the budget file."
+type = "integer"
+
+[memory.maxpackages]
+readonly = true
+set_in = "ar"
+description = "Number of packages participating in the mover. Computed from the packages that supply or receive moved water."
+type = "integer"

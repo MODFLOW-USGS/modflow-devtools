@@ -3,10 +3,10 @@ schema_version = "2.0.0.dev3"
 name = "gwf-npf"
 parent = "gwf-nam"
 
-[dims.njas]
+[runtime_dims.njas]
 set_in = "ar"
 
-[dims.nodes]
+[runtime_dims.nodes]
 set_in = "ar"
 
 [blocks.options.fields.save_flows]

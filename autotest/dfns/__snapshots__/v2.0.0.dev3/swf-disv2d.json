@@ -17,6 +17,14 @@
       "scope": "model"
     }
   },
+  "runtime_dims": {
+    "nodes": {
+      "set_in": "ar"
+    },
+    "nodesuser": {
+      "set_in": "ar"
+    }
+  },
   "blocks": {
     "options": {
       "fields": {
@@ -243,6 +251,26 @@
       "dtype": "integer",
       "shape": [
         "nodes"
+      ]
+    },
+    "nodeuser": {
+      "type": "array",
+      "readonly": true,
+      "set_in": "ar",
+      "description": "Maps each packed (active-cell) node position to its full-grid user node number. Index map for the runtime 'nodes' dimension.",
+      "dtype": "integer",
+      "shape": [
+        "nodes"
+      ]
+    },
+    "nodereduced": {
+      "type": "array",
+      "readonly": true,
+      "set_in": "ar",
+      "description": "Maps each full-grid user node number to its packed (active-cell) node position, or a nonpositive sentinel if the cell is inactive.",
+      "dtype": "integer",
+      "shape": [
+        "nodesuser"
       ]
     }
   }

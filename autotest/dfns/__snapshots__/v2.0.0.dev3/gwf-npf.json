@@ -3,7 +3,7 @@
   "schema_version": "2.0.0.dev3",
   "name": "gwf-npf",
   "parent": "gwf-nam",
-  "dims": {
+  "runtime_dims": {
     "njas": {
       "set_in": "ar"
     },

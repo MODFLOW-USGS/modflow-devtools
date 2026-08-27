@@ -7,6 +7,7 @@ subtype: advanced
 dims:
   auxiliary:
     value: len(auxiliary)
+runtime_dims:
   ncv:
     set_in: ar
 blocks:

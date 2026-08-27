@@ -9,6 +9,7 @@ dims:
   maxsig0:
     value: maxsig0
     scope: model
+runtime_dims:
   ncelldim:
     set_in: ar
   nodes:

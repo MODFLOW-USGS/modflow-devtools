@@ -3,7 +3,7 @@ schema_version = "2.0.0.dev3"
 name = "olf-ic"
 parent = "olf-nam"
 
-[dims.nodes]
+[runtime_dims.nodes]
 set_in = "ar"
 
 [blocks.options.fields.export_array_ascii]

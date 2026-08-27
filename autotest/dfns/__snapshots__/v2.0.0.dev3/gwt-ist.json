@@ -4,7 +4,7 @@
   "name": "gwt-ist",
   "parent": "gwt-nam",
   "multi": true,
-  "dims": {
+  "runtime_dims": {
     "nodes": {
       "set_in": "ar"
     }

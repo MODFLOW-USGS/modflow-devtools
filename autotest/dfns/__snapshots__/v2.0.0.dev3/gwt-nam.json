@@ -4,7 +4,7 @@
   "name": "gwt-nam",
   "parent": "sim-nam",
   "dependent_variable": "concentration",
-  "dims": {
+  "runtime_dims": {
     "nja": {
       "set_in": "ar"
     },

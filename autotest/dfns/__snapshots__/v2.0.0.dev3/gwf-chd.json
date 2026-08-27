@@ -15,7 +15,9 @@
     },
     "naux": {
       "value": "len(auxiliary)"
-    },
+    }
+  },
+  "runtime_dims": {
     "nbound": {
       "set_in": "rp"
     },

@@ -235,13 +235,92 @@ type = "logical"
 
 [memory.auxvar]
 type = "array"
+set_in = "ar"
 source = "aux"
+description = "Auxiliary variable values for each exchange."
 dtype = "double"
 shape = [
     "naux",
+    "nexg",
 ]
 
 [memory.nexg]
 set_in = "ar"
 source = "nexg"
 type = "integer"
+
+[memory.nodem1]
+type = "array"
+set_in = "ar"
+source = "cellidm1"
+description = "Reduced node number in model 1 for each exchange, derived from CELLIDM1."
+dtype = "integer"
+shape = [
+    "nexg",
+]
+
+[memory.nodem2]
+type = "array"
+set_in = "ar"
+source = "cellidm2"
+description = "Reduced node number in model 2 for each exchange, derived from CELLIDM2."
+dtype = "integer"
+shape = [
+    "nexg",
+]
+
+[memory.ihc]
+type = "array"
+set_in = "ar"
+source = "ihc"
+description = "Connection type flag for each exchange: 0 vertical, 1 horizontal, 2 horizontal for a vertically staggered grid."
+dtype = "integer"
+shape = [
+    "nexg",
+]
+
+[memory.cl1]
+type = "array"
+set_in = "ar"
+source = "cl1"
+description = "Distance between the center of the model 1 cell and its shared face."
+dtype = "double"
+shape = [
+    "nexg",
+]
+
+[memory.cl2]
+type = "array"
+set_in = "ar"
+source = "cl2"
+description = "Distance between the center of the model 2 cell and its shared face."
+dtype = "double"
+shape = [
+    "nexg",
+]
+
+[memory.hwva]
+type = "array"
+set_in = "ar"
+source = "hwva"
+description = "Horizontal width of the connection if IHC > 0, or the area perpendicular to flow of the vertical connection if IHC = 0."
+dtype = "double"
+shape = [
+    "nexg",
+]
+
+[memory.naux]
+readonly = true
+set_in = "ar"
+description = "Number of auxiliary variables."
+type = "integer"
+
+[memory.auxname_cst]
+type = "array"
+readonly = true
+set_in = "ar"
+description = "Names of auxiliary variables."
+dtype = "string"
+shape = [
+    "naux",
+]

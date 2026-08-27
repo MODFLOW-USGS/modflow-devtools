@@ -3,7 +3,7 @@
   "schema_version": "2.0.0.dev3",
   "name": "swf-dfw",
   "parent": "swf-nam",
-  "dims": {
+  "runtime_dims": {
     "nodes": {
       "set_in": "ar"
     }

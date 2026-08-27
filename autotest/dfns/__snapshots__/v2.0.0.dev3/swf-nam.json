@@ -4,7 +4,7 @@
   "name": "swf-nam",
   "parent": "sim-nam",
   "dependent_variable": "stage",
-  "dims": {
+  "runtime_dims": {
     "nja": {
       "set_in": "ar"
     },

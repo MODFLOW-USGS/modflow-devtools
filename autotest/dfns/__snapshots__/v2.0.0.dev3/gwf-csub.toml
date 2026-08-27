@@ -11,10 +11,10 @@ scope = "model"
 value = "maxsig0"
 scope = "model"
 
-[dims.ncelldim]
+[runtime_dims.ncelldim]
 set_in = "ar"
 
-[dims.nodes]
+[runtime_dims.nodes]
 set_in = "ar"
 
 [blocks.options.fields.boundnames]

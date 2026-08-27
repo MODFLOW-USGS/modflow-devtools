@@ -15,10 +15,10 @@ value = "len(auxiliary)"
 [dims.naux]
 value = "len(auxiliary)"
 
-[dims.nbound]
+[runtime_dims.nbound]
 set_in = "rp"
 
-[dims.ncolbnd]
+[runtime_dims.ncolbnd]
 set_in = "ar"
 
 [blocks.options.fields.fixed_cell]

@@ -4,10 +4,10 @@ name = "olf-nam"
 parent = "sim-nam"
 dependent_variable = "stage"
 
-[dims.nja]
+[runtime_dims.nja]
 set_in = "ar"
 
-[dims.nodes]
+[runtime_dims.nodes]
 set_in = "ar"
 
 [blocks.options.fields.list]

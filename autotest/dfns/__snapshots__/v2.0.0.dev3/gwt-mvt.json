@@ -62,5 +62,31 @@
         }
       }
     }
+  },
+  "memory": {
+    "iprpak": {
+      "set_in": "ar",
+      "source": "print_input",
+      "description": "Flag controlling whether mover input is echoed to the listing file.",
+      "type": "integer"
+    },
+    "iprflow": {
+      "set_in": "ar",
+      "source": "print_flows",
+      "description": "Flag controlling whether mover flow rates are printed to the listing file.",
+      "type": "integer"
+    },
+    "ipakcb": {
+      "set_in": "ar",
+      "source": "save_flows",
+      "description": "Flag controlling whether mover flows are written to the budget file.",
+      "type": "integer"
+    },
+    "maxpackages": {
+      "readonly": true,
+      "set_in": "ar",
+      "description": "Number of packages participating in the mover. Computed from the packages that supply or receive moved water.",
+      "type": "integer"
+    }
   }
 }

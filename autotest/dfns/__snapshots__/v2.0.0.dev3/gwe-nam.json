@@ -4,7 +4,7 @@
   "name": "gwe-nam",
   "parent": "sim-nam",
   "dependent_variable": "temperature",
-  "dims": {
+  "runtime_dims": {
     "nja": {
       "set_in": "ar"
     },

@@ -11,6 +11,7 @@ dims:
   nreleasetimes:
     value: nreleasetimes
     scope: model
+runtime_dims:
   naux:
     set_in: ar
   nbound:

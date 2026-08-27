@@ -12,7 +12,7 @@ scope = "model"
 [dims.auxiliary]
 value = "len(auxiliary)"
 
-[dims.maxbound]
+[runtime_dims.maxbound]
 set_in = "ar"
 
 [blocks.options.fields.storage]

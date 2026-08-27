@@ -22,6 +22,12 @@ scope = "model"
 [dims.njas]
 value = "(nja - nodes) / 2"
 
+[runtime_dims.nodes]
+set_in = "ar"
+
+[runtime_dims.nodesuser]
+set_in = "ar"
+
 [blocks.options.fields.length_units]
 type = "string"
 longname = "model length units"
@@ -325,7 +331,7 @@ set_in = "ar"
 description = "Horizontal cell area, computed from grid geometry."
 dtype = "double"
 shape = [
-    "nodes",
+    "nodesuser",
 ]
 
 [memory.idomain]
@@ -335,4 +341,24 @@ source = "idomain"
 dtype = "integer"
 shape = [
     "nodes",
+]
+
+[memory.nodeuser]
+type = "array"
+readonly = true
+set_in = "ar"
+description = "Maps each packed (active-cell) node position to its full-grid user node number. Index map for the runtime 'nodes' dimension."
+dtype = "integer"
+shape = [
+    "nodes",
+]
+
+[memory.nodereduced]
+type = "array"
+readonly = true
+set_in = "ar"
+description = "Maps each full-grid user node number to its packed (active-cell) node position, or a nonpositive sentinel if the cell is inactive."
+dtype = "integer"
+shape = [
+    "nodesuser",
 ]

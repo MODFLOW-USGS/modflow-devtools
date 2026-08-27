@@ -4,7 +4,7 @@ name = "gwt-ist"
 parent = "gwt-nam"
 multi = true
 
-[dims.nodes]
+[runtime_dims.nodes]
 set_in = "ar"
 
 [blocks.options.fields.save_flows]

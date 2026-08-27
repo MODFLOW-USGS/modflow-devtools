@@ -8,7 +8,7 @@ subtype = "advanced"
 [dims.auxiliary]
 value = "len(auxiliary)"
 
-[dims.ncv]
+[runtime_dims.ncv]
 set_in = "ar"
 
 [blocks.options.fields.flow_package_name]

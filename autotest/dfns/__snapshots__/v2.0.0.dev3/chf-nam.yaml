@@ -3,7 +3,7 @@ schema_version: 2.0.0.dev3
 name: chf-nam
 parent: sim-nam
 dependent_variable: stage
-dims:
+runtime_dims:
   nja:
     set_in: ar
   nodes:

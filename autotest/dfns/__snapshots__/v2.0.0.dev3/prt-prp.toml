@@ -13,13 +13,13 @@ scope = "model"
 value = "nreleasetimes"
 scope = "model"
 
-[dims.naux]
+[runtime_dims.naux]
 set_in = "ar"
 
-[dims.nbound]
+[runtime_dims.nbound]
 set_in = "rp"
 
-[dims.ncolbnd]
+[runtime_dims.ncolbnd]
 set_in = "ar"
 
 [blocks.options.fields.boundnames]

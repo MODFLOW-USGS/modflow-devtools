@@ -10,6 +10,7 @@ dims:
     scope: model
   auxiliary:
     value: len(auxiliary)
+runtime_dims:
   maxbound:
     set_in: ar
 blocks:

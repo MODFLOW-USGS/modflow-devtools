@@ -4,7 +4,7 @@
   "name": "gwf-nam",
   "parent": "sim-nam",
   "dependent_variable": "head",
-  "dims": {
+  "runtime_dims": {
     "nja": {
       "set_in": "ar"
     },

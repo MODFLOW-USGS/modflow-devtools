@@ -116,7 +116,8 @@ Component definitions consist of a number of attributes:
 - `blocks`: block definitions
 - `parent`: parent component(s)
 - `schema_version`: DFN schema version
-- `dims`: named dimensions (field-backed or derived) available for use in array shapes
+- `dims`: named dimensions resolvable from input fields, available for use in array shapes
+- `runtime_dims`: named dimensions whose value is only known once MODFLOW runs, available for use in memory variable shapes
 - `memory`: API-accessible runtime variable definitions
 
 Components may refer to, i.e. be constrained by, other components. Cross-component constraints include parent-child relations, model-solution compatibility restrictions, and primary/foreign keys.
@@ -159,7 +160,11 @@ Parent relationships are defined bottom-up with attribute `parent`:
 
 #### `dims`
 
-`{string: Dim} (default: {})`. Named dimensions available for use in array and list shape expressions. Each entry has a `value` expression and a `scope` that controls visibility to other components. See [Dimensions](#dimensions).
+`{string: InputDim} (default: {})`. Named dimensions resolvable from input fields at DFN-parse time, available for use in input field and memory variable shape expressions. Each entry has a `value` expression and a `scope` that controls visibility to other components. See [Dimensions](#dimensions).
+
+#### `runtime_dims`
+
+`{string: RuntimeDim} (default: {})`. Named dimensions whose value is only established once MODFLOW runs, never derivable from input fields. Available only in memory variable shape expressions — a sequential parser must know an array's size before reading it, so these can never size an input field. See [Dimensions](#dimensions).
 
 #### `memory`
 
@@ -237,13 +242,13 @@ Blocks are treated differently depending on the structural composition of their 
 
 #### `fields`
 
-`{string: Field} (default: {})`. The block's fields, in definition order.
+`{string: InputField} (default: {})`. The block's fields, in definition order.
 
 #### `header`
 
-`Field | null (default: null)`. A field whose token attaches directly to the block's `begin <name>` line instead of appearing as a body row, e.g. `BEGIN PERIOD <iper>`. Its presence means the block may appear multiple times, each occurrence labeled by the header field's value. The canonical repeating block is the period block, whose header is the stress period number `iper`.
+`InputField | null (default: null)`. A field whose token attaches directly to the block's `begin <name>` line instead of appearing as a body row, e.g. `BEGIN PERIOD <iper>`. Its presence means the block may appear multiple times, each occurrence labeled by the header field's value. The canonical repeating block is the period block, whose header is the stress period number `iper`.
 
-Unlike `fields`, which is a `{string: Field}` mapping keyed by field name, `header` holds a single `Field` directly since there is at most one per block.
+Unlike `fields`, which is a `{string: InputField}` mapping keyed by field name, `header` holds a single `InputField` directly since there is at most one per block.
 
 A block has no explicit `optional` attribute. Its optionality is derived from its fields: a block is optional if and only if all of its fields are optional (vacuously true for an empty block).
 
@@ -504,7 +509,11 @@ A **non-empty `shape`** (exactly one element) names a declared dimension that bo
 
 ### Dimensions
 
-Dimensions may be declared by a component with a `dims` map. Each entry in `dims` has a `value` expression, a `scope`, and an optional `set_in`:
+Dimensions come in two kinds, declared in two separate maps, because the same name can legitimately mean different things in each. `gwf-dis` declares an input dim `nodes` (the full grid cell count a modeler writes, sizing input arrays like `TOP`/`BOTM`/`IDOMAIN`) and *also* a runtime dim of the same name, `nodes` (the active-cell count after IDOMAIN exclusion, what memory variables like `X`/`IBOUND`/`K11` are actually shaped by) — matching MODFLOW 6's own `NODES`/`NODESUSER` memory-manager scalars. Splitting `dims`/`runtime_dims` into separate maps is what makes this safe: the end-user-facing side (`dims`, rendered into MF6IO template text a modeler reads) keeps the plain name `nodes`, while `nodesuser` is reserved for the memory-manager/API side (`runtime_dims`).
+
+#### `dims` (InputDim)
+
+Each entry has a `value` expression and a `scope`:
 
 ```yaml
 dims:
@@ -520,15 +529,9 @@ dims:
   auxiliary:
     value: "len(auxiliary)"      # backed by self-sizing array field 'auxiliary'
     scope: component
-  nbound:
-    set_in: rp                    # runtime-only: set each stress period
-  njas:
-    set_in: ar                    # runtime-only: set once at grid allocation
 ```
 
-Dimensions may be used in the `shape` expression of `list` and `array` fields.
-
-#### Dimension sources
+`InputDim` entries may be used in the `shape` expression of `list` and `array` input fields, and in memory variable shapes.
 
 The `value` attribute defines the dimension source as a Python expression. Three forms are distinguished:
 
@@ -536,12 +539,28 @@ The `value` attribute defines the dimension source as a Python expression. Three
 - **`len(name)`** — backed by a self-sizing array field of that name. The dimension equals the runtime length of the array.
 - **Arithmetic expression** `nlay * nrow * ncol` — derived from other dims. May not use bare field names; all operands must be declared dimensions.
 
-If `value` is absent, the dimension is **runtime-only**: its value cannot be derived from DFN input fields. The optional `set_in` attribute then indicates when MODFLOW first establishes the value:
+#### `runtime_dims` (RuntimeDim)
 
-- **`"ar"`** — set once during Allocate and Read (grid allocation). The value is constant for the lifetime of the simulation. Examples: `njas` (number of cell-to-cell connections, computed from grid topology), `nodes` (total active cells, when inherited from a discretization package), `ncolbnd` (number of bound columns, fixed by package structure).
+Each entry has a `set_in` (required):
+
+```yaml
+runtime_dims:
+  nbound:
+    set_in: rp     # runtime-only: reset each stress period
+  ncv:
+    set_in: ar     # runtime-only: set once at grid allocation
+  nodes:
+    set_in: ar     # runtime-only: the active-cell count, after IDOMAIN exclusion
+  nodesuser:
+    set_in: ar     # runtime-only: the full grid cell count, restated under its memory-manager name
+```
+
+`RuntimeDim` entries may be used only in memory variable shapes, never in input field shapes — a sequential parser must know an array's size before reading it, so an input array may not be sized by a dim whose value is only known at runtime.
+
+`set_in` indicates when MODFLOW first establishes the value:
+
+- **`"ar"`** — set once during Allocate and Read (grid allocation). The value is constant for the lifetime of the simulation. Examples: `nodes` (active cell count, inherited from a discretization package), `ncv` (advanced package control volume count), `ncolbnd` (number of bound columns, fixed by package structure).
 - **`"rp"`** — reset at the start of each stress period from user input. Examples: `nbound` (number of active boundary entries in the current period).
-
-Runtime dims are valid in memory variable shapes but not in input field shapes.
 
 Canonical examples of dimensions:
 
@@ -563,15 +582,26 @@ dims:
   nodes: {value: "nlay * ncpl", scope: model}
   ncelldim: {value: "2", scope: model}
 
-  # gwf-disu: njas is expressible because nja is a user-supplied DFN field
+  # gwf-disu: NODES is a user-supplied DFN field carrying the full,
+  # pre-IDOMAIN-reduction cell count, so it's kept as the input dim nodes
+  # (matching what a modeler writes). njas is expressible because nja is
+  # also a user-supplied DFN field.
+  nodes: {value: nodes}
   njas: {value: "(nja - nodes) / 2"}
 
   # any package with an auxiliary array
   auxiliary: {value: "len(auxiliary)"}
 
+runtime_dims:
   # stress package runtime dims
   nbound: {set_in: rp}   # active BCs this period, not derivable from input
-  njas: {set_in: ar}     # cell connections, set at grid allocation (DIS/DISV)
+  ncv: {set_in: ar}      # advanced package control volume count, no InputDim counterpart
+
+  # gwf-dis (and every other discretization package): a memory variable's
+  # "nodes" reference always means this RuntimeDim, never the same-named
+  # InputDim above.
+  nodes: {set_in: ar}
+  nodesuser: {set_in: ar}
 ```
 
 An inline array may have its size determined by an integer subfield in the same record, or if the record it is within is the item type of a list, by a column in another list.
