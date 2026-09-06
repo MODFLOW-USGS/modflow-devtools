@@ -14,7 +14,8 @@ jobs:
     if: ${{ github.event_name == 'push' && github.ref_name != 'main' }}
     permissions:
       contents: write
-      pull-requests: write
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     defaults:
       run:
         shell: bash
@@ -89,17 +90,12 @@ jobs:
           path: ${{ steps.update-changelog.outputs.changelog }}
 
       - name: Push release branch
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
         run: |
-          ver="${{ steps.version.outputs.version }}"
-          changelog=$(cat ${{ steps.update-changelog.outputs.changelog }} | grep -v "### Version $ver")
-          
           # remove this release's changelog so we don't commit it
           # the changes have already been prepended to HISTORY.md
           rm ${{ steps.update-changelog.outputs.changelog }}
           rm -f CHANGELOG.md
-          
+
           # commit and push changes
           git config core.sharedRepository true
           git config user.name "github-actions[bot]"
@@ -108,17 +104,57 @@ jobs:
           git commit -m "ci(release): set version to ${{ steps.version.outputs.version }}, update changelog"
           git push origin "${{ github.ref_name }}"
 
+  test:
+    name: Test release branch
+    # a bot pushes the release branch, so no push or pull_request event fires
+    # for it; run the CI suite against it before opening the release PR
+    needs: prep
+    permissions:
+      contents: read
+    uses: ./.github/workflows/ci.yml
+    with:
+      ref: v${{ needs.prep.outputs.version }}
+
+  pr:
+    name: Draft release pull request
+    needs: [prep, test]
+    if: ${{ always() && needs.prep.result == 'success' && (needs.test.result == 'success' || needs.test.result == 'skipped') }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    defaults:
+      run:
+        shell: bash
+    steps:
+
+      - name: Checkout release branch
+        uses: actions/checkout@v3
+        with:
+          ref: v${{ needs.prep.outputs.version }}
+
+      - name: Download changelog
+        uses: actions/download-artifact@v4
+        with:
+          name: changelog
+
+      - name: Draft pull request
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          ver="${{ needs.prep.outputs.version }}"
+          changelog=$(grep -v "### Version $ver" "CHANGELOG_$ver.md")
           title="Release $ver"
           body='
           # Release '$ver'
-          
+
           The release can be approved by merging this pull request into `main`. This will trigger a job to publish the release to PyPI.
-          
+
           ## Changelog
-          
+
           '$changelog'
           '
-          gh pr create -B "main" -H "${{ github.ref_name }}" --title "$title" --draft --body "$body"
+          gh pr create -B "main" -H "v$ver" --title "$title" --draft --body "$body"
 
   release:
     name: Draft release
