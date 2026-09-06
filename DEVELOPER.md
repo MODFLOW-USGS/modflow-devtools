@@ -14,6 +14,11 @@ This document provides guidance to set up a development environment and discusse
   - [Writing new tests](#writing-new-tests)
     - [Temporary directories](#temporary-directories)
 - [Releasing](#releasing)
+  - [1. Start the release](#1-start-the-release)
+  - [2. Review and approve](#2-review-and-approve)
+  - [3. Publish](#3-publish)
+  - [4. conda-forge](#4-conda-forge)
+  - [Changelog conventions](#changelog-conventions)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -73,20 +78,77 @@ Tests which must write to disk use `pytest`'s built-in `temp_dir` fixture or one
 
 ## Releasing
 
-The `modflow-devtools` release procedure is automated with GitHub Actions in [`.github/workflows/release.yml`](.github/workflows/release.yml). Making a release involves the following steps:
+Releases are automated by [`.github/workflows/release.yml`](.github/workflows/release.yml).
+Publishing to PyPI uses [trusted publishing](https://docs.pypi.org/trusted-publishers/), so no
+API token is needed, but the repository must have a `release` environment configured.
 
-1. Release from `master` branch
-2. Reinitialize the `develop` branch
-3. Publish the package to PyPI
+> [!IMPORTANT]
+> PyPI matches a trusted publisher on the organisation name, the repository name, the workflow
+> filename and the environment name. Renaming any of them silently invalidates the publisher, and
+> nothing reports it until the next release fails with `invalid-publisher`. This happened to
+> `modflowapi` when the organisation was renamed from `MODFLOW-USGS` to `MODFLOW-ORG`, and went
+> unnoticed for eighteen months until the next release. After any such rename, update the publisher
+> at https://pypi.org/manage/project/modflow-devtools/settings/publishing/ to match.
 
-To begin an automated release, create a release branch from `develop`. The release branch name should be the version number of with a `v`a prefix (e.g., `v0.0.6`). Pushing the release branch to the `MODFLOW-ORG/modflow-devtools` repository will trigger the release workflow, which begins with the following steps:
+### 1. Start the release
 
-- update version strings to match the version number in the release branch name
-- generate a changelog since the last release and update `HISTORY.md`
-- open a PR from the release branch to `master`
+Create a release branch from `develop`, named `v<major>.<minor>.<patch>` (e.g. `v1.9.3`), and push
+it to `MODFLOW-ORG/modflow-devtools`. That triggers the workflow, which:
 
-Merging the pull request into `master` triggers another job to draft a release.
+- updates the version number to match the branch name
+- regenerates the changelog with [git-cliff](https://git-cliff.org/) and prepends it to `HISTORY.md`
+- commits the changes and opens a draft pull request into `main`
 
-**Note:** the PR should be merged, not squashed. Squashing removes the commit history from the `master` branch and causes `develop` and `master` to diverge, which can cause future PRs updating `master` to replay commits from previous releases.
+### 2. Review and approve
 
-Publishing the release triggers jobs to publish the `modflow-devtools` package to PyPI and open a PR updating `develop` from `master`. This PR also updates version strings, incrementing the patch version number.
+Review the release pull request, in particular `HISTORY.md`. Mark it ready for review and merge it
+into `main`. Merge rather than squash: squashing drops the commit history from `main` and makes
+`develop` and `main` diverge, which causes later `main` updates to replay old release commits.
+
+Merging into `main` drafts a GitHub release, with notes taken from the generated changelog.
+
+### 3. Publish
+
+Review the draft release and publish it. Publishing it triggers the job that builds the package
+and uploads it to [PyPI](https://pypi.org/project/modflow-devtools).
+
+Then reset `develop`: branch from `main`, set the next development version, and open a pull request
+back into `develop`.
+
+```shell
+git switch main && git pull
+git switch -c post-x.y.z-release-reset
+python scripts/update_version.py -v x.y.z.dev0
+```
+
+Merge (do not squash) that pull request to finish the release.
+
+### 4. conda-forge
+
+A few hours after the upload to PyPI, a bot opens a version pull request on the
+[feedstock](https://github.com/conda-forge/modflow-devtools-feedstock). To start it immediately
+instead, open an issue there titled `@conda-forge-admin, please update version`.
+
+> [!IMPORTANT]
+> The bot updates the version number and the checksum, and nothing else. Check the recipe's `host`
+> and `run` requirements against the dependencies the release actually declares, which are the
+> `Requires-Dist` lines of the sdist on PyPI. A maintainer can push a correction to the bot's
+> branch.
+
+Merging the feedstock pull request builds and uploads the package. It does not appear to a solver
+until the channel index is regenerated, which takes up to about an hour; the package is visible on
+anaconda.org before then.
+
+### Changelog conventions
+
+Release notes are generated from commit messages with git-cliff, so commits reaching `develop`
+should follow the [conventional commits](https://www.conventionalcommits.org/) format (`feat:`,
+`fix:`, `refactor:`, etc.). Commits that do not follow the convention are omitted from the
+changelog without warning. See [`cliff.toml`](cliff.toml) for the commit groups and which ones are
+skipped.
+
+Pull requests are squash merged, so the title becomes the commit message the notes are generated
+from. Nothing enforces the format on the title, so a user facing change merged with a `chore:` (or
+non-conventional) title is dropped from the notes silently. Read the generated changelog on the
+release pull request before merging it; add anything missing there, in the section for the version
+being cut.
