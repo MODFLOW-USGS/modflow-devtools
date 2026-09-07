@@ -1,17 +1,38 @@
 name: Release
 on:
+  # start a release from the GitHub Actions UI (or `gh workflow run release.yml`)
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to release from.'
+        required: true
+        type: string
+        default: 'develop'
+      version:
+        description: "Version number to release, e.g. 1.9.3. Defaults to version.txt with its development suffix removed."
+        required: false
+        type: string
+      run_tests:
+        description: 'Run the test suite before drafting the release.'
+        required: false
+        type: boolean
+        default: true
   push:
     branches:
-      - main
+      # a release can also be started by pushing a release branch
       - v[0-9]+.[0-9]+.[0-9]+*
+      # merging the release branch drafts the release and publishes to PyPI
+      - main
   release:
     types:
       - published
 jobs:
   prep:
     name: Prepare release
+    # runs on workflow_dispatch, or when a release branch is first pushed.
+    # later pushes to the release branch must not prepare the release again.
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref_name != 'main' && github.event.created) }}
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'push' && github.ref_name != 'main' }}
     permissions:
       contents: write
     outputs:
@@ -21,9 +42,18 @@ jobs:
         shell: bash
     steps:
 
-      - name: Checkout release branch
+      - name: Check release branch
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          if [[ "${{ inputs.branch }}" == "main" ]]; then
+            echo "error: releases may not be started from main"
+            exit 1
+          fi
+
+      - name: Checkout source branch
         uses: actions/checkout@v3
         with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.branch || github.ref_name }}
           fetch-depth: 0
 
       - name: Setup Python
@@ -38,14 +68,31 @@ jobs:
           pip install --upgrade pip
           pip install . --group test --group build twine
 
-      - name: Update version
+      - name: Resolve version
         id: version
         run: |
-          ref="${{ github.ref_name }}"
-          version="${ref#"v"}"
-          python scripts/update_version.py -v "$version"
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            if [[ -n "${{ inputs.version }}" ]]; then
+              ver="${{ inputs.version }}"
+            else
+              ver=$(python scripts/update_version.py --release --dry-run)
+            fi
+          else
+            # release branch name is the version number, prefixed with 'v'
+            ref="${{ github.ref_name }}"
+            ver="${ref#"v"}"
+          fi
+          echo "releasing version $ver"
+          echo "version=$ver" >> $GITHUB_OUTPUT
+
+      - name: Create release branch
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: git switch -c "v${{ steps.version.outputs.version }}"
+
+      - name: Update version
+        run: |
+          python scripts/update_version.py -v "${{ steps.version.outputs.version }}"
           python -c "import modflow_devtools; print('Version: ', modflow_devtools.__version__)"
-          echo "version=$version" >> $GITHUB_OUTPUT
 
       - name: Touch changelog
         run: touch HISTORY.md
@@ -91,6 +138,8 @@ jobs:
 
       - name: Push release branch
         run: |
+          ver="${{ steps.version.outputs.version }}"
+
           # remove this release's changelog so we don't commit it
           # the changes have already been prepended to HISTORY.md
           rm ${{ steps.update-changelog.outputs.changelog }}
@@ -101,14 +150,15 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -m "ci(release): set version to ${{ steps.version.outputs.version }}, update changelog"
-          git push origin "${{ github.ref_name }}"
+          git commit -m "ci(release): set version to $ver, update changelog"
+          git push origin "v$ver"
 
   test:
     name: Test release branch
     # a bot pushes the release branch, so no push or pull_request event fires
     # for it; run the CI suite against it before opening the release PR
     needs: prep
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.run_tests }}
     permissions:
       contents: read
     uses: ./.github/workflows/ci.yml

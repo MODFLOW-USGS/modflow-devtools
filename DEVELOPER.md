@@ -92,12 +92,28 @@ API token is needed, but the repository must have a `release` environment config
 
 ### 1. Start the release
 
-Create a release branch from `develop`, named `v<major>.<minor>.<patch>` (e.g. `v1.9.3`), and push
-it to `MODFLOW-ORG/modflow-devtools`. That triggers the workflow, which:
+From the [Actions tab](https://github.com/MODFLOW-ORG/modflow-devtools/actions/workflows/release.yml),
+select **Run workflow** and fill in the form:
 
-- updates the version number to match the branch name
-- regenerates the changelog with [git-cliff](https://git-cliff.org/) and prepends it to `HISTORY.md`
-- commits the changes and opens a draft pull request into `main`
+| Input | Description |
+|:--|:--|
+| `branch` | Branch to release from. Defaults to `develop`. |
+| `version` | Explicit version number, e.g. `1.9.3`. Defaults to the version in `version.txt` with its `.dev` suffix removed. |
+| `run_tests` | Run the test suite before drafting the release. Defaults to true. |
+
+This can also be done from the command line, for instance:
+
+```shell
+gh workflow run release.yml -f branch=develop
+```
+
+The release version is normally the development version already set in `version.txt` (e.g.
+`1.10.0.dev0` releases as `1.10.0`); pass `version` only to release something else. The workflow
+creates a `v<version>` release branch, updates the version number, regenerates the changelog with
+[git-cliff](https://git-cliff.org/) and prepends it to `HISTORY.md`, runs the CI suite against the
+branch, and opens a draft pull request into `main`.
+
+A release can alternatively be started by pushing a release branch named `v<major>.<minor>.<patch>`.
 
 ### 2. Review and approve
 
@@ -118,8 +134,11 @@ back into `develop`.
 ```shell
 git switch main && git pull
 git switch -c post-x.y.z-release-reset
-python scripts/update_version.py -v x.y.z.dev0
+python scripts/update_version.py --post-release
 ```
+
+`--post-release` increments the minor version and adds a `.dev0` suffix; pass `-v x.y.z.dev0`
+instead to set it explicitly.
 
 Merge (do not squash) that pull request to finish the release.
 

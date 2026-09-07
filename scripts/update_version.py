@@ -1,4 +1,5 @@
 import argparse
+import sys
 import textwrap
 from datetime import datetime
 from pathlib import Path
@@ -14,9 +15,20 @@ _docs_config_path = _project_root_path / "docs" / "conf.py"
 _current_version = Version(_version_txt_path.read_text().strip())
 
 
+def release_version() -> Version:
+    """The current development version with any development segment (e.g. '.dev0') removed."""
+    return Version(_current_version.base_version)
+
+
+def post_release_version() -> Version:
+    """Development version for the next cycle: minor incremented, '.dev0' suffix."""
+    version = Version(_current_version.base_version)
+    return Version(f"{version.major}.{version.minor + 1}.0.dev0")
+
+
 def update_version_txt(version: Version):
     _version_txt_path.write_text(str(version))
-    print(f"Updated {_version_txt_path} to version {version}")
+    print(f"Updated {_version_txt_path} to version {version}", file=sys.stderr)
 
 
 def update_init_py(timestamp: datetime, version: Version):
@@ -28,7 +40,7 @@ def update_init_py(timestamp: datetime, version: Version):
             line = f'__version__ = "{version}"'
         lines.append(line)
     _package_init_path.write_text("\n".join(lines) + "\n")
-    print(f"Updated {_package_init_path} to version {version}")
+    print(f"Updated {_package_init_path} to version {version}", file=sys.stderr)
 
 
 def update_docs_config(version: Version):
@@ -38,7 +50,7 @@ def update_docs_config(version: Version):
             line = f'release = "{version}"'
         lines.append(line)
     _docs_config_path.write_text("\n".join(lines) + "\n")
-    print(f"Updated {_docs_config_path} to version {version}")
+    print(f"Updated {_docs_config_path} to version {version}", file=sys.stderr)
 
 
 def update_version(
@@ -65,9 +77,10 @@ if __name__ == "__main__":
         epilog=textwrap.dedent(
             """\
             Update version information stored in version.txt in the project root,
-            as well as several other files in the repository. If --version is not
-            provided, the version number will not be changed. A file lock is held
-            to synchronize file access. The version tag must comply with standard
+            as well as several other files in the repository, and print the new
+            version. If none of --version, --release or --post-release is
+            provided, the version number is not changed. A file lock is held to
+            synchronize file access. The version tag must comply with standard
             '<major>.<minor>.<patch>' format conventions for semantic versioning.
             """
         ),
@@ -79,18 +92,42 @@ if __name__ == "__main__":
         help="Specify the release version",
     )
     parser.add_argument(
-        "-g",
-        "--get",
+        "-r",
+        "--release",
         required=False,
         action="store_true",
-        help="Just get the current version number, don't update anything (defaults to false)",
+        help=(
+            "Use the current development version with its development segment "
+            "(e.g. '.dev0') removed"
+        ),
+    )
+    parser.add_argument(
+        "-p",
+        "--post-release",
+        required=False,
+        action="store_true",
+        help=(
+            "Use the development version for the next cycle: the minor version "
+            "incremented, with a '.dev0' suffix"
+        ),
+    )
+    parser.add_argument(
+        "--dry-run",
+        required=False,
+        action="store_true",
+        help="Print the version that would be written, and exit without writing",
     )
     args = parser.parse_args()
 
-    if args.get:
-        print(Version(_version_txt_path.read_text().strip()))
+    if args.post_release:
+        version = post_release_version()
+    elif args.release:
+        version = release_version()
+    elif args.version:
+        version = Version(args.version)
     else:
-        update_version(
-            timestamp=datetime.now(),
-            version=(Version(args.version) if args.version else _current_version),
-        )
+        version = _current_version
+
+    if not args.dry_run:
+        update_version(timestamp=datetime.now(), version=version)
+    print(version)
