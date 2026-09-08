@@ -1,28 +1,59 @@
 name: Release
 on:
+  # start a release from the GitHub Actions UI (or `gh workflow run release.yml`)
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to release from.'
+        required: true
+        type: string
+        default: 'develop'
+      version:
+        description: "Version number to release, e.g. 1.9.3. Defaults to version.txt with its development suffix removed."
+        required: false
+        type: string
+      run_tests:
+        description: 'Run the test suite before drafting the release.'
+        required: false
+        type: boolean
+        default: true
   push:
     branches:
-      - main
+      # a release can also be started by pushing a release branch
       - v[0-9]+.[0-9]+.[0-9]+*
+      # merging the release branch drafts the release and publishes to PyPI
+      - main
   release:
     types:
       - published
 jobs:
   prep:
     name: Prepare release
+    # runs on workflow_dispatch, or when a release branch is first pushed.
+    # later pushes to the release branch must not prepare the release again.
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref_name != 'main' && github.event.created) }}
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'push' && github.ref_name != 'main' }}
     permissions:
       contents: write
-      pull-requests: write
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     defaults:
       run:
         shell: bash
     steps:
 
-      - name: Checkout release branch
+      - name: Check release branch
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          if [[ "${{ inputs.branch }}" == "main" ]]; then
+            echo "error: releases may not be started from main"
+            exit 1
+          fi
+
+      - name: Checkout source branch
         uses: actions/checkout@v3
         with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.branch || github.ref_name }}
           fetch-depth: 0
 
       - name: Setup Python
@@ -37,14 +68,31 @@ jobs:
           pip install --upgrade pip
           pip install . --group test --group build twine
 
-      - name: Update version
+      - name: Resolve version
         id: version
         run: |
-          ref="${{ github.ref_name }}"
-          version="${ref#"v"}"
-          python scripts/update_version.py -v "$version"
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            if [[ -n "${{ inputs.version }}" ]]; then
+              ver="${{ inputs.version }}"
+            else
+              ver=$(python scripts/update_version.py --release --dry-run)
+            fi
+          else
+            # release branch name is the version number, prefixed with 'v'
+            ref="${{ github.ref_name }}"
+            ver="${ref#"v"}"
+          fi
+          echo "releasing version $ver"
+          echo "version=$ver" >> $GITHUB_OUTPUT
+
+      - name: Create release branch
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: git switch -c "v${{ steps.version.outputs.version }}"
+
+      - name: Update version
+        run: |
+          python scripts/update_version.py -v "${{ steps.version.outputs.version }}"
           python -c "import modflow_devtools; print('Version: ', modflow_devtools.__version__)"
-          echo "version=$version" >> $GITHUB_OUTPUT
 
       - name: Touch changelog
         run: touch HISTORY.md
@@ -89,36 +137,72 @@ jobs:
           path: ${{ steps.update-changelog.outputs.changelog }}
 
       - name: Push release branch
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
         run: |
           ver="${{ steps.version.outputs.version }}"
-          changelog=$(cat ${{ steps.update-changelog.outputs.changelog }} | grep -v "### Version $ver")
-          
+
           # remove this release's changelog so we don't commit it
           # the changes have already been prepended to HISTORY.md
           rm ${{ steps.update-changelog.outputs.changelog }}
           rm -f CHANGELOG.md
-          
+
           # commit and push changes
           git config core.sharedRepository true
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -m "ci(release): set version to ${{ steps.version.outputs.version }}, update changelog"
-          git push origin "${{ github.ref_name }}"
+          git commit -m "ci(release): set version to $ver, update changelog"
+          git push origin "v$ver"
 
+  test:
+    name: Test release branch
+    needs: prep
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.run_tests }}
+    permissions:
+      contents: read
+    uses: ./.github/workflows/ci.yml
+    with:
+      ref: v${{ needs.prep.outputs.version }}
+
+  pr:
+    name: Draft release pull request
+    needs: [prep, test]
+    if: ${{ always() && needs.prep.result == 'success' && (needs.test.result == 'success' || needs.test.result == 'skipped') }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    defaults:
+      run:
+        shell: bash
+    steps:
+
+      - name: Checkout release branch
+        uses: actions/checkout@v3
+        with:
+          ref: v${{ needs.prep.outputs.version }}
+
+      - name: Download changelog
+        uses: actions/download-artifact@v4
+        with:
+          name: changelog
+
+      - name: Draft pull request
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          ver="${{ needs.prep.outputs.version }}"
+          changelog=$(grep -v "### Version $ver" "CHANGELOG_$ver.md")
           title="Release $ver"
           body='
           # Release '$ver'
-          
+
           The release can be approved by merging this pull request into `main`. This will trigger a job to publish the release to PyPI.
-          
+
           ## Changelog
-          
+
           '$changelog'
           '
-          gh pr create -B "main" -H "${{ github.ref_name }}" --title "$title" --draft --body "$body"
+          gh pr create -B "main" -H "v$ver" --title "$title" --draft --body "$body"
 
   release:
     name: Draft release
@@ -197,3 +281,59 @@ jobs:
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
+
+  reset:
+    name: Reset develop
+    # runs after the release is published, opens a PR merging main back into develop
+    needs: publish
+    if: ${{ github.event_name == 'release' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    defaults:
+      run:
+        shell: bash
+    steps:
+
+      - name: Checkout main branch
+        uses: actions/checkout@v3
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.x
+
+      - name: Install Python dependencies
+        run: |
+          pip install --upgrade pip
+          pip install filelock packaging
+
+      - name: Open reset pull request
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          ver=$(cat version.txt)
+          branch="post-release-$ver-reset"
+
+          # bump the minor version and re-add the '.dev0' suffix; prints the new version
+          next=$(python scripts/update_version.py --post-release)
+
+          git config core.sharedRepository true
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$branch"
+          git add version.txt modflow_devtools/__init__.py docs/conf.py
+          git commit -m "ci(release): update version to $next"
+          git push origin "$branch"
+
+          body='
+          # Reset `develop` after release '$ver'
+
+          Merge (do not squash) this pull request to bring `main` back into `develop` and set the
+          development version to `'$next'`.
+          '
+          gh pr create -B "develop" -H "$branch" --title "Reset develop after release $ver" --body "$body"

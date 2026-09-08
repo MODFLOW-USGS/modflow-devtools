@@ -14,6 +14,11 @@ This document provides guidance to set up a development environment and discusse
   - [Writing new tests](#writing-new-tests)
     - [Temporary directories](#temporary-directories)
 - [Releasing](#releasing)
+  - [1. Start the release](#1-start-the-release)
+  - [2. Review and approve](#2-review-and-approve)
+  - [3. Publish](#3-publish)
+  - [4. conda-forge](#4-conda-forge)
+  - [Changelog conventions](#changelog-conventions)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -73,20 +78,85 @@ Tests which must write to disk use `pytest`'s built-in `temp_dir` fixture or one
 
 ## Releasing
 
-The `modflow-devtools` release procedure is automated with GitHub Actions in [`.github/workflows/release.yml`](.github/workflows/release.yml). Making a release involves the following steps:
+Releases are automated by [`.github/workflows/release.yml`](.github/workflows/release.yml).
+Publishing to PyPI uses [trusted publishing](https://docs.pypi.org/trusted-publishers/), so no
+API token is needed, but the repository must have a `release` environment configured.
 
-1. Release from `master` branch
-2. Reinitialize the `develop` branch
-3. Publish the package to PyPI
+> [!IMPORTANT]
+> PyPI matches a trusted publisher on the organisation name, the repository name, the workflow
+> filename and the environment name. Renaming any of them silently invalidates the publisher, and
+> nothing reports it until the next release fails with `invalid-publisher`. After any such rename,
+> update the publisher at https://pypi.org/manage/project/modflow-devtools/settings/publishing/ to match.
 
-To begin an automated release, create a release branch from `develop`. The release branch name should be the version number of with a `v`a prefix (e.g., `v0.0.6`). Pushing the release branch to the `MODFLOW-ORG/modflow-devtools` repository will trigger the release workflow, which begins with the following steps:
+### 1. Start the release
 
-- update version strings to match the version number in the release branch name
-- generate a changelog since the last release and update `HISTORY.md`
-- open a PR from the release branch to `master`
+From the [Actions tab](https://github.com/MODFLOW-ORG/modflow-devtools/actions/workflows/release.yml),
+select **Run workflow** and fill in the form:
 
-Merging the pull request into `master` triggers another job to draft a release.
+| Input | Description |
+|:--|:--|
+| `branch` | Branch to release from. Defaults to `develop`. |
+| `version` | Explicit version number, e.g. `1.9.3`. Defaults to the version in `version.txt` with its `.dev` suffix removed. |
+| `run_tests` | Run the test suite before drafting the release. Defaults to true. |
 
-**Note:** the PR should be merged, not squashed. Squashing removes the commit history from the `master` branch and causes `develop` and `master` to diverge, which can cause future PRs updating `master` to replay commits from previous releases.
+This can also be done from the command line, for instance:
 
-Publishing the release triggers jobs to publish the `modflow-devtools` package to PyPI and open a PR updating `develop` from `master`. This PR also updates version strings, incrementing the patch version number.
+```shell
+gh workflow run release.yml -f branch=develop
+```
+
+The release version is normally the development version already set in `version.txt` (e.g.
+`1.10.0.dev0` releases as `1.10.0`); pass `version` only to release something else. The workflow
+creates a `v<version>` release branch, updates the version number, regenerates the changelog with
+[git-cliff](https://git-cliff.org/) and prepends it to `HISTORY.md`, runs the CI suite against the
+branch, and opens a draft pull request into `main`.
+
+A release can alternatively be started by pushing a release branch named `v<major>.<minor>.<patch>`.
+
+### 2. Review and approve
+
+Review the release pull request, in particular `HISTORY.md`. Mark it ready for review and merge it
+into `main`. Merge rather than squash: squashing drops the commit history from `main` and makes
+`develop` and `main` diverge, which causes later `main` updates to replay old release commits.
+
+Merging into `main` drafts a GitHub release, with notes taken from the generated changelog.
+
+### 3. Publish
+
+Review the draft release and publish it. Publishing it triggers jobs that:
+
+1. build the package and upload it to [PyPI](https://pypi.org/project/modflow-devtools)
+2. open a follow-up pull request resetting `develop` from `main`, with the version number
+   incremented to the next development version (minor bumped, `.dev0` suffix)
+
+Merge (do not squash) the reset pull request to finish the release.
+
+### 4. conda-forge
+
+A few hours after the upload to PyPI, a bot opens a version pull request on the
+[feedstock](https://github.com/conda-forge/modflow-devtools-feedstock). To start it immediately
+instead, open an issue there titled `@conda-forge-admin, please update version`.
+
+> [!IMPORTANT]
+> The bot updates the version number and the checksum, and nothing else. Check the recipe's `host`
+> and `run` requirements against the dependencies the release actually declares, which are the
+> `Requires-Dist` lines of the sdist on PyPI. A maintainer can push corrections to the bot's branch.
+
+Merging the feedstock pull request builds and uploads the package. It does not appear to a solver
+until the channel index is regenerated, which takes up to about an hour; the package is visible on
+anaconda.org before then.
+
+### Changelog conventions
+
+Release notes are generated from commit messages with git-cliff, so commits reaching `develop`
+should follow the [conventional commits](https://www.conventionalcommits.org/) format (`feat:`,
+`fix:`, `refactor:`, etc.). Commits that do not follow the convention are omitted from the
+changelog without warning. See [`cliff.toml`](cliff.toml) for the commit groups and which ones are
+skipped.
+
+Pull requests are squash merged, so the title becomes the commit message the notes are generated
+from. [`.github/workflows/pull_request.yml`](.github/workflows/pull_request.yml) rejects a title
+that is not a conventional commit header, but it cannot tell whether the type is the right one: a
+user facing change titled `chore:` still passes the check and is still dropped from the notes.
+Read the generated changelog on the release pull request before merging it, and make any necessary
+edits to the section for the version being cut.

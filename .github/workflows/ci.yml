@@ -13,8 +13,14 @@ on:
       - '**.md'
       - '.github/workflows/release.yml'
       - '.gitignore'
+  workflow_call:
+    inputs:
+      ref:
+        description: 'Ref to test. Defaults to the ref that triggered the workflow.'
+        required: false
+        type: string
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ inputs.ref || github.ref }}-tests
   cancel-in-progress: true
 jobs:
   lint:
@@ -24,6 +30,8 @@ jobs:
 
       - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
 
       - name: Setup uv
         uses: astral-sh/setup-uv@v5
@@ -52,6 +60,8 @@ jobs:
 
       - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
 
       - name: Setup uv
         uses: astral-sh/setup-uv@v7
@@ -89,6 +99,7 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
+          ref: ${{ inputs.ref }}
           path: modflow-devtools
 
       - name: Checkout modflow6 for DFN autodiscovery
@@ -160,7 +171,8 @@ jobs:
     name: Docs
     needs: test
     runs-on: ubuntu-22.04
-    if: github.repository_owner == 'MODFLOW-ORG' && github.event_name == 'push'
+    # skip on release-branch test runs called by the release workflow
+    if: github.repository_owner == 'MODFLOW-ORG' && github.event_name == 'push' && !inputs.ref
     steps:
       - name: Trigger RTD
         uses: dfm/rtds-action@v1
