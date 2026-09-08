@@ -155,8 +155,6 @@ jobs:
 
   test:
     name: Test release branch
-    # a bot pushes the release branch, so no push or pull_request event fires
-    # for it; run the CI suite against it before opening the release PR
     needs: prep
     if: ${{ github.event_name != 'workflow_dispatch' || inputs.run_tests }}
     permissions:

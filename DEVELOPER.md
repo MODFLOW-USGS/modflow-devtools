@@ -85,10 +85,8 @@ API token is needed, but the repository must have a `release` environment config
 > [!IMPORTANT]
 > PyPI matches a trusted publisher on the organisation name, the repository name, the workflow
 > filename and the environment name. Renaming any of them silently invalidates the publisher, and
-> nothing reports it until the next release fails with `invalid-publisher`. This happened to
-> `modflowapi` when the organisation was renamed from `MODFLOW-USGS` to `MODFLOW-ORG`, and went
-> unnoticed for eighteen months until the next release. After any such rename, update the publisher
-> at https://pypi.org/manage/project/modflow-devtools/settings/publishing/ to match.
+> nothing reports it until the next release fails with `invalid-publisher`. After any such rename,
+> update the publisher at https://pypi.org/manage/project/modflow-devtools/settings/publishing/ to match.
 
 ### 1. Start the release
 
@@ -151,8 +149,7 @@ instead, open an issue there titled `@conda-forge-admin, please update version`.
 > [!IMPORTANT]
 > The bot updates the version number and the checksum, and nothing else. Check the recipe's `host`
 > and `run` requirements against the dependencies the release actually declares, which are the
-> `Requires-Dist` lines of the sdist on PyPI. A maintainer can push a correction to the bot's
-> branch.
+> `Requires-Dist` lines of the sdist on PyPI. A maintainer can push corrections to the bot's branch.
 
 Merging the feedstock pull request builds and uploads the package. It does not appear to a solver
 until the channel index is regenerated, which takes up to about an hour; the package is visible on
@@ -169,5 +166,5 @@ skipped.
 Pull requests are squash merged, so the title becomes the commit message the notes are generated
 from. Nothing enforces the format on the title, so a user facing change merged with a `chore:` (or
 non-conventional) title is dropped from the notes silently. Read the generated changelog on the
-release pull request before merging it; add anything missing there, in the section for the version
+release pull request before merging it, and make any necessary edits to the section for the version
 being cut.

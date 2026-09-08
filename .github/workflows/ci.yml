@@ -13,8 +13,6 @@ on:
       - '**.md'
       - '.github/workflows/release.yml'
       - '.gitignore'
-  # the release workflow calls this to test a release branch, which a bot
-  # pushes and so does not raise a push or pull_request event of its own
   workflow_call:
     inputs:
       ref:
@@ -22,8 +20,6 @@ on:
         required: false
         type: string
 concurrency:
-  # distinct from the calling workflow's group, so a called run cannot cancel
-  # the release that started it
   group: ${{ github.workflow }}-${{ inputs.ref || github.ref }}-tests
   cancel-in-progress: true
 jobs:
