@@ -123,22 +123,13 @@ Merging into `main` drafts a GitHub release, with notes taken from the generated
 
 ### 3. Publish
 
-Review the draft release and publish it. Publishing it triggers the job that builds the package
-and uploads it to [PyPI](https://pypi.org/project/modflow-devtools).
+Review the draft release and publish it. Publishing it triggers jobs that:
 
-Then reset `develop`: branch from `main`, set the next development version, and open a pull request
-back into `develop`.
+1. build the package and upload it to [PyPI](https://pypi.org/project/modflow-devtools)
+2. open a follow-up pull request resetting `develop` from `main`, with the version number
+   incremented to the next development version (minor bumped, `.dev0` suffix)
 
-```shell
-git switch main && git pull
-git switch -c post-x.y.z-release-reset
-python scripts/update_version.py --post-release
-```
-
-`--post-release` increments the minor version and adds a `.dev0` suffix; pass `-v x.y.z.dev0`
-instead to set it explicitly.
-
-Merge (do not squash) that pull request to finish the release.
+Merge (do not squash) the reset pull request to finish the release.
 
 ### 4. conda-forge
 

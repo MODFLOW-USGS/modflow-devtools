@@ -281,3 +281,59 @@ jobs:
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
+
+  reset:
+    name: Reset develop
+    # runs after the release is published, opens a PR merging main back into develop
+    needs: publish
+    if: ${{ github.event_name == 'release' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    defaults:
+      run:
+        shell: bash
+    steps:
+
+      - name: Checkout main branch
+        uses: actions/checkout@v3
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.x
+
+      - name: Install Python dependencies
+        run: |
+          pip install --upgrade pip
+          pip install filelock packaging
+
+      - name: Open reset pull request
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          ver=$(cat version.txt)
+          branch="post-release-$ver-reset"
+
+          # bump the minor version and re-add the '.dev0' suffix; prints the new version
+          next=$(python scripts/update_version.py --post-release)
+
+          git config core.sharedRepository true
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$branch"
+          git add version.txt modflow_devtools/__init__.py docs/conf.py
+          git commit -m "ci(release): update version to $next"
+          git push origin "$branch"
+
+          body='
+          # Reset `develop` after release '$ver'
+
+          Merge (do not squash) this pull request to bring `main` back into `develop` and set the
+          development version to `'$next'`.
+          '
+          gh pr create -B "develop" -H "$branch" --title "Reset develop after release $ver" --body "$body"
