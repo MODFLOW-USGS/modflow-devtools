@@ -155,7 +155,8 @@ changelog without warning. See [`cliff.toml`](cliff.toml) for the commit groups 
 skipped.
 
 Pull requests are squash merged, so the title becomes the commit message the notes are generated
-from. Nothing enforces the format on the title, so a user facing change merged with a `chore:` (or
-non-conventional) title is dropped from the notes silently. Read the generated changelog on the
-release pull request before merging it, and make any necessary edits to the section for the version
-being cut.
+from. [`.github/workflows/pull_request.yml`](.github/workflows/pull_request.yml) rejects a title
+that is not a conventional commit header, but it cannot tell whether the type is the right one: a
+user facing change titled `chore:` still passes the check and is still dropped from the notes.
+Read the generated changelog on the release pull request before merging it, and make any necessary
+edits to the section for the version being cut.
