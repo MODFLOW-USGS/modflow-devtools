@@ -319,7 +319,8 @@ jobs:
           ver=$(cat version.txt)
           branch="post-release-$ver-reset"
 
-          # bump the minor version and re-add the '.dev0' suffix; prints the new version
+          # bump to the next minor version, with a '.devN' suffix where N is the
+          # patch number of the version just released; prints the new version
           next=$(python scripts/update_version.py --post-release)
 
           git config core.sharedRepository true

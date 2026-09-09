@@ -21,9 +21,15 @@ def release_version() -> Version:
 
 
 def post_release_version() -> Version:
-    """Development version for the next cycle: minor incremented, '.dev0' suffix."""
+    """Development version for the next cycle, following a release.
+
+    Targets the next anticipated minor version, with the development segment
+    set to the micro (patch) number of the version just released: e.g. after
+    1.9.2 comes 1.10.0.dev2, and after 1.11.0 comes 1.12.0.dev0. The counter
+    marks how many releases have been cut in the current minor version cycle.
+    """
     version = Version(_current_version.base_version)
-    return Version(f"{version.major}.{version.minor + 1}.0.dev0")
+    return Version(f"{version.major}.{version.minor + 1}.0.dev{version.micro}")
 
 
 def update_version_txt(version: Version):
@@ -107,8 +113,8 @@ if __name__ == "__main__":
         required=False,
         action="store_true",
         help=(
-            "Use the development version for the next cycle: the minor version "
-            "incremented, with a '.dev0' suffix"
+            "Use the development version for the next cycle: the next minor "
+            "version, with a development segment set to the released patch number"
         ),
     )
     parser.add_argument(

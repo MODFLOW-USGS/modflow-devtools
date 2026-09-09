@@ -127,7 +127,9 @@ Review the draft release and publish it. Publishing it triggers jobs that:
 
 1. build the package and upload it to [PyPI](https://pypi.org/project/modflow-devtools)
 2. open a follow-up pull request resetting `develop` from `main`, with the version number
-   incremented to the next development version (minor bumped, `.dev0` suffix)
+   incremented to the next development version: the next minor version, with a `.devN` suffix
+   where `N` is the patch number of the version just released (e.g. `1.9.2` &rarr; `1.10.0.dev2`,
+   `1.11.0` &rarr; `1.12.0.dev0`)
 
 Merge (do not squash) the reset pull request to finish the release.
 
