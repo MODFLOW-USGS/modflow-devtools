@@ -26,7 +26,7 @@ def post_release_version() -> Version:
     Targets the next anticipated minor version, with the development segment
     set to the micro (patch) number of the version just released: e.g. after
     1.9.2 comes 1.10.0.dev2, and after 1.11.0 comes 1.12.0.dev0. The counter
-    marks how many releases into the series development has resumed.
+    marks how many releases have been cut in the current minor version cycle.
     """
     version = Version(_current_version.base_version)
     return Version(f"{version.major}.{version.minor + 1}.0.dev{version.micro}")
